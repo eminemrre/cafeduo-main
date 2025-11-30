@@ -121,6 +121,10 @@ export const api = {
         body: JSON.stringify(user),
       });
       return res.json();
+    },
+    getActiveGame: async (username: string): Promise<GameRequest | null> => {
+      const res = await fetch(`${API_URL}/users/${username}/active-game`);
+      return res.json();
     }
   },
   coupons: {

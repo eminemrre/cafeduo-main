@@ -61,6 +61,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   const [activeGameId, setActiveGameId] = useState<number | null>(null);
   const [activeGameType, setActiveGameType] = useState<string>('');
   const [opponentName, setOpponentName] = useState<string | undefined>(undefined);
+  const [serverActiveGame, setServerActiveGame] = useState<GameRequest | null>(null);
 
   // Main Tab State
   const [mainTab, setMainTab] = useState<'games' | 'leaderboard' | 'achievements'>('games');
@@ -102,12 +103,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
       }
     };
 
+    const checkActiveGame = async () => {
+      try {
+        const game = await api.users.getActiveGame(currentUser.username);
+        setServerActiveGame(game);
+
+        // Auto-rejoin if just refreshed and found game? 
+        // Maybe not auto, let user click. But if we want auto:
+        // if (game && !activeGameId) { ... }
+      } catch (error) {
+        console.error("Failed to check active game", error);
+      }
+    };
+
     fetchGames();
     fetchInventory();
     fetchRewards();
+    checkActiveGame();
 
     // Polling for new games (Real-time effect)
-    const interval = setInterval(fetchGames, 5000);
+    const interval = setInterval(() => {
+      fetchGames();
+      checkActiveGame();
+    }, 5000);
     return () => clearInterval(interval);
   }, [currentUser.id]);
 
@@ -291,8 +309,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
               currentUser={currentUser}
               gameId={activeGameId}
               onGameEnd={handleGameEnd}
-              onLeave={() => setActiveGameId(null)}
-              isBot={!opponentName && activeGameId === null} // Only bot if explicitly bot mode (not implemented yet) or waiting
+              onLeave={() => handleGameEnd('forfeit', 0)} // Forfeit
+              onMinimize={() => setActiveGameId(null)} // Minimize
+              isBot={!opponentName && activeGameId === null}
               opponentName={opponentName}
             />
           ) : (
@@ -301,7 +320,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
               gameId={activeGameId}
               opponentName={opponentName}
               onGameEnd={handleGameEnd}
-              onLeave={() => setActiveGameId(null)}
+              onLeave={() => handleGameEnd('forfeit', 0)} // Forfeit
+              onMinimize={() => setActiveGameId(null)} // Minimize
             />
           )}
         </div>
@@ -452,6 +472,32 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
 
             {/* MIDDLE PANEL: Step 2 - Game Lobby */}
             <div className="lg:col-span-2">
+              {serverActiveGame && !activeGameId && (
+                <div className="mb-6 bg-green-900/30 border-2 border-green-500 rounded-xl p-4 flex items-center justify-between animate-pulse-slow">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
+                      <Gamepad2 className="text-white" size={24} />
+                    </div>
+                    <div>
+                      <h3 className="font-pixel text-white text-lg">DEVAM EDEN OYUNUN VAR!</h3>
+                      <p className="text-green-300 text-sm">{serverActiveGame.gameType} - {serverActiveGame.table}</p>
+                    </div>
+                  </div>
+                  <RetroButton
+                    variant="primary"
+                    onClick={() => {
+                      setActiveGameId(serverActiveGame.id);
+                      setActiveGameType(serverActiveGame.gameType);
+                      // Determine opponent name
+                      const isHost = currentUser.username === serverActiveGame.hostName;
+                      setOpponentName(isHost ? serverActiveGame.guestName : serverActiveGame.hostName);
+                    }}
+                  >
+                    OYUNA DÖN
+                  </RetroButton>
+                </div>
+              )}
+
               <GameLobby
                 currentUser={currentUser}
                 requests={requests}

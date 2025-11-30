@@ -40,6 +40,10 @@ export interface GameRequest {
   points: number;
   table: string;
   status: 'waiting' | 'active' | 'finished';
+  guestName?: string;
+  player1Move?: string;
+  player2Move?: string;
+  gameState?: any;
 }
 
 export interface Reward {

@@ -787,11 +787,15 @@ app.put('/api/users/:id', async (req, res) => {
   }
 });
 
-// The "catchall" handler: for any request that doesn't
-// match one above, send back React's index.html file.
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
+// --- DÜZELTİLEN KISIM BAŞLANGICI ---
+
+// Eskiden burada dist/index.html çağıran kod vardı, onu kaldırdık.
+// Şimdi Render'a girenler hata almasın diye basit bir mesaj gösteriyoruz:
+app.get('/', (req, res) => {
+  res.send('✅ CafeDuo API Sunucusu (Render) Aktif!');
 });
+
+// --- DÜZELTİLEN KISIM BİTİŞİ ---
 
 // Global Error Handler
 app.use((err, req, res, next) => {

@@ -9,8 +9,14 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // Middleware
-app.use(cors());
+// Middleware bölümünde:
+app.use(cors({
+  origin: '*', // Tüm sitelerden gelen isteklere izin ver
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Bu metodlara izin ver
+  allowedHeaders: ['Content-Type', 'Authorization'] // Bu başlıklara izin ver
+}));
 app.use(express.json());
+
 
 // Initialize Database Schema (Robust Version)
 const initDb = async () => {

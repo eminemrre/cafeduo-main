@@ -10,11 +10,12 @@ interface GameRoomProps {
     opponentName?: string;
     onGameEnd: (winner: string, points: number) => void;
     onLeave: () => void;
+    onMinimize?: () => void;
 }
 
 type Move = 'rock' | 'paper' | 'scissors' | null;
 
-export const GameRoom: React.FC<GameRoomProps> = ({ currentUser, gameId, opponentName, onGameEnd, onLeave }) => {
+export const GameRoom: React.FC<GameRoomProps> = ({ currentUser, gameId, opponentName, onGameEnd, onLeave, onMinimize }) => {
     const [playerMove, setPlayerMove] = useState<Move>(null);
     const [opponentMove, setOpponentMove] = useState<Move>(null);
     const [result, setResult] = useState<string>('');
@@ -43,20 +44,20 @@ export const GameRoom: React.FC<GameRoomProps> = ({ currentUser, gameId, opponen
                 const game = await api.games.get(gameId);
 
                 // Check if opponent joined
-                if (waitingForOpponent && game.guest_name) {
+                if (waitingForOpponent && game.guestName) {
                     setWaitingForOpponent(false);
                 }
 
                 // Check for opponent move
-                const isHost = currentUser.username === game.host_name;
-                const oppMove = isHost ? game.player2_move : game.player1_move;
+                const isHost = currentUser.username === game.hostName;
+                const oppMove = isHost ? game.player2Move : game.player1Move;
 
                 if (oppMove && !opponentMove) {
                     setOpponentMove(oppMove as Move);
                 }
 
                 // Check for result reset (new round)
-                if (!game.player1_move && !game.player2_move && result) {
+                if (!game.player1Move && !game.player2Move && result) {
                     resetRound();
                 }
 
@@ -230,6 +231,19 @@ export const GameRoom: React.FC<GameRoomProps> = ({ currentUser, gameId, opponen
                                 {isBot ? <Bot className="text-white" /> : <User className="text-white" />}
                             </div>
                         </div>
+                    </div>
+
+                    {/* Top Actions */}
+                    <div className="absolute top-4 right-4 flex gap-2">
+                        {onMinimize && (
+                            <button
+                                onClick={onMinimize}
+                                className="bg-gray-700 hover:bg-gray-600 text-white p-2 rounded border border-gray-500"
+                                title="Panele Dön (Oyun Devam Eder)"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3" /><path d="M21 8h-3a2 2 0 0 1-2-2V3" /><path d="M3 16h3a2 2 0 0 1 2 2v3" /><path d="M16 21v-3a2 2 0 0 1 2-2h3" /></svg>
+                            </button>
+                        )}
                     </div>
 
                     {/* Game Area */}

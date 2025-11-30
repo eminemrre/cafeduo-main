@@ -313,7 +313,20 @@ app.post('/api/auth/login', async (req, res) => {
 // 3. GET GAMES
 app.get('/api/games', async (req, res) => {
   if (await isDbConnected()) {
-    const result = await pool.query('SELECT * FROM games WHERE status = \'waiting\' ORDER BY created_at DESC');
+    const result = await pool.query(`
+      SELECT 
+        id, 
+        host_name as "hostName", 
+        game_type as "gameType", 
+        points, 
+        table_code as "table", 
+        status, 
+        guest_name as "guestName", 
+        created_at as "createdAt" 
+      FROM games 
+      WHERE status = 'waiting' 
+      ORDER BY created_at DESC
+    `);
     res.json(result.rows);
   } else {
     res.json(MEMORY_GAMES);
@@ -327,7 +340,7 @@ app.post('/api/games', async (req, res) => {
   if (await isDbConnected()) {
     try {
       const result = await pool.query(
-        'INSERT INTO games (host_name, game_type, points, table_code, status) VALUES ($1, $2, $3, $4, \'waiting\') RETURNING *',
+        'INSERT INTO games (host_name, game_type, points, table_code, status) VALUES ($1, $2, $3, $4, \'waiting\') RETURNING id, host_name as "hostName", game_type as "gameType", points, table_code as "table", status, created_at as "createdAt"',
         [hostName, gameType, points, table]
       );
       res.json(result.rows[0]);
@@ -363,7 +376,22 @@ app.post('/api/games/:id/join', async (req, res) => {
 app.get('/api/games/:id', async (req, res) => {
   const { id } = req.params;
   if (await isDbConnected()) {
-    const result = await pool.query('SELECT * FROM games WHERE id = $1', [id]);
+    const result = await pool.query(`
+      SELECT 
+        id, 
+        host_name as "hostName", 
+        game_type as "gameType", 
+        points, 
+        table_code as "table", 
+        status, 
+        guest_name as "guestName", 
+        player1_move as "player1Move", 
+        player2_move as "player2Move", 
+        game_state as "gameState", 
+        created_at as "createdAt" 
+      FROM games 
+      WHERE id = $1
+    `, [id]);
     if (result.rows.length > 0) {
       res.json(result.rows[0]);
     } else {
@@ -766,6 +794,47 @@ const checkAchievements = async (userId) => {
     console.error('Achievement Check Error:', err);
   }
 };
+
+// 17. GET ACTIVE GAME FOR USER
+app.get('/api/users/:username/active-game', async (req, res) => {
+  const { username } = req.params;
+
+  if (await isDbConnected()) {
+    try {
+      const result = await pool.query(`
+        SELECT 
+          id, 
+          host_name as "hostName", 
+          game_type as "gameType", 
+          points, 
+          table_code as "table", 
+          status, 
+          guest_name as "guestName", 
+          player1_move as "player1Move", 
+          player2_move as "player2Move", 
+          game_state as "gameState", 
+          created_at as "createdAt" 
+        FROM games 
+        WHERE (host_name = $1 OR guest_name = $1) AND status = 'active' 
+        LIMIT 1
+      `, [username]);
+
+      if (result.rows.length > 0) {
+        res.json(result.rows[0]);
+      } else {
+        res.json(null);
+      }
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Aktif oyun sorgulanamadı.' });
+    }
+  } else {
+    const game = MEMORY_GAMES.find(g =>
+      (g.hostName === username || g.guestName === username) && g.status === 'active'
+    );
+    res.json(game || null);
+  }
+});
 
 // Hook into User Update to check achievements
 app.put('/api/users/:id', async (req, res) => {

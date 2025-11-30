@@ -11,6 +11,7 @@ interface GladiatorGameProps {
     isBot: boolean;
     onGameEnd: (winner: string, points: number) => void;
     onLeave: () => void;
+    onMinimize?: () => void;
 }
 
 interface FighterStats {
@@ -23,7 +24,7 @@ interface FighterStats {
 
 type ActionType = 'light' | 'heavy' | 'defend' | 'rest';
 
-export const GladiatorGame: React.FC<GladiatorGameProps> = ({ currentUser, gameId, opponentName, isBot, onGameEnd, onLeave }) => {
+export const GladiatorGame: React.FC<GladiatorGameProps> = ({ currentUser, gameId, opponentName, isBot, onGameEnd, onLeave, onMinimize }) => {
     const [player, setPlayer] = useState<FighterStats>({ hp: 100, maxHp: 100, energy: 100, maxEnergy: 100, shield: 0 });
     const [opponent, setOpponent] = useState<FighterStats>({ hp: 100, maxHp: 100, energy: 100, maxEnergy: 100, shield: 0 });
     const [turn, setTurn] = useState<'player' | 'opponent'>('player');
@@ -48,15 +49,15 @@ export const GladiatorGame: React.FC<GladiatorGameProps> = ({ currentUser, gameI
                 const game = await api.games.get(gameId);
 
                 // Check if opponent joined
-                if (waitingForOpponent && game.guest_name) {
+                if (waitingForOpponent && game.guestName) {
                     setWaitingForOpponent(false);
                 }
 
                 // Sync Game State
-                if (game.game_state) {
-                    const state = game.game_state;
+                if (game.gameState) {
+                    const state = game.gameState;
                     // Determine who is who
-                    const isHost = currentUser.username === game.host_name;
+                    const isHost = currentUser.username === game.hostName;
 
                     // If it's my turn in DB but local says opponent, update
                     // Or just sync everything
@@ -301,6 +302,20 @@ export const GladiatorGame: React.FC<GladiatorGameProps> = ({ currentUser, gameI
                         </div>
                     </div>
 
+
+                    {/* Top Actions */}
+                    <div className="absolute top-4 right-4 flex gap-2 z-30">
+                        {onMinimize && (
+                            <button
+                                onClick={onMinimize}
+                                className="bg-gray-900/80 hover:bg-gray-800 text-white p-2 rounded border border-gray-600"
+                                title="Panele Dön (Oyun Devam Eder)"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3" /><path d="M21 8h-3a2 2 0 0 1-2-2V3" /><path d="M3 16h3a2 2 0 0 1 2 2v3" /><path d="M16 21v-3a2 2 0 0 1 2-2h3" /></svg>
+                            </button>
+                        )}
+                    </div>
+
                     {/* Arena */}
                     <div className="relative z-10 w-full max-w-4xl grid grid-cols-2 gap-12 mb-8">
 
@@ -415,7 +430,6 @@ export const GladiatorGame: React.FC<GladiatorGameProps> = ({ currentUser, gameI
                             <RetroButton onClick={onLeave} variant="primary">LOBİYE DÖN</RetroButton>
                         </div>
                     )}
-
                 </>
             )}
 

@@ -1,0 +1,13 @@
+On branch main
+Your branch is ahead of 'origin/main' by 3 commits.
+  (use "git push" to publish your local commits)
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	branch_info.txt
+	remote_info.txt
+	remote_info_ascii.txt
+	status_info.txt
+	status_info_ascii.txt
+
+nothing added to commit but untracked files present (use "git add" to track)

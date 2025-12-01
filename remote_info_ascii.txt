@@ -1,0 +1,2 @@
+origin	https://github.com/eminemre35/cafeduo-main.git (fetch)
+origin	https://github.com/eminemre35/cafeduo-main.git (push)

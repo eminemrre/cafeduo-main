@@ -27,7 +27,11 @@
     ]
   },
   "include": [
-    "src",
+    "App.tsx",
+    "index.tsx",
+    "types.ts",
+    "constants.ts",
+    "components",
     "lib",
     "vite.config.ts"
   ]

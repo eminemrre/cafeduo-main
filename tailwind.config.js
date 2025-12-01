@@ -11,7 +11,7 @@ export default {
         extend: {
             fontFamily: {
                 sans: ['Inter', 'sans-serif'],
-                pixel: ['"Silkscreen"', 'cursive'],
+                pixel: ['"Chakra Petch"', 'sans-serif'],
                 retro: ['"VT323"', 'monospace'],
             },
             colors: {

@@ -196,6 +196,37 @@ const isDbConnected = async () => {
   }
 };
 
+// --- CLEANUP JOB ---
+// Her 5 dakikada bir çalışır, 30 dakikadan eski 'waiting' oyunları siler
+setInterval(async () => {
+  console.log('🧹 Running cleanup job for stale games...');
+  const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+
+  if (await isDbConnected()) {
+    try {
+      const result = await pool.query(
+        "DELETE FROM games WHERE status = 'waiting' AND created_at < $1 RETURNING id",
+        [thirtyMinutesAgo]
+      );
+      if (result.rowCount > 0) {
+        console.log(`🗑️ Deleted ${result.rowCount} stale games from DB.`);
+      }
+    } catch (err) {
+      console.error('Cleanup Error:', err);
+    }
+  } else {
+    const initialCount = MEMORY_GAMES.length;
+    MEMORY_GAMES = MEMORY_GAMES.filter(g => {
+      const createdAt = new Date(g.createdAt || Date.now()); // Fallback if createdAt missing in memory
+      return g.status !== 'waiting' || createdAt > new Date(Date.now() - 30 * 60 * 1000);
+    });
+    const deletedCount = initialCount - MEMORY_GAMES.length;
+    if (deletedCount > 0) {
+      console.log(`🗑️ Deleted ${deletedCount} stale games from Memory.`);
+    }
+  }
+}, 5 * 60 * 1000); // 5 minutes
+
 // --- API ROUTES ---
 
 // Email Configuration

@@ -5,15 +5,39 @@ const { pool } = require('./db');
 const fs = require('fs');
 const path = require('path');
 
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Security Middleware
+app.use(helmet()); // Secure HTTP headers
+
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Çok fazla istek gönderdiniz, lütfen daha sonra tekrar deneyin.'
+});
+app.use(limiter);
+
 // Middleware
-// Middleware bölümünde:
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['*'];
+
 app.use(cors({
-  origin: '*', // Tüm sitelerden gelen isteklere izin ver
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Bu metodlara izin ver
-  allowedHeaders: ['Content-Type', 'Authorization'] // Bu başlıklara izin ver
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS policy: This origin is not allowed.'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 
@@ -240,7 +264,11 @@ const transporter = nodemailer.createTransport({
 });
 
 
-// 1. REGISTER
+// Temporary storage for verification codes
+const verificationCodes = new Map();
+const pendingUsers = new Map();
+
+// 1. REGISTER (Step 1: Send Code)
 app.post('/api/auth/register', async (req, res) => {
   const { username, email, password, department } = req.body;
 
@@ -256,14 +284,59 @@ app.post('/api/auth/register', async (req, res) => {
     if (MEMORY_USERS.find(u => u.email === email)) return res.status(400).json({ error: 'E-posta kullanımda.' });
   }
 
-  // Create User Directly
+  // Generate Code
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+
+  // Store pending user
+  pendingUsers.set(email, { username, email, password, department });
+  verificationCodes.set(email, code);
+
+  // Send Email
+  const mailOptions = {
+    from: process.env.GMAIL_USER,
+    to: email,
+    subject: 'CafeDuo Doğrulama Kodu',
+    text: `CafeDuo'ya hoş geldin! Doğrulama kodun: ${code}`
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error('Email error:', error);
+      // In dev mode, return code directly if email fails
+      return res.json({ requireVerification: true, devCode: code });
+    } else {
+      console.log('Email sent: ' + info.response);
+      res.json({ requireVerification: true });
+    }
+  });
+});
+
+// 1.5 VERIFY (Step 2: Create User)
+app.post('/api/auth/verify', async (req, res) => {
+  const { email, code } = req.body;
+
+  if (verificationCodes.get(email) !== code) {
+    return res.status(400).json({ error: 'Geçersiz doğrulama kodu.' });
+  }
+
+  const userData = pendingUsers.get(email);
+  if (!userData) {
+    return res.status(400).json({ error: 'Oturum zaman aşımına uğradı. Tekrar kayıt olun.' });
+  }
+
+  // Create User
   if (await isDbConnected()) {
     try {
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(userData.password, 10);
       const result = await pool.query(
         'INSERT INTO users (username, email, password_hash, points, department) VALUES ($1, $2, $3, 100, $4) RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin"',
-        [username, email, hashedPassword, department || '']
+        [userData.username, userData.email, hashedPassword, userData.department || '']
       );
+
+      // Cleanup
+      verificationCodes.delete(email);
+      pendingUsers.delete(email);
+
       res.json(result.rows[0]);
     } catch (err) {
       res.status(400).json({ error: 'Kullanıcı oluşturulamadı.' });
@@ -272,15 +345,20 @@ app.post('/api/auth/register', async (req, res) => {
     // Fallback
     const newUser = {
       id: Date.now(),
-      username,
-      email,
-      password,
+      username: userData.username,
+      email: userData.email,
+      password: userData.password,
       points: 100,
       wins: 0,
       gamesPlayed: 0,
-      department
+      department: userData.department
     };
     MEMORY_USERS.push(newUser);
+
+    // Cleanup
+    verificationCodes.delete(email);
+    pendingUsers.delete(email);
+
     res.json(newUser);
   }
 });

@@ -1,17 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
-import { Games } from './components/Games';
 import { HowItWorks } from './components/HowItWorks';
 import { About } from './components/About';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
-import { Dashboard } from './components/Dashboard';
-import { AdminDashboard } from './components/AdminDashboard';
-import { CafeDashboard } from './components/CafeDashboard';
 import { User } from './types';
 import { api } from './lib/api';
+
+// Lazy Load Components
+const Games = React.lazy(() => import('./components/Games').then(module => ({ default: module.Games })));
+const Dashboard = React.lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
+const AdminDashboard = React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
+const CafeDashboard = React.lazy(() => import('./components/CafeDashboard').then(module => ({ default: module.CafeDashboard })));
+
+// Loading Component
+const PageLoader = () => (
+  <div className="min-h-[60vh] flex flex-col items-center justify-center text-white">
+    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+    <div className="font-pixel text-xl animate-pulse">YÜKLENİYOR...</div>
+  </div>
+);
 
 // Protected Route Component
 const ProtectedRoute = ({ children, user, isAdminRoute = false, requiredRole }: { children: React.ReactElement, user: User | null, isAdminRoute?: boolean, requiredRole?: string }) => {
@@ -123,47 +133,49 @@ const App: React.FC = () => {
       <Navbar isLoggedIn={isLoggedIn} onLogout={handleLogout} />
 
       <main>
-        <Routes>
-          {/* Public Home Route */}
-          <Route path="/" element={
-            <>
-              <Hero
-                onLogin={openLogin}
-                onRegister={openRegister}
-                isLoggedIn={isLoggedIn}
-                userRole={currentUser?.role}
-                isAdmin={currentUser?.isAdmin}
-              />
-              <Games />
-              <HowItWorks />
-              <About />
-            </>
-          } />
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            {/* Public Home Route */}
+            <Route path="/" element={
+              <>
+                <Hero
+                  onLogin={openLogin}
+                  onRegister={openRegister}
+                  isLoggedIn={isLoggedIn}
+                  userRole={currentUser?.role}
+                  isAdmin={currentUser?.isAdmin}
+                />
+                <Games />
+                <HowItWorks />
+                <About />
+              </>
+            } />
 
-          {/* User Dashboard Route */}
-          <Route path="/dashboard" element={
-            <ProtectedRoute user={currentUser}>
-              <Dashboard currentUser={currentUser!} onUpdateUser={handleUpdateUser} />
-            </ProtectedRoute>
-          } />
+            {/* User Dashboard Route */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute user={currentUser}>
+                <Dashboard currentUser={currentUser!} onUpdateUser={handleUpdateUser} />
+              </ProtectedRoute>
+            } />
 
-          {/* Admin Dashboard Route */}
-          <Route path="/admin" element={
-            <ProtectedRoute user={currentUser} isAdminRoute={true}>
-              <AdminDashboard currentUser={currentUser!} />
-            </ProtectedRoute>
-          } />
+            {/* Admin Dashboard Route */}
+            <Route path="/admin" element={
+              <ProtectedRoute user={currentUser} isAdminRoute={true}>
+                <AdminDashboard currentUser={currentUser!} />
+              </ProtectedRoute>
+            } />
 
-          {/* Cafe Admin Route */}
-          <Route path="/cafe-admin" element={
-            <ProtectedRoute user={currentUser} requiredRole="cafe_admin">
-              <CafeDashboard currentUser={currentUser!} />
-            </ProtectedRoute>
-          } />
+            {/* Cafe Admin Route */}
+            <Route path="/cafe-admin" element={
+              <ProtectedRoute user={currentUser} requiredRole="cafe_admin">
+                <CafeDashboard currentUser={currentUser!} />
+              </ProtectedRoute>
+            } />
 
-          {/* Catch all - Redirect to Home */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            {/* Catch all - Redirect to Home */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
       </main>
 
       <Footer />

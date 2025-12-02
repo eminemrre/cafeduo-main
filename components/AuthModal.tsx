@@ -27,6 +27,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [department, setDepartment] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
 
   useEffect(() => {
     setMode(initialMode);
@@ -35,6 +37,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setEmail('');
     setPassword('');
     setDepartment('');
+    setVerificationCode('');
+    setIsVerifying(false);
   }, [initialMode, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -44,9 +48,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     try {
       if (mode === 'register') {
-        // Register Call
-        const user = await api.auth.register(username, email, password, department);
-        onLoginSuccess(user);
+        if (!isVerifying) {
+          // Step 1: Register (Send Code)
+          const response = await api.auth.register(username, email, password, department);
+          if (response.requireVerification) {
+            setIsVerifying(true);
+            if (response.devCode) {
+              console.log("DEV CODE:", response.devCode);
+              alert(`Geliştirici Modu Kodu: ${response.devCode}`);
+            }
+          } else {
+            // Should not happen with new logic, but fallback
+            onLoginSuccess(response);
+          }
+        } else {
+          // Step 2: Verify Code
+          const user = await api.auth.verify(email, verificationCode);
+          onLoginSuccess(user);
+        }
       } else {
         // Login Call
         const user = await api.auth.login(email, password);
@@ -112,7 +131,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
           <form className="space-y-4" onSubmit={handleSubmit}>
 
-            {mode === 'register' && (
+            {mode === 'register' && !isVerifying && (
               <>
                 <div className="relative group">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
@@ -147,36 +166,59 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </>
             )}
 
-            <div className="relative group">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="E-posta Adresi"
-                className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all"
-              />
-            </div>
+            {(!isVerifying || mode === 'login') && (
+              <>
+                <div className="relative group">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="E-posta Adresi"
+                    className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all"
+                  />
+                </div>
 
-            <div className="relative group">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Şifre"
-                className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all"
-              />
-            </div>
+                <div className="relative group">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Şifre"
+                    className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all"
+                  />
+                </div>
+              </>
+            )}
+
+            {isVerifying && (
+              <div className="relative group animate-fade-in-up">
+                <div className="text-center mb-2 text-green-400 text-sm">
+                  E-postana gönderilen 6 haneli kodu gir:
+                </div>
+                <input
+                  type="text"
+                  required
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  placeholder="Doğrulama Kodu"
+                  className="w-full bg-black/30 border-2 border-green-500 focus:border-green-400 text-white py-3 text-center outline-none font-mono text-2xl tracking-widest placeholder:text-gray-600 transition-all"
+                  maxLength={6}
+                />
+              </div>
+            )}
 
             <RetroButton variant="primary" className="w-full mt-6 flex items-center justify-center gap-2" type="submit">
               {isLoading ? (
                 <span className="animate-pulse">ISLENIYOR...</span>
               ) : (
                 <>
-                  <span>{mode === 'login' ? 'BAŞLA' : 'KAYDOL'}</span>
+                  <span>
+                    {mode === 'login' ? 'BAŞLA' : (isVerifying ? 'DOĞRULA VE GİR' : 'KAYIT OL')}
+                  </span>
                   <ArrowRight size={20} />
                 </>
               )}

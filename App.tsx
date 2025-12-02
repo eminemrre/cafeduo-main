@@ -9,6 +9,7 @@ import { AuthModal } from './components/AuthModal';
 import { User } from './types';
 import { api } from './lib/api';
 import { CafeSelection } from './components/CafeSelection';
+import { CookieConsent } from './components/CookieConsent';
 
 // Lazy Load Components
 const Games = React.lazy(() => import('./components/Games').then(module => ({ default: module.Games })));
@@ -189,6 +190,7 @@ const App: React.FC = () => {
         initialMode={authMode}
         onLoginSuccess={handleLoginSuccess}
       />
+      <CookieConsent />
     </div>
   );
 };

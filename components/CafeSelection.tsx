@@ -18,13 +18,20 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
 
     useEffect(() => {
         loadCafes();
+        const savedCafeId = localStorage.getItem('last_cafe_id');
+        const savedTable = localStorage.getItem('last_table_number');
+        if (savedCafeId) setSelectedCafeId(parseInt(savedCafeId));
+        if (savedTable) setTableNumber(savedTable);
     }, []);
 
     const loadCafes = async () => {
         try {
             const data = await api.cafes.list();
             setCafes(data);
-            if (data.length > 0) setSelectedCafeId(data[0].id);
+            // Only set default if no saved cafe
+            if (data.length > 0 && !localStorage.getItem('last_cafe_id')) {
+                setSelectedCafeId(data[0].id);
+            }
         } catch (err) {
             console.error("Failed to load cafes");
         }
@@ -59,6 +66,8 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                     });
 
                     onCheckInSuccess(res.cafeName);
+                    localStorage.setItem('last_cafe_id', selectedCafeId.toString());
+                    localStorage.setItem('last_table_number', tableNumber);
                 } catch (err: any) {
                     setError(err.message || 'Check-in başarısız.');
                 } finally {
@@ -136,8 +145,8 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                         onClick={handleCheckIn}
                         disabled={loading}
                         className={`w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all ${loading
-                                ? 'bg-gray-700 cursor-not-allowed'
-                                : 'bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-600/30 hover:scale-[1.02]'
+                            ? 'bg-gray-700 cursor-not-allowed'
+                            : 'bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-600/30 hover:scale-[1.02]'
                             }`}
                     >
                         {loading ? (

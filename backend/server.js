@@ -142,7 +142,7 @@ const initDb = async () => {
       await addColumn('cafes', 'latitude', 'DECIMAL(10, 8)');
       await addColumn('cafes', 'longitude', 'DECIMAL(11, 8)');
       await addColumn('cafes', 'table_count', 'INTEGER DEFAULT 20');
-      await addColumn('cafes', 'radius', 'INTEGER DEFAULT 100'); // Meters
+      await addColumn('cafes', 'radius', 'INTEGER DEFAULT 500'); // Meters
 
       // 7. Seed Initial Cafes
       await pool.query(`INSERT INTO cafes (name, table_count, radius) VALUES ('PAÜ İİBF Kantin', 50, 150), ('PAÜ Yemekhane', 100, 200) ON CONFLICT (name) DO NOTHING`);

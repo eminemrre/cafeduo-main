@@ -360,6 +360,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                     center={[editCafeData.latitude, editCafeData.longitude]}
                                     zoom={15}
                                     style={{ height: '100%', width: '100%' }}
+                                    key={`${selectedCafe?.id}-${activeTab}`} // Force re-render only when cafe changes
                                 >
                                     <TileLayer
                                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

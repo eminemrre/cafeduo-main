@@ -1,26 +1,6 @@
-import React, { useState, useEffect, Suspense } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { Navbar } from './components/Navbar';
-import { Hero } from './components/Hero';
-import { HowItWorks } from './components/HowItWorks';
-import { About } from './components/About';
-import { Footer } from './components/Footer';
-import { AuthModal } from './components/AuthModal';
-import { User } from './types';
-import { api } from './lib/api';
+import { CafeSelection } from './components/CafeSelection';
 
-// Lazy Load Components
-const Games = React.lazy(() => import('./components/Games').then(module => ({ default: module.Games })));
-const Dashboard = React.lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
-const AdminDashboard = React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
-const CafeDashboard = React.lazy(() => import('./components/CafeDashboard').then(module => ({ default: module.CafeDashboard })));
-
-// Loading Component
-const PageLoader = () => (
-  <div className="min-h-[60vh] flex flex-col items-center justify-center text-white">
-    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-  </div>
-);
+// ... (imports remain same)
 
 // Protected Route Component
 const ProtectedRoute = ({ children, user, isAdminRoute = false, requiredRole }: { children: React.ReactElement, user: User | null, isAdminRoute?: boolean, requiredRole?: string }) => {
@@ -37,17 +17,16 @@ const ProtectedRoute = ({ children, user, isAdminRoute = false, requiredRole }: 
 };
 
 const App: React.FC = () => {
+  // ... (state remains same)
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-
-  // Auth State
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Check for saved session (mock)
+  // ... (useEffect remains same)
   useEffect(() => {
     const savedUser = localStorage.getItem('cafe_user');
     if (savedUser) {
@@ -93,13 +72,11 @@ const App: React.FC = () => {
     }
 
     if (user.isAdmin) {
-      console.log("Redirecting to /admin");
       navigate('/admin');
     } else if (user.role === 'cafe_admin') {
-      console.log("Redirecting to /cafe-admin");
       navigate('/cafe-admin');
     } else {
-      console.log("Redirecting to /dashboard");
+      // Regular user logic handled in render (CafeSelection vs Dashboard)
       navigate('/dashboard');
     }
   };
@@ -113,10 +90,8 @@ const App: React.FC = () => {
 
   const handleUpdateUser = async (updatedUser: User) => {
     try {
-      // Optimistic UI update
       setCurrentUser(updatedUser);
-      localStorage.setItem('cafe_user', JSON.stringify(updatedUser)); // Update local storage
-      // API call
+      localStorage.setItem('cafe_user', JSON.stringify(updatedUser));
       const serverUser = await api.users.update(updatedUser);
       setCurrentUser(serverUser);
       localStorage.setItem('cafe_user', JSON.stringify(serverUser));
@@ -125,16 +100,23 @@ const App: React.FC = () => {
     }
   };
 
+  const handleCheckInSuccess = (cafeName: string) => {
+    if (currentUser) {
+      const updatedUser = { ...currentUser, cafe_name: cafeName }; // Optimistic update
+      // Ideally we should fetch the full updated user from backend, but this is enough for UI
+      setCurrentUser(updatedUser);
+      localStorage.setItem('cafe_user', JSON.stringify(updatedUser));
+      navigate('/dashboard');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0f141a] text-white font-sans selection:bg-purple-500 selection:text-white">
-      {/* Show Navbar on all pages except maybe specific ones if needed. 
-          For now, we keep it everywhere. */}
       <Navbar isLoggedIn={isLoggedIn} onLogout={handleLogout} />
 
       <main>
         <Suspense fallback={<PageLoader />}>
           <Routes>
-            {/* Public Home Route */}
             <Route path="/" element={
               <>
                 <Hero
@@ -150,28 +132,29 @@ const App: React.FC = () => {
               </>
             } />
 
-            {/* User Dashboard Route */}
             <Route path="/dashboard" element={
               <ProtectedRoute user={currentUser}>
-                <Dashboard currentUser={currentUser!} onUpdateUser={handleUpdateUser} />
+                {/* CHECK-IN LOGIC: If user has no cafe_id, show CafeSelection */}
+                {!currentUser?.isAdmin && currentUser?.role !== 'cafe_admin' && !currentUser?.cafe_id ? (
+                  <CafeSelection currentUser={currentUser!} onCheckInSuccess={handleCheckInSuccess} />
+                ) : (
+                  <Dashboard currentUser={currentUser!} onUpdateUser={handleUpdateUser} />
+                )}
               </ProtectedRoute>
             } />
 
-            {/* Admin Dashboard Route */}
             <Route path="/admin" element={
               <ProtectedRoute user={currentUser} isAdminRoute={true}>
                 <AdminDashboard currentUser={currentUser!} />
               </ProtectedRoute>
             } />
 
-            {/* Cafe Admin Route */}
             <Route path="/cafe-admin" element={
               <ProtectedRoute user={currentUser} requiredRole="cafe_admin">
                 <CafeDashboard currentUser={currentUser!} />
               </ProtectedRoute>
             } />
 
-            {/* Catch all - Redirect to Home */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Suspense>

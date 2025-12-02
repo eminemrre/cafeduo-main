@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@react-oauth/google": "^0.12.2",
+    "@types/leaflet": "^1.9.21",
+    "@types/react-leaflet": "^2.8.3",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -18,6 +20,7 @@
     "express-rate-limit": "^8.2.1",
     "google-auth-library": "^10.5.0",
     "helmet": "^8.1.0",
+    "leaflet": "^1.9.4",
     "lucide-react": "^0.263.1",
     "nodemailer": "^7.0.11",
     "nodemon": "^3.0.1",
@@ -25,6 +28,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-google-recaptcha": "^3.1.0",
+    "react-leaflet": "^5.0.0",
     "react-router-dom": "^7.9.6"
   },
   "browserslist": {

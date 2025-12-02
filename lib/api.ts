@@ -189,12 +189,41 @@ export const api = {
         throw new Error(resData.error || 'İşlem başarısız');
       }
       return resData;
+    },
+    getUsers: async () => {
+      const response = await fetch(`${API_URL}/admin/users`);
+      return response.json();
+    },
+    getGames: async () => {
+      const response = await fetch(`${API_URL}/admin/games`);
+      return response.json();
+    },
+    updateCafe: async (id: number, data: any) => {
+      const response = await fetch(`${API_URL}/admin/cafes/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return response.json();
     }
   },
   cafes: {
     list: async () => {
       const response = await fetch(`${API_URL}/cafes`);
       return response.json();
+    },
+    checkIn: async (data: { userId: number, cafeId: number, tableNumber: number, userLat: number, userLon: number }) => {
+      const response = await fetch(`${API_URL}/cafes/check-in`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      const resData = await response.json();
+      if (!response.ok) {
+        throw new Error(resData.error || 'Check-in başarısız');
+      }
+      return resData;
     }
   },
   rewards: {

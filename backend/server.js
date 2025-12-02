@@ -138,8 +138,14 @@ const initDb = async () => {
       await addColumn('games', 'player2_move', 'VARCHAR(50)');
       await addColumn('games', 'game_state', 'JSONB');
 
+      // Cafes Table Updates (Location System)
+      await addColumn('cafes', 'latitude', 'DECIMAL(10, 8)');
+      await addColumn('cafes', 'longitude', 'DECIMAL(11, 8)');
+      await addColumn('cafes', 'table_count', 'INTEGER DEFAULT 20');
+      await addColumn('cafes', 'radius', 'INTEGER DEFAULT 100'); // Meters
+
       // 7. Seed Initial Cafes
-      await pool.query(`INSERT INTO cafes (name) VALUES ('PAÜ İİBF Kantin'), ('PAÜ Yemekhane') ON CONFLICT (name) DO NOTHING`);
+      await pool.query(`INSERT INTO cafes (name, table_count, radius) VALUES ('PAÜ İİBF Kantin', 50, 150), ('PAÜ Yemekhane', 100, 200) ON CONFLICT (name) DO NOTHING`);
 
       // 9. Achievements Table
       await pool.query(`
@@ -508,6 +514,66 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
+// 2.6 LOCATION CHECK-IN SYSTEM
+function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
+  var R = 6371; // Radius of the earth in km
+  var dLat = deg2rad(lat2 - lat1);
+  var dLon = deg2rad(lon2 - lon1);
+  var a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  var d = R * c; // Distance in km
+  return d * 1000; // Distance in meters
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI / 180);
+}
+
+app.post('/api/cafes/check-in', async (req, res) => {
+  const { userId, cafeId, tableNumber, userLat, userLon } = req.body;
+
+  if (await isDbConnected()) {
+    try {
+      // 1. Get Cafe Location & Radius
+      const cafeRes = await pool.query('SELECT * FROM cafes WHERE id = $1', [cafeId]);
+      if (cafeRes.rows.length === 0) return res.status(404).json({ error: 'Kafe bulunamadı.' });
+
+      const cafe = cafeRes.rows[0];
+
+      // 2. Check if Cafe has coordinates set
+      if (!cafe.latitude || !cafe.longitude) {
+        // If no location set by admin yet, allow entry for testing/setup
+        // OR deny. For now, let's allow but warn.
+        // return res.status(400).json({ error: 'Bu kafenin konumu henüz ayarlanmamış.' });
+      } else {
+        // 3. Calculate Distance
+        const distance = getDistanceFromLatLonInMeters(userLat, userLon, cafe.latitude, cafe.longitude);
+
+        if (distance > cafe.radius) {
+          return res.status(403).json({
+            error: `Kafeden çok uzaktasınız! (${Math.round(distance)}m). Giriş için ${cafe.radius}m yakınında olmalısınız.`
+          });
+        }
+      }
+
+      // 4. Update User
+      await pool.query('UPDATE users SET cafe_id = $1 WHERE id = $2', [cafeId, userId]);
+
+      res.json({ success: true, message: 'Giriş başarılı!', cafeName: cafe.name });
+
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Check-in işlemi başarısız.' });
+    }
+  } else {
+    // Memory Fallback
+    res.json({ success: true, message: 'Memory Mode: Check-in simulated.' });
+  }
+});
+
 // 3. GET GAMES
 app.get('/api/games', async (req, res) => {
   if (await isDbConnected()) {
@@ -856,31 +922,11 @@ app.get('/api/rewards', async (req, res) => {
       { id: 1, title: 'Bedava Filtre Kahve', cost: 500, description: 'Günün yorgunluğunu at.', icon: 'coffee' },
       { id: 2, title: '%20 Hesap İndirimi', cost: 850, description: 'Tüm masada geçerli.', icon: 'discount' },
       { id: 3, title: 'Cheesecake İkramı', cost: 400, description: 'Tatlı bir mola ver.', icon: 'dessert' },
-      { id: 4, title: 'Oyun Jetonu x5', cost: 100, description: 'Ekstra oyun hakkı.', icon: 'game' },
     ]);
   }
 });
 
-// 12. REWARDS: CREATE (Cafe Admin)
-app.post('/api/rewards', async (req, res) => {
-  const { title, cost, description, icon, cafeId } = req.body;
-
-  if (await isDbConnected()) {
-    try {
-      const result = await pool.query(
-        'INSERT INTO rewards (title, cost, description, icon, cafe_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-        [title, cost, description, icon, cafeId]
-      );
-      res.json(result.rows[0]);
-    } catch (err) {
-      res.status(500).json({ error: 'Ödül oluşturulamadı.' });
-    }
-  } else {
-    res.status(501).json({ error: 'Not implemented in memory mode' });
-  }
-});
-
-// 13. REWARDS: DELETE
+// 14. REWARDS: DELETE
 app.delete('/api/rewards/:id', async (req, res) => {
   const { id } = req.params;
   if (await isDbConnected()) {
@@ -895,7 +941,7 @@ app.delete('/api/rewards/:id', async (req, res) => {
   }
 });
 
-// 14. LEADERBOARD
+// 15. LEADERBOARD
 app.get('/api/leaderboard', async (req, res) => {
   const { type, department } = req.query; // type: 'general' or 'department'
 
@@ -927,7 +973,7 @@ app.get('/api/leaderboard', async (req, res) => {
   }
 });
 
-// 15. ACHIEVEMENTS: GET ALL & USER STATUS
+// 16. ACHIEVEMENTS: GET ALL & USER STATUS
 app.get('/api/achievements/:userId', async (req, res) => {
   const { userId } = req.params;
 

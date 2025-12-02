@@ -30,7 +30,8 @@ export interface User {
   department?: string;
   isAdmin?: boolean;
   role?: 'user' | 'admin' | 'cafe_admin';
-  cafeId?: number;
+  cafe_id?: number;
+  cafe_name?: string;
 }
 
 export interface GameRequest {

@@ -4,6 +4,8 @@ import { RetroButton } from './RetroButton';
 import { User as UserType } from '../types';
 import { api } from '../lib/api';
 import { PAU_DEPARTMENTS } from '../constants';
+import { GoogleLogin } from '@react-oauth/google';
+import ReCAPTCHA from 'react-google-recaptcha';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -29,6 +31,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [department, setDepartment] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   useEffect(() => {
     setMode(initialMode);
@@ -39,6 +42,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setDepartment('');
     setVerificationCode('');
     setIsVerifying(false);
+    setCaptchaToken(null);
   }, [initialMode, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -50,7 +54,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       if (mode === 'register') {
         if (!isVerifying) {
           // Step 1: Register (Send Code)
-          const response = await api.auth.register(username, email, password, department);
+          if (!captchaToken) {
+            setError('Lütfen robot olmadığınızı doğrulayın.');
+            setIsLoading(false);
+            return;
+          }
+          const response = await api.auth.register(username, email, password, department, captchaToken);
           if (response.requireVerification) {
             setIsVerifying(true);
             if (response.devCode) {
@@ -68,7 +77,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         }
       } else {
         // Login Call
-        const user = await api.auth.login(email, password);
+        if (!captchaToken) {
+          setError('Lütfen robot olmadığınızı doğrulayın.');
+          setIsLoading(false);
+          return;
+        }
+        const user = await api.auth.login(email, password, captchaToken);
         onLoginSuccess(user);
       }
     } catch (err: any) {
@@ -211,6 +225,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             )}
 
+            {/* reCAPTCHA */}
+            {!isVerifying && (
+              <div className="flex justify-center my-4">
+                <ReCAPTCHA
+                  sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
+                  onChange={(token) => setCaptchaToken(token)}
+                  theme="dark"
+                />
+              </div>
+            )}
+
             <RetroButton variant="primary" className="w-full mt-6 flex items-center justify-center gap-2" type="submit">
               {isLoading ? (
                 <span className="animate-pulse">ISLENIYOR...</span>
@@ -223,6 +248,39 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </>
               )}
             </RetroButton>
+
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-600"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-[#1a1f2e] text-gray-400">VEYA</span>
+              </div>
+            </div>
+
+            <div className="flex justify-center">
+              <GoogleLogin
+                onSuccess={async (credentialResponse) => {
+                  if (credentialResponse.credential) {
+                    try {
+                      setIsLoading(true);
+                      const user = await api.auth.googleLogin(credentialResponse.credential);
+                      onLoginSuccess(user);
+                    } catch (err: any) {
+                      setError(err.message || 'Google girişi başarısız.');
+                    } finally {
+                      setIsLoading(false);
+                    }
+                  }
+                }}
+                onError={() => {
+                  setError('Google girişi başarısız.');
+                }}
+                theme="filled_black"
+                shape="pill"
+                text={mode === 'login' ? 'signin_with' : 'signup_with'}
+              />
+            </div>
           </form>
 
           <div className="text-center font-retro text-gray-400">

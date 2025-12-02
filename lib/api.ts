@@ -11,11 +11,11 @@ console.log("🚀 Current API URL:", API_URL); // Debugging log
 
 export const api = {
   auth: {
-    login: async (email: string, password: string): Promise<User> => {
+    login: async (email: string, password: string, captchaToken: string): Promise<User> => {
       const res = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, captchaToken }),
       });
 
       const text = await res.text();
@@ -32,11 +32,11 @@ export const api = {
       }
       return data;
     },
-    register: async (username: string, email: string, password: string, department?: string): Promise<any> => {
+    register: async (username: string, email: string, password: string, department?: string, captchaToken?: string): Promise<any> => {
       const res = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password, department }),
+        body: JSON.stringify({ username, email, password, department, captchaToken }),
       });
 
       const text = await res.text();
@@ -70,6 +70,26 @@ export const api = {
 
       if (!res.ok) {
         throw new Error(data.error || 'Doğrulama başarısız');
+      }
+      return data;
+    },
+    googleLogin: async (token: string): Promise<User> => {
+      const res = await fetch(`${API_URL}/auth/google`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      });
+
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error(`Sunucu hatası: ${res.status}`);
+      }
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Google girişi başarısız');
       }
       return data;
     }

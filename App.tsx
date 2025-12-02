@@ -18,8 +18,7 @@ const CafeDashboard = React.lazy(() => import('./components/CafeDashboard').then
 // Loading Component
 const PageLoader = () => (
   <div className="min-h-[60vh] flex flex-col items-center justify-center text-white">
-    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-    <div className="font-pixel text-xl animate-pulse">YÜKLENİYOR...</div>
+    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
   </div>
 );
 

@@ -883,10 +883,77 @@ app.get('/api/shop/inventory/:userId', async (req, res) => {
 // 9. ADMIN: GET USERS
 app.get('/api/admin/users', async (req, res) => {
   if (await isDbConnected()) {
-    const result = await pool.query('SELECT id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id FROM users ORDER BY id ASC');
+    const result = await pool.query('SELECT id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, (SELECT name FROM cafes WHERE id = users.cafe_id) as cafe_name FROM users ORDER BY id ASC');
     res.json(result.rows);
   } else {
     res.json(MEMORY_USERS);
+  }
+});
+
+// 18. ADMIN: GET ALL GAMES
+app.get('/api/admin/games', async (req, res) => {
+  if (await isDbConnected()) {
+    const result = await pool.query(`
+      SELECT 
+        g.id, 
+        g.host_name, 
+        g.guest_name, 
+        g.game_type, 
+        g.points, 
+        g.table_code, 
+        g.status, 
+        g.created_at,
+        c.name as cafe_name
+      FROM games g
+      LEFT JOIN users u ON u.username = g.host_name
+      LEFT JOIN cafes c ON c.id = u.cafe_id
+      ORDER BY g.created_at DESC
+    `);
+    res.json(result.rows);
+  } else {
+    res.json(MEMORY_GAMES);
+  }
+});
+
+// 19. ADMIN: UPDATE CAFE
+app.put('/api/admin/cafes/:id', async (req, res) => {
+  const { id } = req.params;
+  const { latitude, longitude, table_count, radius } = req.body;
+
+  if (await isDbConnected()) {
+    try {
+      await pool.query(
+        'UPDATE cafes SET latitude = $1, longitude = $2, table_count = $3, radius = $4 WHERE id = $5',
+        [latitude, longitude, table_count, radius, id]
+      );
+      res.json({ success: true });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Kafe güncellenemedi.' });
+    }
+  } else {
+    res.json({ success: true });
+  }
+});
+
+// 20. ADMIN: CREATE CAFE
+app.post('/api/admin/cafes', async (req, res) => {
+  const { name, latitude, longitude, table_count, radius } = req.body;
+
+  if (await isDbConnected()) {
+    try {
+      const result = await pool.query(
+        'INSERT INTO cafes (name, latitude, longitude, table_count, radius) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+        [name, latitude, longitude, table_count, radius]
+      );
+      res.json(result.rows[0]);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Kafe oluşturulamadı. İsim benzersiz olmalı.' });
+    }
+  } else {
+    const newCafe = { id: Date.now(), name, latitude, longitude, table_count, radius };
+    res.json(newCafe);
   }
 });
 

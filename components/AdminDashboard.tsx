@@ -106,6 +106,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         }
     };
 
+    const [showAddCafeModal, setShowAddCafeModal] = useState(false);
+    const [newCafeData, setNewCafeData] = useState({
+        name: '',
+        latitude: 37.7749,
+        longitude: 29.0875,
+        table_count: 20,
+        radius: 100
+    });
+
+    // ... (existing loadData and other functions)
+
+    const handleAddCafe = async () => {
+        if (!newCafeData.name) {
+            alert('Lütfen kafe adı girin.');
+            return;
+        }
+        try {
+            await api.admin.createCafe(newCafeData);
+            alert('Yeni kafe eklendi!');
+            setShowAddCafeModal(false);
+            setNewCafeData({ name: '', latitude: 37.7749, longitude: 29.0875, table_count: 20, radius: 100 });
+            loadData();
+        } catch (error) {
+            alert('Kafe eklenirken hata oluştu.');
+        }
+    };
+
     return (
         <div className="min-h-screen bg-[#0f141a] pt-24 px-4 pb-12 font-sans">
             <div className="max-w-7xl mx-auto">
@@ -131,8 +158,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as any)}
                                 className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 ${activeTab === tab.id
-                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 scale-105'
-                                        : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-white'
+                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 scale-105'
+                                    : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-white'
                                     }`}
                             >
                                 <tab.icon size={18} />
@@ -184,8 +211,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                                 <td className="p-4 text-center font-mono text-yellow-500">{user.points}</td>
                                                 <td className="p-4 text-center">
                                                     <span className={`px-2 py-1 rounded text-xs border ${user.isAdmin ? 'bg-red-900/30 border-red-800 text-red-300' :
-                                                            user.role === 'cafe_admin' ? 'bg-orange-900/30 border-orange-800 text-orange-300' :
-                                                                'bg-blue-900/30 border-blue-800 text-blue-300'
+                                                        user.role === 'cafe_admin' ? 'bg-orange-900/30 border-orange-800 text-orange-300' :
+                                                            'bg-blue-900/30 border-blue-800 text-blue-300'
                                                         }`}>
                                                         {user.isAdmin ? 'ADMIN' : user.role === 'cafe_admin' ? 'CAFE ADMIN' : 'USER'}
                                                     </span>
@@ -211,13 +238,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                 {games.map((game: any) => (
                                     <div key={game.id} className="bg-black/20 border border-gray-700 rounded-xl p-4 flex items-center justify-between hover:bg-black/40 transition-all">
                                         <div className="flex items-center gap-4">
-                                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-2xl ${game.gameType === 'tictactoe' ? 'bg-blue-900/20 text-blue-400' : 'bg-green-900/20 text-green-400'
+                                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-2xl ${game.game_type === 'tictactoe' ? 'bg-blue-900/20 text-blue-400' : 'bg-green-900/20 text-green-400'
                                                 }`}>
-                                                {game.gameType === 'tictactoe' ? '❌' : '🧠'}
+                                                {game.game_type === 'tictactoe' ? '❌' : '🧠'}
                                             </div>
                                             <div>
                                                 <h3 className="text-white font-bold">{game.host_name} vs {game.guest_name || 'Bekleniyor'}</h3>
-                                                <p className="text-gray-400 text-xs">{new Date(game.created_at).toLocaleString()} • {game.cafe_name}</p>
+                                                <p className="text-gray-400 text-xs">{new Date(game.created_at).toLocaleString()} • {game.cafe_name || 'Bilinmiyor'}</p>
                                             </div>
                                         </div>
                                         <div className="text-right">
@@ -237,10 +264,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                     {activeTab === 'cafes' && (
                         <div className="flex h-[600px]">
                             {/* Sidebar */}
-                            <div className="w-1/3 border-r border-gray-700/50 p-6 bg-black/20">
-                                <h2 className="text-xl text-white font-bold mb-6 flex items-center gap-2">
-                                    <Coffee className="text-orange-400" /> Kafe Ayarları
-                                </h2>
+                            <div className="w-1/3 border-r border-gray-700/50 p-6 bg-black/20 overflow-y-auto">
+                                <div className="flex items-center justify-between mb-6">
+                                    <h2 className="text-xl text-white font-bold flex items-center gap-2">
+                                        <Coffee className="text-orange-400" /> Kafe Ayarları
+                                    </h2>
+                                    <button
+                                        onClick={() => setShowAddCafeModal(true)}
+                                        className="bg-green-600 hover:bg-green-500 text-white p-2 rounded-lg transition-colors"
+                                        title="Yeni Kafe Ekle"
+                                    >
+                                        <div className="flex items-center gap-1 text-xs font-bold">
+                                            <span>+</span> EKLE
+                                        </div>
+                                    </button>
+                                </div>
 
                                 <div className="space-y-6">
                                     <div>
@@ -300,7 +338,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
 
                                             <button
                                                 onClick={handleCafeUpdate}
-                                                className="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-600/20"
+                                                className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/20"
                                             >
                                                 <Save size={18} /> KAYDET
                                             </button>
@@ -336,6 +374,74 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
 
                 </div>
             </div>
+
+            {/* Add Cafe Modal */}
+            {showAddCafeModal && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                    <div className="bg-[#1a1f2e] border border-gray-700 rounded-2xl p-8 max-w-md w-full relative">
+                        <h2 className="text-2xl font-bold text-white mb-6">Yeni Kafe Ekle</h2>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-gray-400 text-sm mb-2">Kafe Adı</label>
+                                <input
+                                    type="text"
+                                    value={newCafeData.name}
+                                    onChange={e => setNewCafeData({ ...newCafeData, name: e.target.value })}
+                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500"
+                                    placeholder="Örn: Kampüs Kafe"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-gray-400 text-sm mb-2">Enlem</label>
+                                    <input
+                                        type="number"
+                                        value={newCafeData.latitude}
+                                        onChange={e => setNewCafeData({ ...newCafeData, latitude: parseFloat(e.target.value) })}
+                                        className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-gray-400 text-sm mb-2">Boylam</label>
+                                    <input
+                                        type="number"
+                                        value={newCafeData.longitude}
+                                        onChange={e => setNewCafeData({ ...newCafeData, longitude: parseFloat(e.target.value) })}
+                                        className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-gray-400 text-sm mb-2">Masa Sayısı</label>
+                                <input
+                                    type="number"
+                                    value={newCafeData.table_count}
+                                    onChange={e => setNewCafeData({ ...newCafeData, table_count: parseInt(e.target.value) })}
+                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white"
+                                />
+                            </div>
+
+                            <div className="flex gap-3 mt-8">
+                                <button
+                                    onClick={() => setShowAddCafeModal(false)}
+                                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-xl transition-colors"
+                                >
+                                    İptal
+                                </button>
+                                <button
+                                    onClick={handleAddCafe}
+                                    className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors"
+                                >
+                                    Ekle
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

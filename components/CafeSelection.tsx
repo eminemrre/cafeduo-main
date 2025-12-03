@@ -5,7 +5,7 @@ import { User } from '../types';
 
 interface CafeSelectionProps {
     currentUser: User;
-    onCheckInSuccess: (cafeName: string) => void;
+    onCheckInSuccess: (cafeName: string, tableNumber: string) => void;
 }
 
 export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onCheckInSuccess }) => {
@@ -65,7 +65,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                         userLon: position.coords.longitude
                     });
 
-                    onCheckInSuccess(res.cafeName);
+                    onCheckInSuccess(res.cafeName, res.table);
                     localStorage.setItem('last_cafe_id', selectedCafeId.toString());
                     localStorage.setItem('last_table_number', tableNumber);
                 } catch (err: any) {

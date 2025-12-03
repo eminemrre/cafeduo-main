@@ -122,9 +122,9 @@ const App: React.FC = () => {
     }
   };
 
-  const handleCheckInSuccess = (cafeName: string) => {
+  const handleCheckInSuccess = (cafeName: string, tableNumber: string) => {
     if (currentUser) {
-      const updatedUser = { ...currentUser, cafe_name: cafeName }; // Optimistic update
+      const updatedUser = { ...currentUser, cafe_name: cafeName, table_number: tableNumber }; // Optimistic update
       // Ideally we should fetch the full updated user from backend, but this is enough for UI
       setCurrentUser(updatedUser);
       localStorage.setItem('cafe_user', JSON.stringify(updatedUser));

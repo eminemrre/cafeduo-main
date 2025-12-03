@@ -127,6 +127,7 @@ const initDb = async () => {
       await addColumn('users', 'is_admin', 'BOOLEAN DEFAULT FALSE');
       await addColumn('users', 'role', "VARCHAR(50) DEFAULT 'user'");
       await addColumn('users', 'cafe_id', 'INTEGER REFERENCES cafes(id)');
+      await addColumn('users', 'table_number', 'VARCHAR(10)'); // Store table number (e.g. "5" or "MASA05")
       await addColumn('users', 'last_daily_bonus', 'DATE');
 
       await addColumn('user_items', 'is_used', 'BOOLEAN DEFAULT FALSE');
@@ -478,7 +479,7 @@ app.post('/api/auth/google', async (req, res) => {
 
     if (await isDbConnected()) {
       // Check if user exists
-      const check = await pool.query('SELECT id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, avatar_url FROM users WHERE email = $1', [email]);
+      const check = await pool.query('SELECT id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number, avatar_url FROM users WHERE email = $1', [email]);
 
       if (check.rows.length > 0) {
         // User exists -> Login
@@ -950,6 +951,62 @@ app.put('/api/admin/cafes/:id', async (req, res) => {
     }
   } else {
     res.json({ success: true });
+  }
+});
+
+// 19. CHECK-IN (Location Verification)
+app.post('/api/cafes/check-in', async (req, res) => {
+  const { userId, cafeId, tableNumber, userLat, userLon } = req.body;
+
+  if (await isDbConnected()) {
+    try {
+      // 1. Get Cafe Location
+      const cafeRes = await pool.query('SELECT * FROM cafes WHERE id = $1', [cafeId]);
+      if (cafeRes.rows.length === 0) return res.status(404).json({ error: 'Kafe bulunamadı.' });
+      const cafe = cafeRes.rows[0];
+
+      // 2. Calculate Distance (Haversine Formula)
+      const R = 6371e3; // Earth radius in meters
+      const φ1 = userLat * Math.PI / 180;
+      const φ2 = cafe.latitude * Math.PI / 180;
+      const Δφ = (cafe.latitude - userLat) * Math.PI / 180;
+      const Δλ = (cafe.longitude - userLon) * Math.PI / 180;
+
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+        Math.cos(φ1) * Math.cos(φ2) *
+        Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      const distance = R * c; // Distance in meters
+
+      // 3. Verify Location (Radius Check)
+      // Use cafe.radius (default 500m) or fallback to 500m
+      const allowedRadius = cafe.radius || 500;
+
+      if (distance > allowedRadius) {
+        return res.status(400).json({
+          error: `Kafeden çok uzaktasınız! (${Math.round(distance)}m). Giriş için ${allowedRadius}m yakınında olmalısınız.`
+        });
+      }
+
+      // 4. Update User (Check-in)
+      // Format table number as "MASA05" for compatibility
+      const formattedTable = `MASA${tableNumber.toString().padStart(2, '0')}`;
+
+      await pool.query('UPDATE users SET cafe_id = $1, table_number = $2 WHERE id = $3', [cafeId, formattedTable, userId]);
+
+      res.json({ success: true, cafeName: cafe.name, table: formattedTable });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Check-in işlemi başarısız.' });
+    }
+  } else {
+    // Memory Fallback
+    const user = MEMORY_USERS.find(u => u.id === userId);
+    if (user) {
+      user.cafe_id = cafeId;
+      user.table_number = `MASA${tableNumber.toString().padStart(2, '0')}`;
+    }
+    res.json({ success: true, cafeName: 'Demo Cafe', table: `MASA${tableNumber.toString().padStart(2, '0')}` });
   }
 });
 

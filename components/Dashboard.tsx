@@ -127,7 +127,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
       checkActiveGame();
     }, 5000);
     return () => clearInterval(interval);
-  }, [currentUser.id]);
+    // Auto-connect if user has table number
+    if (currentUser.table_number) {
+      setTableCode(currentUser.table_number);
+      setIsMatched(true);
+    }
+  }, [currentUser.id, currentUser.table_number]);
 
   // MASA BAĞLAMA FONKSİYONU
   const handleTableSubmit = (e: React.FormEvent) => {

@@ -551,47 +551,24 @@ function deg2rad(deg) {
   return deg * (Math.PI / 180);
 }
 
-app.post('/api/cafes/check-in', async (req, res) => {
-  const { userId, cafeId, tableNumber, userLat, userLon } = req.body;
+// 2.6 LOCATION CHECK-IN SYSTEM (Moved to Section 19)
+function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
+  var R = 6371; // Radius of the earth in km
+  var dLat = deg2rad(lat2 - lat1);
+  var dLon = deg2rad(lon2 - lon1);
+  var a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  var d = R * c; // Distance in km
+  return d * 1000; // Distance in meters
+}
 
-  if (await isDbConnected()) {
-    try {
-      // 1. Get Cafe Location & Radius
-      const cafeRes = await pool.query('SELECT * FROM cafes WHERE id = $1', [cafeId]);
-      if (cafeRes.rows.length === 0) return res.status(404).json({ error: 'Kafe bulunamadı.' });
-
-      const cafe = cafeRes.rows[0];
-
-      // 2. Check if Cafe has coordinates set
-      if (!cafe.latitude || !cafe.longitude) {
-        // If no location set by admin yet, allow entry for testing/setup
-        // OR deny. For now, let's allow but warn.
-        // return res.status(400).json({ error: 'Bu kafenin konumu henüz ayarlanmamış.' });
-      } else {
-        // 3. Calculate Distance
-        const distance = getDistanceFromLatLonInMeters(userLat, userLon, cafe.latitude, cafe.longitude);
-
-        if (distance > cafe.radius) {
-          return res.status(403).json({
-            error: `Kafeden çok uzaktasınız! (${Math.round(distance)}m). Giriş için ${cafe.radius}m yakınında olmalısınız.`
-          });
-        }
-      }
-
-      // 4. Update User
-      await pool.query('UPDATE users SET cafe_id = $1 WHERE id = $2', [cafeId, userId]);
-
-      res.json({ success: true, message: 'Giriş başarılı!', cafeName: cafe.name });
-
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Check-in işlemi başarısız.' });
-    }
-  } else {
-    // Memory Fallback
-    res.json({ success: true, message: 'Memory Mode: Check-in simulated.' });
-  }
-});
+function deg2rad(deg) {
+  return deg * (Math.PI / 180);
+}
+// Old endpoint removed to avoid conflict with Section 19
 
 // 3. GET GAMES
 app.get('/api/games', async (req, res) => {

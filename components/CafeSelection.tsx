@@ -102,9 +102,20 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                 </div>
 
                 {error && (
-                    <div className="bg-red-900/20 border border-red-800 text-red-300 p-4 rounded-xl mb-6 flex items-start gap-3 text-sm">
-                        <AlertTriangle size={18} className="shrink-0 mt-0.5" />
-                        {error}
+                    <div className="bg-red-900/20 border border-red-800 text-red-300 p-4 rounded-xl mb-6 text-sm">
+                        <div className="flex items-start gap-3 mb-2">
+                            <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+                            <span>{error}</span>
+                        </div>
+                        {/* Debug Info for User/Admin */}
+                        <div className="mt-2 p-2 bg-black/30 rounded text-xs font-mono text-gray-400">
+                            <p className="font-bold text-gray-300 mb-1">Hata Detayları:</p>
+                            <p>Tarayıcı Konumu: {locationStatus === 'found' ? 'Alındı' : 'Bekleniyor'}</p>
+                            <p>Konum İzni: {locationStatus === 'denied' ? 'Reddedildi' : 'Verildi'}</p>
+                            <p className="mt-1 text-orange-300">
+                                Not: Bilgisayardan giriyorsanız konumunuz internet sağlayıcınıza göre yanlış (farklı şehirde) görünebilir. Telefondan denemeniz önerilir.
+                            </p>
+                        </div>
                     </div>
                 )}
 

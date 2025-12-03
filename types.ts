@@ -32,6 +32,8 @@ export interface User {
   role?: 'user' | 'admin' | 'cafe_admin';
   cafe_id?: number;
   cafe_name?: string;
+  table_number?: string;
+  avatar_url?: string;
 }
 
 export interface GameRequest {

@@ -461,6 +461,10 @@ app.post('/api/auth/login', async (req, res) => {
             bonusReceived = true;
           }
 
+          // FORCE LOCATION RESET: Clear cafe_id on login
+          await pool.query('UPDATE users SET cafe_id = NULL WHERE id = $1', [user.id]);
+          user.cafe_id = null;
+
           // Remove password_hash from response
           delete user.password_hash;
           delete user.last_daily_bonus; // Don't send internal date

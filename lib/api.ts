@@ -3,9 +3,7 @@ import { User, GameRequest } from '../types';
 // BURASI DEĞİŞTİ:
 // Canlıdaysak (PROD) Render linkini kullan, değilsek (DEV) yerel proxy'yi (/api) kullan.
 const RENDER_URL = "https://cafeduo-api.onrender.com";
-const API_URL = import.meta.env.PROD
-  ? 'https://cafeduo-api.onrender.com/api'
-  : '/api';
+const API_URL = '/api';
 
 console.log("🚀 Current API URL:", API_URL); // Debugging log
 

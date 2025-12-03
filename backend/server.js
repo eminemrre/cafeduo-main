@@ -1267,6 +1267,44 @@ app.get('/', (req, res) => {
 
 // --- DÜZELTİLEN KISIM BİTİŞİ ---
 
+// 21. AUTO-CLEANUP STUCK GAMES
+setInterval(async () => {
+  if (await isDbConnected()) {
+    try {
+      // Mark games as 'finished' if created more than 2 hours ago and still 'waiting' or 'active'
+      await pool.query(`
+        UPDATE games 
+        SET status = 'finished' 
+        WHERE status IN ('waiting', 'active') 
+        AND created_at < NOW() - INTERVAL '2 hours'
+      `);
+    } catch (err) {
+      console.error("Auto-cleanup failed:", err);
+    }
+  }
+}, 5 * 60 * 1000); // Run every 5 minutes
+
+// 22. ADMIN: UPDATE USER ROLE
+app.put('/api/admin/users/:id/role', async (req, res) => {
+  const { id } = req.params;
+  const { role } = req.body; // 'cafe_admin' or 'user'
+
+  if (await isDbConnected()) {
+    try {
+      const result = await pool.query(
+        'UPDATE users SET role = $1 WHERE id = $2 RETURNING id, username, role',
+        [role, id]
+      );
+      res.json(result.rows[0]);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Rol güncellenemedi.' });
+    }
+  } else {
+    res.status(501).json({ error: 'Not implemented in memory mode' });
+  }
+});
+
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error('Unhandled Error:', err);

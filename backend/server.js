@@ -1,16 +1,22 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const { pool } = require('./db');
 const fs = require('fs');
-const path = require('path');
 
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+console.log("🚀 Starting Server...");
+console.log("📂 Current Dir:", __dirname);
+console.log("📄 Env Path:", path.resolve(__dirname, '../.env'));
+console.log("🔑 Google Client ID:", process.env.VITE_GOOGLE_CLIENT_ID ? "Loaded ✅" : "MISSING ❌");
+console.log("🗄️  Database URL:", process.env.***REMOVED*** ? "Loaded ✅" : "MISSING ❌");
 
 // Security Middleware
 app.use(helmet()); // Secure HTTP headers

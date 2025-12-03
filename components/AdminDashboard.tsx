@@ -130,6 +130,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         }
     };
 
+    const handleDeleteGame = async (gameId: number) => {
+        if (window.confirm('Bu oyunu silmek istediğinize emin misiniz? (Geri alınamaz)')) {
+            try {
+                await api.games.delete(gameId);
+                alert('Oyun silindi!');
+                loadData();
+            } catch (error) {
+                alert('Oyun silinemedi.');
+            }
+        }
+    };
+
     const handleAddCafe = async () => {
         if (!newCafeData.name) {
             alert('Lütfen kafe adı girin.');
@@ -280,6 +292,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                                 {game.status === 'finished' ? 'TAMAMLANDI' : 'DEVAM EDİYOR'}
                                             </span>
                                             <p className="text-gray-500 text-xs mt-1">Masa: {game.table_code}</p>
+                                            <button
+                                                onClick={() => handleDeleteGame(game.id)}
+                                                className="mt-2 text-xs bg-red-900/30 text-red-400 px-2 py-1 rounded hover:bg-red-900/50 flex items-center gap-1 ml-auto"
+                                            >
+                                                <Trash2 size={12} /> SİL
+                                            </button>
                                         </div>
                                     </div>
                                 ))}

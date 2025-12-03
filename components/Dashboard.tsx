@@ -353,8 +353,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
             onClick={() => handleViewProfile(currentUser.username)}
             className="flex items-center gap-4 hover:bg-white/5 p-2 rounded transition-colors group"
           >
-            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center border-2 border-white shadow-lg group-hover:scale-105 transition-transform">
-              <span className="font-pixel text-xl">{(currentUser.username || '?').substring(0, 2).toUpperCase()}</span>
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center border-2 border-white shadow-lg group-hover:scale-105 transition-transform overflow-hidden">
+              {currentUser.avatar_url ? (
+                <img src={currentUser.avatar_url} alt={currentUser.username} className="w-full h-full object-cover" />
+              ) : (
+                <span className="font-pixel text-xl">{(currentUser.username || '?').substring(0, 2).toUpperCase()}</span>
+              )}
             </div>
             <div className="text-left">
               <h2 className="font-pixel text-lg md:text-xl text-white group-hover:text-blue-300 transition-colors">HOŞGELDİN, {currentUser.username}</h2>

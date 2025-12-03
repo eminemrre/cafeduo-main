@@ -467,14 +467,20 @@ app.post('/api/auth/google', async (req, res) => {
       audience: process.env.VITE_GOOGLE_CLIENT_ID,
     });
     const payload = ticket.getPayload();
-    const { email, name, sub } = payload;
+    const { email, name, sub, picture } = payload;
 
     if (await isDbConnected()) {
       // Check if user exists
-      const check = await pool.query('SELECT id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id FROM users WHERE email = $1', [email]);
+      const check = await pool.query('SELECT id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, avatar_url FROM users WHERE email = $1', [email]);
 
       if (check.rows.length > 0) {
         // User exists -> Login
+        // Update avatar if changed
+        if (picture && check.rows[0].avatar_url !== picture) {
+          await pool.query('UPDATE users SET avatar_url = $1 WHERE id = $2', [picture, check.rows[0].id]);
+          check.rows[0].avatar_url = picture;
+        }
+
         const user = check.rows[0];
         // Daily Bonus Logic (Same as regular login)
         // ... (Simplified for brevity, ideally refactor bonus logic to a function)
@@ -485,8 +491,8 @@ app.post('/api/auth/google', async (req, res) => {
         const hashedPassword = await bcrypt.hash(randomPassword, 10);
 
         const result = await pool.query(
-          'INSERT INTO users (username, email, password_hash, points, department) VALUES ($1, $2, $3, 100, $4) RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin"',
-          [name, email, hashedPassword, 'Google User']
+          'INSERT INTO users (username, email, password_hash, points, department, avatar_url) VALUES ($1, $2, $3, 100, $4, $5) RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, avatar_url',
+          [name, email, hashedPassword, 'Google User', picture]
         );
         res.json(result.rows[0]);
       }

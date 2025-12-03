@@ -449,7 +449,14 @@ app.post('/api/auth/login', async (req, res) => {
   } else {
     // Fallback
     const user = MEMORY_USERS.find(u => u.email === email && u.password === password);
-    if (user) res.json(user);
+    if (user) {
+      // Reset cafe_id on login to force re-verification
+      if (await isDbConnected()) {
+        await pool.query('UPDATE users SET cafe_id = NULL WHERE id = $1', [user.id]);
+        user.cafe_id = null;
+      }
+      res.json(user);
+    }
     else res.status(401).json({ error: 'Kullanıcı bulunamadı.' });
   }
 });
@@ -475,11 +482,15 @@ app.post('/api/auth/google', async (req, res) => {
 
       if (check.rows.length > 0) {
         // User exists -> Login
-        // Update avatar if changed
+        // Update avatar if changed AND clear cafe_id
         if (picture && check.rows[0].avatar_url !== picture) {
-          await pool.query('UPDATE users SET avatar_url = $1 WHERE id = $2', [picture, check.rows[0].id]);
+          await pool.query('UPDATE users SET avatar_url = $1, cafe_id = NULL WHERE id = $2', [picture, check.rows[0].id]);
           check.rows[0].avatar_url = picture;
+        } else {
+          // Just clear cafe_id
+          await pool.query('UPDATE users SET cafe_id = NULL WHERE id = $1', [check.rows[0].id]);
         }
+        check.rows[0].cafe_id = null;
 
         const user = check.rows[0];
         // Daily Bonus Logic (Same as regular login)

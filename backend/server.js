@@ -1,10 +1,33 @@
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
+const fs = require('fs');
+
+// Try to find .env in multiple locations
+const possiblePaths = [
+  path.resolve(__dirname, '../.env'), // Root (standard)
+  path.resolve(__dirname, '.env'),    // Backend folder
+  path.resolve(process.cwd(), '.env') // Current working dir
+];
+
+let envPath = null;
+for (const p of possiblePaths) {
+  if (fs.existsSync(p)) {
+    envPath = p;
+    break;
+  }
+}
+
+if (envPath) {
+  require('dotenv').config({ path: envPath });
+  console.log(`✅ Loaded .env from: ${envPath}`);
+} else {
+  console.warn("⚠️  .env file NOT FOUND in any standard location!");
+  console.warn("Checked paths:", possiblePaths);
+}
+
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const { pool } = require('./db');
-const fs = require('fs');
 
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -13,8 +36,6 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 console.log("🚀 Starting Server...");
-console.log("📂 Current Dir:", __dirname);
-console.log("📄 Env Path:", path.resolve(__dirname, '../.env'));
 console.log("🔑 Google Client ID:", process.env.VITE_GOOGLE_CLIENT_ID ? "Loaded ✅" : "MISSING ❌");
 console.log("🗄️  Database URL:", process.env.***REMOVED*** ? "Loaded ✅" : "MISSING ❌");
 

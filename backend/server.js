@@ -157,6 +157,7 @@ const initDb = async () => {
       await addColumn('users', 'cafe_id', 'INTEGER REFERENCES cafes(id)');
       await addColumn('users', 'table_number', 'VARCHAR(10)'); // Store table number (e.g. "5" or "MASA05")
       await addColumn('users', 'last_daily_bonus', 'DATE');
+      await addColumn('users', 'avatar_url', 'VARCHAR(500)'); // Store Google Profile Picture URL
 
       await addColumn('user_items', 'is_used', 'BOOLEAN DEFAULT FALSE');
       await addColumn('user_items', 'used_at', 'TIMESTAMP WITH TIME ZONE');

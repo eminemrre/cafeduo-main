@@ -117,6 +117,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
 
     // ... (existing loadData and other functions)
 
+    const handleToggleRole = async (userId: number, currentRole: string | undefined) => {
+        const newRole = currentRole === 'cafe_admin' ? 'user' : 'cafe_admin';
+        if (window.confirm(`Kullanıcı rolünü ${newRole === 'cafe_admin' ? 'KAFE YÖNETİCİSİ' : 'KULLANICI'} olarak değiştirmek istiyor musunuz?`)) {
+            try {
+                await api.admin.updateUserRole(userId, newRole);
+                alert('Kullanıcı rolü güncellendi!');
+                loadData();
+            } catch (error) {
+                alert('Rol güncelleme başarısız.');
+            }
+        }
+    };
+
     const handleAddCafe = async () => {
         if (!newCafeData.name) {
             alert('Lütfen kafe adı girin.');
@@ -200,6 +213,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                             <th className="p-4 text-center">Puan</th>
                                             <th className="p-4 text-center">Rol</th>
                                             <th className="p-4 text-center">Mevcut Kafe</th>
+                                            <th className="p-4 text-right">İşlemler</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-700/50">
@@ -219,6 +233,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                                 </td>
                                                 <td className="p-4 text-center text-sm text-gray-500">
                                                     {user.cafe_name || '-'}
+                                                </td>
+                                                <td className="p-4 text-right">
+                                                    {!user.isAdmin && (
+                                                        <button
+                                                            onClick={() => handleToggleRole(user.id, user.role)}
+                                                            className={`text-xs font-bold px-3 py-1 rounded transition-colors ${user.role === 'cafe_admin'
+                                                                ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50'
+                                                                : 'bg-green-900/30 text-green-400 hover:bg-green-900/50'
+                                                                }`}
+                                                        >
+                                                            {user.role === 'cafe_admin' ? 'YÖNETİCİLİĞİ AL' : 'YÖNETİCİ YAP'}
+                                                        </button>
+                                                    )}
                                                 </td>
                                             </tr>
                                         ))}

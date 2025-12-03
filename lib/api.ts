@@ -213,6 +213,14 @@ export const api = {
         body: JSON.stringify(data),
       });
       return response.json();
+    },
+    updateUserRole: async (userId: number, role: string) => {
+      const response = await fetch(`${API_URL}/admin/users/${userId}/role`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+      return response.json();
     }
   },
   cafes: {

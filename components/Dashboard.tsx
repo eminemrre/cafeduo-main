@@ -411,52 +411,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
         {mainTab === 'games' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-            {/* LEFT PANEL: Step 1 - Table & Status */}
+            {/* LEFT PANEL: Step 1 - Table Status (Simplified) */}
             <div className="space-y-6">
-              <div className={`bg-[#1a1f2e] border-4 ${isMatched ? 'border-green-600' : 'border-gray-600'} relative overflow-hidden transition-colors duration-500`}>
+              <div className="bg-[#1a1f2e] border-4 border-green-600 relative overflow-hidden">
                 <div className="bg-gray-800 p-2 flex items-center justify-between border-b-2 border-gray-600">
-                  <span className="font-pixel text-xs text-gray-400">STEP 01 // CONNECTION</span>
+                  <span className="font-pixel text-xs text-gray-400">STATUS // CONNECTED</span>
                   <div className="flex gap-1">
-                    <div className={`w-2 h-2 rounded-full ${isMatched ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                     <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
                   </div>
                 </div>
 
-                <div className="p-6 relative z-10">
-                  <h3 className="font-pixel text-xl text-white mb-1">MASA EŞLEŞMESİ</h3>
-                  <p className="text-gray-400 text-sm mb-6 font-mono">Oturduğunuz masanın kodunu giriniz.</p>
-
-                  {!isMatched ? (
-                    <form onSubmit={handleTableSubmit} className="space-y-4">
-                      <div className="relative">
-                        <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-400" />
-                        <input
-                          type="text"
-                          value={tableCode}
-                          onChange={(e) => setTableCode(e.target.value)}
-                          placeholder="Örn: MASA01"
-                          className="w-full bg-black border-2 border-gray-600 focus:border-blue-500 text-center font-retro text-3xl py-4 text-white outline-none tracking-widest transition-all shadow-inner uppercase"
-                          maxLength={6}
-                        />
-                      </div>
-                      {matchError && <p className="text-red-500 text-xs font-pixel">{matchError}</p>}
-                      <RetroButton type="submit" className="w-full" variant="primary">
-                        {loadingTable ? 'BAĞLANILIYOR...' : 'BAĞLAN'}
-                      </RetroButton>
-                    </form>
-                  ) : (
-                    <div className="bg-green-500/10 border border-green-500/50 p-4 rounded-lg text-center animate-pulse-slow">
-                      <div className="flex justify-center mb-2"><Check size={40} className="text-green-500" /></div>
-                      <div className="text-green-400 font-pixel text-3xl mb-2">{tableCode}</div>
-                      <span className="text-xs text-green-300 tracking-widest uppercase">BAĞLANTI BAŞARILI</span>
-                      <button
-                        onClick={() => { setIsMatched(false); setTableCode('') }}
-                        className="mt-4 text-xs text-gray-400 hover:text-white underline block w-full"
-                      >
-                        Bağlantıyı Kes
-                      </button>
+                <div className="p-6 relative z-10 text-center">
+                  <div className="flex justify-center mb-4">
+                    <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center border-2 border-green-500 animate-pulse-slow">
+                      <MapPin size={40} className="text-green-400" />
                     </div>
-                  )}
+                  </div>
+
+                  <h3 className="font-pixel text-lg text-gray-400 mb-1">BAĞLI MASA</h3>
+                  <div className="font-retro text-4xl text-white tracking-widest mb-2">
+                    {currentUser.table_number || 'MASA??'}
+                  </div>
+                  <div className="text-green-500 font-mono text-xs uppercase tracking-widest bg-green-500/10 inline-block px-3 py-1 rounded">
+                    {currentUser.cafe_name || 'Bilinmeyen Kafe'}
+                  </div>
                 </div>
 
                 <div className="absolute bottom-0 right-0 p-4 opacity-10 pointer-events-none">

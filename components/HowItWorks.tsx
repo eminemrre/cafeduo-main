@@ -12,8 +12,8 @@ export const HowItWorks: React.FC = () => {
     {
       id: 2,
       icon: <Coffee size={32} className="text-orange-400" />,
-      title: "MASANI SEÇ",
-      description: "Kafedeki masanın üzerindeki QR kodu okut veya masa kodunu gir."
+      title: "KONUMUNU DOĞRULA",
+      description: "Kafeye gittiğinde konumunu doğrula ve oturduğun masayı seç."
     },
     {
       id: 3,

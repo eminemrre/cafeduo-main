@@ -986,7 +986,7 @@ app.post('/api/cafes/check-in', async (req, res) => {
 
       // 3. Verify Location (Radius Check)
       // Use cafe.radius (default 500m) or fallback to 500m
-      const allowedRadius = cafe.radius || 500;
+      const allowedRadius = cafe.radius || 3000; // Increased to 3000m for PC/WiFi accuracy
 
       if (distance > allowedRadius) {
         return res.status(400).json({

@@ -1262,9 +1262,21 @@ app.put('/api/users/:id', async (req, res) => {
 
   if (await isDbConnected()) {
     const result = await pool.query(
-      'UPDATE users SET points = $1, wins = $2, games_played = $3, department = $4 WHERE id = $5 RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number, cafe_name, avatar_url',
+      'UPDATE users SET points = $1, wins = $2, games_played = $3, department = $4 WHERE id = $5 RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number, avatar_url',
       [points, wins, gamesPlayed, req.body.department, id]
     );
+
+    const user = result.rows[0];
+
+    // Fetch cafe name if cafe_id exists
+    if (user.cafe_id) {
+      const cafeRes = await pool.query('SELECT name FROM cafes WHERE id = $1', [user.cafe_id]);
+      if (cafeRes.rows.length > 0) {
+        user.cafe_name = cafeRes.rows[0].name;
+      }
+    }
+
+    res.json(user);
 
     // Check achievements asynchronously
     checkAchievements(id);

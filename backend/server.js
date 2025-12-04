@@ -728,7 +728,29 @@ app.post('/api/games/:id/move', async (req, res) => {
   }
 });
 
-// 8. DELETE GAME
+res.json({ success: true });
+  }
+});
+
+// 8. FINISH GAME
+app.post('/api/games/:id/finish', async (req, res) => {
+  const { id } = req.params;
+  const { winner } = req.body;
+
+  if (await isDbConnected()) {
+    await pool.query('UPDATE games SET status = \'finished\', winner = $1 WHERE id = $2', [winner, id]);
+    res.json({ success: true });
+  } else {
+    const game = MEMORY_GAMES.find(g => g.id == id);
+    if (game) {
+      game.status = 'finished';
+      game.winner = winner;
+    }
+    res.json({ success: true });
+  }
+});
+
+// 9. DELETE GAME
 app.delete('/api/games/:id', async (req, res) => {
   const { id } = req.params;
   if (await isDbConnected()) {

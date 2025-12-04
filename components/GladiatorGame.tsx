@@ -54,7 +54,7 @@ export const GladiatorGame: React.FC<GladiatorGameProps> = ({ currentUser, gameI
                 }
 
                 // Sync Game State
-                if (game.gameState) {
+                if (game.gameState && !animating) {
                     const state = game.gameState;
                     // Determine who is who
                     const isHost = currentUser.username === game.hostName;

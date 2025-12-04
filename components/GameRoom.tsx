@@ -212,10 +212,20 @@ export const GameRoom: React.FC<GameRoomProps> = ({ currentUser, gameId, opponen
 
                     <button
                         onClick={startBotGame}
-                        className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-lg font-pixel flex items-center gap-2 mx-auto transition-colors"
+                        className="bg-purple-600 hover:bg-purple-500 text-white px-6 py-3 rounded-lg font-pixel flex items-center gap-2 mx-auto transition-colors mb-4"
                     >
                         <Bot size={20} />
                         BOT İLE OYNA
+                    </button>
+
+                    <button
+                        onClick={async () => {
+                            if (gameId) await api.games.delete(gameId);
+                            onLeave();
+                        }}
+                        className="bg-red-900/50 hover:bg-red-800 text-red-200 px-4 py-2 rounded border border-red-800 transition-colors text-sm"
+                    >
+                        İPTAL ET & ÇIK
                     </button>
                 </div>
             ) : (

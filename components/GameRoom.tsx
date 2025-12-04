@@ -161,9 +161,15 @@ export const GameRoom: React.FC<GameRoomProps> = ({ currentUser, gameId, opponen
             (p1 === 'scissors' && p2 === 'paper')
         ) {
             setResult('KAZANDIN!');
+            if (!isBot) api.games.finish(gameId, currentUser.username);
             addTimer(() => onGameEnd(currentUser.username, isBot ? 0 : 100), 3000);
         } else {
             setResult('KAYBETTİN!');
+            // Loser doesn't need to finish, but to be safe, maybe only winner calls it?
+            // Or both try. It's idempotent.
+            // But wait, if I lost, the opponent won. Opponent will call finish.
+            // If I call finish with 'opponent', server might not know who 'opponent' is.
+            // Better: Winner calls finish.
             addTimer(() => onGameEnd('opponent', 0), 3000);
         }
     };

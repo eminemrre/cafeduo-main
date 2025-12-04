@@ -332,7 +332,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
               onGameEnd={handleGameEnd}
               onLeave={() => handleGameEnd('forfeit', 0)} // Forfeit
               onMinimize={() => setActiveGameId(null)} // Minimize
-              isBot={!opponentName && activeGameId === null}
+              isBot={!opponentName}
               opponentName={opponentName}
             />
           ) : (

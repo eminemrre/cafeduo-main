@@ -64,13 +64,8 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
 
-    if (allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
-      callback(null, true);
-    } else {
-      console.log("Blocked CORS origin:", origin);
-      // Temporarily allow all for debugging if needed, but better to be explicit
-      callback(null, true);
-    }
+    // Allow all origins for now to fix "Failed to fetch" issues
+    callback(null, true);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

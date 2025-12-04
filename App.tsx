@@ -61,12 +61,9 @@ const App: React.FC = () => {
         const user = JSON.parse(savedUser);
         console.log("Restoring session for:", user.username);
 
-        // FORCE LOCATION VERIFICATION ON EVERY LOAD
-        // We intentionally clear cafe_id and table_number so the user must check in again.
-        // This solves the "bypassing location" issue.
-        const userWithResetLocation = { ...user, cafe_id: null, table_number: null, cafe_name: null };
-
-        setCurrentUser(userWithResetLocation);
+        // Restore user session without resetting location
+        // This allows users to refresh the page without being kicked out of the cafe
+        setCurrentUser(user);
         setIsLoggedIn(true);
       } catch (e) {
         console.error("Failed to parse saved user", e);

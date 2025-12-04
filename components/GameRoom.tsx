@@ -46,6 +46,13 @@ export const GameRoom: React.FC<GameRoomProps> = ({ currentUser, gameId, opponen
                 // Check if opponent joined
                 if (waitingForOpponent && game.guestName) {
                     setWaitingForOpponent(false);
+                    // If we are host, the guestName is our opponent
+                    if (currentUser.username === game.hostName) {
+                        // We need a way to update the parent state or local display
+                        // Since opponentName prop is read-only, we might need a local state or just rely on game data for display
+                        // But for now, let's just force a re-render or use a local ref if needed. 
+                        // Actually, we can just use game.guestName for display if opponentName is missing.
+                    }
                 }
 
                 // Check for opponent move

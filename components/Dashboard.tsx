@@ -167,7 +167,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
         hostName: currentUser.username,
         gameType,
         points,
-        table: tableCode
+        table: tableCode || currentUser.table_number || 'MASA00'
       });
 
       setRequests([newGame, ...requests]);

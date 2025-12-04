@@ -38,12 +38,17 @@ const ProtectedRoute = ({ children, user, isAdminRoute = false, requiredRole }: 
   return children;
 };
 
+import { Toast, ToastType } from './components/Toast';
+
+// ... (rest of imports)
+
 const App: React.FC = () => {
   // ... (state remains same)
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -96,7 +101,7 @@ const App: React.FC = () => {
 
     // Check for Daily Bonus
     if ((user as any).bonusReceived) {
-      alert("🎉 TEBRİKLER! Günlük giriş ödülü olarak 10 PUAN kazandınız!");
+      setToast({ message: "🎉 TEBRİKLER! Günlük giriş ödülü olarak 10 PUAN kazandınız!", type: 'success' });
     }
 
     if (user.isAdmin) {
@@ -197,6 +202,14 @@ const App: React.FC = () => {
         onLoginSuccess={handleLoginSuccess}
       />
       <CookieConsent />
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
 
       {/* DEBUG OVERLAY - REMOVE IN PRODUCTION */}
       <div className="fixed bottom-0 right-0 bg-black/80 text-green-400 p-2 text-xs font-mono z-[100] pointer-events-none opacity-50 hover:opacity-100">

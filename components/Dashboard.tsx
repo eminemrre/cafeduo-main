@@ -126,12 +126,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
       fetchGames();
       checkActiveGame();
     }, 5000);
-    return () => clearInterval(interval);
+
     // Auto-connect if user has table number
     if (currentUser.table_number) {
       setTableCode(currentUser.table_number);
       setIsMatched(true);
     }
+
+    return () => clearInterval(interval);
   }, [currentUser.id, currentUser.table_number]);
 
   // MASA BAĞLAMA FONKSİYONU
@@ -201,8 +203,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   };
 
   const handleGameEnd = async (winner: string, points: number) => {
-    if (points > 0 && winner === currentUser.username) {
-      const newPoints = currentUser.points + points;
+    // User requested constant 10 points per win
+    const WIN_POINTS = 10;
+
+    if (winner === currentUser.username) {
+      const newPoints = currentUser.points + WIN_POINTS;
       const newWins = currentUser.wins + 1;
       const newGamesPlayed = currentUser.gamesPlayed + 1;
 

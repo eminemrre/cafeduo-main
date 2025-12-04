@@ -265,7 +265,17 @@ export const GladiatorGame: React.FC<GladiatorGameProps> = ({ currentUser, gameI
                         <AlertCircle size={48} className="text-red-500" />
                     </div>
                     <h2 className="font-pixel text-2xl text-white mb-2">RAKİP BEKLENİYOR...</h2>
-                    <p className="text-gray-400">Arenaya bir savaşçı aranıyor.</p>
+                    <p className="text-gray-400 mb-6">Arenaya bir savaşçı aranıyor.</p>
+
+                    <button
+                        onClick={async () => {
+                            if (gameId) await api.games.delete(gameId);
+                            onLeave();
+                        }}
+                        className="bg-red-900/50 hover:bg-red-800 text-red-200 px-4 py-2 rounded border border-red-800 transition-colors text-sm"
+                    >
+                        İPTAL ET & ÇIK
+                    </button>
                 </div>
             ) : (
                 <>

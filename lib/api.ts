@@ -124,6 +124,14 @@ export const api = {
       });
       return response.json();
     },
+    finish: async (id: number, winner: string) => {
+      const response = await fetch(`${API_URL}/games/${id}/finish`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ winner }),
+      });
+      return response.json();
+    },
     delete: async (id: number) => {
       const response = await fetch(`${API_URL}/games/${id}`, {
         method: 'DELETE',

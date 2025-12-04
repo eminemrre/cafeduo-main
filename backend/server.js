@@ -728,9 +728,7 @@ app.post('/api/games/:id/move', async (req, res) => {
   }
 });
 
-res.json({ success: true });
-  }
-});
+
 
 // 8. FINISH GAME
 app.post('/api/games/:id/finish', async (req, res) => {

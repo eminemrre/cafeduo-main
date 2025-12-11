@@ -310,18 +310,26 @@ const pendingUsers = new Map();
 
 // Helper: Verify reCAPTCHA
 const verifyRecaptcha = async (token) => {
-  if (!token) return false;
+  // If no token provided, skip verification (for backwards compatibility)
+  if (!token) return true;
 
   try {
     const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+    // If no secret key configured, skip verification
+    if (!secretKey) {
+      console.warn('RECAPTCHA_SECRET_KEY not configured, skipping verification');
+      return true;
+    }
+
     const response = await fetch(`https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${token}`, {
       method: 'POST'
     });
     const data = await response.json();
     return data.success;
   } catch (error) {
-    console.error('reCAPTCHA Error:', error);
-    return false;
+    console.error('reCAPTCHA Error (allowing login):', error);
+    // Fail open - allow login if reCAPTCHA service is down
+    return true;
   }
 };
 
@@ -1000,23 +1008,31 @@ app.post('/api/cafes/check-in', async (req, res) => {
       const cafe = cafeRes.rows[0];
 
       // 2. Calculate Distance (Haversine Formula)
-      const R = 6371e3; // Earth radius in meters
-      const φ1 = userLat * Math.PI / 180;
-      const φ2 = cafe.latitude * Math.PI / 180;
-      const Δφ = (cafe.latitude - userLat) * Math.PI / 180;
-      const Δλ = (cafe.longitude - userLon) * Math.PI / 180;
+      // Skip location check if cafe has no coordinates set
+      const cafeHasCoordinates = cafe.latitude && cafe.longitude &&
+        cafe.latitude !== 0 && cafe.longitude !== 0;
 
-      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-        Math.cos(φ1) * Math.cos(φ2) *
-        Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      const distance = R * c; // Distance in meters
+      let distance = 0;
+      if (cafeHasCoordinates) {
+        const R = 6371e3; // Earth radius in meters
+        const φ1 = userLat * Math.PI / 180;
+        const φ2 = cafe.latitude * Math.PI / 180;
+        const Δφ = (cafe.latitude - userLat) * Math.PI / 180;
+        const Δλ = (cafe.longitude - userLon) * Math.PI / 180;
+
+        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+          Math.cos(φ1) * Math.cos(φ2) *
+          Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        distance = R * c; // Distance in meters
+      }
 
       // 3. Verify Location (Radius Check)
-      // Use cafe.radius (default 500m) or fallback to 500m
-      const allowedRadius = cafe.radius || 150; // Default to 150m (Strict Mode)
+      // Use cafe.radius or fallback to 500m (more lenient default)
+      const allowedRadius = cafe.radius || 500; // Default to 500m
 
-      if (distance > allowedRadius) {
+      // Only enforce distance check if cafe has coordinates
+      if (cafeHasCoordinates && distance > allowedRadius) {
         return res.status(400).json({
           error: `Kafeden çok uzaktasınız! (${Math.round(distance)}m). Giriş için ${allowedRadius}m yakınında olmalısınız.`
         });

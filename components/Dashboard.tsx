@@ -4,11 +4,10 @@ import { User, GameRequest, Reward, RedeemedReward } from '../types';
 import { GameLobby } from './GameLobby';
 import { CreateGameModal } from './CreateGameModal';
 import { UserProfileModal } from './UserProfileModal';
-import { GameRoom } from './GameRoom';
+import { ArenaBattle } from './ArenaBattle';
+import { DungeonClash } from './DungeonClash';
 import { AdminDashboard } from './AdminDashboard';
 import { api } from '../lib/api';
-import { MatchingGame } from './MatchingGame';
-import { GladiatorGame } from './GladiatorGame';
 import { Leaderboard } from './Leaderboard';
 import { Achievements } from './Achievements';
 import {
@@ -317,32 +316,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
     return (
       <div className="pt-24 pb-12 px-4 min-h-screen bg-[#0f141a]">
         <div className="max-w-4xl mx-auto">
-          {activeGameType === 'Kelime Eşleştirme' ? (
-            <MatchingGame
-              currentUser={currentUser}
-              onGameEnd={handleGameEnd}
-              onLeave={() => setActiveGameId(null)}
-              isBot={!opponentName}
-              opponentName={opponentName}
-            />
-          ) : activeGameType === 'Arena Düellosu' ? (
-            <GladiatorGame
+          {activeGameType === 'Zindan Savaşı' ? (
+            <DungeonClash
               currentUser={currentUser}
               gameId={activeGameId}
               onGameEnd={handleGameEnd}
-              onLeave={() => handleGameEnd('forfeit', 0)} // Forfeit
-              onMinimize={() => setActiveGameId(null)} // Minimize
+              onLeave={() => handleGameEnd('forfeit', 0)}
+              onMinimize={() => setActiveGameId(null)}
               isBot={!opponentName}
               opponentName={opponentName}
             />
           ) : (
-            <GameRoom
+            <ArenaBattle
               currentUser={currentUser}
               gameId={activeGameId}
-              opponentName={opponentName}
               onGameEnd={handleGameEnd}
-              onLeave={() => handleGameEnd('forfeit', 0)} // Forfeit
-              onMinimize={() => setActiveGameId(null)} // Minimize
+              onLeave={() => handleGameEnd('forfeit', 0)}
+              onMinimize={() => setActiveGameId(null)}
+              isBot={!opponentName}
+              opponentName={opponentName}
             />
           )}
         </div>

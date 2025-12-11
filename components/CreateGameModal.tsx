@@ -15,7 +15,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   onSubmit,
   maxPoints
 }) => {
-  const [gameType, setGameType] = useState('Taş Kağıt Makas');
+  const [gameType, setGameType] = useState('Arena Savaşı');
 
 
   if (!isOpen) return null;
@@ -51,9 +51,8 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                 onChange={(e) => setGameType(e.target.value)}
                 className="w-full bg-black border-2 border-gray-600 text-white p-3 font-retro text-xl focus:border-blue-500 outline-none appearance-none cursor-pointer hover:border-gray-500 transition-colors"
               >
-                <option>Taş Kağıt Makas</option>
-                <option>Kelime Eşleştirme</option>
-                <option>Arena Düellosu</option>
+                <option>Arena Savaşı</option>
+                <option>Zindan Savaşı</option>
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500 group-hover:text-blue-400 transition-colors">
                 ▼

@@ -60,6 +60,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   const [activeGameId, setActiveGameId] = useState<number | null>(null);
   const [activeGameType, setActiveGameType] = useState<string>('');
   const [opponentName, setOpponentName] = useState<string | undefined>(undefined);
+  const [isBot, setIsBot] = useState<boolean>(false); // Explicit bot tracking
   const [serverActiveGame, setServerActiveGame] = useState<GameRequest | null>(null);
 
   // Main Tab State
@@ -82,8 +83,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
 
     const fetchInventory = async () => {
       try {
-        const res = await fetch(`/api/shop/inventory/${currentUser.id}`);
-        const data = await res.json();
+        const data = await api.shop.inventory(currentUser.id);
         setRedeemedRewards(data.map((item: any) => ({
           ...item,
           redeemedAt: new Date(item.redeemedAt)
@@ -183,10 +183,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
       setRequests([newGame, ...requests]);
       setIsCreateModalOpen(false);
 
-      // Auto-join as host
+      // Auto-join as host - NOT a bot game, wait for opponent
       setActiveGameId(newGame.id);
       setActiveGameType(gameType);
       setOpponentName(undefined); // Waiting for opponent
+      setIsBot(false); // Explicitly NOT a bot game
     } catch (error) {
       alert("Oyun kurulurken hata oluştu.");
     }
@@ -205,8 +206,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
       setRequests(requests.filter(req => req.id !== id));
 
       setActiveGameId(id);
-      setActiveGameType(game?.gameType || 'rps');
+      setActiveGameType(game?.gameType || 'Arena Savaşı');
       setOpponentName(game?.hostName); // Joiner sees host
+      setIsBot(false); // Joining means real opponent
     } catch (error) {
       alert("Oyuna katılırken hata oluştu.");
     }
@@ -323,7 +325,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
               onGameEnd={handleGameEnd}
               onLeave={() => handleGameEnd('forfeit', 0)}
               onMinimize={() => setActiveGameId(null)}
-              isBot={!opponentName}
+              isBot={isBot}
               opponentName={opponentName}
             />
           ) : (
@@ -333,7 +335,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
               onGameEnd={handleGameEnd}
               onLeave={() => handleGameEnd('forfeit', 0)}
               onMinimize={() => setActiveGameId(null)}
-              isBot={!opponentName}
+              isBot={isBot}
               opponentName={opponentName}
             />
           )}

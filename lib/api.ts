@@ -272,5 +272,23 @@ export const api = {
     delete: async (id: number) => {
       await fetch(`${API_URL}/rewards/${id}`, { method: 'DELETE' });
     }
+  },
+  shop: {
+    buy: async (userId: number, rewardId: number) => {
+      const response = await fetch(`${API_URL}/shop/buy`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, rewardId }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Satın alma başarısız');
+      }
+      return data;
+    },
+    inventory: async (userId: number) => {
+      const response = await fetch(`${API_URL}/shop/inventory/${userId}`);
+      return response.json();
+    }
   }
 };

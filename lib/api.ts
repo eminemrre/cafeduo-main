@@ -234,7 +234,7 @@ export const api = {
       const response = await fetch(`${API_URL}/cafes`);
       return response.json();
     },
-    checkIn: async (data: { userId: number, cafeId: number, tableNumber: number, userLat: number, userLon: number }) => {
+    checkIn: async (data: { userId: number, cafeId: number, tableNumber: number, pin: string }) => {
       const response = await fetch(`${API_URL}/cafes/check-in`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -246,6 +246,14 @@ export const api = {
         throw new Error(resData.error || 'Check-in başarısız');
       }
       return resData;
+    },
+    updatePin: async (cafeId: number, pin: string) => {
+      const response = await fetch(`${API_URL}/cafes/${cafeId}/pin`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin }),
+      });
+      return response.json();
     }
   },
   rewards: {

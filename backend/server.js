@@ -177,9 +177,10 @@ const initDb = async () => {
       await addColumn('cafes', 'longitude', 'DECIMAL(11, 8)');
       await addColumn('cafes', 'table_count', 'INTEGER DEFAULT 20');
       await addColumn('cafes', 'radius', 'INTEGER DEFAULT 500'); // Meters
+      await addColumn('cafes', 'daily_pin', "VARCHAR(6) DEFAULT '0000'"); // Daily PIN code
 
       // 7. Seed Initial Cafes
-      await pool.query(`INSERT INTO cafes (name, table_count, radius) VALUES ('PAÜ İİBF Kantin', 50, 150), ('PAÜ Yemekhane', 100, 200) ON CONFLICT (name) DO NOTHING`);
+      await pool.query(`INSERT INTO cafes (name, table_count, radius, daily_pin) VALUES ('PAÜ İİBF Kantin', 50, 150, '1234'), ('PAÜ Yemekhane', 100, 200, '5678') ON CONFLICT (name) DO NOTHING`);
 
       // 9. Achievements Table
       await pool.query(`
@@ -996,52 +997,24 @@ app.put('/api/admin/cafes/:id', async (req, res) => {
   }
 });
 
-// 19. CHECK-IN (Location Verification)
+// 19. CHECK-IN (PIN Verification - Replaced GPS)
 app.post('/api/cafes/check-in', async (req, res) => {
-  const { userId, cafeId, tableNumber, userLat, userLon } = req.body;
+  const { userId, cafeId, tableNumber, pin } = req.body;
 
   if (await isDbConnected()) {
     try {
-      // 1. Get Cafe Location
+      // 1. Get Cafe
       const cafeRes = await pool.query('SELECT * FROM cafes WHERE id = $1', [cafeId]);
       if (cafeRes.rows.length === 0) return res.status(404).json({ error: 'Kafe bulunamadı.' });
       const cafe = cafeRes.rows[0];
 
-      // 2. Calculate Distance (Haversine Formula)
-      // Skip location check if cafe has no coordinates set
-      const cafeHasCoordinates = cafe.latitude && cafe.longitude &&
-        cafe.latitude !== 0 && cafe.longitude !== 0;
-
-      let distance = 0;
-      if (cafeHasCoordinates) {
-        const R = 6371e3; // Earth radius in meters
-        const φ1 = userLat * Math.PI / 180;
-        const φ2 = cafe.latitude * Math.PI / 180;
-        const Δφ = (cafe.latitude - userLat) * Math.PI / 180;
-        const Δλ = (cafe.longitude - userLon) * Math.PI / 180;
-
-        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-          Math.cos(φ1) * Math.cos(φ2) *
-          Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        distance = R * c; // Distance in meters
+      // 2. Verify PIN
+      if (cafe.daily_pin && cafe.daily_pin !== '0000' && cafe.daily_pin !== pin) {
+        return res.status(400).json({ error: 'Yanlış PIN kodu! Kafe personelinden güncel PIN kodunu isteyin.' });
       }
 
-      // 3. Verify Location (Radius Check)
-      // Use cafe.radius or fallback to 500m (more lenient default)
-      const allowedRadius = cafe.radius || 500; // Default to 500m
-
-      // Only enforce distance check if cafe has coordinates
-      if (cafeHasCoordinates && distance > allowedRadius) {
-        return res.status(400).json({
-          error: `Kafeden çok uzaktasınız! (${Math.round(distance)}m). Giriş için ${allowedRadius}m yakınında olmalısınız.`
-        });
-      }
-
-      // 4. Update User (Check-in)
-      // Format table number as "MASA05" for compatibility
+      // 3. Update User (Check-in)
       const formattedTable = `MASA${tableNumber.toString().padStart(2, '0')}`;
-
       await pool.query('UPDATE users SET cafe_id = $1, table_number = $2 WHERE id = $3', [cafeId, formattedTable, userId]);
 
       res.json({ success: true, cafeName: cafe.name, table: formattedTable });
@@ -1057,6 +1030,28 @@ app.post('/api/cafes/check-in', async (req, res) => {
       user.table_number = `MASA${tableNumber.toString().padStart(2, '0')}`;
     }
     res.json({ success: true, cafeName: 'Demo Cafe', table: `MASA${tableNumber.toString().padStart(2, '0')}` });
+  }
+});
+
+// 19.5 UPDATE CAFE PIN (For Cafe Admins)
+app.put('/api/cafes/:id/pin', async (req, res) => {
+  const { id } = req.params;
+  const { pin } = req.body;
+
+  if (!pin || pin.length < 4 || pin.length > 6) {
+    return res.status(400).json({ error: 'PIN 4-6 karakter olmalı.' });
+  }
+
+  if (await isDbConnected()) {
+    try {
+      await pool.query('UPDATE cafes SET daily_pin = $1 WHERE id = $2', [pin, id]);
+      res.json({ success: true, pin });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: 'PIN güncellenemedi.' });
+    }
+  } else {
+    res.json({ success: true, pin });
   }
 });
 

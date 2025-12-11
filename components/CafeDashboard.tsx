@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { User } from '../types';
 import { api } from '../lib/api';
 import { RetroButton } from './RetroButton';
-import { QrCode, CheckCircle, XCircle, Coffee, Gift, Plus, Trash2 } from 'lucide-react';
+import { QrCode, CheckCircle, XCircle, Coffee, Gift, Plus, Trash2, KeyRound, Settings, RefreshCw } from 'lucide-react';
 
 interface CafeDashboardProps {
     currentUser: User;
 }
 
 export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => {
-    const [activeTab, setActiveTab] = useState<'verification' | 'rewards'>('verification');
+    const [activeTab, setActiveTab] = useState<'verification' | 'rewards' | 'settings'>('verification');
 
     // Verification State
     const [couponCode, setCouponCode] = useState('');
@@ -21,20 +21,38 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
     const [rewards, setRewards] = useState<any[]>([]);
     const [newReward, setNewReward] = useState({ title: '', cost: 500, description: '', icon: 'coffee' });
 
+    // PIN State
+    const [currentPin, setCurrentPin] = useState('');
+    const [newPin, setNewPin] = useState('');
+    const [pinStatus, setPinStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [pinMessage, setPinMessage] = useState('');
+    const [loadingPin, setLoadingPin] = useState(false);
+
     useEffect(() => {
         if (activeTab === 'rewards') {
             fetchRewards();
         }
+        if (activeTab === 'settings') {
+            fetchCafeInfo();
+        }
     }, [activeTab]);
+
+    const fetchCafeInfo = async () => {
+        try {
+            const cafes = await api.cafes.list();
+            // Find the cafe for this admin
+            const myCafe = cafes.find((c: any) => c.id === currentUser.cafeId);
+            if (myCafe) {
+                setCurrentPin(myCafe.daily_pin || '0000');
+            }
+        } catch (error) {
+            console.error("Failed to fetch cafe info", error);
+        }
+    };
 
     const fetchRewards = async () => {
         try {
             const data = await api.rewards.list();
-            // Filter rewards for this cafe (if needed, or show all)
-            // Ideally backend filters, but for now we show all or filter by cafeId if present in reward
-            // Since we want cafe admins to manage THEIR rewards, we should filter.
-            // But currently backend returns all active rewards. 
-            // Let's just show all for now as per "general rewards + cafe specific" requirement.
             setRewards(data);
         } catch (error) {
             console.error("Failed to fetch rewards", error);
@@ -85,6 +103,36 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
         }
     };
 
+    const handleUpdatePin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newPin || newPin.length < 4 || newPin.length > 6) {
+            setPinStatus('error');
+            setPinMessage('PIN 4-6 haneli olmalıdır.');
+            return;
+        }
+
+        setLoadingPin(true);
+        setPinStatus('idle');
+
+        try {
+            await api.cafes.updatePin(currentUser.cafeId!, newPin);
+            setCurrentPin(newPin);
+            setNewPin('');
+            setPinStatus('success');
+            setPinMessage('PIN başarıyla güncellendi!');
+        } catch (error) {
+            setPinStatus('error');
+            setPinMessage('PIN güncellenemedi.');
+        } finally {
+            setLoadingPin(false);
+        }
+    };
+
+    const generateRandomPin = () => {
+        const pin = Math.floor(1000 + Math.random() * 9000).toString();
+        setNewPin(pin);
+    };
+
     return (
         <div className="min-h-screen bg-[#0f141a] pt-24 px-4 pb-12">
             <div className="max-w-6xl mx-auto">
@@ -94,17 +142,17 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
                     </div>
                     <div>
                         <h1 className="text-3xl font-bold text-white mb-1">Kafe Yönetim Paneli</h1>
-                        <p className="text-gray-400">Kupon doğrulama ve ödül yönetimi</p>
+                        <p className="text-gray-400">Kupon doğrulama, ödül ve PIN yönetimi</p>
                     </div>
                 </div>
 
                 {/* Tabs */}
-                <div className="flex gap-4 mb-8">
+                <div className="flex gap-4 mb-8 flex-wrap">
                     <button
                         onClick={() => setActiveTab('verification')}
                         className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'verification'
-                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
-                                : 'bg-[#1a1f2e] text-gray-400 hover:bg-[#252b3d]'
+                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
+                            : 'bg-[#1a1f2e] text-gray-400 hover:bg-[#252b3d]'
                             }`}
                     >
                         <QrCode size={20} />
@@ -113,12 +161,22 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
                     <button
                         onClick={() => setActiveTab('rewards')}
                         className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'rewards'
-                                ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/50'
-                                : 'bg-[#1a1f2e] text-gray-400 hover:bg-[#252b3d]'
+                            ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/50'
+                            : 'bg-[#1a1f2e] text-gray-400 hover:bg-[#252b3d]'
                             }`}
                     >
                         <Gift size={20} />
                         Ödül Yönetimi
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('settings')}
+                        className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'settings'
+                            ? 'bg-green-600 text-white shadow-lg shadow-green-900/50'
+                            : 'bg-[#1a1f2e] text-gray-400 hover:bg-[#252b3d]'
+                            }`}
+                    >
+                        <Settings size={20} />
+                        PIN Ayarları
                     </button>
                 </div>
 
@@ -197,7 +255,7 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
                             )}
                         </div>
                     </div>
-                ) : (
+                ) : activeTab === 'rewards' ? (
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Add Reward Form */}
                         <div className="bg-[#1a1f2e] border border-gray-800 rounded-2xl p-6 h-fit">
@@ -291,6 +349,96 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
                                     ))}
                                 </div>
                             )}
+                        </div>
+                    </div>
+                ) : (
+                    /* PIN Settings Tab */
+                    <div className="max-w-md mx-auto">
+                        <div className="bg-[#1a1f2e] border border-gray-800 rounded-2xl p-8 shadow-xl">
+                            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                                <KeyRound className="text-green-400" />
+                                Günlük PIN Kodu
+                            </h2>
+
+                            {/* Current PIN Display */}
+                            <div className="mb-8 p-6 bg-black/30 rounded-xl border border-green-900/50 text-center">
+                                <div className="text-sm text-gray-400 mb-2">Mevcut PIN</div>
+                                <div className="text-4xl font-mono font-bold text-green-400 tracking-[0.5em]">
+                                    {currentPin || '----'}
+                                </div>
+                                <p className="text-xs text-gray-500 mt-3">
+                                    Bu PIN kodunu müşterilere verin
+                                </p>
+                            </div>
+
+                            {/* Update PIN Form */}
+                            <form onSubmit={handleUpdatePin} className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                                        Yeni PIN Kodu (4-6 haneli)
+                                    </label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            value={newPin}
+                                            onChange={(e) => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                            placeholder="Yeni PIN girin"
+                                            maxLength={6}
+                                            className="flex-1 bg-black/30 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-600 focus:border-green-500 outline-none font-mono text-xl tracking-widest text-center"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={generateRandomPin}
+                                            className="px-4 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl transition-colors"
+                                            title="Rastgele PIN Oluştur"
+                                        >
+                                            <RefreshCw size={20} className="text-gray-400" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="submit"
+                                    disabled={loadingPin || !newPin}
+                                    className={`w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all ${loadingPin || !newPin
+                                            ? 'bg-gray-700 cursor-not-allowed'
+                                            : 'bg-green-600 hover:bg-green-500'
+                                        }`}
+                                >
+                                    {loadingPin ? (
+                                        <>
+                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            Güncelleniyor...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <KeyRound size={20} />
+                                            PIN'İ GÜNCELLE
+                                        </>
+                                    )}
+                                </button>
+                            </form>
+
+                            {/* Status Messages */}
+                            {pinStatus !== 'idle' && (
+                                <div className={`mt-6 p-4 rounded-xl border flex items-center gap-3 ${pinStatus === 'success'
+                                    ? 'bg-green-900/20 border-green-900/50 text-green-400'
+                                    : 'bg-red-900/20 border-red-900/50 text-red-400'
+                                    }`}>
+                                    {pinStatus === 'success' ? <CheckCircle size={20} /> : <XCircle size={20} />}
+                                    <p className="font-medium">{pinMessage}</p>
+                                </div>
+                            )}
+
+                            {/* Tips */}
+                            <div className="mt-6 p-4 bg-blue-900/10 border border-blue-900/30 rounded-xl text-sm text-blue-300">
+                                <p className="font-bold mb-2">💡 İpuçları:</p>
+                                <ul className="list-disc list-inside space-y-1 text-blue-400/80">
+                                    <li>Her gün PIN kodunu değiştirmeniz önerilir</li>
+                                    <li>PIN'i masalarda veya kasada gösterebilirsiniz</li>
+                                    <li>Güvenlik için kolay tahmin edilebilir PIN kullanmayın</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 )}

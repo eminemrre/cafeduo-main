@@ -208,14 +208,16 @@ const App: React.FC = () => {
         />
       )}
 
-      {/* DEBUG OVERLAY - REMOVE IN PRODUCTION */}
-      <div className="fixed bottom-0 right-0 bg-black/80 text-green-400 p-2 text-xs font-mono z-[100] pointer-events-none opacity-50 hover:opacity-100">
-        <p>v2.1 - Debug</p>
-        <p>User: {currentUser?.username || 'Guest'}</p>
-        <p>CafeID: {currentUser?.cafe_id || 'NULL'}</p>
-        <p>Table: {currentUser?.table_number || 'NULL'}</p>
-        <p>Env: {import.meta.env.MODE}</p>
-      </div>
+      {/* Debug overlay - only show in development */}
+      {import.meta.env.DEV && (
+        <div className="fixed bottom-0 right-0 bg-black/80 text-green-400 p-2 text-xs font-mono z-[100] pointer-events-none opacity-50 hover:opacity-100">
+          <p>v2.1 - Debug</p>
+          <p>User: {currentUser?.username || 'Guest'}</p>
+          <p>CafeID: {currentUser?.cafe_id || 'NULL'}</p>
+          <p>Table: {currentUser?.table_number || 'NULL'}</p>
+          <p>Env: {import.meta.env.MODE}</p>
+        </div>
+      )}
     </div>
   );
 };

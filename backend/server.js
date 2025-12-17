@@ -335,53 +335,46 @@ const verifyRecaptcha = async (token) => {
   }
 };
 
-// 1. REGISTER (Step 1: Send Code)
+// 1. REGISTER (Doğrudan Kayıt - E-posta Doğrulaması Kaldırıldı)
 app.post('/api/auth/register', async (req, res) => {
-  const { username, email, password, department, captchaToken } = req.body;
+  const { username, email, password, department } = req.body;
 
   if (!username || !email || !password) {
     return res.status(400).json({ error: 'Tüm alanlar zorunludur.' });
-  }
-
-  // Verify reCAPTCHA
-  const isHuman = await verifyRecaptcha(captchaToken);
-  if (!isHuman) {
-    return res.status(400).json({ error: 'Robot doğrulaması başarısız.' });
   }
 
   // Check if user already exists
   if (await isDbConnected()) {
     const check = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
     if (check.rows.length > 0) return res.status(400).json({ error: 'E-posta kullanımda.' });
+
+    try {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const result = await pool.query(
+        'INSERT INTO users (username, email, password_hash, points, department) VALUES ($1, $2, $3, 100, $4) RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin"',
+        [username, email, hashedPassword, department || '']
+      );
+      res.json(result.rows[0]);
+    } catch (err) {
+      console.error('Register error:', err);
+      res.status(400).json({ error: 'Kullanıcı oluşturulamadı.' });
+    }
   } else {
     if (MEMORY_USERS.find(u => u.email === email)) return res.status(400).json({ error: 'E-posta kullanımda.' });
+
+    const newUser = {
+      id: Date.now(),
+      username,
+      email,
+      password,
+      points: 100,
+      wins: 0,
+      gamesPlayed: 0,
+      department
+    };
+    MEMORY_USERS.push(newUser);
+    res.json(newUser);
   }
-
-  // Generate Code
-  const code = Math.floor(100000 + Math.random() * 900000).toString();
-
-  // Store pending user
-  pendingUsers.set(email, { username, email, password, department });
-  verificationCodes.set(email, code);
-
-  // Send Email
-  const mailOptions = {
-    from: process.env.GMAIL_USER,
-    to: email,
-    subject: 'CafeDuo Doğrulama Kodu',
-    text: `CafeDuo'ya hoş geldin! Doğrulama kodun: ${code}`
-  };
-
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.error('Email error:', error);
-      // In dev mode, return code directly if email fails
-      return res.json({ requireVerification: true, devCode: code });
-    } else {
-      console.log('Email sent: ' + info.response);
-      res.json({ requireVerification: true });
-    }
-  });
 });
 
 // 1.5 VERIFY (Step 2: Create User)

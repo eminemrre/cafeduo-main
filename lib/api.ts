@@ -247,13 +247,17 @@ export const api = {
       }
       return resData;
     },
-    updatePin: async (cafeId: number, pin: string) => {
-      const response = await fetch(`${API_URL}/cafes/${cafeId}/pin`, {
+    updatePin: async (cafeId: number | null | undefined, pin: string, userId: number) => {
+      const response = await fetch(`${API_URL}/cafes/${cafeId || 'auto'}/pin`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin }),
+        body: JSON.stringify({ pin, userId }),
       });
-      return response.json();
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'PIN güncellenemedi');
+      }
+      return data;
     }
   },
   rewards: {

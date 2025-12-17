@@ -468,9 +468,12 @@ app.post('/api/auth/login', async (req, res) => {
             bonusReceived = true;
           }
 
-          // FORCE LOCATION RESET: Clear cafe_id on login
-          await pool.query('UPDATE users SET cafe_id = NULL WHERE id = $1', [user.id]);
-          user.cafe_id = null;
+          // FORCE LOCATION RESET: Clear cafe_id on login (ONLY for regular users, NOT cafe admins)
+          if (user.role !== 'cafe_admin') {
+            await pool.query('UPDATE users SET cafe_id = NULL WHERE id = $1', [user.id]);
+            user.cafe_id = null;
+          }
+          // cafe_admin için cafe_id korunuyor
 
           // Remove password_hash from response
           delete user.password_hash;
@@ -1057,10 +1060,13 @@ app.post('/api/cafes/check-in', async (req, res) => {
   }
 });
 
-// 19.5 UPDATE CAFE PIN (For Cafe Admins)
+// 19.5 UPDATE CAFE PIN (For Cafe Admins) - YENİ VERSİYON
+// userId ile çalışır, cafe_id'yi veritabanından alır
 app.put('/api/cafes/:id/pin', async (req, res) => {
   const { id } = req.params;
-  const { pin } = req.body;
+  const { pin, userId } = req.body;
+
+  console.log(`[PIN UPDATE] Request: cafeId=${id}, pin=${pin}, userId=${userId}`);
 
   if (!pin || pin.length < 4 || pin.length > 6) {
     return res.status(400).json({ error: 'PIN 4-6 karakter olmalı.' });
@@ -1068,11 +1074,35 @@ app.put('/api/cafes/:id/pin', async (req, res) => {
 
   if (await isDbConnected()) {
     try {
-      await pool.query('UPDATE cafes SET daily_pin = $1 WHERE id = $2', [pin, id]);
-      res.json({ success: true, pin });
+      let targetCafeId = id;
+
+      // Eğer cafeId "null" veya "undefined" string olarak geldiyse, userId'den bul
+      if (!id || id === 'null' || id === 'undefined') {
+        if (!userId) {
+          return res.status(400).json({ error: 'userId gerekli.' });
+        }
+
+        // Kullanıcının cafe_id'sini veritabanından al
+        const userRes = await pool.query('SELECT cafe_id FROM users WHERE id = $1', [userId]);
+        if (userRes.rows.length === 0 || !userRes.rows[0].cafe_id) {
+          return res.status(400).json({ error: 'Bu kullanıcı bir kafeye bağlı değil.' });
+        }
+        targetCafeId = userRes.rows[0].cafe_id;
+        console.log(`[PIN UPDATE] Found cafe_id from user: ${targetCafeId}`);
+      }
+
+      // PIN'i güncelle
+      const result = await pool.query('UPDATE cafes SET daily_pin = $1 WHERE id = $2', [pin, targetCafeId]);
+      console.log(`[PIN UPDATE] Updated ${result.rowCount} rows for cafe ${targetCafeId}`);
+
+      if (result.rowCount === 0) {
+        return res.status(404).json({ error: 'Kafe bulunamadı.' });
+      }
+
+      res.json({ success: true, pin, cafeId: targetCafeId });
     } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'PIN güncellenemedi.' });
+      console.error('[PIN UPDATE] Error:', err);
+      res.status(500).json({ error: 'PIN güncellenemedi: ' + err.message });
     }
   } else {
     res.json({ success: true, pin });

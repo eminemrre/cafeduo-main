@@ -115,7 +115,7 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
         setPinStatus('idle');
 
         try {
-            await api.cafes.updatePin(currentUser.cafe_id!, newPin);
+            await api.cafes.updatePin(currentUser.cafe_id, newPin, currentUser.id);
             setCurrentPin(newPin);
             setNewPin('');
             setPinStatus('success');

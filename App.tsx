@@ -10,6 +10,7 @@ import { User } from './types';
 import { api } from './lib/api';
 import { CafeSelection } from './components/CafeSelection';
 import { CookieConsent } from './components/CookieConsent';
+import { PrivacyPolicy } from './components/PrivacyPolicy';
 
 // Lazy Load Components
 const Games = React.lazy(() => import('./components/Games').then(module => ({ default: module.Games })));
@@ -184,6 +185,9 @@ const App: React.FC = () => {
                 <CafeDashboard currentUser={currentUser!} />
               </ProtectedRoute>
             } />
+
+            {/* KVKK Gizlilik Politikası */}
+            <Route path="/gizlilik" element={<PrivacyPolicy />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

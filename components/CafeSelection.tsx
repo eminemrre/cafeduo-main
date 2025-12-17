@@ -76,15 +76,21 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
     const selectedCafe = cafes.find(c => c.id === selectedCafeId);
     const isPinValid = pin.length >= 4;
 
-    // PIN digit display component
+    // PIN digit display component - clickable to focus hidden input
     const PinDigitBox = ({ index }: { index: number }) => {
         const digit = pin[index];
         const isFilled = digit !== undefined;
         const isActive = index === pin.length;
 
+        const handleClick = () => {
+            const input = document.getElementById('pin-input');
+            if (input) input.focus();
+        };
+
         return (
             <div
-                className={`w-12 h-14 border-2 rounded-lg flex items-center justify-center text-2xl font-bold transition-all
+                onClick={handleClick}
+                className={`w-12 h-14 border-2 rounded-lg flex items-center justify-center text-2xl font-bold transition-all cursor-pointer
                     ${isFilled ? 'bg-green-900/30 border-green-500 text-green-400' :
                         isActive ? 'border-green-400 bg-black/40 animate-pulse' :
                             'border-gray-600 bg-black/30 text-gray-600'}`}
@@ -175,7 +181,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                             ))}
                         </div>
 
-                        {/* Hidden PIN Input */}
+                        {/* Hidden PIN Input - accessible but visually hidden */}
                         <input
                             type="tel"
                             inputMode="numeric"
@@ -186,9 +192,10 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                                 setPin(value);
                                 if (error) setError(null);
                             }}
-                            className="w-full bg-black/40 border border-gray-600 rounded-xl py-3 px-4 text-white outline-none focus:border-green-500 text-center tracking-[1em] text-2xl font-mono"
-                            placeholder="● ● ● ●"
+                            className="sr-only"
                             autoComplete="one-time-code"
+                            id="pin-input"
+                            aria-label="PIN kodu girişi"
                         />
 
                         {/* PIN Status */}
@@ -204,16 +211,11 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                             )}
                         </div>
 
-                        {/* PIN Hint */}
+                        {/* PIN Hint - KVKK compliant, no demo PIN shown */}
                         <div className="mt-3 p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg text-center">
                             <p className="text-xs text-blue-300">
                                 💡 PIN kodunu kafe personelinden veya masadaki etiketten öğrenin.
                             </p>
-                            {selectedCafe?.daily_pin && selectedCafe.daily_pin !== '0000' && (
-                                <p className="text-xs text-yellow-400 mt-1 font-bold">
-                                    Demo: Bu kafenin PIN'i {selectedCafe.daily_pin}
-                                </p>
-                            )}
                         </div>
                     </div>
 
@@ -222,8 +224,8 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                         onClick={handleCheckIn}
                         disabled={loading || !isPinValid || !tableNumber}
                         className={`w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all ${loading || !isPinValid || !tableNumber
-                                ? 'bg-gray-700 cursor-not-allowed opacity-50'
-                                : 'bg-green-600 hover:bg-green-500 shadow-lg shadow-green-600/30 hover:scale-[1.02] active:scale-95'
+                            ? 'bg-gray-700 cursor-not-allowed opacity-50'
+                            : 'bg-green-600 hover:bg-green-500 shadow-lg shadow-green-600/30 hover:scale-[1.02] active:scale-95'
                             }`}
                     >
                         {loading ? (

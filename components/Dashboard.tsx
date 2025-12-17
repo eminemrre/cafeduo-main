@@ -6,6 +6,7 @@ import { CreateGameModal } from './CreateGameModal';
 import { UserProfileModal } from './UserProfileModal';
 import { ArenaBattle } from './ArenaBattle';
 import { DungeonClash } from './DungeonClash';
+import { RockPaperScissors } from './RockPaperScissors';
 import { AdminDashboard } from './AdminDashboard';
 import { api } from '../lib/api';
 import { Leaderboard } from './Leaderboard';
@@ -313,7 +314,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
     return (
       <div className="pt-24 pb-12 px-4 min-h-screen bg-[#0f141a]">
         <div className="max-w-4xl mx-auto">
-          {activeGameType === 'Zindan Savaşı' ? (
+          {activeGameType === 'Taş Kağıt Makas' ? (
+            <RockPaperScissors
+              currentUser={currentUser}
+              isBot={isBot}
+              onGameEnd={handleGameEnd}
+              onLeave={() => handleGameEnd('forfeit', 0)}
+            />
+          ) : activeGameType === 'Zindan Savaşı' ? (
             <DungeonClash
               currentUser={currentUser}
               gameId={activeGameId}

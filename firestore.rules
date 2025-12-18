@@ -1,0 +1,48 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Users collection
+    match /users/{userId} {
+      // Users can read their own data
+      allow read: if request.auth != null && request.auth.uid == userId;
+      // Users can create their own document
+      allow create: if request.auth != null && request.auth.uid == userId;
+      // Users can update their own data
+      allow update: if request.auth != null && request.auth.uid == userId;
+      // Anyone can read usernames for leaderboard
+      allow read: if request.auth != null;
+      
+      // User items subcollection
+      match /items/{itemId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // Cafes collection (public read, admin write)
+    match /cafes/{cafeId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'cafe_admin';
+    }
+    
+    // Games collection (authenticated users)
+    match /games/{gameId} {
+      // Anyone authenticated can read games
+      allow read: if request.auth != null;
+      // Anyone authenticated can create games
+      allow create: if request.auth != null;
+      // Game participants can update
+      allow update: if request.auth != null;
+      // Game host can delete
+      allow delete: if request.auth != null;
+    }
+    
+    // Rewards collection (public read)
+    match /rewards/{rewardId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Only admin via console
+    }
+  }
+}

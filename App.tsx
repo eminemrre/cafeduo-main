@@ -11,6 +11,7 @@ import { api } from './lib/api';
 import { CafeSelection } from './components/CafeSelection';
 import { CookieConsent } from './components/CookieConsent';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
+import { FirestoreSeed } from './components/FirestoreSeed';
 
 // Lazy Load Components
 const Games = React.lazy(() => import('./components/Games').then(module => ({ default: module.Games })));
@@ -112,7 +113,12 @@ const App: React.FC = () => {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await api.auth.logout();
+    } catch (err) {
+      console.error('Logout error:', err);
+    }
     setIsLoggedIn(false);
     setCurrentUser(null);
     localStorage.removeItem('cafe_user');
@@ -188,6 +194,9 @@ const App: React.FC = () => {
 
             {/* KVKK Gizlilik Politikası */}
             <Route path="/gizlilik" element={<PrivacyPolicy />} />
+
+            {/* Firestore Seed Page */}
+            <Route path="/seed" element={<FirestoreSeed />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

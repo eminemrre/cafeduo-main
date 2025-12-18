@@ -4,8 +4,6 @@ import { RetroButton } from './RetroButton';
 import { User as UserType } from '../types';
 import { api } from '../lib/api';
 import { PAU_DEPARTMENTS } from '../constants';
-import { GoogleLogin } from '@react-oauth/google';
-import ReCAPTCHA from 'react-google-recaptcha';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -29,9 +27,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [department, setDepartment] = useState('');
-  const [verificationCode, setVerificationCode] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   useEffect(() => {
     setMode(initialMode);
@@ -40,9 +35,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setEmail('');
     setPassword('');
     setDepartment('');
-    setVerificationCode('');
-    setIsVerifying(false);
-    setCaptchaToken(null);
   }, [initialMode, isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,41 +44,57 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     try {
       if (mode === 'register') {
-        if (!isVerifying) {
-          // Step 1: Register (Send Code)
-          if (!captchaToken) {
-            setError('Lütfen robot olmadığınızı doğrulayın.');
-            setIsLoading(false);
-            return;
-          }
-          const response = await api.auth.register(username, email, password, department, captchaToken);
-          if (response.requireVerification) {
-            setIsVerifying(true);
-            if (response.devCode) {
-              console.log("DEV CODE:", response.devCode);
-              alert(`Geliştirici Modu Kodu: ${response.devCode}`);
-            }
-          } else {
-            // Should not happen with new logic, but fallback
-            onLoginSuccess(response);
-          }
-        } else {
-          // Step 2: Verify Code
-          const user = await api.auth.verify(email, verificationCode);
-          onLoginSuccess(user);
+        if (!username || username.length < 3) {
+          throw new Error('Kullanıcı adı en az 3 karakter olmalıdır.');
         }
+        if (!email || !email.includes('@')) {
+          throw new Error('Geçerli bir e-posta adresi girin.');
+        }
+        if (!password || password.length < 6) {
+          throw new Error('Şifre en az 6 karakter olmalıdır.');
+        }
+        const user = await api.auth.register(username, email, password);
+        onLoginSuccess(user);
       } else {
-        // Login Call
-        if (!captchaToken) {
-          setError('Lütfen robot olmadığınızı doğrulayın.');
-          setIsLoading(false);
-          return;
+        // Login
+        if (!email || !password) {
+          throw new Error('E-posta ve şifre gereklidir.');
         }
-        const user = await api.auth.login(email, password, captchaToken);
+        const user = await api.auth.login(email, password);
         onLoginSuccess(user);
       }
     } catch (err: any) {
-      setError(err.message || 'Bir hata oluştu.');
+      console.error('Auth error:', err);
+      // Firebase error messages
+      if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+        setError('E-posta veya şifre hatalı.');
+      } else if (err.code === 'auth/email-already-in-use') {
+        setError('Bu e-posta zaten kullanımda.');
+      } else if (err.code === 'auth/weak-password') {
+        setError('Şifre çok zayıf, en az 6 karakter olmalı.');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('Geçersiz e-posta adresi.');
+      } else {
+        setError(err.message || 'Bir hata oluştu.');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setError('');
+    setIsLoading(true);
+    try {
+      const user = await api.auth.googleLogin();
+      onLoginSuccess(user);
+    } catch (err: any) {
+      console.error('Google auth error:', err);
+      if (err.code === 'auth/popup-closed-by-user') {
+        setError('Google giriş penceresi kapatıldı.');
+      } else {
+        setError(err.message || 'Google ile giriş başarısız.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -103,11 +111,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       ></div>
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-md bg-[#1a1f2e] border-4 border-gray-500 border-t-white border-l-white border-b-gray-800 border-r-gray-800 shadow-2xl animate-pulse-slow">
+      <div className="relative w-full max-w-md bg-[#1a1f2e] border-4 border-gray-500 border-t-white border-l-white border-b-gray-800 border-r-gray-800 shadow-2xl">
 
         {/* Header Bar */}
         <div className="bg-gradient-to-r from-blue-900 to-purple-900 px-4 py-2 flex justify-between items-center border-b-4 border-gray-800">
-          <span className="font-pixel text-white tracking-widest animate-pulse">
+          <span className="font-pixel text-white tracking-widest">
             {mode === 'login' ? 'GIRIS_YAP.EXE' : 'KAYIT_OL.EXE'}
           </span>
           <button
@@ -145,7 +153,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
           <form className="space-y-4" onSubmit={handleSubmit}>
 
-            {mode === 'register' && !isVerifying && (
+            {mode === 'register' && (
               <>
                 <div className="relative group">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
@@ -172,7 +180,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         <option key={dept} value={dept} className="bg-gray-900 text-white py-2">{dept}</option>
                       ))}
                     </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 group-hover:text-white transition-colors">
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
                     </div>
                   </div>
@@ -180,117 +188,76 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </>
             )}
 
-            {(!isVerifying || mode === 'login') && (
-              <>
-                <div className="relative group">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="E-posta Adresi"
-                    className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all"
-                  />
-                </div>
+            <div className="relative group">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="E-posta"
+                className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all"
+              />
+            </div>
 
-                <div className="relative group">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Şifre"
-                    className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all"
-                  />
-                </div>
-              </>
-            )}
+            <div className="relative group">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Şifre"
+                minLength={6}
+                className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all"
+              />
+            </div>
 
-            {isVerifying && (
-              <div className="relative group animate-fade-in-up">
-                <div className="text-center mb-2 text-green-400 text-sm">
-                  E-postana gönderilen 6 haneli kodu gir:
-                </div>
-                <input
-                  type="text"
-                  required
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                  placeholder="Doğrulama Kodu"
-                  className="w-full bg-black/30 border-2 border-green-500 focus:border-green-400 text-white py-3 text-center outline-none font-mono text-2xl tracking-widest placeholder:text-gray-600 transition-all"
-                  maxLength={6}
-                />
-              </div>
-            )}
-
-            {/* reCAPTCHA */}
-            {!isVerifying && (
-              <div className="flex justify-center my-4">
-                <ReCAPTCHA
-                  sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}
-                  onChange={(token) => setCaptchaToken(token)}
-                  theme="dark"
-                />
-              </div>
-            )}
-
-            <RetroButton variant="primary" className="w-full mt-6 flex items-center justify-center gap-2" type="submit">
+            <RetroButton
+              variant="primary"
+              type="submit"
+              className="w-full py-3 flex items-center justify-center gap-2"
+              disabled={isLoading}
+            >
               {isLoading ? (
-                <span className="animate-pulse">ISLENIYOR...</span>
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
               ) : (
                 <>
-                  <span>
-                    {mode === 'login' ? 'BAŞLA' : (isVerifying ? 'DOĞRULA VE GİR' : 'KAYIT OL')}
-                  </span>
-                  <ArrowRight size={20} />
+                  {mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}
+                  <ArrowRight size={16} />
                 </>
               )}
             </RetroButton>
-
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-600"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-[#1a1f2e] text-gray-400">VEYA</span>
-              </div>
-            </div>
-
-            <div className="flex justify-center">
-              <GoogleLogin
-                onSuccess={async (credentialResponse) => {
-                  if (credentialResponse.credential) {
-                    try {
-                      setIsLoading(true);
-                      const user = await api.auth.googleLogin(credentialResponse.credential);
-                      onLoginSuccess(user);
-                    } catch (err: any) {
-                      setError(err.message || 'Google girişi başarısız.');
-                    } finally {
-                      setIsLoading(false);
-                    }
-                  }
-                }}
-                onError={() => {
-                  setError('Google girişi başarısız.');
-                }}
-                theme="filled_black"
-                shape="pill"
-                text={mode === 'login' ? 'signin_with' : 'signup_with'}
-              />
-            </div>
           </form>
 
-          <div className="text-center font-retro text-gray-400">
-            {mode === 'login' ? (
-              <p>Hesabın yok mu? <button onClick={() => setMode('register')} className="text-blue-400 hover:underline">Hemen Kaydol</button></p>
-            ) : (
-              <p>Zaten hesabın var mı? <button onClick={() => setMode('login')} className="text-blue-400 hover:underline">Giriş Yap</button></p>
-            )}
+          {/* Divider */}
+          <div className="flex items-center gap-4">
+            <div className="flex-1 h-px bg-gray-600"></div>
+            <span className="text-gray-500 text-xs">veya</span>
+            <div className="flex-1 h-px bg-gray-600"></div>
           </div>
 
+          {/* Google Login Button */}
+          <button
+            onClick={handleGoogleLogin}
+            disabled={isLoading}
+            className="w-full bg-white hover:bg-gray-100 text-gray-800 font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-3 transition-all disabled:opacity-50"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+            </svg>
+            Google ile {mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}
+          </button>
+
+          {/* Footer Text */}
+          <p className="text-center text-xs text-gray-500">
+            {mode === 'login'
+              ? "Hesabın yok mu? Yukarıdan 'Kayıt Ol' seçeneğine tıkla."
+              : "Zaten hesabın var mı? Yukarıdan 'Giriş Yap' seçeneğine tıkla."}
+          </p>
         </div>
       </div>
     </div>

@@ -5,12 +5,12 @@ import { User } from '../types';
 
 interface CafeSelectionProps {
     currentUser: User;
-    onCheckInSuccess: (cafeName: string, tableNumber: string, cafeId: number) => void;
+    onCheckInSuccess: (cafeName: string, tableNumber: string, cafeId: string | number) => void;
 }
 
 export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onCheckInSuccess }) => {
     const [cafes, setCafes] = useState<any[]>([]);
-    const [selectedCafeId, setSelectedCafeId] = useState<number | null>(null);
+    const [selectedCafeId, setSelectedCafeId] = useState<string | null>(null);
     const [tableNumber, setTableNumber] = useState<string>('');
     const [pin, setPin] = useState<string>('');
     const [loading, setLoading] = useState(false);
@@ -20,19 +20,22 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
         loadCafes();
         const savedCafeId = localStorage.getItem('last_cafe_id');
         const savedTable = localStorage.getItem('last_table_number');
-        if (savedCafeId) setSelectedCafeId(parseInt(savedCafeId));
+        if (savedCafeId) setSelectedCafeId(savedCafeId);
         if (savedTable) setTableNumber(savedTable);
     }, []);
 
     const loadCafes = async () => {
         try {
+            console.log('Loading cafes...');
             const data = await api.cafes.list();
+            console.log('Loaded cafes:', data);
             setCafes(data);
             if (data.length > 0 && !localStorage.getItem('last_cafe_id')) {
                 setSelectedCafeId(data[0].id);
             }
-        } catch (err) {
-            console.error("Failed to load cafes");
+        } catch (err: any) {
+            console.error("Failed to load cafes:", err);
+            setError('Kafeler yüklenemedi: ' + (err.message || 'Bilinmeyen hata'));
         }
     };
 
@@ -136,7 +139,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                             <select
                                 value={selectedCafeId || ''}
                                 onChange={(e) => {
-                                    setSelectedCafeId(parseInt(e.target.value));
+                                    setSelectedCafeId(e.target.value);
                                     setPin(''); // Clear PIN when cafe changes
                                     setError(null);
                                 }}

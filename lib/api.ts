@@ -1,299 +1,112 @@
-import { User, GameRequest } from '../types';
+// API Layer - Now using Firebase
+import { firebaseAuth, firebaseUsers, firebaseCafes, firebaseGames, firebaseRewards } from './firebase';
 
-// API URL: Geliştirme ortamında localhost, canlıda Render kullanılır
-const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-const API_URL = isDev
-  ? 'http://localhost:3001/api'
-  : 'https://cafeduo-api.onrender.com/api';
-
-console.log(`🚀 API URL: ${API_URL} (${isDev ? 'DEV' : 'PROD'})`);
-
+// Re-export Firebase functions as the main API
 export const api = {
+  // AUTH
   auth: {
-    login: async (email: string, password: string, captchaToken: string): Promise<User> => {
-      const res = await fetch(`${API_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, captchaToken }),
-      });
-
-      const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        console.error("Login Error (Non-JSON):", text);
-        throw new Error(`Sunucu Hatası (${res.status}): ${text.substring(0, 100)}`);
-      }
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Giriş başarısız');
-      }
-      return data;
+    login: async (email: string, password: string) => {
+      return await firebaseAuth.login(email, password);
     },
-    register: async (username: string, email: string, password: string, department?: string, captchaToken?: string): Promise<any> => {
-      const res = await fetch(`${API_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, email, password, department, captchaToken }),
-      });
-
-      const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        console.error("Register Error (Non-JSON):", text);
-        throw new Error(`Sunucu hatası: ${res.status}`);
-      }
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Kayıt başarısız');
-      }
-      return data;
+    register: async (username: string, email: string, password: string) => {
+      return await firebaseAuth.register(email, password, username);
     },
-    verify: async (email: string, code: string): Promise<User> => {
-      const res = await fetch(`${API_URL}/auth/verify`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code }),
-      });
-
-      const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        throw new Error(`Sunucu hatası: ${res.status}`);
-      }
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Doğrulama başarısız');
-      }
-      return data;
+    googleLogin: async () => {
+      return await firebaseAuth.googleLogin();
     },
-    googleLogin: async (token: string): Promise<User> => {
-      const res = await fetch(`${API_URL}/auth/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token }),
-      });
-
-      const text = await res.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        throw new Error(`Sunucu hatası: ${res.status}`);
-      }
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Google girişi başarısız');
-      }
-      return data;
+    logout: async () => {
+      return await firebaseAuth.logout();
     }
   },
-  games: {
-    list: async (): Promise<GameRequest[]> => {
-      const res = await fetch(`${API_URL}/games`);
-      return res.json();
-    },
-    get: async (id: number) => {
-      const response = await fetch(`${API_URL}/games/${id}`);
-      return response.json();
-    },
-    create: async (game: Partial<GameRequest>): Promise<GameRequest> => {
-      const res = await fetch(`${API_URL}/games`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(game),
-      });
-      return res.json();
-    },
-    join: async (id: number, guestName: string): Promise<void> => {
-      await fetch(`${API_URL}/games/${id}/join`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ guestName }),
-      });
-    },
-    move: async (id: number, data: any) => {
-      const response = await fetch(`${API_URL}/games/${id}/move`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      return response.json();
-    },
-    finish: async (id: number, winner: string) => {
-      const response = await fetch(`${API_URL}/games/${id}/finish`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ winner }),
-      });
-      return response.json();
-    },
-    delete: async (id: number) => {
-      const response = await fetch(`${API_URL}/games/${id}`, {
-        method: 'DELETE',
-      });
-      return response.json();
-    },
-  },
+
+  // USERS
   users: {
-    update: async (user: User): Promise<User> => {
-      const res = await fetch(`${API_URL}/users/${user.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(user),
-      });
-      return res.json();
+    get: async (userId: string) => {
+      return await firebaseUsers.get(userId);
     },
-    getActiveGame: async (username: string): Promise<GameRequest | null> => {
-      const res = await fetch(`${API_URL}/users/${username}/active-game`);
-      return res.json();
+    update: async (userData: any) => {
+      return await firebaseUsers.update(userData.id, userData);
+    },
+    getActiveGame: async (username: string) => {
+      // Check if user has an active game
+      const games = await firebaseGames.getAll();
+      return games.find((g: any) => g.hostName === username || g.guestName === username) || null;
     }
   },
-  coupons: {
-    use: async (code: string) => {
-      const response = await fetch(`${API_URL}/coupons/use`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
-      });
 
-      const text = await response.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        throw new Error(`Sunucu hatası: ${response.status}`);
-      }
-
-      if (!response.ok) {
-        throw { response: { data } };
-      }
-      return data;
-    }
-  },
-  admin: {
-    createCafeAdmin: async (data: any) => {
-      const response = await fetch(`${API_URL}/admin/cafe-admins`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      const text = await response.text();
-      let resData;
-      try {
-        resData = JSON.parse(text);
-      } catch (e) {
-        throw new Error(`Sunucu hatası: ${response.status}`);
-      }
-
-      if (!response.ok) {
-        throw new Error(resData.error || 'İşlem başarısız');
-      }
-      return resData;
-    },
-    getUsers: async () => {
-      const response = await fetch(`${API_URL}/admin/users`);
-      return response.json();
-    },
-    getGames: async () => {
-      const response = await fetch(`${API_URL}/admin/games`);
-      return response.json();
-    },
-    updateCafe: async (id: number, data: any) => {
-      const response = await fetch(`${API_URL}/admin/cafes/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      return response.json();
-    },
-    createCafe: async (data: any) => {
-      const response = await fetch(`${API_URL}/admin/cafes`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      return response.json();
-    },
-    updateUserRole: async (userId: number, role: string) => {
-      const response = await fetch(`${API_URL}/admin/users/${userId}/role`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role }),
-      });
-      return response.json();
-    }
-  },
+  // CAFES
   cafes: {
     list: async () => {
-      const response = await fetch(`${API_URL}/cafes`);
-      return response.json();
+      return await firebaseCafes.getAll();
     },
-    checkIn: async (data: { userId: number, cafeId: number, tableNumber: number, pin: string }) => {
-      const response = await fetch(`${API_URL}/cafes/check-in`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      const resData = await response.json();
-      if (!response.ok) {
-        throw new Error(resData.error || 'Check-in başarısız');
-      }
-      return resData;
+    get: async (cafeId: string) => {
+      return await firebaseCafes.get(cafeId);
     },
-    updatePin: async (cafeId: number | null | undefined, pin: string, userId: number) => {
-      const response = await fetch(`${API_URL}/cafes/${cafeId || 'auto'}/pin`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pin, userId }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'PIN güncellenemedi');
-      }
-      return data;
+    checkIn: async (params: { userId: string | number; cafeId: string | number; tableNumber: number; pin: string }) => {
+      return await firebaseCafes.checkIn(
+        params.userId.toString(),
+        params.cafeId.toString(),
+        params.tableNumber,
+        params.pin
+      );
+    },
+    updatePin: async (cafeId: string, pin: string, userId?: string) => {
+      return await firebaseCafes.updatePin(cafeId.toString(), pin);
     }
   },
-  rewards: {
+
+  // GAMES
+  games: {
     list: async () => {
-      const response = await fetch(`${API_URL}/rewards`);
-      return response.json();
+      return await firebaseGames.getAll();
+    },
+    get: async (gameId: number | string) => {
+      return await firebaseGames.get(gameId.toString());
     },
     create: async (data: any) => {
-      const response = await fetch(`${API_URL}/rewards`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      return response.json();
+      return await firebaseGames.create(data);
     },
-    delete: async (id: number) => {
-      await fetch(`${API_URL}/rewards/${id}`, { method: 'DELETE' });
+    join: async (gameId: number | string, guestName: string) => {
+      await firebaseGames.join(gameId.toString(), guestName);
+      return await firebaseGames.get(gameId.toString());
+    },
+    move: async (gameId: number | string, data: any) => {
+      await firebaseGames.updateState(gameId.toString(), data.gameState);
+    },
+    finish: async (gameId: number | string, winner: string) => {
+      await firebaseGames.finish(gameId.toString(), winner);
+    },
+    delete: async (gameId: number | string) => {
+      await firebaseGames.delete(gameId.toString());
+    },
+    // REALTIME LISTENERS
+    onGameChange: firebaseGames.onGameChange,
+    onLobbyChange: firebaseGames.onLobbyChange
+  },
+
+  // REWARDS / SHOP
+  rewards: {
+    list: async () => {
+      return await firebaseRewards.getAll();
     }
   },
+
   shop: {
-    buy: async (userId: number, rewardId: number) => {
-      const response = await fetch(`${API_URL}/shop/buy`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, rewardId }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Satın alma başarısız');
-      }
-      return data;
+    buy: async (userId: string, rewardId: string | number) => {
+      return await firebaseRewards.buy(userId, rewardId.toString());
     },
-    inventory: async (userId: number) => {
-      const response = await fetch(`${API_URL}/shop/inventory/${userId}`);
-      return response.json();
+    inventory: async (userId: string) => {
+      return await firebaseRewards.getUserItems(userId);
+    }
+  },
+
+  // LEADERBOARD
+  leaderboard: {
+    get: async () => {
+      return await firebaseUsers.getLeaderboard(10);
     }
   }
 };
+
+// Export Firebase auth for direct access if needed
+export { firebaseAuth } from './firebase';

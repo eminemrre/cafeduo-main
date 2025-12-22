@@ -1,8 +1,8 @@
 // Firebase Configuration for CafeDuo
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { getFirestore, collection, doc, getDoc, getDocs, getDocsFromServer, getDocFromServer, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, enableNetwork, disableNetwork } from 'firebase/firestore';
-import { getAnalytics } from 'firebase/analytics';
+import { getFirestore, collection, doc, getDoc, getDocs, getDocsFromServer, getDocFromServer, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, enableNetwork, disableNetwork, initializeFirestore, memoryLocalCache } from 'firebase/firestore';
+import { getAnalytics, isSupported } from 'firebase/analytics';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -18,8 +18,25 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
-const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
+
+// Initialize Firestore with memory-only cache to avoid IndexedDB issues
+const db = initializeFirestore(app, {
+    localCache: memoryLocalCache(),
+    experimentalForceLongPolling: true,
+});
+
+// Initialize Analytics only if supported
+let analytics: any = null;
+if (typeof window !== 'undefined') {
+    isSupported().then((supported) => {
+        if (supported) {
+            analytics = getAnalytics(app);
+        }
+    }).catch(() => {
+        console.log('Analytics not supported');
+    });
+}
+
 const googleProvider = new GoogleAuthProvider();
 
 // Force enable network on startup
@@ -144,13 +161,23 @@ export const firebaseAuth = {
         await signOut(auth);
     },
 
-    // Get User Data
+    // Get User Data - force from server to avoid cache issues
     getUserData: async (uid: string): Promise<any> => {
-        const userDoc = await getDoc(doc(db, 'users', uid));
-        if (userDoc.exists()) {
-            return { id: uid, ...userDoc.data() };
+        try {
+            const userDoc = await getDocFromServer(doc(db, 'users', uid));
+            if (userDoc.exists()) {
+                return { id: uid, ...userDoc.data() };
+            }
+            return null;
+        } catch (error) {
+            console.warn('Server fetch failed, trying cache:', error);
+            // Fallback to cache if server fails
+            const userDoc = await getDoc(doc(db, 'users', uid));
+            if (userDoc.exists()) {
+                return { id: uid, ...userDoc.data() };
+            }
+            return null;
         }
-        return null;
     },
 
     // Get current user

@@ -836,18 +836,34 @@ app.get('/api/admin/games', async (req, res) => {
 // 4.3 UPDATE USER ROLE (Admin only)
 app.put('/api/admin/users/:id/role', async (req, res) => {
   const { id } = req.params;
-  const { role } = req.body;
+  const { role, cafe_id } = req.body;
 
   if (!role || !['user', 'cafe_admin', 'admin'].includes(role)) {
     return res.status(400).json({ error: 'Geçersiz rol.' });
   }
 
+  // If assigning cafe_admin role, cafe_id is required
+  if (role === 'cafe_admin' && !cafe_id) {
+    return res.status(400).json({ error: 'Kafe yöneticisi için kafe seçimi zorunludur.' });
+  }
+
   if (await isDbConnected()) {
     try {
-      const result = await pool.query(
-        `UPDATE users SET role = $1, is_admin = $2 WHERE id = $3 RETURNING *`,
-        [role, role === 'admin', id]
-      );
+      let result;
+
+      if (role === 'cafe_admin') {
+        // Assign cafe_admin with cafe_id
+        result = await pool.query(
+          `UPDATE users SET role = $1, is_admin = $2, cafe_id = $3 WHERE id = $4 RETURNING *`,
+          [role, false, cafe_id, id]
+        );
+      } else {
+        // For user or admin role, clear cafe_id
+        result = await pool.query(
+          `UPDATE users SET role = $1, is_admin = $2, cafe_id = NULL WHERE id = $3 RETURNING *`,
+          [role, role === 'admin', id]
+        );
+      }
 
       if (result.rows.length === 0) {
         return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
@@ -863,6 +879,11 @@ app.put('/api/admin/users/:id/role', async (req, res) => {
     if (userIdx !== -1) {
       MEMORY_USERS[userIdx].role = role;
       MEMORY_USERS[userIdx].isAdmin = (role === 'admin');
+      if (role === 'cafe_admin') {
+        MEMORY_USERS[userIdx].cafe_id = cafe_id;
+      } else {
+        MEMORY_USERS[userIdx].cafe_id = null;
+      }
       res.json({ success: true, user: MEMORY_USERS[userIdx] });
     } else {
       res.status(404).json({ error: 'Kullanıcı bulunamadı.' });

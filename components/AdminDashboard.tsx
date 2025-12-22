@@ -78,6 +78,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     };
 
     const [showAddCafeModal, setShowAddCafeModal] = useState(false);
+    const [showRoleModal, setShowRoleModal] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<any>(null);
+    const [selectedCafeForAdmin, setSelectedCafeForAdmin] = useState<string>('');
+
     const [newCafeData, setNewCafeData] = useState({
         name: '',
         address: '',
@@ -87,16 +91,43 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
 
     // ... (existing loadData and other functions)
 
-    const handleToggleRole = async (userId: number, currentRole: string | undefined) => {
-        const newRole = currentRole === 'cafe_admin' ? 'user' : 'cafe_admin';
-        if (window.confirm(`Kullanıcı rolünü ${newRole === 'cafe_admin' ? 'KAFE YÖNETİCİSİ' : 'KULLANICI'} olarak değiştirmek istiyor musunuz?`)) {
-            try {
-                await api.admin.updateUserRole(userId, newRole);
-                alert('Kullanıcı rolü güncellendi!');
-                loadData();
-            } catch (error) {
-                alert('Rol güncelleme başarısız.');
+    const handleToggleRole = async (user: any) => {
+        const currentRole = user.role;
+
+        if (currentRole === 'cafe_admin') {
+            // Demote from cafe_admin to user
+            if (window.confirm(`${user.username} kullanıcısının kafe yöneticiliğini kaldırmak istediğinize emin misiniz?`)) {
+                try {
+                    await api.admin.updateUserRole(user.id, 'user', null);
+                    alert('Kullanıcı rolü güncellendi!');
+                    loadData();
+                } catch (error) {
+                    alert('Rol güncelleme başarısız.');
+                }
             }
+        } else {
+            // Promote to cafe_admin - show modal to select cafe
+            setSelectedUser(user);
+            setSelectedCafeForAdmin(cafes.length > 0 ? cafes[0].id.toString() : '');
+            setShowRoleModal(true);
+        }
+    };
+
+    const handleConfirmCafeAdmin = async () => {
+        if (!selectedUser || !selectedCafeForAdmin) {
+            alert('Lütfen bir kafe seçin.');
+            return;
+        }
+
+        try {
+            await api.admin.updateUserRole(selectedUser.id, 'cafe_admin', parseInt(selectedCafeForAdmin));
+            alert(`${selectedUser.username} artık seçilen kafenin yöneticisi!`);
+            setShowRoleModal(false);
+            setSelectedUser(null);
+            setSelectedCafeForAdmin('');
+            loadData();
+        } catch (error) {
+            alert('Rol güncelleme başarısız.');
         }
     };
 
@@ -219,7 +250,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                                 <td className="p-4 text-right">
                                                     {!user.isAdmin && (
                                                         <button
-                                                            onClick={() => handleToggleRole(user.id, user.role)}
+                                                            onClick={() => handleToggleRole(user)}
                                                             className={`text-xs font-bold px-3 py-1 rounded transition-colors ${user.role === 'cafe_admin'
                                                                 ? 'bg-red-900/30 text-red-400 hover:bg-red-900/50'
                                                                 : 'bg-green-900/30 text-green-400 hover:bg-green-900/50'
@@ -433,6 +464,52 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                     className="flex-1 bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition-colors"
                                 >
                                     Ekle
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Cafe Admin Assignment Modal */}
+            {showRoleModal && selectedUser && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+                    <div className="bg-[#1a1f2e] border border-gray-700 rounded-2xl p-8 max-w-md w-full relative">
+                        <h2 className="text-2xl font-bold text-white mb-2">Kafe Yöneticisi Ata</h2>
+                        <p className="text-gray-400 mb-6">
+                            <span className="text-white font-bold">{selectedUser.username}</span> kullanıcısını hangi kafenin yöneticisi yapmak istiyorsunuz?
+                        </p>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-gray-400 text-sm mb-2">Kafe Seç *</label>
+                                <select
+                                    value={selectedCafeForAdmin}
+                                    onChange={e => setSelectedCafeForAdmin(e.target.value)}
+                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500"
+                                >
+                                    {cafes.map(cafe => (
+                                        <option key={cafe.id} value={cafe.id}>{cafe.name}</option>
+                                    ))}
+                                </select>
+                                <p className="text-xs text-gray-500 mt-1">Seçilen kafenin yönetim yetkisi verilecek</p>
+                            </div>
+
+                            <div className="flex gap-3 mt-8">
+                                <button
+                                    onClick={() => {
+                                        setShowRoleModal(false);
+                                        setSelectedUser(null);
+                                    }}
+                                    className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-xl transition-colors"
+                                >
+                                    İptal
+                                </button>
+                                <button
+                                    onClick={handleConfirmCafeAdmin}
+                                    className="flex-1 bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 rounded-xl transition-colors"
+                                >
+                                    Yönetici Yap
                                 </button>
                             </div>
                         </div>

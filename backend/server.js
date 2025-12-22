@@ -640,6 +640,148 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
+// ===================================
+// 3. CAFE ENDPOINTS
+// ===================================
+
+// 3.1 GET ALL CAFES
+app.get('/api/cafes', async (req, res) => {
+  if (await isDbConnected()) {
+    try {
+      const result = await pool.query('SELECT id, name, address, total_tables, pin FROM cafes ORDER BY name');
+      res.json(result.rows);
+    } catch (err) {
+      console.error('Error fetching cafes:', err);
+      res.status(500).json({ error: 'Kafeler yüklenemedi.' });
+    }
+  } else {
+    // Fallback cafes
+    res.json([
+      { id: 1, name: 'PAÜ İİBF Kantin', address: 'İİBF Yerleşkesi', total_tables: 30, pin: '1234' },
+      { id: 2, name: 'PAÜ Mühendislik Kafeterya', address: 'Mühendislik Fakültesi', total_tables: 25, pin: '5678' }
+    ]);
+  }
+});
+
+// 3.2 GET SINGLE CAFE
+app.get('/api/cafes/:id', async (req, res) => {
+  const { id } = req.params;
+
+  if (await isDbConnected()) {
+    try {
+      const result = await pool.query('SELECT id, name, address, total_tables, pin FROM cafes WHERE id = $1', [id]);
+      if (result.rows.length > 0) {
+        res.json(result.rows[0]);
+      } else {
+        res.status(404).json({ error: 'Kafe bulunamadı.' });
+      }
+    } catch (err) {
+      console.error('Error fetching cafe:', err);
+      res.status(500).json({ error: 'Kafe yüklenemedi.' });
+    }
+  } else {
+    res.status(404).json({ error: 'Kafe bulunamadı.' });
+  }
+});
+
+// 3.3 CHECK-IN TO CAFE (CRITICAL)
+app.post('/api/cafes/checkin', async (req, res) => {
+  const { userId, cafeId, tableNumber, pin } = req.body;
+
+  if (!userId || !cafeId || !tableNumber || !pin) {
+    return res.status(400).json({ error: 'Tüm alanlar zorunludur.' });
+  }
+
+  if (await isDbConnected()) {
+    try {
+      // 1. Verify cafe PIN
+      const cafeResult = await pool.query('SELECT pin FROM cafes WHERE id = $1', [cafeId]);
+      if (cafeResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Kafe bulunamadı.' });
+      }
+
+      const cafe = cafeResult.rows[0];
+      if (cafe.pin !== pin) {
+        return res.status(401).json({ error: 'Hatalı PIN kodu.' });
+      }
+
+      // 2. Update user's cafe_id and table_number
+      const userResult = await pool.query(
+        `UPDATE users 
+         SET cafe_id = $1, table_number = $2 
+         WHERE id = $3 
+         RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number`,
+        [cafeId, tableNumber, userId]
+      );
+
+      if (userResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+      }
+
+      const updatedUser = userResult.rows[0];
+
+      // 3. Fetch cafe name
+      const cafeNameResult = await pool.query('SELECT name FROM cafes WHERE id = $1', [cafeId]);
+      if (cafeNameResult.rows.length > 0) {
+        updatedUser.cafe_name = cafeNameResult.rows[0].name;
+      }
+
+      res.json(updatedUser);
+    } catch (err) {
+      console.error('Check-in error:', err);
+      res.status(500).json({ error: 'Giriş yapılamadı.' });
+    }
+  } else {
+    // Memory fallback
+    const userIdx = MEMORY_USERS.findIndex(u => u.id == userId);
+    if (userIdx !== -1) {
+      MEMORY_USERS[userIdx].cafe_id = cafeId;
+      MEMORY_USERS[userIdx].table_number = tableNumber;
+      res.json(MEMORY_USERS[userIdx]);
+    } else {
+      res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
+    }
+  }
+});
+
+// 3.4 UPDATE CAFE PIN (Admin only)
+app.put('/api/cafes/:id/pin', async (req, res) => {
+  const { id } = req.params;
+  const { pin, userId } = req.body;
+
+  if (!pin || pin.length !== 4) {
+    return res.status(400).json({ error: 'PIN 4 haneli olmalıdır.' });
+  }
+
+  if (await isDbConnected()) {
+    try {
+      // Optional: Verify user is admin
+      if (userId) {
+        const userCheck = await pool.query('SELECT role FROM users WHERE id = $1', [userId]);
+        if (userCheck.rows.length === 0 || userCheck.rows[0].role !== 'cafe_admin') {
+          return res.status(403).json({ error: 'Yetkisiz işlem.' });
+        }
+      }
+
+      const result = await pool.query(
+        'UPDATE cafes SET pin = $1 WHERE id = $2 RETURNING id, name, pin',
+        [pin, id]
+      );
+
+      if (result.rows.length > 0) {
+        res.json(result.rows[0]);
+      } else {
+        res.status(404).json({ error: 'Kafe bulunamadı.' });
+      }
+    } catch (err) {
+      console.error('PIN update error:', err);
+      res.status(500).json({ error: 'PIN güncellenemedi.' });
+    }
+  } else {
+    res.status(501).json({ error: 'Demo modda PIN değiştirilemez.' });
+  }
+});
+
 // 2.6 LOCATION CHECK-IN SYSTEM
 function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
   var R = 6371; // Radius of the earth in km

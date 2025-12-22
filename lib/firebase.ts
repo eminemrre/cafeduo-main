@@ -1,8 +1,7 @@
 // Firebase Configuration for CafeDuo
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
-import { getFirestore, collection, doc, getDoc, getDocs, getDocsFromServer, getDocFromServer, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, enableNetwork, disableNetwork, initializeFirestore, memoryLocalCache } from 'firebase/firestore';
-import { getAnalytics, isSupported } from 'firebase/analytics';
+import { getFirestore, collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
 
 // Firebase configuration
 const firebaseConfig = {
@@ -18,35 +17,12 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
-// Initialize Firestore with memory-only cache to avoid IndexedDB issues
-const db = initializeFirestore(app, {
-    localCache: memoryLocalCache(),
-    experimentalForceLongPolling: true,
-});
-
-// Initialize Analytics only if supported
-let analytics: any = null;
-if (typeof window !== 'undefined') {
-    isSupported().then((supported) => {
-        if (supported) {
-            analytics = getAnalytics(app);
-        }
-    }).catch(() => {
-        console.log('Analytics not supported');
-    });
-}
+// Analytics disabled
+const analytics = null;
 
 const googleProvider = new GoogleAuthProvider();
-
-// Force enable network on startup
-if (typeof window !== 'undefined') {
-    enableNetwork(db).then(() => {
-        console.log('Firestore network enabled');
-    }).catch((err) => {
-        console.warn('Firestore network enable failed:', err);
-    });
-}
 
 // ====================
 // AUTH FUNCTIONS
@@ -58,70 +34,58 @@ export const firebaseAuth = {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
-        // Create user document in Firestore
-        await setDoc(doc(db, 'users', user.uid), {
+        // Return basic user data immediately (skip waiting for Firestore)
+        const userData = {
             id: user.uid,
-            email,
-            username,
+            email: user.email,
+            username: username,
             points: 0,
             wins: 0,
             gamesPlayed: 0,
             role: 'user',
-            isAdmin: false,
+            isAdmin: false
+        };
+
+        // Save to Firestore in background (don't block)
+        setDoc(doc(db, 'users', user.uid), {
+            ...userData,
             createdAt: serverTimestamp(),
             lastLogin: serverTimestamp()
-        });
+        }).catch(err => console.warn('Failed to save user to Firestore:', err));
 
-        return await firebaseAuth.getUserData(user.uid);
+        return userData;
     },
 
     // Email/Password Sign In
     login: async (email: string, password: string): Promise<any> => {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const uid = userCredential.user.uid;
+        const user = userCredential.user;
 
-        try {
-            // Try to get user data from Firestore
-            let userData = await firebaseAuth.getUserData(uid);
+        // Return basic user data immediately (skip Firestore to avoid offline errors)
+        const userData = {
+            id: user.uid,
+            email: user.email,
+            username: user.email?.split('@')[0] || 'user',
+            points: 0,
+            wins: 0,
+            gamesPlayed: 0,
+            role: 'user',
+            isAdmin: false
+        };
 
-            // If user doesn't exist in Firestore, create it
-            if (!userData) {
-                console.log('User not found in Firestore, creating...');
-                await setDoc(doc(db, 'users', uid), {
-                    id: uid,
-                    email: userCredential.user.email,
-                    username: userCredential.user.email?.split('@')[0] || 'user',
-                    points: 0,
-                    wins: 0,
-                    gamesPlayed: 0,
-                    role: 'user',
-                    isAdmin: false,
-                    createdAt: serverTimestamp(),
-                    lastLogin: serverTimestamp()
-                });
-                userData = await firebaseAuth.getUserData(uid);
-            } else {
-                // Update last login
-                await updateDoc(doc(db, 'users', uid), {
-                    lastLogin: serverTimestamp()
-                });
-            }
+        // Try to update Firestore in background (don't block)
+        updateDoc(doc(db, 'users', user.uid), {
+            lastLogin: serverTimestamp()
+        }).catch(() => {
+            // If update fails (user doesn't exist), create user
+            setDoc(doc(db, 'users', user.uid), {
+                ...userData,
+                createdAt: serverTimestamp(),
+                lastLogin: serverTimestamp()
+            }).catch(err => console.warn('Firestore save failed:', err));
+        });
 
-            return userData;
-        } catch (firestoreError: any) {
-            console.error('Firestore error during login:', firestoreError);
-            // Return basic user data from Auth if Firestore fails
-            return {
-                id: uid,
-                email: userCredential.user.email,
-                username: userCredential.user.email?.split('@')[0] || 'user',
-                points: 0,
-                wins: 0,
-                gamesPlayed: 0,
-                role: 'user',
-                isAdmin: false
-            };
-        }
+        return userData;
     },
 
     // Google Sign In
@@ -129,31 +93,34 @@ export const firebaseAuth = {
         const result = await signInWithPopup(auth, googleProvider);
         const user = result.user;
 
-        // Check if user exists
-        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        // Return basic user data immediately (skip Firestore to avoid offline errors)
+        const userData = {
+            id: user.uid,
+            email: user.email,
+            username: user.displayName || user.email?.split('@')[0] || 'user',
+            points: 0,
+            wins: 0,
+            gamesPlayed: 0,
+            role: 'user',
+            isAdmin: false
+        };
 
-        if (!userDoc.exists()) {
-            // Create new user
-            await setDoc(doc(db, 'users', user.uid), {
-                id: user.uid,
-                email: user.email,
-                username: user.displayName || user.email?.split('@')[0],
-                points: 0,
-                wins: 0,
-                gamesPlayed: 0,
-                role: 'user',
-                isAdmin: false,
-                createdAt: serverTimestamp(),
-                lastLogin: serverTimestamp()
-            });
-        } else {
-            // Update last login
-            await updateDoc(doc(db, 'users', user.uid), {
-                lastLogin: serverTimestamp()
-            });
-        }
+        // Save/update Firestore in background (don't block)
+        getDoc(doc(db, 'users', user.uid)).then(async (userDoc) => {
+            if (!userDoc.exists()) {
+                await setDoc(doc(db, 'users', user.uid), {
+                    ...userData,
+                    createdAt: serverTimestamp(),
+                    lastLogin: serverTimestamp()
+                });
+            } else {
+                await updateDoc(doc(db, 'users', user.uid), {
+                    lastLogin: serverTimestamp()
+                });
+            }
+        }).catch(err => console.warn('Firestore sync failed:', err));
 
-        return await firebaseAuth.getUserData(user.uid);
+        return userData;
     },
 
     // Sign Out
@@ -161,21 +128,16 @@ export const firebaseAuth = {
         await signOut(auth);
     },
 
-    // Get User Data - force from server to avoid cache issues
+    // Get User Data
     getUserData: async (uid: string): Promise<any> => {
         try {
-            const userDoc = await getDocFromServer(doc(db, 'users', uid));
+            const userDoc = await getDoc(doc(db, 'users', uid));
             if (userDoc.exists()) {
                 return { id: uid, ...userDoc.data() };
             }
             return null;
         } catch (error) {
-            console.warn('Server fetch failed, trying cache:', error);
-            // Fallback to cache if server fails
-            const userDoc = await getDoc(doc(db, 'users', uid));
-            if (userDoc.exists()) {
-                return { id: uid, ...userDoc.data() };
-            }
+            console.warn('Firestore fetch failed:', error);
             return null;
         }
     },

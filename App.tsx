@@ -55,23 +55,45 @@ const App: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // ... (useEffect remains same)
+  // Restore user session on load
   useEffect(() => {
-    const savedUser = localStorage.getItem('cafe_user');
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
-        console.log("Restoring session for:", user.username);
+    const restoreSession = async () => {
+      const token = localStorage.getItem('token');
+      const savedUser = localStorage.getItem('cafe_user');
 
-        // Restore user session without resetting location
-        // This allows users to refresh the page without being kicked out of the cafe
-        setCurrentUser(user);
-        setIsLoggedIn(true);
-      } catch (e) {
-        console.error("Failed to parse saved user", e);
-        localStorage.removeItem('cafe_user');
+      if (token) {
+        try {
+          // Verify token with backend
+          const user = await api.auth.verifyToken();
+          if (user) {
+            console.log("Token verified, restoring session for:", user.username);
+            setCurrentUser(user);
+            setIsLoggedIn(true);
+            localStorage.setItem('cafe_user', JSON.stringify(user));
+            return;
+          }
+        } catch (e) {
+          console.error("Token verification failed", e);
+          localStorage.removeItem('token');
+          localStorage.removeItem('cafe_user');
+        }
       }
-    }
+
+      // Fallback to saved user (for backwards compatibility)
+      if (savedUser) {
+        try {
+          const user = JSON.parse(savedUser);
+          console.log("Restoring session from localStorage:", user.username);
+          setCurrentUser(user);
+          setIsLoggedIn(true);
+        } catch (e) {
+          console.error("Failed to parse saved user", e);
+          localStorage.removeItem('cafe_user');
+        }
+      }
+    };
+
+    restoreSession();
   }, []);
 
   const openLogin = () => {

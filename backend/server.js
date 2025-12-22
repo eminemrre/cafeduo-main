@@ -24,10 +24,12 @@ if (envPath) {
   console.warn("Checked paths:", possiblePaths);
 }
 
+
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const { pool } = require('./db');
+const jwt = require('jsonwebtoken');
 
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -35,9 +37,39 @@ const rateLimit = require('express-rate-limit');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// JWT Secret from .env
+const ***REMOVED*** = process.env.***REMOVED*** || 'cafeduo_super_secret_key_2024';
+
 console.log("🚀 Starting Server...");
 console.log("🔑 Google Client ID:", process.env.VITE_GOOGLE_CLIENT_ID ? "Loaded ✅" : "MISSING ❌");
 console.log("🗄️  Database URL:", process.env.***REMOVED*** ? "Loaded ✅" : "MISSING ❌");
+
+// JWT Authentication Middleware
+const authenticateToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+  if (!token) {
+    return res.status(401).json({ error: 'Access token required' });
+  }
+
+  jwt.verify(token, ***REMOVED***, (err, user) => {
+    if (err) {
+      return res.status(403).json({ error: 'Invalid or expired token' });
+    }
+    req.user = user; // Attach user info to request
+    next();
+  });
+};
+
+// Helper to generate JWT
+const generateToken = (user) => {
+  return jwt.sign(
+    { id: user.id, email: user.email, username: user.username, role: user.role },
+    ***REMOVED***,
+    { expiresIn: '7d' } // Token valid for 7 days
+  );
+};
 
 // Security Middleware
 app.use(helmet()); // Secure HTTP headers
@@ -479,7 +511,10 @@ app.post('/api/auth/login', async (req, res) => {
           delete user.password_hash;
           delete user.last_daily_bonus; // Don't send internal date
 
-          res.json({ ...user, bonusReceived });
+          // Generate JWT token
+          const token = generateToken(user);
+
+          res.json({ user: { ...user, bonusReceived }, token });
         } else {
           res.status(401).json({ error: 'Geçersiz e-posta veya şifre.' });
         }
@@ -502,6 +537,36 @@ app.post('/api/auth/login', async (req, res) => {
       res.json(user);
     }
     else res.status(401).json({ error: 'Kullanıcı bulunamadı.' });
+  }
+});
+
+// 2.1 VERIFY TOKEN (Get current user from JWT)
+app.get('/api/auth/me', authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    if (await isDbConnected()) {
+      const result = await pool.query(
+        'SELECT id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number FROM users WHERE id = $1',
+        [userId]
+      );
+
+      if (result.rows.length > 0) {
+        res.json(result.rows[0]);
+      } else {
+        res.status(404).json({ error: 'User not found' });
+      }
+    } else {
+      const user = MEMORY_USERS.find(u => u.id === userId);
+      if (user) {
+        res.json(user);
+      } else {
+        res.status(404).json({ error: 'User not found' });
+      }
+    }
+  } catch (err) {
+    console.error('Auth verification error:', err);
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

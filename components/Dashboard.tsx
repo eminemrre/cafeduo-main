@@ -380,8 +380,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
             </div>
             <div className="text-left">
               <h2 className="font-pixel text-lg md:text-xl text-white group-hover:text-blue-300 transition-colors">HOŞGELDİN, {currentUser.username}</h2>
-              <div className="flex items-center gap-2 text-xs font-mono text-green-400">
-                <span className="animate-pulse">●</span> SYSTEM ONLINE
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 text-xs font-mono text-green-400">
+                  <span className="animate-pulse">●</span> SYSTEM ONLINE
+                </div>
+                {currentUser.table_number && (
+                  <div className="flex items-center gap-2 text-xs font-mono text-blue-400">
+                    <Coffee size={12} /> Masa: {currentUser.table_number}
+                  </div>
+                )}
               </div>
             </div>
           </button>

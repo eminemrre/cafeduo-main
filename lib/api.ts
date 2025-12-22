@@ -274,10 +274,10 @@ export const api = {
       return await fetchAPI('/admin/games');
     },
 
-    updateUserRole: async (userId: number | string, role: string): Promise<void> => {
+    updateUserRole: async (userId: number | string, role: string, cafeId?: number | null): Promise<void> => {
       await fetchAPI(`/admin/users/${userId}/role`, {
         method: 'PUT',
-        body: JSON.stringify({ role }),
+        body: JSON.stringify({ role, cafe_id: cafeId }),
       });
     },
 

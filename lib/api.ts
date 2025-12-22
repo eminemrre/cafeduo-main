@@ -296,6 +296,27 @@ export const api = {
     }
   },
 
+  // REWARDS (for CafeDashboard)
+  rewards: {
+    create: async (data: any): Promise<any> => {
+      return await fetchAPI('/rewards', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+    },
+
+    list: async (cafeId?: number): Promise<any[]> => {
+      const url = cafeId ? `/rewards?cafeId=${cafeId}` : '/rewards';
+      return await fetchAPI(url);
+    },
+
+    delete: async (id: number): Promise<void> => {
+      await fetchAPI(`/rewards/${id}`, {
+        method: 'DELETE',
+      });
+    }
+  },
+
   // COUPONS (for CafeDashboard)
   coupons: {
     use: async (code: string): Promise<{ success: boolean; item?: any }> => {

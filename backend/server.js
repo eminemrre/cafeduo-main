@@ -979,6 +979,86 @@ app.post('/api/admin/cafes', async (req, res) => {
   }
 });
 
+// ===================================
+// 5. REWARDS ENDPOINTS (for Cafe Admins)
+// ===================================
+
+// 5.1 CREATE REWARD (Cafe Admin)
+app.post('/api/rewards', async (req, res) => {
+  const { title, cost, description, icon, cafeId } = req.body;
+
+  if (!title || !cost) {
+    return res.status(400).json({ error: 'Başlık ve maliyet zorunludur.' });
+  }
+
+  if (await isDbConnected()) {
+    try {
+      const result = await pool.query(
+        `INSERT INTO rewards (title, cost, description, icon, cafe_id) 
+         VALUES ($1, $2, $3, $4, $5) 
+         RETURNING *`,
+        [title, cost, description || '', icon || 'coffee', cafeId || null]
+      );
+
+      res.json({ success: true, reward: result.rows[0] });
+    } catch (err) {
+      console.error('Reward creation error:', err);
+      res.status(500).json({ error: 'Ödül oluşturulamadı.' });
+    }
+  } else {
+    res.status(501).json({ error: 'Demo modda ödül oluşturulamaz.' });
+  }
+});
+
+// 5.2 GET REWARDS (optionally by cafe)
+app.get('/api/rewards', async (req, res) => {
+  const { cafeId } = req.query;
+
+  if (await isDbConnected()) {
+    try {
+      let query = 'SELECT * FROM rewards';
+      let params = [];
+
+      if (cafeId) {
+        query += ' WHERE cafe_id = $1 OR cafe_id IS NULL';
+        params.push(cafeId);
+      }
+
+      query += ' ORDER BY cost ASC';
+
+      const result = await pool.query(query, params);
+      res.json(result.rows);
+    } catch (err) {
+      console.error('Error fetching rewards:', err);
+      res.status(500).json({ error: 'Ödüller yüklenemedi.' });
+    }
+  } else {
+    res.json([]);
+  }
+});
+
+// 5.3 DELETE REWARD (Cafe Admin)
+app.delete('/api/rewards/:id', async (req, res) => {
+  const { id } = req.params;
+
+  if (await isDbConnected()) {
+    try {
+      const result = await pool.query('DELETE FROM rewards WHERE id = $1 RETURNING *', [id]);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Ödül bulunamadı.' });
+      }
+
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Reward deletion error:', err);
+      res.status(500).json({ error: 'Ödül silinemedi.' });
+    }
+  } else {
+    res.status(501).json({ error: 'Demo modda ödül silinemez.' });
+  }
+});
+
 // 2.6 LOCATION CHECK-IN SYSTEM
 function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
   var R = 6371; // Radius of the earth in km

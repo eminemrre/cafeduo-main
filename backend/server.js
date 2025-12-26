@@ -693,7 +693,12 @@ app.get('/api/auth/me', authenticateToken, async (req, res) => {
       );
 
       if (result.rows.length > 0) {
-        res.json(result.rows[0]);
+        const user = result.rows[0];
+        // Format table_number for frontend (db stores int, frontend needs 'MASAxx')
+        if (user.table_number && !isNaN(user.table_number)) {
+          user.table_number = `MASA${user.table_number.toString().padStart(2, '0')}`;
+        }
+        res.json(user);
       } else {
         res.status(404).json({ error: 'User not found' });
       }
@@ -1659,7 +1664,7 @@ app.post('/api/cafes/check-in', async (req, res) => {
 
       // 3. Update User (Check-in)
       const formattedTable = `MASA${tableNumber.toString().padStart(2, '0')}`;
-      await pool.query('UPDATE users SET cafe_id = $1, table_number = $2 WHERE id = $3', [cafeId, formattedTable, userId]);
+      await pool.query('UPDATE users SET cafe_id = $1, table_number = $2 WHERE id = $3', [cafeId, tableNumber, userId]);
 
       res.json({ success: true, cafeName: cafe.name, table: formattedTable });
     } catch (err) {

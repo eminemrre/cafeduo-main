@@ -31,7 +31,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
             console.log('Loaded cafes:', data);
             setCafes(data);
             if (data.length > 0 && !localStorage.getItem('last_cafe_id')) {
-                setSelectedCafeId(data[0].id);
+                setSelectedCafeId(String(data[0].id));
             }
         } catch (err: any) {
             console.error("Failed to load cafes:", err);

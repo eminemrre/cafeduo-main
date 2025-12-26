@@ -318,6 +318,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
             <RockPaperScissors
               currentUser={currentUser}
               isBot={isBot}
+              gameId={activeGameId as string} // Pass gameId for multiplayer
               onGameEnd={handleGameEnd}
               onLeave={() => handleGameEnd('forfeit', 0)}
             />

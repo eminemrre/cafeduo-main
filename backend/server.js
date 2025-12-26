@@ -30,12 +30,153 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const { pool } = require('./db');
 const jwt = require('jsonwebtoken');
+const http = require('http'); // Import HTTP
+const { Server } = require("socket.io"); // Import Socket.IO
 
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
+const server = http.createServer(app); // Wrap Express
 const PORT = process.env.PORT || 3001;
+
+// Socket.IO Setup
+const io = new Server(server, {
+  cors: {
+    origin: [
+      'https://cafeduotr.com',
+      'https://www.cafeduotr.com',
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'https://cafeduo-api.onrender.com'
+    ],
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
+
+// Socket.IO Logic
+const rpsGames = new Map(); // Store active RPS games in memory: { gameId: { p1: { id, move, score }, p2: { ... }, round: 1 } }
+
+io.on('connection', (socket) => {
+  console.log(`⚡ Client connected: ${socket.id}`);
+
+  // General Join
+  socket.on('join_game', (gameId) => {
+    socket.join(gameId);
+    console.log(`Socket ${socket.id} joined game: ${gameId}`);
+  });
+
+  // --- Rock Paper Scissors Logic ---
+  socket.on('rps_join', ({ gameId, username }) => {
+    socket.join(gameId);
+
+    if (!rpsGames.has(gameId)) {
+      rpsGames.set(gameId, {
+        players: {},
+        rounds: 0,
+        history: []
+      });
+    }
+
+    const game = rpsGames.get(gameId);
+
+    // Add player if not exists
+    if (!game.players[socket.id]) {
+      // Limit to 2 players
+      if (Object.keys(game.players).length < 2) {
+        game.players[socket.id] = { id: socket.id, username, move: null, score: 0 };
+        console.log(`Player ${username} (${socket.id}) joined RPS game ${gameId}`);
+      } else {
+        socket.emit('error', 'Game full');
+        return;
+      }
+    }
+
+    // Notify everyone in room about updated player list
+    io.to(gameId).emit('rps_update_players', Object.values(game.players));
+  });
+
+  socket.on('rps_move', ({ gameId, move }) => {
+    const game = rpsGames.get(gameId);
+    if (!game || !game.players[socket.id]) return;
+
+    game.players[socket.id].move = move;
+    console.log(`Player ${socket.id} moved in ${gameId}`);
+
+    // Notify opponent that a move was made (but not WHAT move)
+    socket.to(gameId).emit('rps_opponent_moved');
+
+    // Check if both players moved
+    const playerIds = Object.keys(game.players);
+    if (playerIds.length === 2) {
+      const p1 = game.players[playerIds[0]];
+      const p2 = game.players[playerIds[1]];
+
+      if (p1.move && p2.move) {
+        // Calculate Winner
+        let winner = 'draw';
+        if (p1.move !== p2.move) {
+          if (
+            (p1.move === 'rock' && p2.move === 'scissors') ||
+            (p1.move === 'scissors' && p2.move === 'paper') ||
+            (p1.move === 'paper' && p2.move === 'rock')
+          ) {
+            winner = p1.id;
+            p1.score += 1;
+          } else {
+            winner = p2.id;
+            p2.score += 1;
+          }
+        }
+
+        const result = {
+          p1: { id: p1.id, move: p1.move, score: p1.score },
+          p2: { id: p2.id, move: p2.move, score: p2.score },
+          winner
+        };
+
+        // Reset moves for next round
+        p1.move = null;
+        p2.move = null;
+        game.rounds += 1;
+
+        // Emit result to specific game room after delay
+        setTimeout(() => {
+          io.to(gameId).emit('rps_round_result', result);
+        }, 500); // 500ms delay for suspense
+      }
+    }
+  });
+
+  socket.on('game_move', (data) => {
+    // data: { gameId, move, player }
+    console.log(`Move received in game ${data.gameId}:`, data);
+    socket.to(data.gameId).emit('opponent_move', data);
+  });
+
+  // Game state sync
+  socket.on('update_game_state', (data) => {
+    // data: { gameId, state }
+    socket.to(data.gameId).emit('game_state_updated', data.state);
+  });
+
+  socket.on('disconnect', () => {
+    console.log(`Client disconnected: ${socket.id}`);
+    // Optional: Handle cleanup if needed, or leave for room auto-cleanup
+    // For robust app, we should remove player from rpsGames
+    for (const [gameId, game] of rpsGames.entries()) {
+      if (game.players[socket.id]) {
+        delete game.players[socket.id];
+        io.to(gameId).emit('rps_player_disconnected', socket.id);
+        if (Object.keys(game.players).length === 0) {
+          rpsGames.delete(gameId);
+        }
+        break;
+      }
+    }
+  });
+});
 
 // JWT Secret from .env
 const JWT_SECRET = process.env.JWT_SECRET || 'cafeduo_super_secret_key_2024';
@@ -1986,7 +2127,7 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // Initialize DB and start server
 initDb().then(() => {
-  app.listen(PORT, () => {
+  server.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
   });
 });

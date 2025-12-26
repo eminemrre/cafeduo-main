@@ -226,8 +226,9 @@ export const api = {
 
   // REWARDS / SHOP
   rewards: {
-    list: async (): Promise<Reward[]> => {
-      return await fetchAPI('/rewards');
+    list: async (cafeId?: string | number): Promise<Reward[]> => {
+      const url = cafeId ? `/rewards?cafeId=${cafeId}` : '/rewards';
+      return await fetchAPI(url);
     },
 
     create: async (data: Partial<Reward> & { cafeId?: string | number }): Promise<Reward> => {
@@ -296,26 +297,7 @@ export const api = {
     }
   },
 
-  // REWARDS (for CafeDashboard)
-  rewards: {
-    create: async (data: any): Promise<any> => {
-      return await fetchAPI('/rewards', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
-    },
 
-    list: async (cafeId?: number): Promise<any[]> => {
-      const url = cafeId ? `/rewards?cafeId=${cafeId}` : '/rewards';
-      return await fetchAPI(url);
-    },
-
-    delete: async (id: number): Promise<void> => {
-      await fetchAPI(`/rewards/${id}`, {
-        method: 'DELETE',
-      });
-    }
-  },
 
   // COUPONS (for CafeDashboard)
   coupons: {

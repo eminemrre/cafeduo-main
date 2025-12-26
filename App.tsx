@@ -8,6 +8,7 @@ import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
 import { User } from './types';
 import { api } from './lib/api';
+import { socketService } from './lib/socket';
 import { CafeSelection } from './components/CafeSelection';
 import { CookieConsent } from './components/CookieConsent';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
@@ -54,6 +55,14 @@ const App: React.FC = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Socket IO Connection
+  useEffect(() => {
+    socketService.connect();
+    return () => {
+      socketService.disconnect();
+    };
+  }, []);
 
   // Restore user session on load
   useEffect(() => {

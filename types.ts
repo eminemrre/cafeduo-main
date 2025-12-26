@@ -66,6 +66,9 @@ export interface RedeemedReward extends Reward {
 export interface Cafe {
   id: string | number;
   name: string;
+  address?: string;
+  total_tables?: number;
+  pin?: string;
   daily_pin?: string;
   table_count?: number;
   latitude?: number;

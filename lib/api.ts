@@ -123,7 +123,7 @@ export const api = {
     },
 
     checkIn: async (params: { userId: string | number; cafeId: string | number; tableNumber: number; pin: string }) => {
-      return await fetchAPI('/cafes/checkin', {
+      return await fetchAPI('/cafes/check-in', {
         method: 'POST',
         body: JSON.stringify({
           userId: params.userId,

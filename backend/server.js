@@ -1645,21 +1645,22 @@ app.post('/api/cafes/check-in', async (req, res) => {
       const cafe = cafeRes.rows[0];
 
       // 2. Verify PIN (STRICT: PIN must match)
-      const cafePin = cafe.daily_pin || '0000'; // Default PIN if not set
+      const cafePin = (cafe.daily_pin || '0000').toString().trim();
+      const inputPin = (pin || '').toString().trim();
 
       // DEBUG MODE: Show expected PIN (remove in production!)
       const isDemoMode = process.env.NODE_ENV !== 'production';
 
-      if (cafePin !== pin) {
-        console.log(`PIN mismatch for cafe ${cafe.name}: expected "${cafePin}", got "${pin}"`);
+      console.log(`[CHECK-IN] Cafe: ${cafe.name} (ID: ${cafeId})`);
+      console.log(`[CHECK-IN] Expected PIN: "${cafePin}", Received PIN: "${inputPin}"`);
 
+      if (cafePin !== inputPin) {
         if (isDemoMode) {
           return res.status(400).json({
-            error: `Yanlış PIN! Doğru PIN: ${cafePin} (Demo Modu)`
+            error: `Yanlış PIN! Doğru PIN: ${cafePin}`
           });
         }
-
-        return res.status(400).json({ error: 'Yanlış PIN kodu! Kafe personelinden güncel PIN kodunu isteyin.' });
+        return res.status(400).json({ error: 'Yanlış PIN kodu!' });
       }
 
       // 3. Update User (Check-in)

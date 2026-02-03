@@ -806,7 +806,7 @@ app.post('/api/auth/login', async (req, res) => {
       res.status(500).json({ error: 'Sunucu hatası: ' + err.message });
     }
   } else {
-    // Fallback
+    // Fallback (Memory Mode)
     const user = MEMORY_USERS.find(u => u.email === email && u.password === password);
     if (user) {
       // Reset cafe_id on login to force re-verification
@@ -814,7 +814,11 @@ app.post('/api/auth/login', async (req, res) => {
         await pool.query('UPDATE users SET cafe_id = NULL WHERE id = $1', [user.id]);
         user.cafe_id = null;
       }
-      res.json(user);
+      
+      // Generate JWT token for memory mode too!
+      const token = generateToken(user);
+      
+      res.json({ user, token });
     }
     else res.status(401).json({ error: 'Kullanıcı bulunamadı.' });
   }

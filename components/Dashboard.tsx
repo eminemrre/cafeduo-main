@@ -6,23 +6,23 @@
  */
 
 import React, { useState } from 'react';
-import { User } from '../../types';
-import { UserProfileModal } from '../UserProfileModal';
-import { RockPaperScissors } from '../RockPaperScissors';
-import { ArenaBattle } from '../ArenaBattle';
-import { DungeonClash } from '../DungeonClash';
-import { Leaderboard } from '../Leaderboard';
-import { Achievements } from '../Achievements';
-import { RetroButton } from '../RetroButton';
+import { User } from '../types';
+import { UserProfileModal } from './UserProfileModal';
+import { RockPaperScissors } from './RockPaperScissors';
+import { ArenaBattle } from './ArenaBattle';
+import { DungeonClash } from './DungeonClash';
+import { Leaderboard } from './Leaderboard';
+import { Achievements } from './Achievements';
+import { RetroButton } from './RetroButton';
 
 // Hooks
-import { useGames } from '../../hooks/useGames';
-import { useRewards } from '../../hooks/useRewards';
+import { useGames } from '../hooks/useGames';
+import { useRewards } from '../hooks/useRewards';
 
 // Sub-components
-import { StatusBar } from './StatusBar';
-import { GameSection } from './GameSection';
-import { RewardSection } from './RewardSection';
+import { StatusBar } from './dashboard/StatusBar';
+import { GameSection } from './dashboard/GameSection';
+import { RewardSection } from './dashboard/RewardSection';
 
 // Icons
 import { Trophy, Gift, Gamepad2 } from 'lucide-react';

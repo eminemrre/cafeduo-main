@@ -14,7 +14,7 @@ import { CafeSelection } from './components/CafeSelection';
 import { CookieConsent } from './components/CookieConsent';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { AuthProvider } from './contexts/AuthContext';
-import { ToastProvider } from './contexts/ToastContext';
+import { ToastProvider, useToast } from './contexts/ToastContext';
 
 // Lazy Load Components
 const Games = React.lazy(() => import('./components/Games').then(module => ({ default: module.Games })));
@@ -60,8 +60,8 @@ const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   
-  // UI state
-  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+  // Toast hook
+  const toast = useToast();
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -141,7 +141,9 @@ const App: React.FC = () => {
 
     // Check for Daily Bonus
     if ((user as any).bonusReceived) {
-      setToast({ message: "🎉 TEBRİKLER! Günlük giriş ödülü olarak 10 PUAN kazandınız!", type: 'success' });
+      toast.success("🎉 Günlük giriş ödülü: 10 PUAN!");
+    } else {
+      toast.success(`Hoş geldin, ${user.username}!`);
     }
 
     if (user.isAdmin) {
@@ -157,6 +159,7 @@ const App: React.FC = () => {
   const handleLogout = async () => {
     try {
       await api.auth.logout();
+      toast.success('Çıkış yapıldı. Görüşmek üzere!');
     } catch (err) {
       console.error('Logout error:', err);
     }
@@ -250,14 +253,6 @@ const App: React.FC = () => {
         onLoginSuccess={handleLoginSuccess}
       />
       <CookieConsent />
-
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
 
       {/* Debug overlay - only show in development */}
       {import.meta.env.DEV && (

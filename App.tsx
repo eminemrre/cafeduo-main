@@ -6,7 +6,7 @@ import { HowItWorks } from './components/HowItWorks';
 import { About } from './components/About';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
-import { Toast, ToastType } from './components/Toast';
+
 import { User } from './types';
 import { api } from './lib/api';
 import { socketService } from './lib/socket';
@@ -14,6 +14,7 @@ import { CafeSelection } from './components/CafeSelection';
 import { CookieConsent } from './components/CookieConsent';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './contexts/ToastContext';
 
 // Lazy Load Components
 const Games = React.lazy(() => import('./components/Games').then(module => ({ default: module.Games })));
@@ -272,11 +273,13 @@ const App: React.FC = () => {
   );
 };
 
-// AuthProvider ile sarmalanmış App
-const AppWithAuth: React.FC = () => (
+// AuthProvider + ToastProvider ile sarmalanmış App
+const AppWithProviders: React.FC = () => (
   <AuthProvider>
-    <App />
+    <ToastProvider>
+      <App />
+    </ToastProvider>
   </AuthProvider>
 );
 
-export default AppWithAuth;
+export default AppWithProviders;

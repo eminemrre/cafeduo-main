@@ -1,31 +1,43 @@
 {
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Debug Backend",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${workspaceFolder}/backend/server.js",
-            "envFile": "${workspaceFolder}/.env"
-        },
-        {
-            "type": "firefox",
-            "request": "launch",
-            "name": "Debug Frontend",
-            "url": "http://localhost:3001",
-            "webRoot": "${workspaceFolder}"
-        }
-    ],
-    "compounds": [
-        {
-            "name": "Full Stack Debug",
-            "configurations": [
-                "Debug Backend",
-                "Debug Frontend"
-            ]
-        }
-    ]
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug Backend",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "nodemon",
+      "args": ["backend/server.js"],
+      "env": {
+        "NODE_ENV": "development"
+      },
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Debug Frontend (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}",
+      "sourceMaps": true
+    },
+    {
+      "name": "Debug Full Stack",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "env": {
+        "NODE_ENV": "development"
+      }
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug Both",
+      "configurations": ["Debug Backend", "Debug Frontend (Chrome)"]
+    }
+  ]
 }

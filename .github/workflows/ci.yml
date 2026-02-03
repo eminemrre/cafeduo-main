@@ -2,28 +2,27 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop, 'feat/**', 'fix/**' ]
+    branches: [main, develop, 'feat/**', 'fix/**']
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Use Node.js 20.x
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20.x
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Run security audit
-      run: npm audit --audit-level=moderate || true
+      - uses: actions/checkout@v4
 
-    - name: Build
-      run: npm run build
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run security audit
+        run: npm audit --audit-level=moderate || true
+
+      - name: Build
+        run: npm run build

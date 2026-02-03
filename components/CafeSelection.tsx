@@ -105,13 +105,13 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
 
     return (
         <div className="min-h-screen bg-[#0f141a] flex items-center justify-center p-4 font-sans">
-            <div className="max-w-md w-full bg-[#1a1f2e] border border-gray-700 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
+            <div className="max-w-md w-full bg-[#1a1f2e] border border-gray-700 rounded-2xl p-8 shadow-[0_30px_70px_rgba(0,0,0,0.45)] relative overflow-hidden">
 
                 {/* Background Glow */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-2 bg-gradient-to-r from-transparent via-green-500 to-transparent opacity-50 blur-sm"></div>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-2 bg-gradient-to-r from-transparent via-green-500 to-transparent opacity-60 blur-sm"></div>
 
                 <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-500/30">
+                    <div className="w-16 h-16 bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-500/30 shadow-[0_10px_25px_rgba(34,197,94,0.2)]">
                         <KeyRound size={32} className="text-green-400" />
                     </div>
                     <h1 className="text-2xl font-bold text-white mb-2">Kafe Giriş</h1>
@@ -143,7 +143,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                                     setPin(''); // Clear PIN when cafe changes
                                     setError(null);
                                 }}
-                                className="w-full bg-black/40 border border-gray-600 rounded-xl py-3 pl-10 pr-4 text-white outline-none focus:border-green-500 appearance-none cursor-pointer"
+                                className="w-full bg-black/40 border border-gray-600 rounded-xl py-3 pl-10 pr-4 text-white outline-none focus:border-green-500 appearance-none cursor-pointer focus:shadow-[0_0_20px_rgba(34,197,94,0.2)]"
                             >
                                 {cafes.map(cafe => (
                                     <option key={cafe.id} value={cafe.id}>{cafe.name}</option>
@@ -165,7 +165,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                                 onChange={(e) => setTableNumber(e.target.value)}
                                 min="1"
                                 max={selectedCafe?.table_count || 20}
-                                className="w-full bg-black/40 border border-gray-600 rounded-xl py-3 pl-10 pr-4 text-white outline-none focus:border-green-500"
+                                className="w-full bg-black/40 border border-gray-600 rounded-xl py-3 pl-10 pr-4 text-white outline-none focus:border-green-500 focus:shadow-[0_0_20px_rgba(34,197,94,0.2)]"
                             />
                         </div>
                     </div>

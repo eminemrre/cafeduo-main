@@ -1,20 +1,69 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# CafeDuo
 
-# Run and deploy your AI Studio app
+Oyunlaştırılmış kafe sadakat platformu. Öğrenciler kafede check-in yaparak birbirleriyle oyun oynar, puan kazanır ve ödüller alır.
 
-This contains everything you need to run your app locally.
+## Özellikler
 
-View your app in AI Studio: https://ai.studio/apps/drive/1cAZn0z748MVnPqdHKuPf_gn72kQ6FA4L
+- 🎮 **Multiplayer Oyunlar**: Taş Kağıt Makas, Gladyatör Arenası
+- 📍 **Kafe Check-in**: PIN ile masa doğrulama
+- 🏆 **Puan ve Liderlik**: Kazanarak puan topla, sıralamaya gir
+- 🎁 **Ödül Mağazası**: Puanlarla kafe ödülleri
 
-## Run Locally
+## Teknolojiler
 
-**Prerequisites:**  Node.js
+- **Frontend**: React 18 + TypeScript + Vite
+- **Backend**: Node.js + Express.js
+- **Veritabanı**: PostgreSQL
+- **Gerçek Zamanlı**: Socket.IO
 
+## Kurulum
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### Gereksinimler
+- Node.js (v18+)
+- PostgreSQL
+
+### Adımlar
+
+1. **Bağımlılıkları yükle**:
+   ```bash
+   npm install
+   ```
+
+2. **Veritabanını oluştur**:
+   ```bash
+   createdb cafeduo
+   psql cafeduo < schema.sql
+   ```
+
+3. **Çevre değişkenlerini ayarla**:
+   ```bash
+   cp .env.example .env
+   # .env dosyasını düzenle
+   ```
+
+4. **Uygulamayı çalıştır**:
+   ```bash
+   npm run dev
+   ```
+
+   Bu komut hem backend (port 3001) hem de frontend (port 3000) sunucularını başlatır.
+
+## Scriptler
+
+- `npm run dev` - Hem frontend hem backend'i başlatır
+- `npm run server` - Sadece backend'i başlatır (nodemon)
+- `npm run client` - Sadece frontend'i başlatır
+- `npm run build` - Production build alır
+
+## Proje Yapısı
+
+```
+cafeduo-main/
+├── backend/           # Express.js API
+│   ├── server.js     # Ana sunucu
+│   └── db.js         # Veritabanı bağlantısı
+├── components/       # React bileşenleri
+├── lib/              # Yardımcı fonksiyonlar
+├── public/           # Statik dosyalar
+└── schema.sql        # Veritabanı şeması
+```

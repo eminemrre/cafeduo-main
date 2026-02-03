@@ -1,10 +1,12 @@
 const { Pool } = require('pg');
 require('dotenv').config();
 
-// Production environment configuration
+// Database configuration
+const isLocalDev = !process.env.***REMOVED*** || process.env.DB_HOST === 'localhost';
+
 const pool = new Pool({
   connectionString: process.env.***REMOVED***,
-  ssl: process.env.***REMOVED*** ? { rejectUnauthorized: false } : false,
+  ssl: isLocalDev ? false : { rejectUnauthorized: false },
   // Fallback for local dev if ***REMOVED*** is not set
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',

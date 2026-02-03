@@ -43,7 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
   };
 
   return (
-    <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled || isLoggedIn ? 'bg-slate-900/95 backdrop-blur-md shadow-lg py-2' : 'bg-transparent py-6'}`}>
+    <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled || isLoggedIn ? 'bg-slate-900/95 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.35)] py-2' : 'bg-transparent py-6'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -55,7 +55,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
               }
             }}
           >
-            <div className="bg-white text-black rounded-full p-1.5 group-hover:rotate-12 transition-transform">
+            <div className="bg-white text-black rounded-full p-1.5 group-hover:rotate-12 transition-transform shadow-[0_8px_20px_rgba(255,255,255,0.2)]">
               <Coffee size={24} strokeWidth={3} />
             </div>
             <span className="font-pixel text-3xl text-white tracking-wider">
@@ -71,14 +71,14 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
                   <button
                     key={item.id}
                     onClick={() => scrollToSection(item.id)}
-                    className="text-gray-300 hover:text-white hover:bg-white/10 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 font-pixel"
+                    className="text-gray-300 hover:text-white hover:bg-white/10 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 font-pixel border border-transparent hover:border-white/10"
                   >
                     {item.label}
                   </button>
                 ))
               ) : (
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full border border-slate-600">
+                  <div className="flex items-center gap-2 bg-slate-800/80 px-3 py-1 rounded-full border border-slate-600 shadow-[0_0_20px_rgba(34,197,94,0.15)]">
                     <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                     <span className="font-pixel text-sm text-gray-300">ONLINE</span>
                   </div>
@@ -108,31 +108,31 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden bg-slate-900/95 border-b border-slate-800 backdrop-blur-xl">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-            {!isLoggedIn ? (
-              NAV_ITEMS.map((item) => (
+          <div className="md:hidden bg-slate-900/95 border-b border-slate-800 backdrop-blur-xl">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+              {!isLoggedIn ? (
+                NAV_ITEMS.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => scrollToSection(item.id)}
+                    className="text-gray-300 hover:text-white block w-full text-left px-3 py-4 rounded-md text-base font-pixel border-b border-slate-800 last:border-0"
+                  >
+                    {item.label}
+                  </button>
+                ))
+              ) : (
                 <button
-                  key={item.id}
-                  onClick={() => scrollToSection(item.id)}
-                  className="text-gray-300 hover:text-white block w-full text-left px-3 py-4 rounded-md text-base font-pixel border-b border-slate-800 last:border-0"
+                  onClick={() => {
+                    if (onLogout) onLogout();
+                    setIsOpen(false);
+                  }}
+                  className="text-red-400 hover:text-red-300 block w-full text-left px-3 py-4 rounded-md text-base font-pixel border-b border-slate-800"
                 >
-                  {item.label}
+                  ÇIKIŞ YAP
                 </button>
-              ))
-            ) : (
-              <button
-                onClick={() => {
-                  if (onLogout) onLogout();
-                  setIsOpen(false);
-                }}
-                className="text-red-400 hover:text-red-300 block w-full text-left px-3 py-4 rounded-md text-base font-pixel border-b border-slate-800"
-              >
-                ÇIKIŞ YAP
-              </button>
-            )}
+              )}
+            </div>
           </div>
-        </div>
       )}
     </nav>
   );

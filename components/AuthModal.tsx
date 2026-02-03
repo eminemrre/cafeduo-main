@@ -95,7 +95,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       ></div>
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-md bg-[#1a1f2e] border-4 border-gray-500 border-t-white border-l-white border-b-gray-800 border-r-gray-800 shadow-2xl">
+      <div className="relative w-full max-w-md bg-[#1a1f2e] border-4 border-gray-500 border-t-white border-l-white border-b-gray-800 border-r-gray-800 shadow-[0_30px_70px_rgba(0,0,0,0.5)]">
 
         {/* Header Bar */}
         <div className="bg-gradient-to-r from-blue-900 to-purple-900 px-4 py-2 flex justify-between items-center border-b-4 border-gray-800">
@@ -147,7 +147,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Kullanıcı Adı"
-                    className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all"
+                    className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all focus:shadow-[0_0_20px_rgba(59,130,246,0.25)]"
                   />
                 </div>
 
@@ -157,7 +157,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <select
                       value={department}
                       onChange={(e) => setDepartment(e.target.value)}
-                      className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-10 outline-none font-sans text-sm transition-all appearance-none cursor-pointer hover:bg-black/50"
+                      className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-10 outline-none font-sans text-sm transition-all appearance-none cursor-pointer hover:bg-black/50 focus:shadow-[0_0_20px_rgba(59,130,246,0.25)]"
                     >
                       <option value="" className="bg-gray-900 text-gray-400">Bölüm Seçiniz (İsteğe Bağlı)</option>
                       {PAU_DEPARTMENTS.map(dept => (
@@ -180,7 +180,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="E-posta"
-                className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all"
+                className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all focus:shadow-[0_0_20px_rgba(59,130,246,0.25)]"
               />
             </div>
 
@@ -193,14 +193,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Şifre"
                 minLength={6}
-                className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all"
+                className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all focus:shadow-[0_0_20px_rgba(59,130,246,0.25)]"
               />
             </div>
 
             <RetroButton
               variant="primary"
               type="submit"
-              className="w-full py-3 flex items-center justify-center gap-2"
+              className="w-full py-3 flex items-center justify-center gap-2 shadow-[0_12px_28px_rgba(59,130,246,0.25)]"
               disabled={isLoading}
             >
               {isLoading ? (

@@ -6,13 +6,13 @@ import { HowItWorks } from './components/HowItWorks';
 import { About } from './components/About';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
+import { Toast, ToastType } from './components/Toast';
 import { User } from './types';
 import { api } from './lib/api';
 import { socketService } from './lib/socket';
 import { CafeSelection } from './components/CafeSelection';
 import { CookieConsent } from './components/CookieConsent';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
-import { FirestoreSeed } from './components/FirestoreSeed';
 
 // Lazy Load Components
 const Games = React.lazy(() => import('./components/Games').then(module => ({ default: module.Games })));
@@ -27,8 +27,16 @@ const PageLoader = () => (
   </div>
 );
 
+// Protected Route Component Props
+interface ProtectedRouteProps {
+  children: React.ReactElement;
+  user: User | null;
+  isAdminRoute?: boolean;
+  requiredRole?: string;
+}
+
 // Protected Route Component
-const ProtectedRoute = ({ children, user, isAdminRoute = false, requiredRole }: { children: React.ReactElement, user: User | null, isAdminRoute?: boolean, requiredRole?: string }) => {
+const ProtectedRoute = ({ children, user, isAdminRoute = false, requiredRole }: ProtectedRouteProps) => {
   if (!user) {
     return <Navigate to="/" replace />;
   }
@@ -41,16 +49,16 @@ const ProtectedRoute = ({ children, user, isAdminRoute = false, requiredRole }: 
   return children;
 };
 
-import { Toast, ToastType } from './components/Toast';
-
-// ... (rest of imports)
-
 const App: React.FC = () => {
-  // ... (state remains same)
+  // Auth modal state
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  
+  // User session state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  
+  // UI state
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   const navigate = useNavigate();
@@ -225,9 +233,6 @@ const App: React.FC = () => {
 
             {/* KVKK Gizlilik Politikası */}
             <Route path="/gizlilik" element={<PrivacyPolicy />} />
-
-            {/* Firestore Seed Page */}
-            <Route path="/seed" element={<FirestoreSeed />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

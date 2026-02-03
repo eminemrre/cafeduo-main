@@ -1,10 +1,19 @@
-// API Layer - REST API Backend (VPS)
+/**
+ * API Layer - REST API Client
+ * Handles all HTTP communication with the backend
+ */
 import type { User, GameRequest, Reward, Cafe } from '../types';
 
-const API_URL = '/api'; // Nginx proxy handles routing to backend
+const API_URL = '/api';
 
-// Helper function for API calls
-async function fetchAPI(endpoint: string, options: RequestInit = {}) {
+/**
+ * Generic API fetch wrapper with authentication
+ * @param endpoint - API endpoint (e.g., '/auth/login')
+ * @param options - Fetch options
+ * @returns Parsed JSON response
+ * @throws Error with message from server or network error
+ */
+async function fetchAPI(endpoint: string, options: RequestInit = {}): Promise<any> {
   const token = localStorage.getItem('token');
 
   const headers: HeadersInit = {

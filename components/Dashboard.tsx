@@ -367,7 +367,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
       <div className="max-w-7xl mx-auto">
 
         {/* Top Status Bar */}
-        <div className="mb-8 bg-slate-900/80 border border-slate-700 rounded-lg p-4 flex flex-wrap justify-between items-center gap-4 shadow-[0_0_15px_rgba(0,0,0,0.5)] backdrop-blur-md sticky top-20 z-40">
+        <div className="mb-8 bg-slate-900/80 border border-slate-700 rounded-lg p-4 flex flex-wrap justify-between items-center gap-4 shadow-[0_20px_45px_rgba(0,0,0,0.45)] backdrop-blur-md sticky top-20 z-40">
           <button
             onClick={() => handleViewProfile(currentUser.username)}
             className="flex items-center gap-4 hover:bg-white/5 p-2 rounded transition-colors group"
@@ -394,13 +394,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
             </div>
           </button>
 
-          <div className="flex items-center gap-6 bg-black/40 px-6 py-2 rounded-full border border-slate-700">
-            <div className="flex flex-col items-end">
-              <span className="text-[10px] text-slate-400 uppercase tracking-widest">Toplam Puan</span>
-              <span className="font-retro text-3xl text-yellow-400 leading-none shadow-yellow-500/20 drop-shadow-sm">{currentUser.points}</span>
+            <div className="flex items-center gap-6 bg-black/40 px-6 py-2 rounded-full border border-slate-700 shadow-[0_0_25px_rgba(234,179,8,0.15)]">
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] text-slate-400 uppercase tracking-widest">Toplam Puan</span>
+                <span className="font-retro text-3xl text-yellow-400 leading-none shadow-yellow-500/20 drop-shadow-sm">{currentUser.points}</span>
+              </div>
+              <Trophy className="text-yellow-500" size={28} />
             </div>
-            <Trophy className="text-yellow-500" size={28} />
-          </div>
         </div>
 
         {/* Main Navigation Tabs */}
@@ -434,7 +434,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
 
             {/* LEFT PANEL: Step 1 - Table Status (Simplified) */}
             <div className="space-y-6">
-              <div className="bg-[#1a1f2e] border-4 border-green-600 relative overflow-hidden">
+              <div className="bg-[#1a1f2e] border-4 border-green-600 relative overflow-hidden shadow-[0_20px_45px_rgba(0,0,0,0.4)]">
                 <div className="bg-gray-800 p-2 flex items-center justify-between border-b-2 border-gray-600">
                   <span className="font-pixel text-xs text-gray-400">STATUS // CONNECTED</span>
                   <div className="flex gap-1">
@@ -464,25 +464,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
                 </div>
               </div>
 
-              <div className="bg-[#1a1f2e] p-4 border-2 border-gray-700 rounded-lg">
-                <h4 className="font-pixel text-sm text-gray-400 mb-3">İSTATİSTİKLER</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-black/40 p-3 rounded border border-gray-700">
-                    <span className="block text-xs text-gray-500 mb-1">Oyun Sayısı</span>
-                    <span className="font-retro text-2xl text-white">{currentUser.gamesPlayed}</span>
-                  </div>
-                  <div className="bg-black/40 p-3 rounded border border-gray-700">
-                    <span className="block text-xs text-gray-500 mb-1">Galibiyet</span>
-                    <span className="font-retro text-2xl text-green-400">{currentUser.wins}</span>
+                <div className="bg-[#1a1f2e] p-4 border-2 border-gray-700 rounded-lg shadow-[0_16px_35px_rgba(0,0,0,0.35)]">
+                  <h4 className="font-pixel text-sm text-gray-400 mb-3">İSTATİSTİKLER</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-black/40 p-3 rounded border border-gray-700">
+                      <span className="block text-xs text-gray-500 mb-1">Oyun Sayısı</span>
+                      <span className="font-retro text-2xl text-white">{currentUser.gamesPlayed}</span>
+                    </div>
+                    <div className="bg-black/40 p-3 rounded border border-gray-700">
+                      <span className="block text-xs text-gray-500 mb-1">Galibiyet</span>
+                      <span className="font-retro text-2xl text-green-400">{currentUser.wins}</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
             {/* MIDDLE PANEL: Step 2 - Game Lobby */}
             <div className="lg:col-span-2">
               {serverActiveGame && !activeGameId && (
-                <div className="mb-6 bg-green-900/30 border-2 border-green-500 rounded-xl p-4 flex items-center justify-between animate-pulse-slow">
+                <div className="mb-6 bg-green-900/30 border-2 border-green-500 rounded-xl p-4 flex items-center justify-between animate-pulse-slow shadow-[0_20px_45px_rgba(34,197,94,0.15)]">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
                       <Gamepad2 className="text-white" size={24} />
@@ -517,8 +517,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
             </div>
 
             {/* RIGHT PANEL: Step 3 - Rewards */}
-            <div className="lg:col-span-3 mt-8">
-              <div className="mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="lg:col-span-3 mt-8">
+                <div className="mb-6 flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                   <Gift size={32} className="text-yellow-400" />
                   <div>
@@ -527,7 +527,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
                   </div>
                 </div>
 
-                <div className="flex bg-black p-1 rounded-lg border border-gray-700">
+                <div className="flex bg-black p-1 rounded-lg border border-gray-700 shadow-[0_12px_30px_rgba(0,0,0,0.35)]">
                   <button
                     onClick={() => setRewardTab('shop')}
                     className={`px-6 py-2 rounded font-pixel text-sm transition-all ${rewardTab === 'shop' ? 'bg-yellow-500 text-black' : 'text-gray-400 hover:text-white'}`}
@@ -548,7 +548,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
                   {rewards.map((reward) => {
                     const canAfford = currentUser.points >= reward.cost;
                     return (
-                      <div key={reward.id} className={`relative group bg-[#1a1f2e] border-2 ${canAfford ? 'border-yellow-500/30 hover:border-yellow-500' : 'border-gray-700 opacity-60'} rounded-xl p-6 flex flex-col justify-between overflow-hidden transition-all duration-300 h-full`}>
+                      <div key={reward.id} className={`relative group bg-[#1a1f2e] border-2 ${canAfford ? 'border-yellow-500/30 hover:border-yellow-500' : 'border-gray-700 opacity-60'} rounded-xl p-6 flex flex-col justify-between overflow-hidden transition-all duration-300 h-full shadow-[0_16px_35px_rgba(0,0,0,0.35)]`}>
 
                         <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-white/5 to-transparent rounded-bl-full pointer-events-none"></div>
 

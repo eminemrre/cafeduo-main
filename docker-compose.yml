@@ -1,0 +1,74 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  db:
+    image: pgvector/pgvector:pg15
+    container_name: cafeduo-db
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_NAME:-cafeduo}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cafeduo-network
+
+  # Backend API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cafeduo-api
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      ***REMOVED***: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-password}@db:5432/${DB_NAME:-cafeduo}
+      ***REMOVED***: ${***REMOVED***}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      ***REMOVED***: ${***REMOVED***}
+      ***REMOVED***: ${***REMOVED***}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    ports:
+      - "3001:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    networks:
+      - cafeduo-network
+    restart: unless-stopped
+
+  # Frontend (Production Build)
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    container_name: cafeduo-web
+    environment:
+      VITE_API_URL: http://localhost:3001
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+    networks:
+      - cafeduo-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  cafeduo-network:
+    driver: bridge

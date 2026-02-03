@@ -1,40 +1,44 @@
 const path = require('path');
 const fs = require('fs');
 
-// Try to find .env in multiple locations
-const possiblePaths = [
-  path.resolve(__dirname, '../.env'), // Root (standard)
-  path.resolve(__dirname, '.env'),    // Backend folder
-  path.resolve(process.cwd(), '.env') // Current working dir
-];
+/**
+ * Load environment variables from .env file
+ * Searches in multiple locations for flexibility
+ */
+function loadEnvFile() {
+  const possiblePaths = [
+    path.resolve(__dirname, '../.env'), // Root (standard)
+    path.resolve(__dirname, '.env'),    // Backend folder
+    path.resolve(process.cwd(), '.env') // Current working dir
+  ];
 
-let envPath = null;
-for (const p of possiblePaths) {
-  if (fs.existsSync(p)) {
-    envPath = p;
-    break;
+  for (const envPath of possiblePaths) {
+    if (fs.existsSync(envPath)) {
+      require('dotenv').config({ path: envPath });
+      console.log(`✅ Loaded .env from: ${envPath}`);
+      return;
+    }
   }
-}
 
-if (envPath) {
-  require('dotenv').config({ path: envPath });
-  console.log(`✅ Loaded .env from: ${envPath}`);
-} else {
   console.warn("⚠️  .env file NOT FOUND in any standard location!");
   console.warn("Checked paths:", possiblePaths);
 }
 
+loadEnvFile();
 
+
+// Core dependencies
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
-const bcrypt = require('bcrypt');
-const { pool } = require('./db');
-const jwt = require('jsonwebtoken');
-const http = require('http'); // Import HTTP
-const { Server } = require("socket.io"); // Import Socket.IO
-
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { Server } = require("socket.io");
+
+// Local modules
+const { pool } = require('./db');
 
 const app = express();
 const server = http.createServer(app); // Wrap Express
@@ -2133,7 +2137,21 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // Initialize DB and start server
 initDb().then(() => {
-  server.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  const startServer = (portToUse) => {
+    server.listen(portToUse, () => {
+      console.log(`🚀 Server running on http://localhost:${portToUse}`);
+    });
+  };
+
+  server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      const fallbackPort = Number(PORT) + 1;
+      console.warn(`⚠️  Port ${PORT} is in use. Trying ${fallbackPort}...`);
+      startServer(fallbackPort);
+      return;
+    }
+    console.error('Server error:', err);
   });
+
+  startServer(PORT);
 });

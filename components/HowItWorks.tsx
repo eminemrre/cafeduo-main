@@ -51,9 +51,9 @@ export const HowItWorks: React.FC = () => {
                 <div className="hidden md:block absolute top-1/2 right-[-50%] w-full h-[2px] bg-gradient-to-r from-gray-800 to-transparent z-0 transform -translate-y-1/2"></div>
               )}
 
-              <div className="relative z-10 bg-[#151921] border border-gray-800 p-8 rounded-2xl hover:border-blue-500/30 transition-all duration-300 hover:-translate-y-2 group-hover:shadow-[0_0_30px_rgba(59,130,246,0.1)] h-full flex flex-col items-center text-center">
+              <div className="relative z-10 bg-[#151921] border border-gray-800 p-8 rounded-2xl hover:border-blue-500/30 transition-all duration-300 hover:-translate-y-2 group-hover:shadow-[0_20px_50px_rgba(59,130,246,0.18)] h-full flex flex-col items-center text-center">
 
-                <div className="w-16 h-16 rounded-2xl bg-gray-900 border border-gray-700 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                <div className="w-16 h-16 rounded-2xl bg-gray-900 border border-gray-700 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-[0_12px_25px_rgba(0,0,0,0.35)]">
                   {step.icon}
                 </div>
 

@@ -33,7 +33,7 @@ export const About: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-6 mt-10">
-              <div className="bg-[#151921] p-4 rounded-xl border border-gray-800 flex items-center gap-4 hover:border-blue-500/30 transition-colors">
+              <div className="bg-[#151921] p-4 rounded-xl border border-gray-800 flex items-center gap-4 hover:border-blue-500/30 transition-colors shadow-[0_12px_24px_rgba(0,0,0,0.25)]">
                 <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center text-blue-400">
                   <Server size={20} />
                 </div>
@@ -42,7 +42,7 @@ export const About: React.FC = () => {
                   <span className="text-xs text-gray-500">Güçlü sunucular</span>
                 </div>
               </div>
-              <div className="bg-[#151921] p-4 rounded-xl border border-gray-800 flex items-center gap-4 hover:border-purple-500/30 transition-colors">
+              <div className="bg-[#151921] p-4 rounded-xl border border-gray-800 flex items-center gap-4 hover:border-purple-500/30 transition-colors shadow-[0_12px_24px_rgba(0,0,0,0.25)]">
                 <div className="w-10 h-10 bg-purple-500/10 rounded-lg flex items-center justify-center text-purple-400">
                   <Zap size={20} />
                 </div>
@@ -51,7 +51,7 @@ export const About: React.FC = () => {
                   <span className="text-xs text-gray-500">Anlık etkileşim</span>
                 </div>
               </div>
-              <div className="bg-[#151921] p-4 rounded-xl border border-gray-800 flex items-center gap-4 hover:border-green-500/30 transition-colors">
+              <div className="bg-[#151921] p-4 rounded-xl border border-gray-800 flex items-center gap-4 hover:border-green-500/30 transition-colors shadow-[0_12px_24px_rgba(0,0,0,0.25)]">
                 <div className="w-10 h-10 bg-green-500/10 rounded-lg flex items-center justify-center text-green-400">
                   <Shield size={20} />
                 </div>
@@ -60,7 +60,7 @@ export const About: React.FC = () => {
                   <span className="text-xs text-gray-500">Veri koruması</span>
                 </div>
               </div>
-              <div className="bg-[#151921] p-4 rounded-xl border border-gray-800 flex items-center gap-4 hover:border-orange-500/30 transition-colors">
+              <div className="bg-[#151921] p-4 rounded-xl border border-gray-800 flex items-center gap-4 hover:border-orange-500/30 transition-colors shadow-[0_12px_24px_rgba(0,0,0,0.25)]">
                 <div className="w-10 h-10 bg-orange-500/10 rounded-lg flex items-center justify-center text-orange-400">
                   <Users size={20} />
                 </div>
@@ -75,11 +75,11 @@ export const About: React.FC = () => {
           {/* Right: Visual */}
           <div className="relative">
             <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl blur-2xl opacity-20 animate-pulse-slow"></div>
-            <div className="relative bg-[#151921] border border-gray-800 rounded-2xl p-8 overflow-hidden">
+            <div className="relative bg-[#151921] border border-gray-800 rounded-2xl p-8 overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.35)]">
               <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-bl-full pointer-events-none"></div>
 
               <div className="flex flex-col items-center text-center gap-6 py-12">
-                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl transform rotate-12 hover:rotate-0 transition-transform duration-500">
+                <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-[0_20px_40px_rgba(59,130,246,0.35)] transform rotate-12 hover:rotate-0 transition-transform duration-500">
                   <Code size={48} className="text-white" />
                 </div>
 

@@ -12,10 +12,10 @@
             "envFile": "${workspaceFolder}/.env"
         },
         {
-            "type": "chrome",
+            "type": "firefox",
             "request": "launch",
             "name": "Debug Frontend",
-            "url": "http://localhost:3000",
+            "url": "http://localhost:3001",
             "webRoot": "${workspaceFolder}"
         }
     ],

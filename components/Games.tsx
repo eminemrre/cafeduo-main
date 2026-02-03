@@ -2,14 +2,14 @@ import React from 'react';
 import { GameCardProps } from '../types';
 import { Scissors, Scroll, Circle, Zap, Trophy, Play, Star, Shapes, Sword, Shield } from 'lucide-react';
 
-const GameCard: React.FC<GameCardProps> = ({ title, content, disabled }) => {
-  return (
+  const GameCard: React.FC<GameCardProps> = ({ title, content, disabled }) => {
+    return (
     <div className={`relative group h-full transition-all duration-500 ${disabled ? 'opacity-75 grayscale' : 'hover:-translate-y-2'}`}>
 
       {/* Glow Effect */}
       <div className={`absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl blur opacity-20 group-hover:opacity-75 transition duration-500 ${disabled ? 'hidden' : ''}`}></div>
 
-      <div className="relative h-full bg-[#151921] rounded-2xl border border-gray-800 overflow-hidden flex flex-col">
+      <div className="relative h-full bg-[#151921] rounded-2xl border border-gray-800 overflow-hidden flex flex-col shadow-[0_18px_40px_rgba(0,0,0,0.35)]">
 
         {/* Card Image Area */}
         <div className="h-64 relative overflow-hidden bg-gray-900 flex items-center justify-center group">
@@ -21,7 +21,7 @@ const GameCard: React.FC<GameCardProps> = ({ title, content, disabled }) => {
           {/* Play Button - Bottom Right Corner */}
           {!disabled && (
             <div className="absolute bottom-4 right-4 z-20">
-              <div className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center shadow-lg transform translate-y-20 group-hover:translate-y-0 transition-all duration-300 hover:scale-110 cursor-pointer">
+              <div className="w-12 h-12 bg-white text-black rounded-full flex items-center justify-center shadow-[0_10px_25px_rgba(255,255,255,0.25)] transform translate-y-20 group-hover:translate-y-0 transition-all duration-300 hover:scale-110 cursor-pointer">
                 <Play size={24} fill="currentColor" className="ml-1" />
               </div>
             </div>

@@ -1,0 +1,45 @@
+# CafeDuo Project Guidelines
+
+## Project Overview
+CafeDuo is a gamified cafe loyalty platform where students check in at cafes, play games with each other, earn points, and redeem rewards.
+
+## Tech Stack
+- **Frontend**: React 18 + TypeScript + Vite + Tailwind CSS v4
+- **Backend**: Node.js + Express.js + Socket.IO
+- **Database**: PostgreSQL
+- **Auth**: JWT + Google OAuth
+
+## Architecture Principles
+1. **Security First**: All admin endpoints must be authenticated
+2. **Modular Code**: Backend should be organized in MVC pattern
+3. **Type Safety**: Use TypeScript types consistently
+4. **Performance**: Use indexes for database queries
+5. **Testing**: Write tests for critical paths
+
+## Security Guidelines
+- NEVER trust user input - validate everything
+- ALWAYS use transactions for financial operations (points)
+- NEVER expose sensitive data in API responses
+- ALWAYS check user permissions before actions
+- Use parameterized queries to prevent SQL injection
+
+## Code Style
+- Use meaningful variable names
+- Add JSDoc comments for functions
+- Keep functions small and focused
+- Use async/await instead of callbacks
+- Handle errors gracefully
+
+## Database Guidelines
+- Use transactions for multi-step operations
+- Add indexes for frequently queried columns
+- Use ENUMs for status/role fields
+- Never delete data - use soft deletes
+- Always include created_at and updated_at
+
+## Git Workflow
+- main: Production-ready code
+- develop: Integration branch
+- feat/*: New features
+- fix/*: Bug fixes
+- hotfix/*: Critical production fixes

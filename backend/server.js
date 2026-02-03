@@ -40,6 +40,14 @@ const { Server } = require("socket.io");
 // Local modules
 const { pool } = require('./db');
 
+// Simple Logger (can be replaced with Winston in production)
+const logger = {
+  info: (...args) => console.log(new Date().toISOString(), '[INFO]', ...args),
+  error: (...args) => console.error(new Date().toISOString(), '[ERROR]', ...args),
+  warn: (...args) => console.warn(new Date().toISOString(), '[WARN]', ...args),
+  debug: (...args) => process.env.NODE_ENV === 'development' && console.log(new Date().toISOString(), '[DEBUG]', ...args)
+};
+
 const app = express();
 const server = http.createServer(app); // Wrap Express
 const PORT = process.env.PORT || 3001;
@@ -189,22 +197,149 @@ console.log("🚀 Starting Server...");
 console.log("🔑 Google Client ID:", process.env.VITE_GOOGLE_CLIENT_ID ? "Loaded ✅" : "MISSING ❌");
 console.log("🗄️  Database URL:", process.env.***REMOVED*** ? "Loaded ✅" : "MISSING ❌");
 
-// JWT Authentication Middleware
-const authenticateToken = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+// ==========================================
+// SECURITY MIDDLEWARE - Enhanced Authentication
+// ==========================================
 
-  if (!token) {
-    return res.status(401).json({ error: 'Access token required' });
+/**
+ * Enhanced JWT Authentication Middleware
+ * Verifies token and fetches fresh user data from DB
+ */
+const authenticateToken = async (req, res, next) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+
+    if (!token) {
+      return res.status(401).json({ 
+        error: 'Access token required',
+        code: 'TOKEN_MISSING'
+      });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, ***REMOVED***);
+    
+    // Fetch fresh user data from database
+    if (await isDbConnected()) {
+      const result = await pool.query(
+        `SELECT id, username, email, role, is_admin as "isAdmin", 
+                cafe_id, points, wins, games_played as "gamesPlayed"
+         FROM users 
+         WHERE id = $1`,
+        [decoded.id]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(401).json({ 
+          error: 'User not found',
+          code: 'USER_NOT_FOUND'
+        });
+      }
+
+      req.user = result.rows[0];
+    } else {
+      // Memory fallback - basic validation
+      req.user = decoded;
+    }
+    
+    next();
+  } catch (err) {
+    if (err.name === 'JsonWebTokenError') {
+      return res.status(403).json({ 
+        error: 'Invalid token',
+        code: 'TOKEN_INVALID'
+      });
+    }
+    if (err.name === 'TokenExpiredError') {
+      return res.status(403).json({ 
+        error: 'Token expired',
+        code: 'TOKEN_EXPIRED'
+      });
+    }
+    
+    console.error('Auth middleware error:', err);
+    return res.status(500).json({ 
+      error: 'Authentication error',
+      code: 'AUTH_ERROR'
+    });
+  }
+};
+
+/**
+ * Require Admin Role Middleware
+ * Must be used AFTER authenticateToken
+ */
+const requireAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ 
+      error: 'Authentication required',
+      code: 'AUTH_REQUIRED'
+    });
   }
 
-  jwt.verify(token, ***REMOVED***, (err, user) => {
-    if (err) {
-      return res.status(403).json({ error: 'Invalid or expired token' });
+  if (req.user.role !== 'admin' && !req.user.isAdmin) {
+    return res.status(403).json({ 
+      error: 'Admin access required',
+      code: 'ADMIN_REQUIRED'
+    });
+  }
+
+  next();
+};
+
+/**
+ * Require Cafe Admin Role Middleware
+ * Must be used AFTER authenticateToken
+ */
+const requireCafeAdmin = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ 
+      error: 'Authentication required',
+      code: 'AUTH_REQUIRED'
+    });
+  }
+
+  if (req.user.role !== 'cafe_admin' && req.user.role !== 'admin') {
+    return res.status(403).json({ 
+      error: 'Cafe admin access required',
+      code: 'CAFE_ADMIN_REQUIRED'
+    });
+  }
+
+  next();
+};
+
+/**
+ * Prevent IDOR - Verify user owns the resource or is admin
+ * @param {string} paramName - URL parameter name for user ID
+ */
+const requireOwnership = (paramName = 'id') => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ 
+        error: 'Authentication required',
+        code: 'AUTH_REQUIRED'
+      });
     }
-    req.user = user; // Attach user info to request
+
+    const resourceUserId = req.params[paramName] || req.body.userId;
+    
+    // Admin can access any resource
+    if (req.user.role === 'admin') {
+      return next();
+    }
+    
+    // Check if user owns the resource
+    if (parseInt(resourceUserId) !== req.user.id) {
+      return res.status(403).json({ 
+        error: 'Access denied to this resource',
+        code: 'ACCESS_DENIED'
+      });
+    }
+
     next();
-  });
+  };
 };
 
 // Helper to generate JWT
@@ -936,8 +1071,8 @@ app.put('/api/cafes/:id/pin', async (req, res) => {
 // 4. ADMIN ENDPOINTS
 // ===================================
 
-// 4.1 GET ALL USERS (Admin only)
-app.get('/api/admin/users', async (req, res) => {
+// 4.1 GET ALL USERS (Admin only) - PROTECTED
+app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
   if (await isDbConnected()) {
     try {
       const result = await pool.query(`
@@ -959,8 +1094,8 @@ app.get('/api/admin/users', async (req, res) => {
   }
 });
 
-// 4.2 GET ALL GAMES (Admin only)
-app.get('/api/admin/games', async (req, res) => {
+// 4.2 GET ALL GAMES (Admin only) - PROTECTED
+app.get('/api/admin/games', authenticateToken, requireAdmin, async (req, res) => {
   if (await isDbConnected()) {
     try {
       const result = await pool.query(`
@@ -983,8 +1118,8 @@ app.get('/api/admin/games', async (req, res) => {
   }
 });
 
-// 4.3 UPDATE USER ROLE (Admin only)
-app.put('/api/admin/users/:id/role', async (req, res) => {
+// 4.3 UPDATE USER ROLE (Admin only) - PROTECTED
+app.put('/api/admin/users/:id/role', authenticateToken, requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { role, cafe_id } = req.body;
 
@@ -1041,8 +1176,8 @@ app.put('/api/admin/users/:id/role', async (req, res) => {
   }
 });
 
-// 4.4 UPDATE CAFE (Admin only)
-app.put('/api/admin/cafes/:id', async (req, res) => {
+// 4.4 UPDATE CAFE (Admin only) - PROTECTED
+app.put('/api/admin/cafes/:id', authenticateToken, requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { address, total_tables, pin } = req.body;
 
@@ -1091,8 +1226,8 @@ app.put('/api/admin/cafes/:id', async (req, res) => {
   }
 });
 
-// 4.5 CREATE CAFE (Admin only)
-app.post('/api/admin/cafes', async (req, res) => {
+// 4.5 CREATE CAFE (Admin only) - PROTECTED
+app.post('/api/admin/cafes', authenticateToken, requireAdmin, async (req, res) => {
   const { name, address, total_tables, pin } = req.body;
 
   if (!name) {
@@ -1402,45 +1537,69 @@ app.delete('/api/games/:id', async (req, res) => {
 
 
 
-// 7. SHOP: BUY ITEM
-app.post('/api/shop/buy', async (req, res) => {
-  const { userId, item } = req.body; // item: { id, title, cost, icon }
+// 7. SHOP: BUY ITEM - PROTECTED (Fixed IDOR & Race Condition)
+app.post('/api/shop/buy', authenticateToken, async (req, res) => {
+  // SECURITY FIX: Get userId from authenticated token, NOT from body
+  const userId = req.user.id;
+  const { item } = req.body; // item: { id, title, cost, icon }
+
+  if (!item || !item.id || !item.cost) {
+    return res.status(400).json({ error: 'Invalid item data' });
+  }
 
   if (await isDbConnected()) {
+    const client = await pool.connect();
     try {
-      // 1. Check points
-      const userRes = await pool.query('SELECT points FROM users WHERE id = $1', [userId]);
-      if (userRes.rows.length === 0) return res.status(404).json({ error: 'User not found' });
+      // Start transaction to prevent race condition
+      await client.query('BEGIN');
+      
+      // 1. Lock user row and check points (FOR UPDATE prevents race condition)
+      const userRes = await client.query(
+        'SELECT points FROM users WHERE id = $1 FOR UPDATE', 
+        [userId]
+      );
+      
+      if (userRes.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'User not found' });
+      }
 
       const currentPoints = userRes.rows[0].points;
       if (currentPoints < item.cost) {
+        await client.query('ROLLBACK');
         return res.status(400).json({ error: 'Yetersiz puan.' });
       }
 
       // 2. Deduct points
       const newPoints = currentPoints - item.cost;
-      await pool.query('UPDATE users SET points = $1 WHERE id = $2', [newPoints, userId]);
+      await client.query('UPDATE users SET points = $1 WHERE id = $2', [newPoints, userId]);
 
       // 3. Add to inventory
       const crypto = require('crypto');
       const code = `CD-${crypto.randomBytes(2).toString('hex').toUpperCase()}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
-      const redeemRes = await pool.query(
+      const redeemRes = await client.query(
         'INSERT INTO user_items (user_id, item_id, item_title, code) VALUES ($1, $2, $3, $4) RETURNING *',
         [userId, item.id, item.title, code]
       );
 
+      // Commit transaction
+      await client.query('COMMIT');
+
       res.json({ success: true, newPoints, reward: redeemRes.rows[0] });
     } catch (err) {
-      console.error(err);
+      await client.query('ROLLBACK');
+      console.error('Shop buy error:', err);
       res.status(500).json({ error: 'İşlem başarısız.' });
+    } finally {
+      client.release();
     }
   } else {
     res.status(500).json({ error: 'Veritabanı bağlantısı yok.' });
   }
 });
 
-// Get User Items (Coupons)
-app.get('/api/users/:id/items', async (req, res) => {
+// Get User Items (Coupons) - PROTECTED
+app.get('/api/users/:id/items', authenticateToken, requireOwnership('id'), async (req, res) => {
   const userId = parseInt(req.params.id);
   try {
     if (await isDbConnected()) { // Check DB connection
@@ -1523,8 +1682,8 @@ app.get('/api/cafes', async (req, res) => {
   }
 });
 
-// Create Cafe Admin (Super Admin only)
-app.post('/api/admin/cafe-admins', async (req, res) => {
+// Create Cafe Admin (Super Admin only) - PROTECTED
+app.post('/api/admin/cafe-admins', authenticateToken, requireAdmin, async (req, res) => {
   const { username, email, password, cafeId } = req.body;
   try {
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -1546,9 +1705,9 @@ app.post('/api/admin/cafe-admins', async (req, res) => {
   }
 });
 
-// 8. SHOP: GET INVENTORY
-app.get('/api/shop/inventory/:userId', async (req, res) => {
-  const { userId } = req.params;
+// 8. SHOP: GET INVENTORY - PROTECTED
+app.get('/api/shop/inventory/:userId', authenticateToken, requireOwnership('userId'), async (req, res) => {
+  const userId = req.user.id; // SECURITY FIX: Use authenticated user ID
   if (await isDbConnected()) {
     // Filter expired coupons (5 days)
     const result = await pool.query("SELECT * FROM user_items WHERE user_id = $1 AND redeemed_at > NOW() - INTERVAL '5 days' ORDER BY redeemed_at DESC", [userId]);
@@ -1572,65 +1731,13 @@ app.get('/api/shop/inventory/:userId', async (req, res) => {
   }
 });
 
-// 9. ADMIN: GET USERS
-app.get('/api/admin/users', async (req, res) => {
-  if (await isDbConnected()) {
-    const result = await pool.query('SELECT id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, (SELECT name FROM cafes WHERE id = users.cafe_id) as cafe_name FROM users ORDER BY id ASC');
-    res.json(result.rows);
-  } else {
-    res.json(MEMORY_USERS);
-  }
-});
+// NOTE: Duplicate admin endpoints removed. Using protected versions above.
 
-// 18. ADMIN: GET ALL GAMES
-app.get('/api/admin/games', async (req, res) => {
-  if (await isDbConnected()) {
-    const result = await pool.query(`
-      SELECT 
-        g.id, 
-        g.host_name, 
-        g.guest_name, 
-        g.game_type, 
-        g.points, 
-        g.table_code, 
-        g.status, 
-        g.created_at,
-        c.name as cafe_name
-      FROM games g
-      LEFT JOIN users u ON u.username = g.host_name
-      LEFT JOIN cafes c ON c.id = u.cafe_id
-      ORDER BY g.created_at DESC
-    `);
-    res.json(result.rows);
-  } else {
-    res.json(MEMORY_GAMES);
-  }
-});
-
-// 19. ADMIN: UPDATE CAFE
-app.put('/api/admin/cafes/:id', async (req, res) => {
-  const { id } = req.params;
-  const { latitude, longitude, table_count, radius } = req.body;
-
-  if (await isDbConnected()) {
-    try {
-      await pool.query(
-        'UPDATE cafes SET latitude = $1, longitude = $2, table_count = $3, radius = $4 WHERE id = $5',
-        [latitude, longitude, table_count, radius, id]
-      );
-      res.json({ success: true });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Kafe güncellenemedi.' });
-    }
-  } else {
-    res.json({ success: true });
-  }
-});
-
-// 19. CHECK-IN (PIN Verification - STRICT MODE)
-app.post('/api/cafes/check-in', async (req, res) => {
-  const { userId, cafeId, tableNumber, pin } = req.body;
+// CHECK-IN (PIN Verification - STRICT MODE) - PROTECTED
+app.post('/api/cafes/check-in', authenticateToken, async (req, res) => {
+  // SECURITY FIX: Get userId from authenticated token
+  const userId = req.user.id;
+  const { cafeId, tableNumber, pin } = req.body;
 
   // Validate input
   if (!userId || !cafeId || !tableNumber) {
@@ -1744,8 +1851,8 @@ app.put('/api/cafes/:id/pin', async (req, res) => {
   }
 });
 
-// 20. ADMIN: CREATE CAFE
-app.post('/api/admin/cafes', async (req, res) => {
+// 20. ADMIN: CREATE CAFE - PROTECTED
+app.post('/api/admin/cafes', authenticateToken, requireAdmin, async (req, res) => {
   const { name, latitude, longitude, table_count, radius } = req.body;
 
   if (await isDbConnected()) {
@@ -1770,8 +1877,8 @@ app.use(express.static(path.join(__dirname, '../dist')));
 
 // ... (keep existing API routes)
 
-// 10. ADMIN: DELETE USER
-app.delete('/api/admin/users/:id', async (req, res) => {
+// 10. ADMIN: DELETE USER - PROTECTED
+app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
   const { id } = req.params;
   if (await isDbConnected()) {
     await pool.query('DELETE FROM users WHERE id = $1', [id]);
@@ -1801,8 +1908,8 @@ app.get('/api/rewards', async (req, res) => {
   }
 });
 
-// 14. REWARDS: DELETE
-app.delete('/api/rewards/:id', async (req, res) => {
+// 14. REWARDS: DELETE - PROTECTED (Admin or Cafe Admin)
+app.delete('/api/rewards/:id', authenticateToken, requireCafeAdmin, async (req, res) => {
   const { id } = req.params;
   if (await isDbConnected()) {
     try {
@@ -1955,8 +2062,8 @@ app.get('/api/users/:username/active-game', async (req, res) => {
   }
 });
 
-// Hook into User Update to check achievements
-app.put('/api/users/:id', async (req, res) => {
+// Hook into User Update to check achievements - PROTECTED
+app.put('/api/users/:id', authenticateToken, requireOwnership('id'), async (req, res) => {
   const { id } = req.params;
   const { points, wins, gamesPlayed } = req.body;
 
@@ -1976,12 +2083,10 @@ app.put('/api/users/:id', async (req, res) => {
       }
     }
 
-    res.json(user);
-
-    // Check achievements asynchronously
+    // Check achievements asynchronously (don't await)
     checkAchievements(id);
 
-    res.json(result.rows[0]);
+    res.json(user);
   } else {
     const idx = MEMORY_USERS.findIndex(u => u.id == id);
     if (idx !== -1) {
@@ -2003,6 +2108,29 @@ app.get('/', (req, res) => {
 
 // --- DÜZELTİLEN KISIM BİTİŞİ ---
 
+// HEALTH CHECK ENDPOINT (for Docker/load balancers)
+app.get('/health', async (req, res) => {
+  const healthcheck = {
+    uptime: process.uptime(),
+    message: 'OK',
+    timestamp: Date.now(),
+    database: false
+  };
+  
+  try {
+    healthcheck.database = await isDbConnected();
+    if (healthcheck.database) {
+      res.status(200).json(healthcheck);
+    } else {
+      healthcheck.message = 'Database disconnected - Running in memory mode';
+      res.status(200).json(healthcheck);
+    }
+  } catch (err) {
+    healthcheck.message = err.message;
+    res.status(503).json(healthcheck);
+  }
+});
+
 // 21. AUTO-CLEANUP STUCK GAMES
 setInterval(async () => {
   if (await isDbConnected()) {
@@ -2020,119 +2148,104 @@ setInterval(async () => {
   }
 }, 5 * 60 * 1000); // Run every 5 minutes
 
-// 22. ADMIN: UPDATE USER ROLE
-app.put('/api/admin/users/:id/role', async (req, res) => {
-  const { id } = req.params;
-  const { role } = req.body; // 'cafe_admin' or 'user'
+// NOTE: Duplicate endpoints removed. Protected versions are defined above.
 
-  if (await isDbConnected()) {
-    try {
-      const result = await pool.query(
-        'UPDATE users SET role = $1 WHERE id = $2 RETURNING id, username, role',
-        [role, id]
-      );
-      res.json(result.rows[0]);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Rol güncellenemedi.' });
-    }
-  } else {
-    res.status(501).json({ error: 'Not implemented in memory mode' });
-  }
-});
+// ==========================================
+// GLOBAL ERROR HANDLING
+// ==========================================
 
-// 23. SHOP: BUY REWARD
-app.post('/api/shop/buy', async (req, res) => {
-  const { userId, rewardId } = req.body;
-
-  if (!userId || !rewardId) {
-    return res.status(400).json({ error: 'userId ve rewardId gerekli.' });
-  }
-
-  if (await isDbConnected()) {
-    try {
-      // 1. Get User
-      const userRes = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
-      if (userRes.rows.length === 0) return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
-      const user = userRes.rows[0];
-
-      // 2. Get Reward
-      const rewardRes = await pool.query('SELECT * FROM rewards WHERE id = $1', [rewardId]);
-      if (rewardRes.rows.length === 0) return res.status(404).json({ error: 'Ödül bulunamadı.' });
-      const reward = rewardRes.rows[0];
-
-      // 3. Check Points
-      if (user.points < reward.cost) {
-        return res.status(400).json({ error: `Yetersiz puan! ${reward.cost} puan gerekli, ${user.points} puanınız var.` });
-      }
-
-      // 4. Deduct Points
-      await pool.query('UPDATE users SET points = points - $1 WHERE id = $2', [reward.cost, userId]);
-
-      // 5. Generate Coupon Code
-      const couponCode = `CD${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
-
-      // 6. Add to User Items
-      await pool.query(
-        'INSERT INTO user_items (user_id, item_id, item_title, code) VALUES ($1, $2, $3, $4)',
-        [userId, rewardId, reward.title, couponCode]
-      );
-
-      res.json({
-        success: true,
-        message: `${reward.title} satın alındı!`,
-        code: couponCode,
-        newPoints: user.points - reward.cost
-      });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Satın alma işlemi başarısız.' });
-    }
-  } else {
-    res.status(501).json({ error: 'Shop not available in demo mode.' });
-  }
-});
-
-// 24. SHOP: GET USER INVENTORY
-app.get('/api/shop/inventory/:userId', async (req, res) => {
-  const { userId } = req.params;
-
-  if (await isDbConnected()) {
-    try {
-      const result = await pool.query(
-        `SELECT ui.id as redeemId, ui.item_title as title, ui.code, ui.is_used as isUsed, 
-         ui.redeemed_at as redeemedAt, ui.used_at as usedAt,
-         r.cost, r.description, r.icon
-         FROM user_items ui
-         LEFT JOIN rewards r ON ui.item_id = r.id
-         WHERE ui.user_id = $1
-         ORDER BY ui.redeemed_at DESC`,
-        [userId]
-      );
-      res.json(result.rows);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Envanter yüklenemedi.' });
-    }
-  } else {
-    res.json([]); // Empty inventory in demo mode
-  }
+// 404 Handler
+app.use((req, res) => {
+  res.status(404).json({ 
+    error: 'Route not found',
+    code: 'ROUTE_NOT_FOUND',
+    path: req.originalUrl
+  });
 });
 
 // Global Error Handler
 app.use((err, req, res, next) => {
-  console.error('Unhandled Error:', err);
-  res.status(500).json({ error: 'Sunucu hatası oluştu.' });
+  // Log error with context
+  logger.error({
+    message: err.message,
+    stack: err.stack,
+    path: req.originalUrl,
+    method: req.method,
+    userId: req.user?.id,
+    ip: req.ip,
+    timestamp: new Date().toISOString()
+  });
+
+  // Handle specific error types
+  if (err.code === '23505') { // PostgreSQL unique violation
+    return res.status(409).json({
+      error: 'Resource already exists',
+      code: 'DUPLICATE_ENTRY'
+    });
+  }
+
+  if (err.code === '23503') { // PostgreSQL foreign key violation
+    return res.status(400).json({
+      error: 'Referenced resource not found',
+      code: 'FOREIGN_KEY_VIOLATION'
+    });
+  }
+
+  if (err.name === 'JsonWebTokenError') {
+    return res.status(403).json({
+      error: 'Invalid token',
+      code: 'TOKEN_INVALID'
+    });
+  }
+
+  if (err.name === 'TokenExpiredError') {
+    return res.status(403).json({
+      error: 'Token expired',
+      code: 'TOKEN_EXPIRED'
+    });
+  }
+
+  // Default error response
+  const isDev = process.env.NODE_ENV === 'development';
+  res.status(err.status || 500).json({
+    error: isDev ? err.message : 'Internal server error',
+    code: err.code || 'INTERNAL_ERROR',
+    ...(isDev && { stack: err.stack })
+  });
 });
 
-// Prevent Node.js from crashing on unhandled errors
+// ==========================================
+// PROCESS ERROR HANDLERS
+// ==========================================
+
 process.on('uncaughtException', (err) => {
-  console.error('CRITICAL ERROR (Uncaught Exception):', err);
-  // Do not exit, keep server running
+  logger.error('CRITICAL: Uncaught Exception', err);
+  
+  // Graceful shutdown
+  setTimeout(() => {
+    process.exit(1);
+  }, 1000);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('CRITICAL ERROR (Unhandled Rejection):', reason);
+  logger.error('CRITICAL: Unhandled Rejection', { reason, promise });
+  
+  // Graceful shutdown
+  setTimeout(() => {
+    process.exit(1);
+  }, 1000);
+});
+
+// Graceful shutdown on SIGTERM/SIGINT
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM received, shutting down gracefully');
+  server.close(() => {
+    logger.info('Server closed');
+    pool.end(() => {
+      logger.info('Database pool closed');
+      process.exit(0);
+    });
+  });
 });
 
 // Initialize DB and start server

@@ -167,10 +167,13 @@
 - [x] Framer Motion setup - ✅ Kuruldu
 - [x] Page transitions - Dashboard tab'ları fade/slide
 - [x] Button hover effects - Navbar, Tab'lar scale + glow
-- [ ] Card hover lift effect
+- [x] Card hover lift effect - RewardSection: lift + glow + border
 - [x] Modal open/close animations - AuthModal: slide up/down
 - [x] Toast slide-in/out animations - Stack layout + AnimatePresence
 - [ ] Loading spinner enhancements
+
+**Bonus:**
+- [x] Inventory coupon shake effect - Retro kupon hissi
 
 **3. Touch & Mobile UX (4h)**
 - [ ] Swipe gestures (modal kapatma, tab değiştirme)

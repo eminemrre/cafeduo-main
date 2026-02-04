@@ -9,115 +9,123 @@
 
 **Tarih:** 2026-02-03
 **Aktif Branch:** `feat/phase-1-security-hardening`
-**Faz:** Faz 1 tamamlandı, Faz 2'ye geçiş hazırlığı
+**Faz:** Faz 2 tamamlandı, Faz 3 planlaması
 
 ---
 
 ## ✅ Son Yapılan İşlem
 
-Faz 1 (Güvenlik Hardening) tamamlandı ve GitHub'a push edildi.
+Faz 2 (Frontend Refactoring) tamamlandı ve GitHub'a push edildi.
 
-**Commit:** `a5b76a7`
-**Mesaj:** "security: harden backend endpoints and fix critical vulnerabilities"
+**Commit:** `252d62a` ve önceki
+**Mesaj:** "refactor: complete Dashboard extraction with custom hooks"
 
-### Test Sonuçları (Başarılı)
-```bash
-$ curl http://localhost:3001/api/admin/users
-{"error":"Access token required","code":"TOKEN_MISSING"}
+### Başarılanlar:
+- Dashboard.tsx 659 → ~150 satır (%77 azalma)
+- useGames, useRewards hooks oluşturuldu
+- StatusBar, GameSection, RewardSection component'leri ayrıldı
+- AuthContext implementasyonu
+- Backend memory mode token fix
+- Check-in API JWT entegrasyonu
 
-$ curl http://localhost:3001/api/shop/buy
-{"error":"Access token required","code":"TOKEN_MISSING"}
-
-$ curl http://localhost:3001/health
-{"uptime":...,"message":"Database disconnected - Running in memory mode",...}
+### Test Sonuçları (Başarılı):
+```
+✅ Login çalışıyor
+✅ Token kaydediliyor
+✅ Kafe check-in çalışıyor
+✅ Dashboard yüklüyor
+✅ Oyun lobisi görünüyor
+✅ Mağaza/Envanter çalışıyor
 ```
 
 ---
 
-## 🎯 Sıradaki Görev
+## 🎯 Sıradaki Görev: Faz 3 Planlaması
 
-**Faz 2: Frontend Refactoring**
+**Hedef:** Database optimizasyon için profesyonel bir plan oluştur
 
-**Hedef:** Dashboard.tsx'i parçalara ayırmak
+**Gerekli Analizler:**
+1. Mevcut schema review (schema.sql + initDb)
+2. Index analizi (eksikler)
+3. Migration stratejisi belirleme
+4. Enum standardizasyonu
+5. Soft delete implementasyonu
 
-**Başlangıç Adımı:** Klasör yapısını oluştur + useGames hook'u yaz
+**Çıktı:**
+- Detaylı teknik plan (ADRs dahil)
+- Migration dosyaları taslağı
+- Implementation sıralaması
 
 ---
 
 ## 💬 Son Konuşma Özeti
 
 Kullanıcı:
-1. Faz 1'in anlaşılır bir şekilde özetini istedi ✓
-2. Faz 2'ye başlamaya hazır olduğunu belirtti ✓
-3. AI tokenları bitme durumunda bağlamı korumak istedi ✓
+- Faz 2'nin başarılı olduğunu onayladı ✅
+- Faz 3 ve sonrası için profesyonel plan istedi ✅
+- Senior developer yaklaşımı bekliyor ✅
 
 Ben (AI):
-1. AGENTS.md ve CONTEXT.md dosyalarını oluşturdum ✓
-2. Bağlam koruma sistemini açıkladım ✓
+- AGENTS.md'yi güncelledim ✅
+- Faz 2'yi "tamamlandı" olarak işaretledim ✅
+- Faz 3-4-5-6 planlarını ekledim ✅
 
 ---
 
-## 📋 Hemen Yapılacaklar
+## 📋 Faz 3 Detaylı Planlama Checklist
 
-1. [ ] `src/hooks/` klasörü oluştur
-2. [ ] `useGames.ts` hook'u yaz
-3. [ ] `useRewards.ts` hook'u yaz
-4. [ ] `src/components/dashboard/` klasörü oluştur
-5. [ ] `GameSection.tsx` component'ini ayır
-6. [ ] `RewardSection.tsx` component'ini ayır
-
----
-
-## 🛠️ Mevcut AI Araçları (Bu Session İçin)
-
-**Kimi Code CLI ile gelen araçlar:**
-- ✅ Shell (dosya/dizin işlemleri için sınırlı)
-- ✅ ReadFile (dosya okuma)
-- ✅ WriteFile (dosya yazma)
-- ✅ StrReplaceFile (dosya düzenleme)
-- ✅ Grep (dosya içinde arama)
-- ✅ Glob (dosya listeleme)
-- ✅ GitHub MCP (repo işlemleri)
-- ❌ Playwright (tarayıcı otomasyonu - kurulu değil)
-
-**Not:** Shell tool'unda teknik sorun var (bash readline hatası), 
-dizin oluşturma çalışmıyor. WriteFile ile dosya yazılabilir 
-ama parent directory yoksa hata verir.
+- [ ] Mevcut schema analizi
+- [ ] Index eksiklikleri belirleme
+- [ ] Migration tool seçimi (node-pg-migrate vs knex)
+- [ ] Enum standardizasyon planı
+- [ ] Soft delete stratejisi
+- [ ] ADR (Architecture Decision Record) yazımı
+- [ ] Implementation sıralaması
 
 ---
 
-## ⚠️ Dikkat Edilecekler
+## ⚠️ Bilinen Teknik Borçlar (Faz 3 İçin)
 
-- `Dashboard.tsx` 659 satır - çok dikkatli refactor et!
-- Her component ayrı dosyada olacak
-- Custom hooks reusable olmalı
-- TypeScript tipleri korunmalı (any kullanma!)
+1. **Tip Tutarsızlıkları:**
+   - `table_number` (INTEGER vs VARCHAR)
+   - `total_tables` vs `table_count`
+
+2. **Redundancy:**
+   - `is_admin` ve `role` sütunları
+   - Hangisi canonical olacak?
+
+3. **Eksik Index'ler:**
+   - `users(cafe_id)`
+   - `games(status, created_at)`
+   - `user_items(user_id)`
+
+4. **Hard Delete:**
+   - Tüm tablolarda hard delete
+   - Soft delete eklenmeli
+
+5. **Audit Trail:**
+   - `updated_at` eksik
+   - `created_by`, `updated_by` eksik
 
 ---
 
-## 🔗 Önemli Dosyalar
+## 🛠️ Önerilen Araçlar (Faz 3)
 
-**Mevcut:**
-- `components/Dashboard.tsx` - Refactor edilecek ana dosya
-- `lib/api.ts` - API fonksiyonları (değişmeyecek)
-- `types.ts` - TypeScript tipleri
-
-**Oluşturulacak:**
-- `hooks/useGames.ts`
-- `hooks/useRewards.ts`
-- `components/dashboard/GameSection.tsx`
-- `components/dashboard/RewardSection.tsx`
-- `components/dashboard/StatusBar.tsx`
+**Migration:** node-pg-migrate (PostgreSQL native)
+**Linting:** ESLint + Prettier (zaten var)
+**Testing:** Jest + Supertest (API tests)
 
 ---
 
 ## 📝 Notlar
 
-- Her refactor adımında test et!
-- Eski kodu yorum satırı yapma, direkt sil
-- Git commit'leri anlamlı mesajlarla yap
-- Bir adım tamamlanmadan diğerine geçme
+Planlama tamamlandıktan sonra:
+1. `feat/phase-3-database-optimization` branch'i oluştur
+2. Migration dosyalarını yaz
+3. Index'leri ekle
+4. Enum'ları düzenle
+5. Test et
 
 ---
 
-*Bu dosya son güncelleme: Session sonunda güncellenecek*
+*Bu dosya planlama tamamlandığında güncellenecek*

@@ -1721,7 +1721,8 @@ app.get('/api/shop/inventory/:userId', authenticateToken, requireOwnership('user
       id: row.item_id,
       title: row.item_title,
       code: row.code,
-      redeemedAt: row.redeemed_at
+      redeemedAt: row.redeemed_at,
+      isUsed: row.is_used || false
     }));
     res.json(rewards);
   } else {

@@ -10,6 +10,7 @@ import { GameLobby } from '../GameLobby';
 import { CreateGameModal } from '../CreateGameModal';
 import { RetroButton } from '../RetroButton';
 import { Gamepad2, Users } from 'lucide-react';
+import { SkeletonGrid } from '../Skeleton';
 
 interface GameSectionProps {
   // Kullanıcı
@@ -32,7 +33,7 @@ interface GameSectionProps {
   // Handler'lar
   onCreateGame: (gameType: string, points: number) => Promise<void>;
   onJoinGame: (gameId: number) => Promise<void>;
-  onViewProfile: (user: User) => void;
+  onViewProfile: (username: string) => void;
   onRejoinGame: () => void;
 }
 
@@ -103,10 +104,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
 
       {/* Oyun Listesi */}
       {gamesLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <span className="ml-3 text-gray-400">Oyunlar yükleniyor...</span>
-        </div>
+        <SkeletonGrid count={4} columns={2} />
       ) : (
         <GameLobby
           requests={games}
@@ -121,7 +119,8 @@ export const GameSection: React.FC<GameSectionProps> = ({
       <CreateGameModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onCreateGame={onCreateGame}
+        onSubmit={onCreateGame}
+        maxPoints={currentUser.points}
       />
     </div>
   );

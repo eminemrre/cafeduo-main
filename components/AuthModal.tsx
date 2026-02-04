@@ -1,15 +1,41 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Mail, Lock, ArrowRight, AlertTriangle, Briefcase } from 'lucide-react';
+import { X, User, Mail, Lock, ArrowRight, AlertTriangle, Briefcase, Check, Eye, EyeOff } from 'lucide-react';
 import { RetroButton } from './RetroButton';
 import { User as UserType } from '../types';
 import { api } from '../lib/api';
 import { PAU_DEPARTMENTS } from '../constants';
+import { useToast } from '../contexts/ToastContext';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialMode: 'login' | 'register';
   onLoginSuccess: (user: UserType) => void;
+}
+
+// Validation rules
+const VALIDATION = {
+  username: {
+    min: 3,
+    max: 20,
+    pattern: /^[a-zA-Z0-9_]+$/,
+    message: 'Kullanıcı adı 3-20 karakter, sadece harf, rakam ve alt çizgi içerebilir'
+  },
+  email: {
+    pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    message: 'Geçerli bir e-posta adresi girin'
+  },
+  password: {
+    min: 6,
+    max: 50,
+    message: 'Şifre en az 6 karakter olmalıdır'
+  }
+};
+
+interface FieldErrors {
+  username?: string;
+  email?: string;
+  password?: string;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({
@@ -21,6 +47,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [mode, setMode] = useState(initialMode);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  // Toast hook
+  const toast = useToast();
 
   // Form Fields
   const [username, setUsername] = useState('');
@@ -30,59 +62,142 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   useEffect(() => {
     setMode(initialMode);
+    resetForm();
+  }, [initialMode, isOpen]);
+
+  const resetForm = () => {
     setError('');
+    setFieldErrors({});
+    setTouched({});
     setUsername('');
     setEmail('');
     setPassword('');
     setDepartment('');
-  }, [initialMode, isOpen]);
+    setShowPassword(false);
+  };
+
+  // Real-time validation
+  const validateField = (field: keyof FieldErrors, value: string): string | undefined => {
+    switch (field) {
+      case 'username':
+        if (mode !== 'register') return undefined;
+        if (!value) return 'Kullanıcı adı gereklidir';
+        if (value.length < VALIDATION.username.min) return `En az ${VALIDATION.username.min} karakter`;
+        if (value.length > VALIDATION.username.max) return `En fazla ${VALIDATION.username.max} karakter`;
+        if (!VALIDATION.username.pattern.test(value)) return 'Sadece harf, rakam ve alt çizgi';
+        return undefined;
+      case 'email':
+        if (!value) return 'E-posta adresi gereklidir';
+        if (!VALIDATION.email.pattern.test(value)) return VALIDATION.email.message;
+        return undefined;
+      case 'password':
+        if (!value) return 'Şifre gereklidir';
+        if (value.length < VALIDATION.password.min) return VALIDATION.password.message;
+        return undefined;
+      default:
+        return undefined;
+    }
+  };
+
+  const handleBlur = (field: keyof FieldErrors) => {
+    setTouched(prev => ({ ...prev, [field]: true }));
+    const value = field === 'username' ? username : field === 'email' ? email : password;
+    const error = validateField(field, value);
+    setFieldErrors(prev => ({ ...prev, [field]: error }));
+  };
+
+  const handleChange = (field: keyof FieldErrors, value: string) => {
+    switch (field) {
+      case 'username':
+        setUsername(value);
+        break;
+      case 'email':
+        setEmail(value);
+        break;
+      case 'password':
+        setPassword(value);
+        break;
+    }
+    // Clear error when user types
+    if (touched[field]) {
+      const error = validateField(field, value);
+      setFieldErrors(prev => ({ ...prev, [field]: error }));
+    }
+  };
+
+  const validateForm = (): boolean => {
+    const errors: FieldErrors = {};
+    
+    if (mode === 'register') {
+      errors.username = validateField('username', username);
+    }
+    errors.email = validateField('email', email);
+    errors.password = validateField('password', password);
+
+    // Remove undefined errors
+    const cleanErrors: FieldErrors = {};
+    Object.entries(errors).forEach(([key, value]) => {
+      if (value) cleanErrors[key as keyof FieldErrors] = value;
+    });
+
+    setFieldErrors(cleanErrors);
+    setTouched({ username: true, email: true, password: true });
+    
+    return Object.keys(cleanErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Validate all fields
+    if (!validateForm()) {
+      toast.showToast('Lütfen form hatalarını düzeltin', 'error');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       if (mode === 'register') {
-        if (!username || username.length < 3) {
-          throw new Error('Kullanıcı adı en az 3 karakter olmalıdır.');
-        }
-        if (!email || !email.includes('@')) {
-          throw new Error('Geçerli bir e-posta adresi girin.');
-        }
-        if (!password || password.length < 6) {
-          throw new Error('Şifre en az 6 karakter olmalıdır.');
-        }
         const user = await api.auth.register(username, email, password);
+        toast.showToast('Kayıt başarılı! Hoş geldiniz 🎉', 'success');
         onLoginSuccess(user);
       } else {
-        // Login
-        if (!email || !password) {
-          throw new Error('E-posta ve şifre gereklidir.');
-        }
         const user = await api.auth.login(email, password);
+        toast.showToast(`Hoş geldin ${user.username}!`, 'success');
         onLoginSuccess(user);
       }
     } catch (err: any) {
       console.error('Auth error:', err);
+      let errorMessage = 'Bir hata oluştu.';
+      
       // Firebase error messages
       if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
-        setError('E-posta veya şifre hatalı.');
+        errorMessage = 'E-posta veya şifre hatalı.';
       } else if (err.code === 'auth/email-already-in-use') {
-        setError('Bu e-posta zaten kullanımda.');
+        errorMessage = 'Bu e-posta zaten kullanımda.';
       } else if (err.code === 'auth/weak-password') {
-        setError('Şifre çok zayıf, en az 6 karakter olmalı.');
+        errorMessage = 'Şifre çok zayıf, en az 6 karakter olmalı.';
       } else if (err.code === 'auth/invalid-email') {
-        setError('Geçersiz e-posta adresi.');
-      } else {
-        setError(err.message || 'Bir hata oluştu.');
+        errorMessage = 'Geçersiz e-posta adresi.';
+      } else if (err.message) {
+        errorMessage = err.message;
       }
+
+      setError(errorMessage);
+      toast.showToast(errorMessage, 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
-
+  const switchMode = (newMode: 'login' | 'register') => {
+    setMode(newMode);
+    setError('');
+    setFieldErrors({});
+    setTouched({});
+  };
 
   if (!isOpen) return null;
 
@@ -115,13 +230,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
           <div className="flex justify-center gap-4 font-pixel text-sm mb-4">
             <button
-              onClick={() => setMode('login')}
+              onClick={() => switchMode('login')}
               className={`pb-1 border-b-2 transition-colors ${mode === 'login' ? 'text-white border-blue-500' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
             >
               Giriş Yap
             </button>
             <button
-              onClick={() => setMode('register')}
+              onClick={() => switchMode('register')}
               className={`pb-1 border-b-2 transition-colors ${mode === 'register' ? 'text-white border-purple-500' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
             >
               Kayıt Ol
@@ -143,13 +258,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
                   <input
                     type="text"
-                    required
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(e) => handleChange('username', e.target.value)}
+                    onBlur={() => handleBlur('username')}
                     placeholder="Kullanıcı Adı"
-                    className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all focus:shadow-[0_0_20px_rgba(59,130,246,0.25)]"
+                    className={`w-full bg-black/30 border-2 ${fieldErrors.username && touched.username ? 'border-red-500 focus:border-red-500' : 'border-gray-600 focus:border-blue-500'} text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all focus:shadow-[0_0_20px_rgba(59,130,246,0.25)]`}
                   />
+                  {!fieldErrors.username && touched.username && username && (
+                    <Check className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500" size={18} />
+                  )}
                 </div>
+                {fieldErrors.username && touched.username && (
+                  <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
+                    <AlertTriangle size={12} /> {fieldErrors.username}
+                  </p>
+                )}
 
                 <div className="relative group">
                   <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400 z-10" size={20} />
@@ -176,50 +299,76 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
               <input
                 type="email"
-                required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => handleChange('email', e.target.value)}
+                onBlur={() => handleBlur('email')}
                 placeholder="E-posta"
-                className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all focus:shadow-[0_0_20px_rgba(59,130,246,0.25)]"
+                className={`w-full bg-black/30 border-2 ${fieldErrors.email && touched.email ? 'border-red-500 focus:border-red-500' : 'border-gray-600 focus:border-blue-500'} text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all focus:shadow-[0_0_20px_rgba(59,130,246,0.25)]`}
               />
+              {!fieldErrors.email && touched.email && email && (
+                <Check className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500" size={18} />
+              )}
             </div>
+            {fieldErrors.email && touched.email && (
+              <p className="text-red-400 text-xs -mt-3 flex items-center gap-1">
+                <AlertTriangle size={12} /> {fieldErrors.email}
+              </p>
+            )}
 
             <div className="relative group">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
               <input
-                type="password"
-                required
+                type={showPassword ? 'text' : 'password'}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => handleChange('password', e.target.value)}
+                onBlur={() => handleBlur('password')}
                 placeholder="Şifre"
-                minLength={6}
-                className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all focus:shadow-[0_0_20px_rgba(59,130,246,0.25)]"
+                className={`w-full bg-black/30 border-2 ${fieldErrors.password && touched.password ? 'border-red-500 focus:border-red-500' : 'border-gray-600 focus:border-blue-500'} text-white py-3 pl-10 pr-12 outline-none font-retro text-xl placeholder:text-gray-600 transition-all focus:shadow-[0_0_20px_rgba(59,130,246,0.25)]`}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
             </div>
+            {fieldErrors.password && touched.password && (
+              <p className="text-red-400 text-xs -mt-3 flex items-center gap-1">
+                <AlertTriangle size={12} /> {fieldErrors.password}
+              </p>
+            )}
 
             <RetroButton
-              variant="primary"
               type="submit"
-              className="w-full py-3 flex items-center justify-center gap-2 shadow-[0_12px_28px_rgba(59,130,246,0.25)]"
               disabled={isLoading}
+              className="w-full mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                <span className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  {mode === 'login' ? 'Giriş Yapılıyor...' : 'Kayıt Yapılıyor...'}
+                </span>
               ) : (
-                <>
+                <span className="flex items-center justify-center gap-2">
                   {mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}
-                  <ArrowRight size={16} />
-                </>
+                  <ArrowRight size={18} />
+                </span>
               )}
             </RetroButton>
           </form>
 
-          {/* Footer Text */}
-          <p className="text-center text-xs text-gray-500">
-            {mode === 'login'
-              ? "Hesabın yok mu? Yukarıdan 'Kayıt Ol' seçeneğine tıkla."
-              : "Zaten hesabın var mı? Yukarıdan 'Giriş Yap' seçeneğine tıkla."}
-          </p>
+          {mode === 'login' && (
+            <p className="text-center text-gray-500 text-sm">
+              Hesabınız yok mu?{' '}
+              <button
+                onClick={() => switchMode('register')}
+                className="text-blue-400 hover:text-blue-300 transition-colors"
+              >
+                Kayıt olun
+              </button>
+            </p>
+          )}
         </div>
       </div>
     </div>

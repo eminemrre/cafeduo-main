@@ -8,6 +8,7 @@ import React from 'react';
 import { Reward, RedeemedReward, User } from '../../types';
 import { Coffee, Percent, Cookie, Gamepad2, ShoppingBag, Ticket } from 'lucide-react';
 import { RetroButton } from '../RetroButton';
+import { SkeletonGrid, SkeletonCard } from '../Skeleton';
 
 interface RewardSectionProps {
   // Kullanıcı
@@ -92,10 +93,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
       {activeTab === 'shop' && (
         <div>
           {rewardsLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin" />
-              <span className="ml-3 text-gray-400">Ödüller yükleniyor...</span>
-            </div>
+            <SkeletonGrid count={3} columns={1} />
           ) : rewards.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {rewards.map((reward) => {
@@ -161,10 +159,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
       {activeTab === 'inventory' && (
         <div>
           {inventoryLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              <span className="ml-3 text-gray-400">Envanter yükleniyor...</span>
-            </div>
+            <SkeletonGrid count={4} columns={1} />
           ) : inventory.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {inventory.map((item) => {
@@ -172,7 +167,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                   new Date(item.redeemedAt).getTime() + 5 * 24 * 60 * 60 * 1000
                 );
                 const isExpired = new Date() > expirationDate;
-                const isUsed = item.status === 'used';
+                const isUsed = item.isUsed;
 
                 return (
                   <div

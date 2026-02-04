@@ -61,6 +61,7 @@ export interface RedeemedReward extends Reward {
   redeemId: string;
   redeemedAt: Date;
   code: string;
+  isUsed: boolean;
 }
 
 export interface Cafe {

@@ -25,7 +25,8 @@ import { GameSection } from './dashboard/GameSection';
 import { RewardSection } from './dashboard/RewardSection';
 
 // Icons
-import { Trophy, Gift, Gamepad2 } from 'lucide-react';
+import { Trophy, Gift, Gamepad2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface DashboardProps {
   currentUser: User;
@@ -207,87 +208,104 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
         />
 
         {/* Main Navigation Tabs */}
-        <div className="flex items-center gap-2 bg-[#151921] p-2 rounded-xl">
-          <button
-            onClick={() => setMainTab('games')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
-              mainTab === 'games'
-                ? 'bg-blue-500 text-white'
-                : 'text-gray-400 hover:text-white hover:bg-gray-800'
-            }`}
-          >
-            <Gamepad2 size={20} />
-            Oyunlar
-          </button>
-          <button
-            onClick={() => setMainTab('leaderboard')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
-              mainTab === 'leaderboard'
-                ? 'bg-yellow-500 text-black'
-                : 'text-gray-400 hover:text-white hover:bg-gray-800'
-            }`}
-          >
-            <Trophy size={20} />
-            Sıralama
-          </button>
-          <button
-            onClick={() => setMainTab('achievements')}
-            className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-all ${
-              mainTab === 'achievements'
-                ? 'bg-purple-500 text-white'
-                : 'text-gray-400 hover:text-white hover:bg-gray-800'
-            }`}
-          >
-            <Gift size={20} />
-            Başarımlar
-          </button>
+        <div className="relative bg-[#151921] p-1.5 md:p-2 rounded-xl">
+          <div className="flex items-center gap-1 md:gap-2">
+            {[
+              { id: 'games', label: 'Oyunlar', icon: Gamepad2, color: 'blue' },
+              { id: 'leaderboard', label: 'Sıralama', icon: Trophy, color: 'yellow' },
+              { id: 'achievements', label: 'Başarımlar', icon: Gift, color: 'purple' }
+            ].map((tab) => {
+              const Icon = tab.icon;
+              const isActive = mainTab === tab.id;
+              
+              return (
+                <motion.button
+                  key={tab.id}
+                  onClick={() => setMainTab(tab.id as typeof mainTab)}
+                  className={`relative flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3 rounded-lg font-medium transition-colors text-sm md:text-base ${
+                    isActive
+                      ? tab.color === 'blue' ? 'text-white' : tab.color === 'yellow' ? 'text-black' : 'text-white'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeTab"
+                      className={`absolute inset-0 rounded-lg ${
+                        tab.color === 'blue' ? 'bg-blue-500' : 
+                        tab.color === 'yellow' ? 'bg-yellow-500' : 
+                        'bg-purple-500'
+                      }`}
+                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+                    />
+                  )}
+                  <span className="relative z-10 flex items-center gap-1.5 md:gap-2">
+                    <Icon size={18} className="md:w-5 md:h-5" />
+                    <span className="hidden sm:inline">{tab.label}</span>
+                    <span className="sm:hidden">{tab.label.slice(0, 3)}</span>
+                  </span>
+                </motion.button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Tab Content */}
-        {mainTab === 'games' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Sol: Oyun Lobisi */}
-            <div className="lg:col-span-2">
-              <GameSection
-                currentUser={currentUser}
-                tableCode={tableCode}
-                isMatched={isMatched}
-                games={games}
-                gamesLoading={gamesLoading}
-                activeGameId={activeGameId}
-                serverActiveGame={serverActiveGame}
-                isCreateModalOpen={isCreateModalOpen}
-                setIsCreateModalOpen={setIsCreateModalOpen}
-                onCreateGame={handleCreateGame}
-                onJoinGame={handleJoinGame}
-                onViewProfile={handleViewProfile}
-                onRejoinGame={handleRejoinGame}
-              />
-            </div>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={mainTab}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            {mainTab === 'games' && (
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
+                {/* Sol: Oyun Lobisi */}
+                <div className="xl:col-span-2 order-2 xl:order-1">
+                  <GameSection
+                    currentUser={currentUser}
+                    tableCode={tableCode}
+                    isMatched={isMatched}
+                    games={games}
+                    gamesLoading={gamesLoading}
+                    activeGameId={activeGameId}
+                    serverActiveGame={serverActiveGame}
+                    isCreateModalOpen={isCreateModalOpen}
+                    setIsCreateModalOpen={setIsCreateModalOpen}
+                    onCreateGame={handleCreateGame}
+                    onJoinGame={handleJoinGame}
+                    onViewProfile={handleViewProfile}
+                    onRejoinGame={handleRejoinGame}
+                  />
+                </div>
 
-            {/* Sağ: Mağaza & Envanter */}
-            <div className="lg:col-span-1">
-              <RewardSection
-                currentUser={currentUser}
-                rewards={rewards}
-                rewardsLoading={rewardsLoading}
-                inventory={inventory}
-                inventoryLoading={inventoryLoading}
-                activeTab={rewardTab}
-                onTabChange={setRewardTab}
-                onBuyReward={handleBuyReward}
-              />
-            </div>
-          </div>
-        )}
+                {/* Sağ: Mağaza & Envanter */}
+                <div className="xl:col-span-1 order-1 xl:order-2">
+                  <RewardSection
+                    currentUser={currentUser}
+                    rewards={rewards}
+                    rewardsLoading={rewardsLoading}
+                    inventory={inventory}
+                    inventoryLoading={inventoryLoading}
+                    activeTab={rewardTab}
+                    onTabChange={setRewardTab}
+                    onBuyReward={handleBuyReward}
+                  />
+                </div>
+              </div>
+            )}
 
-        {mainTab === 'leaderboard' && (
-          <Leaderboard currentUser={currentUser} />
-        )}
+            {mainTab === 'leaderboard' && (
+              <Leaderboard currentUser={currentUser} />
+            )}
 
-        {mainTab === 'achievements' && (
-          <Achievements userId={currentUser.id} />
-        )}
+            {mainTab === 'achievements' && (
+              <Achievements userId={currentUser.id} />
+            )}
+          </motion.div>
+        </AnimatePresence>
 
         {/* Profile Modal */}
         <UserProfileModal

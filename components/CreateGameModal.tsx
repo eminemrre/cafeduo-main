@@ -204,7 +204,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
 
           {/* Points Input */}
           <div>
-            <label className="block text-blue-400 font-pixel text-xs mb-3 tracking-widest">BAHİS MİKTARI</label>
+            <label className="block text-blue-400 font-pixel text-xs mb-3 tracking-widest">KATILIM PUANI</label>
             <div className="relative">
               <input
                 type="number"
@@ -250,7 +250,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
               <span className="text-white">{gameType}</span>
             </div>
             <div className="flex justify-between text-sm mt-1">
-              <span className="text-gray-400">Bahis:</span>
+              <span className="text-gray-400">Katılım Puanı:</span>
               <span className="text-yellow-400">{points} Puan</span>
             </div>
             <div className="flex justify-between text-sm mt-1 pt-1 border-t border-gray-700">

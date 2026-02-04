@@ -1,0 +1,1518 @@
+openapi: 3.0.3
+info:
+  title: CafeDuo API
+  description: |
+    Gamified cafe loyalty platform API
+    
+    CafeDuo, kafelerde oyun oynayarak puan kazanmayı ve bu puanlarla 
+    ödüller satın almayı sağlayan bir platformun backend API'sidir.
+    
+    ## Özellikler
+    - 🎮 Oyun lobisi (Taş Kağıt Makas)
+    - 🏆 Liderlik tablosu
+    - 🎁 Ödül mağazası
+    - ☕ Kafe check-in sistemi
+    - 📊 Başarım sistemi
+    
+  version: 1.0.0
+  contact:
+    name: CafeDuo Support
+    email: support@cafeduo.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3001
+    description: Local development server
+  - url: https://cafeduo-api.onrender.com
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Authentication
+    description: Kullanıcı kayıt, giriş ve doğrulama işlemleri
+  - name: Users
+    description: Kullanıcı profili ve envanter yönetimi
+  - name: Games
+    description: Oyun lobisi ve oyun yönetimi
+  - name: Shop
+    description: Mağaza ve ödül işlemleri
+  - name: Cafes
+    description: Kafe listesi ve check-in işlemleri
+  - name: Leaderboard
+    description: Liderlik tablosu
+  - name: Achievements
+    description: Başarım sistemi
+  - name: Coupons
+    description: Kupon kullanımı (Kafe Admin)
+  - name: Admin
+    description: Yönetici paneli işlemleri
+  - name: Health
+    description: Sağlık kontrolü
+
+paths:
+  # ==========================================
+  # AUTHENTICATION
+  # ==========================================
+  /api/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Yeni kullanıcı kaydı
+      description: E-posta doğrulaması olmadan doğrudan kayıt oluşturur
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+              properties:
+                username:
+                  type: string
+                  example: "gamer123"
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                password:
+                  type: string
+                  format: password
+                  minLength: 6
+                  example: "securePass123"
+                department:
+                  type: string
+                  example: "Bilgisayar Mühendisliği"
+      responses:
+        200:
+          description: Kayıt başarılı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        400:
+          description: Eksik alan veya kullanımda e-posta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Sunucu hatası
+
+  /api/auth/verify:
+    post:
+      tags:
+        - Authentication
+      summary: E-posta doğrulama kodu kontrolü
+      description: E-posta doğrulama kodunu kontrol eder ve kullanıcı oluşturur
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - code
+              properties:
+                email:
+                  type: string
+                  format: email
+                code:
+                  type: string
+                  example: "123456"
+      responses:
+        200:
+          description: Doğrulama başarılı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        400:
+          description: Geçersiz kod veya oturum zaman aşımı
+
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Kullanıcı girişi
+      description: E-posta ve şifre ile giriş yapar, JWT token döndürür
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                password:
+                  type: string
+                  format: password
+                  example: "securePass123"
+                captchaToken:
+                  type: string
+                  description: Google reCAPTCHA token (opsiyonel)
+      responses:
+        200:
+          description: Giriş başarılı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIs..."
+                  bonusReceived:
+                    type: boolean
+                    description: Günlük bonus alındı mı?
+        401:
+          description: Geçersiz e-posta veya şifre
+        400:
+          description: reCAPTCHA doğrulaması başarısız
+
+  /api/auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Mevcut kullanıcı bilgileri
+      description: JWT token'dan kullanıcı bilgilerini getirir
+      responses:
+        200:
+          description: Kullanıcı bilgileri
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        401:
+          description: Token eksik
+        403:
+          description: Token geçersiz veya süresi dolmuş
+        404:
+          description: Kullanıcı bulunamadı
+
+  /api/auth/google:
+    post:
+      tags:
+        - Authentication
+      summary: Google ile giriş
+      description: Google OAuth token'ı ile giriş yapar
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: Google ID token
+      responses:
+        200:
+          description: Giriş başarılı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        401:
+          description: Google doğrulaması başarısız
+
+  # ==========================================
+  # USERS
+  # ==========================================
+  /api/users/{id}:
+    put:
+      tags:
+        - Users
+      summary: Kullanıcı bilgilerini güncelle
+      description: Puan, galibiyet ve oyun sayısını günceller
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                points:
+                  type: integer
+                  example: 1500
+                wins:
+                  type: integer
+                  example: 10
+                gamesPlayed:
+                  type: integer
+                  example: 25
+                department:
+                  type: string
+                  example: "Endüstri Mühendisliği"
+      responses:
+        200:
+          description: Güncelleme başarılı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        401:
+          description: Yetkilendirme hatası
+        403:
+          description: Kaynağa erişim izni yok
+        404:
+          description: Kullanıcı bulunamadı
+
+  /api/users/{id}/items:
+    get:
+      tags:
+        - Users
+      summary: Kullanıcı kuponlarını getir
+      description: Son 5 gün içindeki aktif kuponları listeler
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Kupon listesi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserItem'
+        401:
+          description: Yetkilendirme hatası
+        403:
+          description: Kaynağa erişim izni yok
+
+  /api/users/{username}/active-game:
+    get:
+      tags:
+        - Users
+      summary: Kullanıcının aktif oyununu getir
+      description: Kullanıcının oynadığı aktif bir oyun varsa döndürür
+      parameters:
+        - name: username
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        200:
+          description: Aktif oyun veya null
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Game'
+                  - type: "null"
+
+  # ==========================================
+  # GAMES
+  # ==========================================
+  /api/games:
+    get:
+      tags:
+        - Games
+      summary: Bekleyen oyunları listele
+      description: Status'ü 'waiting' olan tüm oyunları getirir
+      security: []
+      responses:
+        200:
+          description: Oyun listesi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Game'
+    
+    post:
+      tags:
+        - Games
+      summary: Yeni oyun oluştur
+      description: Yeni bir oyun lobisi oluşturur
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - hostName
+                - gameType
+                - points
+                - table
+              properties:
+                hostName:
+                  type: string
+                  example: "GamerTr_99"
+                gameType:
+                  type: string
+                  enum: ["Taş Kağıt Makas"]
+                  example: "Taş Kağıt Makas"
+                points:
+                  type: integer
+                  minimum: 50
+                  maximum: 1000
+                  example: 150
+                table:
+                  type: string
+                  example: "MASA04"
+      responses:
+        200:
+          description: Oyun oluşturuldu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+        500:
+          description: Sunucu hatası
+
+  /api/games/{id}:
+    get:
+      tags:
+        - Games
+      summary: Oyun detaylarını getir
+      description: Belirli bir oyunun detaylarını döndürür
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Oyun detayları
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Game'
+        404:
+          description: Oyun bulunamadı
+
+  /api/games/{id}/join:
+    post:
+      tags:
+        - Games
+      summary: Oyuna katıl
+      description: Bir oyuna misafir olarak katılır
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - guestName
+              properties:
+                guestName:
+                  type: string
+                  example: "Rival_Pro"
+      responses:
+        200:
+          description: Katılım başarılı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+
+  /api/games/{id}/move:
+    post:
+      tags:
+        - Games
+      summary: Hamle yap
+      description: Oyun içinde bir hamle yapar
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - player
+                - move
+              properties:
+                player:
+                  type: string
+                  enum: ["host", "guest"]
+                  description: Oyuncu rolü
+                move:
+                  type: string
+                  enum: ["rock", "paper", "scissors"]
+                  description: Taş Kağıt Makas hamlesi
+                gameState:
+                  type: object
+                  description: Oyun durumu (JSON)
+      responses:
+        200:
+          description: Hamle kaydedildi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  /api/games/{id}/finish:
+    post:
+      tags:
+        - Games
+      summary: Oyunu bitir
+      description: Oyunu sonlandırır ve kazananı belirler
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - winner
+              properties:
+                winner:
+                  type: string
+                  description: Kazananın kullanıcı adı
+                  example: "GamerTr_99"
+      responses:
+        200:
+          description: Oyun sonlandırıldı
+
+  /api/games/{id}:
+    delete:
+      tags:
+        - Games
+      summary: Oyunu sil
+      description: Bir oyunu tamamen siler
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Oyun silindi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
+  # ==========================================
+  # SHOP
+  # ==========================================
+  /api/shop/buy:
+    post:
+      tags:
+        - Shop
+      summary: Ödül satın al
+      description: Puan kullanarak mağazadan ödül satın alır
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - item
+              properties:
+                item:
+                  type: object
+                  required:
+                    - id
+                    - title
+                    - cost
+                  properties:
+                    id:
+                      type: integer
+                    title:
+                      type: string
+                    cost:
+                      type: integer
+                    icon:
+                      type: string
+      responses:
+        200:
+          description: Satın alma başarılı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  newPoints:
+                    type: integer
+                  reward:
+                    $ref: '#/components/schemas/UserItem'
+        400:
+          description: Yetersiz puan veya geçersiz ürün
+        401:
+          description: Yetkilendirme hatası
+
+  /api/shop/inventory/{userId}:
+    get:
+      tags:
+        - Shop
+      summary: Envanteri getir
+      description: Kullanıcının satın aldığı ödülleri listeler
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Envanter listesi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InventoryItem'
+        401:
+          description: Yetkilendirme hatası
+        403:
+          description: Kaynağa erişim izni yok
+
+  /api/rewards:
+    get:
+      tags:
+        - Shop
+      summary: Tüm ödülleri listele
+      description: Aktif tüm ödülleri getirir
+      security: []
+      responses:
+        200:
+          description: Ödül listesi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reward'
+    
+    post:
+      tags:
+        - Shop
+      summary: Yeni ödül oluştur
+      description: Yeni bir ödül oluşturur (Kafe Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - cost
+              properties:
+                title:
+                  type: string
+                  example: "Bedava Filtre Kahve"
+                cost:
+                  type: integer
+                  example: 500
+                description:
+                  type: string
+                  example: "Günün yorgunluğunu at."
+                icon:
+                  type: string
+                  example: "coffee"
+                cafeId:
+                  type: integer
+      responses:
+        200:
+          description: Ödül oluşturuldu
+        400:
+          description: Eksik bilgi
+        501:
+          description: Demo modda kullanılamaz
+
+  /api/rewards/{id}:
+    delete:
+      tags:
+        - Shop
+      summary: Ödülü sil
+      description: Bir ödülü pasif yapar (soft delete)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Ödül silindi
+        401:
+          description: Yetkilendirme hatası
+        403:
+          description: Yetki gerekli
+
+  # ==========================================
+  # CAFES
+  # ==========================================
+  /api/cafes:
+    get:
+      tags:
+        - Cafes
+      summary: Tüm kafeleri listele
+      description: Sistemdeki tüm kafeleri getirir
+      security: []
+      responses:
+        200:
+          description: Kafe listesi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cafe'
+
+  /api/cafes/{id}:
+    get:
+      tags:
+        - Cafes
+      summary: Kafe detaylarını getir
+      description: Belirli bir kafenin detaylarını döndürür
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Kafe detayları
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cafe'
+        404:
+          description: Kafe bulunamadı
+
+  /api/cafes/checkin:
+    post:
+      tags:
+        - Cafes
+      summary: Kafeye giriş (Eski)
+      description: Kullanıcının kafeye giriş yapması (userId ile)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - userId
+                - cafeId
+                - tableNumber
+                - pin
+              properties:
+                userId:
+                  type: integer
+                cafeId:
+                  type: integer
+                tableNumber:
+                  type: string
+                  example: "05"
+                pin:
+                  type: string
+                  example: "1234"
+      responses:
+        200:
+          description: Giriş başarılı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        400:
+          description: Eksik bilgi veya hatalı PIN
+        404:
+          description: Kafe veya kullanıcı bulunamadı
+
+  /api/cafes/check-in:
+    post:
+      tags:
+        - Cafes
+      summary: Kafeye giriş (JWT)
+      description: JWT token ile kafeye güvenli giriş yapar
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - cafeId
+                - tableNumber
+                - pin
+              properties:
+                cafeId:
+                  type: integer
+                tableNumber:
+                  type: string
+                  example: "05"
+                pin:
+                  type: string
+                  minLength: 4
+                  example: "1234"
+      responses:
+        200:
+          description: Giriş başarılı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  cafeName:
+                    type: string
+                  table:
+                    type: string
+                    example: "MASA05"
+        400:
+          description: Yanlış PIN veya eksik bilgi
+        401:
+          description: Yetkilendirme hatası
+        404:
+          description: Kafe bulunamadı
+
+  /api/cafes/{id}/pin:
+    put:
+      tags:
+        - Cafes
+      summary: Kafe PIN'ini güncelle
+      description: Kafenin günlük PIN kodunu günceller
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - pin
+              properties:
+                pin:
+                  type: string
+                  minLength: 4
+                  maxLength: 6
+                  example: "9876"
+                userId:
+                  type: integer
+                  description: Kafe admin'in user ID'si
+      responses:
+        200:
+          description: PIN güncellendi
+        400:
+          description: Geçersiz PIN formatı
+        404:
+          description: Kafe bulunamadı
+
+  # ==========================================
+  # LEADERBOARD
+  # ==========================================
+  /api/leaderboard:
+    get:
+      tags:
+        - Leaderboard
+      summary: Liderlik tablosu
+      description: En yüksek puana sahip kullanıcıları listeler
+      security: []
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: ["general", "department"]
+            default: "general"
+        - name: department
+          in: query
+          schema:
+            type: string
+          description: Bölüm filtresi (type=department için gerekli)
+      responses:
+        200:
+          description: Liderlik tablosu
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LeaderboardEntry'
+
+  # ==========================================
+  # ACHIEVEMENTS
+  # ==========================================
+  /api/achievements/{userId}:
+    get:
+      tags:
+        - Achievements
+      summary: Kullanıcı başarımlarını getir
+      description: Tüm başarımları ve kullanıcının kazandıklarını listeler
+      security: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Başarım listesi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Achievement'
+
+  # ==========================================
+  # COUPONS
+  # ==========================================
+  /api/coupons/use:
+    post:
+      tags:
+        - Coupons
+      summary: Kupon kullan
+      description: Bir kuponu kullanılmış olarak işaretler (Kafe Admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+              properties:
+                code:
+                  type: string
+                  example: "CD-A1B2-C3D4"
+      responses:
+        200:
+          description: Kupon kullanıldı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  item:
+                    $ref: '#/components/schemas/UserItem'
+        400:
+          description: Geçersiz, süresi dolmuş veya zaten kullanılmış kupon
+
+  # ==========================================
+  # ADMIN
+  # ==========================================
+  /api/admin/users:
+    get:
+      tags:
+        - Admin
+      summary: Tüm kullanıcıları listele
+      description: Sistemdeki tüm kullanıcıları getirir (Admin only)
+      responses:
+        200:
+          description: Kullanıcı listesi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        401:
+          description: Yetkilendirme hatası
+        403:
+          description: Admin yetkisi gerekli
+
+  /api/admin/games:
+    get:
+      tags:
+        - Admin
+      summary: Tüm oyunları listele
+      description: Sistemdeki tüm oyunları getirir (Admin only)
+      responses:
+        200:
+          description: Oyun listesi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Game'
+        401:
+          description: Yetkilendirme hatası
+        403:
+          description: Admin yetkisi gerekli
+
+  /api/admin/users/{id}/role:
+    put:
+      tags:
+        - Admin
+      summary: Kullanıcı rolünü güncelle
+      description: Kullanıcının rolünü değiştirir (Admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - role
+              properties:
+                role:
+                  type: string
+                  enum: ["user", "cafe_admin", "admin"]
+                cafe_id:
+                  type: integer
+                  description: cafe_admin rolü için zorunlu
+      responses:
+        200:
+          description: Rol güncellendi
+        400:
+          description: Geçersiz rol veya eksik cafe_id
+        401:
+          description: Yetkilendirme hatası
+        403:
+          description: Admin yetkisi gerekli
+        404:
+          description: Kullanıcı bulunamadı
+
+  /api/admin/users/{id}:
+    delete:
+      tags:
+        - Admin
+      summary: Kullanıcı sil
+      description: Bir kullanıcıyı tamamen siler (Admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Kullanıcı silindi
+        401:
+          description: Yetkilendirme hatası
+        403:
+          description: Admin yetkisi gerekli
+
+  /api/admin/cafes:
+    post:
+      tags:
+        - Admin
+      summary: Yeni kafe oluştur
+      description: Sistemde yeni bir kafe oluşturur (Admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                  example: "PAÜ Mühendislik Kafeterya"
+                address:
+                  type: string
+                total_tables:
+                  type: integer
+                  default: 20
+                pin:
+                  type: string
+                  minLength: 4
+                  maxLength: 4
+                  default: "1234"
+                latitude:
+                  type: number
+                longitude:
+                  type: number
+                table_count:
+                  type: integer
+                radius:
+                  type: integer
+                  description: Metre cinsinden kontrol radiusu
+      responses:
+        200:
+          description: Kafe oluşturuldu
+        400:
+          description: Kafe adı zorunlu
+        409:
+          description: Bu isimde kafe zaten var
+        501:
+          description: Demo modda kullanılamaz
+
+  /api/admin/cafes/{id}:
+    put:
+      tags:
+        - Admin
+      summary: Kafe güncelle
+      description: Kafe bilgilerini günceller (Admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: string
+                total_tables:
+                  type: integer
+                pin:
+                  type: string
+                  minLength: 4
+                  maxLength: 4
+      responses:
+        200:
+          description: Kafe güncellendi
+        400:
+          description: Güncellenecek alan bulunamadı veya geçersiz PIN
+        401:
+          description: Yetkilendirme hatası
+        403:
+          description: Admin yetkisi gerekli
+        404:
+          description: Kafe bulunamadı
+
+  /api/admin/cafe-admins:
+    post:
+      tags:
+        - Admin
+      summary: Kafe admin'i oluştur
+      description: Yeni bir kafe admin kullanıcısı oluşturur (Admin only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+                - cafeId
+              properties:
+                username:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+                cafeId:
+                  type: integer
+      responses:
+        200:
+          description: Kafe admin oluşturuldu
+        501:
+          description: Demo modda kullanılamaz
+
+  # ==========================================
+  # HEALTH
+  # ==========================================
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Sağlık kontrolü
+      description: API ve veritabanı bağlantı durumunu kontrol eder
+      security: []
+      responses:
+        200:
+          description: Sistem sağlıklı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uptime:
+                    type: number
+                  message:
+                    type: string
+                  timestamp:
+                    type: integer
+                  database:
+                    type: boolean
+        503:
+          description: Servis kullanılamıyor
+
+# ==========================================
+# COMPONENTS
+# ==========================================
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token kullanarak yetkilendirme.
+        Token'ı `Authorization: Bearer <token>` header'ında gönderin.
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        username:
+          type: string
+          example: "GamerTr_99"
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        points:
+          type: integer
+          example: 1250
+        wins:
+          type: integer
+          example: 12
+        gamesPlayed:
+          type: integer
+          example: 25
+        department:
+          type: string
+          example: "Bilgisayar Mühendisliği"
+        role:
+          type: string
+          enum: ["user", "cafe_admin", "admin"]
+          example: "user"
+        isAdmin:
+          type: boolean
+          example: false
+        cafe_id:
+          type: integer
+          nullable: true
+        table_number:
+          type: string
+          nullable: true
+          example: "MASA05"
+        cafe_name:
+          type: string
+          nullable: true
+        avatar_url:
+          type: string
+          nullable: true
+          format: uri
+      required:
+        - id
+        - username
+        - email
+        - points
+
+    Game:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        hostName:
+          type: string
+          example: "GamerTr_99"
+        guestName:
+          type: string
+          nullable: true
+          example: "Rival_Pro"
+        gameType:
+          type: string
+          example: "Taş Kağıt Makas"
+        points:
+          type: integer
+          example: 150
+        table:
+          type: string
+          example: "MASA04"
+        status:
+          type: string
+          enum: ["waiting", "active", "finished"]
+          example: "waiting"
+        player1Move:
+          type: string
+          nullable: true
+        player2Move:
+          type: string
+          nullable: true
+        gameState:
+          type: object
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        cafe_name:
+          type: string
+          nullable: true
+      required:
+        - id
+        - hostName
+        - gameType
+        - points
+        - status
+
+    Reward:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "Bedava Filtre Kahve"
+        cost:
+          type: integer
+          example: 500
+        description:
+          type: string
+          example: "Günün yorgunluğunu at."
+        icon:
+          type: string
+          example: "coffee"
+        cafe_id:
+          type: integer
+          nullable: true
+        is_active:
+          type: boolean
+          example: true
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - cost
+
+    UserItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        user_id:
+          type: integer
+        item_id:
+          type: integer
+        item_title:
+          type: string
+        code:
+          type: string
+          example: "CD-A1B2-C3D4"
+        redeemed_at:
+          type: string
+          format: date-time
+        is_used:
+          type: boolean
+        used_at:
+          type: string
+          format: date-time
+          nullable: true
+        status:
+          type: string
+          enum: ["active", "used"]
+
+    InventoryItem:
+      type: object
+      properties:
+        redeemId:
+          type: integer
+        id:
+          type: integer
+        title:
+          type: string
+        code:
+          type: string
+          example: "CD-A1B2-C3D4"
+        redeemedAt:
+          type: string
+          format: date-time
+        isUsed:
+          type: boolean
+
+    Cafe:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "PAÜ İİBF Kantin"
+        address:
+          type: string
+          nullable: true
+        total_tables:
+          type: integer
+          example: 30
+        pin:
+          type: string
+          example: "1234"
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
+          nullable: true
+        table_count:
+          type: integer
+        radius:
+          type: integer
+          description: Metre cinsinden
+        daily_pin:
+          type: string
+          example: "1234"
+      required:
+        - id
+        - name
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+          example: "GamerTr_99"
+        points:
+          type: integer
+          example: 2500
+        wins:
+          type: integer
+          example: 50
+        gamesPlayed:
+          type: integer
+          example: 100
+        department:
+          type: string
+          example: "Bilgisayar Mühendisliği"
+      required:
+        - id
+        - username
+        - points
+
+    Achievement:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+          example: "İlk Adım"
+        description:
+          type: string
+          example: "İlk oyununu oyna."
+        icon:
+          type: string
+          example: "footsteps"
+        points_reward:
+          type: integer
+          example: 50
+        condition_type:
+          type: string
+          enum: ["wins", "games_played", "points"]
+        condition_value:
+          type: integer
+          example: 1
+        unlocked:
+          type: boolean
+          example: true
+        unlockedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "E-posta kullanımda."
+        code:
+          type: string
+          example: "TOKEN_MISSING"
+      required:
+        - error

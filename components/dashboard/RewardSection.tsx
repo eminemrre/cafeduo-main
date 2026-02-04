@@ -6,9 +6,10 @@
 
 import React from 'react';
 import { Reward, RedeemedReward, User } from '../../types';
-import { Coffee, Percent, Cookie, Gamepad2, ShoppingBag, Ticket } from 'lucide-react';
+import { Coffee, Percent, Cookie, Gamepad2, ShoppingBag, Ticket, Package, Gift } from 'lucide-react';
 import { RetroButton } from '../RetroButton';
 import { SkeletonGrid, SkeletonCard } from '../Skeleton';
+import { EmptyState } from '../EmptyState';
 
 interface RewardSectionProps {
   // Kullanıcı
@@ -147,10 +148,12 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
               })}
             </div>
           ) : (
-            <div className="text-center py-12 text-gray-500">
-              <ShoppingBag size={48} className="mx-auto mb-4 opacity-30" />
-              <p>Henüz ödül bulunmuyor.</p>
-            </div>
+            <EmptyState
+              icon={Gift}
+              title="Mağaza Boş"
+              description="Şu anda satın alınabilecek ödül bulunmuyor. Daha sonra tekrar kontrol edin."
+              variant="compact"
+            />
           )}
         </div>
       )}
@@ -226,19 +229,16 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
               })}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <Ticket size={48} className="mx-auto mb-4 text-gray-500 opacity-30" />
-              <p className="text-gray-500">Henüz kuponun yok.</p>
-              <p className="text-gray-500 text-sm mt-2">
-                Mağazadan puanlarınla ödül alabilirsin.
-              </p>
-              <button
-                onClick={() => onTabChange('shop')}
-                className="mt-4 text-blue-400 hover:underline"
-              >
-                Mağazaya Git →
-              </button>
-            </div>
+            <EmptyState
+              icon={Package}
+              title="Envanterin Boş"
+              description="Henüz hiç kuponun yok. Mağazadan puanlarınla ödül satın alabilirsin!"
+              action={{
+                label: "Mağazaya Git",
+                onClick: () => onTabChange('shop')
+              }}
+              variant="compact"
+            />
           )}
         </div>
       )}

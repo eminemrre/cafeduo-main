@@ -9,8 +9,9 @@ import { GameRequest, User } from '../../types';
 import { GameLobby } from '../GameLobby';
 import { CreateGameModal } from '../CreateGameModal';
 import { RetroButton } from '../RetroButton';
-import { Gamepad2, Users } from 'lucide-react';
+import { Gamepad2, Users, Gamepad2 as GamepadIcon } from 'lucide-react';
 import { SkeletonGrid } from '../Skeleton';
+import { EmptyState } from '../EmptyState';
 
 interface GameSectionProps {
   // Kullanıcı
@@ -105,6 +106,17 @@ export const GameSection: React.FC<GameSectionProps> = ({
       {/* Oyun Listesi */}
       {gamesLoading ? (
         <SkeletonGrid count={4} columns={2} />
+      ) : games.length === 0 ? (
+        <EmptyState
+          icon={GamepadIcon}
+          title="Henüz Oyun Yok"
+          description="Şu an lobide aktif bir oyun yok. İlk oyunu kuran sen ol!"
+          action={{
+            label: "Yeni Oyun Kur",
+            onClick: () => setIsCreateModalOpen(true),
+            icon: Users
+          }}
+        />
       ) : (
         <GameLobby
           requests={games}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Mail, Lock, ArrowRight, AlertTriangle, Briefcase, Check, Eye, EyeOff } from 'lucide-react';
 import { RetroButton } from './RetroButton';
 import { User as UserType } from '../types';
@@ -202,31 +203,51 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center px-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-        onClick={onClose}
-      ></div>
+    <AnimatePresence>
+      <motion.div 
+        className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+      >
+        {/* Backdrop */}
+        <motion.div
+          className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+          onClick={onClose}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        />
 
-      {/* Modal Container */}
-      <div className="relative w-full max-w-md bg-[#1a1f2e] border-4 border-gray-500 border-t-white border-l-white border-b-gray-800 border-r-gray-800 shadow-[0_30px_70px_rgba(0,0,0,0.5)]">
+        {/* Modal Container - Full screen on mobile, centered on desktop */}
+        <motion.div 
+          className="relative w-full sm:max-w-md h-[85vh] sm:h-auto bg-[#1a1f2e] sm:border-4 sm:border-gray-500 sm:border-t-white sm:border-l-white sm:border-b-gray-800 sm:border-r-gray-800 sm:shadow-[0_30px_70px_rgba(0,0,0,0.5)] sm:rounded-lg overflow-hidden flex flex-col"
+          initial={{ y: '100%', opacity: 0.5 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: '100%', opacity: 0.5 }}
+          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+        >
+          {/* Drag handle for mobile */}
+          <div className="sm:hidden w-full pt-3 pb-1 flex justify-center" onClick={onClose}>
+            <div className="w-12 h-1.5 bg-gray-600 rounded-full" />
+          </div>
 
-        {/* Header Bar */}
-        <div className="bg-gradient-to-r from-blue-900 to-purple-900 px-4 py-2 flex justify-between items-center border-b-4 border-gray-800">
-          <span className="font-pixel text-white tracking-widest">
-            {mode === 'login' ? 'GIRIS_YAP.EXE' : 'KAYIT_OL.EXE'}
-          </span>
-          <button
-            onClick={onClose}
-            className="bg-red-500 hover:bg-red-600 text-white p-1 border-2 border-red-300 border-b-red-800 border-r-red-800"
-          >
-            <X size={16} />
-          </button>
-        </div>
+          {/* Header Bar */}
+          <div className="bg-gradient-to-r from-blue-900 to-purple-900 px-4 py-3 flex justify-between items-center border-b-4 border-gray-800 flex-shrink-0">
+            <span className="font-pixel text-white tracking-widest text-sm sm:text-base">
+              {mode === 'login' ? 'GIRIS_YAP.EXE' : 'KAYIT_OL.EXE'}
+            </span>
+            <motion.button
+              onClick={onClose}
+              className="bg-red-500 hover:bg-red-600 text-white p-2 border-2 border-red-300 border-b-red-800 border-r-red-800"
+              whileTap={{ scale: 0.9 }}
+            >
+              <X size={18} />
+            </motion.button>
+          </div>
 
-        {/* Content */}
-        <div className="p-8 flex flex-col gap-6">
+        {/* Content - Scrollable on mobile */}
+        <div className="p-4 sm:p-8 flex-1 overflow-y-auto flex flex-col gap-6">
 
           <div className="flex justify-center gap-4 font-pixel text-sm mb-4">
             <button
@@ -370,7 +391,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             </p>
           )}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };

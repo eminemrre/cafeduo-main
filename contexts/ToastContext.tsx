@@ -8,6 +8,7 @@
  */
 
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, XCircle, AlertCircle, Loader2, X } from 'lucide-react';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'loading';
@@ -89,23 +90,32 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   return (
     <ToastContext.Provider value={{ toast }}>
       {children}
-      {/* Toast Container */}
-      <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2 w-full max-w-sm">
-        {toasts.map((t) => (
-          <div
-            key={t.id}
-            className={`${ToastStyles[t.type]} rounded-lg shadow-lg p-4 flex items-center gap-3 animate-in slide-in-from-right duration-300`}
-          >
-            <ToastIcon type={t.type} />
-            <p className="text-white text-sm flex-1">{t.message}</p>
-            <button
-              onClick={() => dismissToast(t.id)}
-              className="text-gray-400 hover:text-white transition-colors"
+      {/* Toast Container - Stacked with animations */}
+      <div className="fixed top-20 sm:top-4 right-0 sm:right-4 z-[100] flex flex-col gap-2 w-full sm:max-w-sm px-4 sm:px-0 pointer-events-none">
+        <AnimatePresence mode="popLayout">
+          {toasts.map((t) => (
+            <motion.div
+              key={t.id}
+              layout
+              initial={{ x: 100, opacity: 0, scale: 0.9 }}
+              animate={{ x: 0, opacity: 1, scale: 1 }}
+              exit={{ x: 100, opacity: 0, scale: 0.9 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+              className={`${ToastStyles[t.type]} rounded-lg shadow-lg p-4 flex items-center gap-3 pointer-events-auto backdrop-blur-sm`}
             >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        ))}
+              <ToastIcon type={t.type} />
+              <p className="text-white text-sm flex-1">{t.message}</p>
+              <motion.button
+                onClick={() => dismissToast(t.id)}
+                className="text-gray-400 hover:text-white transition-colors p-1 rounded hover:bg-white/10"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                <X className="w-4 h-4" />
+              </motion.button>
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     </ToastContext.Provider>
   );

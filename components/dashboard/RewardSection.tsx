@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { motion } from 'framer-motion';
 import { Reward, RedeemedReward, User } from '../../types';
 import { Coffee, Percent, Cookie, Gamepad2, ShoppingBag, Ticket, Package, Gift } from 'lucide-react';
 import { RetroButton } from '../RetroButton';
@@ -101,13 +102,19 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                 const affordable = canAfford(reward.cost);
                 
                 return (
-                  <div
+                  <motion.div
                     key={reward.id}
-                    className={`relative group bg-[#1a1f2e] border-2 rounded-xl p-5 flex flex-col justify-between transition-all duration-300 h-full ${
+                    className={`relative group bg-[#1a1f2e] border-2 rounded-xl p-5 flex flex-col justify-between h-full cursor-pointer ${
                       affordable
-                        ? 'border-yellow-500/30 hover:border-yellow-500'
+                        ? 'border-yellow-500/30'
                         : 'border-gray-700 opacity-60'
                     }`}
+                    whileHover={affordable ? { 
+                      y: -6, 
+                      boxShadow: '0 20px 40px rgba(245, 193, 108, 0.15)',
+                      borderColor: 'rgba(245, 193, 108, 0.6)'
+                    } : {}}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                   >
                     <div>
                       <div className="flex justify-between items-start mb-3">
@@ -131,19 +138,24 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                       </p>
                     </div>
 
-                    <RetroButton
-                      onClick={() => onBuyReward(reward)}
-                      disabled={!affordable}
-                      variant={affordable ? 'primary' : 'secondary'}
-                      className="w-full text-sm"
+                    <motion.div
+                      whileHover={affordable ? { scale: 1.02 } : {}}
+                      whileTap={affordable ? { scale: 0.98 } : {}}
                     >
-                      {affordable ? (
-                        <><ShoppingBag size={16} /> Satın Al</>
-                      ) : (
-                        'Yetersiz Puan'
-                      )}
-                    </RetroButton>
-                  </div>
+                      <RetroButton
+                        onClick={() => onBuyReward(reward)}
+                        disabled={!affordable}
+                        variant={affordable ? 'primary' : 'secondary'}
+                        className="w-full text-sm"
+                      >
+                        {affordable ? (
+                          <><ShoppingBag size={16} /> Satın Al</>
+                        ) : (
+                          'Yetersiz Puan'
+                        )}
+                      </RetroButton>
+                    </motion.div>
+                  </motion.div>
                 );
               })}
             </div>
@@ -173,11 +185,16 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                 const isUsed = item.isUsed;
 
                 return (
-                  <div
+                  <motion.div
                     key={item.redeemId}
                     className={`relative overflow-hidden font-mono shadow-lg ${
                       isUsed || isExpired ? 'grayscale opacity-70' : ''
                     }`}
+                    whileHover={!isUsed && !isExpired ? {
+                      rotate: [0, -1, 1, 0],
+                      transition: { duration: 0.3 }
+                    } : {}}
+                    whileTap={!isUsed && !isExpired ? { scale: 0.98 } : {}}
                   >
                     <div className="bg-[#fff8dc] text-black p-4 rounded h-full flex flex-col justify-between">
                       {/* Delikler */}
@@ -224,7 +241,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>

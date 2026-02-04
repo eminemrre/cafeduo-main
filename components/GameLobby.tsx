@@ -19,7 +19,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
   onViewProfile
 }) => {
   return (
-    <div className="flex flex-col gap-4 md:gap-6 h-full">
+    <div className="flex flex-col gap-4 md:gap-6 h-full" data-testid="game-lobby-container">
 
       {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-3 md:gap-4">
@@ -73,7 +73,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
           </div>
         </div>
 
-        <div className="p-3 md:p-4 space-y-2 md:space-y-3 overflow-y-auto max-h-[300px] md:max-h-[400px] custom-scrollbar relative">
+        <div className="p-3 md:p-4 space-y-2 md:space-y-3 overflow-y-auto max-h-[300px] md:max-h-[400px] custom-scrollbar relative" data-testid="game-lobby-list">
           {/* Scanline effect */}
           <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-white/5 to-transparent opacity-5" style={{ backgroundSize: '100% 4px' }}></div>
 

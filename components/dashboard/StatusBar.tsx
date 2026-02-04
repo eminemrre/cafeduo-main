@@ -36,7 +36,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         {/* İstatistikler */}
         <div className="flex items-center gap-6">
           {/* Puan */}
-          <div className="flex items-center gap-2 bg-yellow-500/10 px-4 py-2 rounded-lg">
+          <div className="flex items-center gap-2 bg-yellow-500/10 px-4 py-2 rounded-lg" data-testid="user-points">
             <Star className="text-yellow-500" size={20} />
             <div>
               <span className="text-yellow-500 font-bold text-lg">{user.points}</span>
@@ -45,7 +45,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           </div>
 
           {/* Galibiyet */}
-          <div className="flex items-center gap-2 bg-blue-500/10 px-4 py-2 rounded-lg">
+          <div className="flex items-center gap-2 bg-blue-500/10 px-4 py-2 rounded-lg" data-testid="user-wins">
             <Trophy className="text-blue-500" size={20} />
             <div>
               <span className="text-blue-500 font-bold text-lg">{user.wins}</span>
@@ -54,7 +54,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           </div>
 
           {/* Oynanan Oyun */}
-          <div className="flex items-center gap-2 bg-purple-500/10 px-4 py-2 rounded-lg">
+          <div className="flex items-center gap-2 bg-purple-500/10 px-4 py-2 rounded-lg" data-testid="user-games">
             <Gamepad2 className="text-purple-500" size={20} />
             <div>
               <span className="text-purple-500 font-bold text-lg">{user.gamesPlayed}</span>
@@ -64,7 +64,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         </div>
 
         {/* Masa Durumu */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2" data-testid="table-status">
           {isMatched ? (
             <>
               <Wifi className="text-green-500 animate-pulse" size={18} />

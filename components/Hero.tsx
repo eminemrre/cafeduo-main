@@ -88,6 +88,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
 
               <RetroButton
                 onClick={onLogin}
+                data-testid="hero-login-button"
                 className="min-w-[200px] py-4 text-lg"
                 variant="secondary"
               >

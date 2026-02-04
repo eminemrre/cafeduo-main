@@ -96,6 +96,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
           onClick={() => setIsCreateModalOpen(true)}
           disabled={!isMatched}
           variant="primary"
+          data-testid="create-game-button"
           className="w-full sm:w-auto"
         >
           <Users size={18} />
@@ -107,6 +108,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
       {gamesLoading ? (
         <SkeletonGrid count={4} columns={2} />
       ) : games.length === 0 ? (
+        <div data-testid="game-lobby-empty">
         <EmptyState
           icon={GamepadIcon}
           title="Henüz Oyun Yok"
@@ -118,14 +120,16 @@ export const GameSection: React.FC<GameSectionProps> = ({
           }}
         />
       ) : (
-        <GameLobby
-          requests={games}
-          currentUser={currentUser}
-          onJoinGame={onJoinGame}
-          onCreateGameClick={() => setIsCreateModalOpen(true)}
-          onViewProfile={onViewProfile}
-        />
-      )}
+        <div data-testid="game-lobby-list">
+          <GameLobby
+            requests={games}
+            currentUser={currentUser}
+            onJoinGame={onJoinGame}
+            onCreateGameClick={() => setIsCreateModalOpen(true)}
+            onViewProfile={onViewProfile}
+          />
+        </div>
+      )}</div>
 
       {/* Create Game Modal */}
       <CreateGameModal

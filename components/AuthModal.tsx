@@ -324,6 +324,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 onChange={(e) => handleChange('email', e.target.value)}
                 onBlur={() => handleBlur('email')}
                 placeholder="E-posta"
+                data-testid="auth-email-input"
                 className={`w-full bg-black/30 border-2 ${fieldErrors.email && touched.email ? 'border-red-500 focus:border-red-500' : 'border-gray-600 focus:border-blue-500'} text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all focus:shadow-[0_0_20px_rgba(59,130,246,0.25)]`}
               />
               {!fieldErrors.email && touched.email && email && (
@@ -344,6 +345,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 onChange={(e) => handleChange('password', e.target.value)}
                 onBlur={() => handleBlur('password')}
                 placeholder="Şifre"
+                data-testid="auth-password-input"
                 className={`w-full bg-black/30 border-2 ${fieldErrors.password && touched.password ? 'border-red-500 focus:border-red-500' : 'border-gray-600 focus:border-blue-500'} text-white py-3 pl-10 pr-12 outline-none font-retro text-xl placeholder:text-gray-600 transition-all focus:shadow-[0_0_20px_rgba(59,130,246,0.25)]`}
               />
               <button
@@ -363,6 +365,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <RetroButton
               type="submit"
               disabled={isLoading}
+              data-testid="auth-submit-button"
               className="w-full mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (

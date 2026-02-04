@@ -125,6 +125,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
                     </motion.div>
                     <motion.button
                       onClick={onLogout}
+                      data-testid="logout-button"
                       className="flex items-center gap-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 font-pixel border border-transparent hover:border-red-500/50"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
@@ -244,6 +245,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
                         if (onLogout) onLogout();
                         setIsOpen(false);
                       }}
+                      data-testid="logout-button-mobile"
                       className="w-full flex items-center gap-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 px-4 py-4 rounded-xl text-base font-pixel transition-colors border border-red-500/20"
                     >
                       <LogOut size={20} />

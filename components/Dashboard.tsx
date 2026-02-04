@@ -222,6 +222,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
                 <motion.button
                   key={tab.id}
                   onClick={() => setMainTab(tab.id as typeof mainTab)}
+                  data-testid={`dashboard-tab-${tab.id}`}
                   className={`relative flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3 rounded-lg font-medium transition-colors text-sm md:text-base ${
                     isActive
                       ? tab.color === 'blue' ? 'text-white' : tab.color === 'yellow' ? 'text-black' : 'text-white'

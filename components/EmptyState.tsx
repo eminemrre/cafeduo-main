@@ -28,7 +28,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 }) => {
   if (variant === 'compact') {
     return (
-      <div className="text-center py-8 px-4">
+      <div className="text-center py-8 px-4" data-testid="empty-state-compact">
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-800/50 mb-3">
           <Icon size={24} className="text-gray-500" />
         </div>
@@ -44,7 +44,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   }
 
   return (
-    <div className="text-center py-16 px-4">
+    <div className="text-center py-16 px-4" data-testid="empty-state">
       {/* Icon */}
       <div className="relative inline-block mb-6">
         <div className="absolute inset-0 bg-blue-500/20 blur-2xl rounded-full" />
@@ -54,12 +54,12 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       </div>
 
       {/* Title */}
-      <h3 className="text-xl font-bold text-white mb-2">
+      <h3 className="text-xl font-bold text-white mb-2" data-testid="empty-state-title">
         {title}
       </h3>
 
       {/* Description */}
-      <p className="text-gray-400 max-w-sm mx-auto mb-6">
+      <p className="text-gray-400 max-w-sm mx-auto mb-6" data-testid="empty-state-description">
         {description}
       </p>
 

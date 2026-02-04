@@ -141,7 +141,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
       <div className="absolute inset-0 bg-black/90 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
 
       {/* Modal Content */}
-      <div className="relative bg-[#1a1f2e] border-4 border-blue-500 p-6 w-full max-w-md shadow-[0_0_50px_rgba(59,130,246,0.3)] transform transition-all scale-100 opacity-100">
+      <div className="relative bg-[#1a1f2e] border-4 border-blue-500 p-6 w-full max-w-md shadow-[0_0_50px_rgba(59,130,246,0.3)] transform transition-all scale-100 opacity-100" data-testid="create-game-modal">
 
         {/* Header */}
         <div className="flex justify-between items-center mb-6 border-b-2 border-gray-700 pb-4">
@@ -172,6 +172,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                   key={game.id}
                   type="button"
                   onClick={() => handleGameTypeChange(game.name)}
+                  data-testid={`game-type-${game.id}`}
                   className={`w-full p-3 border-2 rounded transition-all text-left ${
                     gameType === game.name
                       ? 'border-blue-500 bg-blue-500/20'
@@ -213,6 +214,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                 onBlur={() => setTouched(prev => ({ ...prev, points: true }))}
                 min={minPoints}
                 max={maxPoints}
+                data-testid="game-points-input"
                 className={`w-full bg-black border-2 ${errors.points && touched.points ? 'border-red-500' : 'border-gray-600'} text-white p-3 font-retro text-2xl text-center focus:border-blue-500 outline-none transition-colors`}
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 text-sm">Puan</span>
@@ -264,6 +266,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
           <RetroButton 
             type="submit" 
             disabled={isSubmitting}
+            data-testid="create-game-submit"
             className="w-full shadow-blue-900/20 border-blue-400 hover:border-blue-300 disabled:opacity-50"
           >
             {isSubmitting ? (

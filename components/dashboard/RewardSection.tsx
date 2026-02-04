@@ -63,6 +63,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
         <div className="flex items-center gap-2 bg-[#0f141a] p-1 rounded-lg">
           <button
             onClick={() => onTabChange('shop')}
+            data-testid="shop-tab"
             className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
               activeTab === 'shop'
                 ? 'bg-blue-500 text-white'
@@ -73,6 +74,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
           </button>
           <button
             onClick={() => onTabChange('inventory')}
+            data-testid="inventory-tab"
             className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
               activeTab === 'inventory'
                 ? 'bg-blue-500 text-white'
@@ -146,6 +148,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                         onClick={() => onBuyReward(reward)}
                         disabled={!affordable}
                         variant={affordable ? 'primary' : 'secondary'}
+                        data-testid="shop-buy-button"
                         className="w-full text-sm"
                       >
                         {affordable ? (

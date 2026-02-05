@@ -137,9 +137,9 @@ jest.mock('./dashboard/RewardSection', () => ({
 }));
 
 jest.mock('./Leaderboard', () => ({
-  Leaderboard: ({ currentUser }: { currentUser: User }) => (
+  Leaderboard: () => (
     <div data-testid="leaderboard">
-      <span>Sıralama Tablosu - {currentUser.username}</span>
+      <span>Sıralama Tablosu</span>
     </div>
   )
 }));

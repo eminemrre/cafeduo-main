@@ -6,22 +6,15 @@ const cafeController = {
     // GET ALL CAFES
     async getAllCafes(req, res) {
         try {
-            if (req.isDbConnected) { // Assuming middleware sets this or we check helper
-                // Check global helper if middleware not set
-                // For now, simpler to reuse helper or assume connected if we want to drop fallback
-                // But let's stick to the pattern:
-                const result = await pool.query('SELECT * FROM cafes ORDER BY name');
-                res.json(result.rows);
-            } else {
-                // Fallback for demo (ideally removed in production refactor but kept for safety)
-                res.json([
-                    { id: 1, name: 'PAÜ İİBF Kantin', latitude: 37.741, longitude: 29.101 },
-                    { id: 2, name: 'PAÜ Yemekhane', latitude: 37.742, longitude: 29.102 }
-                ]);
-            }
+            const result = await pool.query('SELECT * FROM cafes ORDER BY name');
+            res.json(result.rows);
         } catch (err) {
-            console.error(err);
-            res.status(500).json({ error: 'Database error' });
+            console.error('getAllCafes DB error, returning fallback list:', err.message);
+            // Fallback for demo mode and temporary DB outages
+            res.json([
+                { id: 1, name: 'PAÜ İİBF Kantin', latitude: 37.741, longitude: 29.101 },
+                { id: 2, name: 'PAÜ Yemekhane', latitude: 37.742, longitude: 29.102 }
+            ]);
         }
     },
 

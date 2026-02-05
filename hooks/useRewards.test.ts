@@ -105,7 +105,7 @@ describe('useRewards', () => {
       return await result.current.buyReward(reward);
     });
 
-    expect(api.shop.buy).toHaveBeenCalledWith(mockUser.id, reward.id);
+    expect(api.shop.buy).toHaveBeenCalledWith(reward.id);
     expect(buyResult.success).toBe(true);
     expect(buyResult.newPoints).toBe(400);
   });

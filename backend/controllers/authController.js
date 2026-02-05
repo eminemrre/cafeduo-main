@@ -22,10 +22,6 @@ const generateToken = (user) => {
     );
 };
 
-// Temp storage for verification (should be Redis in production)
-const verificationCodes = new Map();
-const pendingUsers = new Map();
-
 // Helper for reCAPTCHA (moved from server.js)
 const verifyRecaptcha = async (token) => {
     if (!token) return true;
@@ -66,13 +62,6 @@ const authController = {
             res.status(400).json({ error: 'Kullanıcı oluşturulamadı.' });
             // Fallback logic could go here if needed
         }
-    },
-
-    // VERIFY (Simplified - normally Step 2)
-    async verify(req, res) {
-        // Logic from server.js app.post('/api/auth/verify')
-        // For brevity, assuming DB connection is active as per priority
-        res.status(501).json({ error: 'Verify endpoint moved to controller - pending implementation' });
     },
 
     // LOGIN

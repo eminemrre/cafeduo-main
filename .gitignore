@@ -26,6 +26,9 @@ dist-ssr
 
 # Environment variables
 .env
+.env.ai
+.env.local
+.env*.local
 
 # Temporary extracted assets
 temp_assets/

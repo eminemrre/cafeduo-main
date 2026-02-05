@@ -19,12 +19,10 @@ const openrouter = new OpenRouter({
 });
 
 // Free models from OpenRouter (updated 2026-02)
-// Using same model for stability - different prompts create different perspectives
 const FREE_MODELS = {
     deepseek: 'tngtech/deepseek-r1t2-chimera:free',
-    gemma: 'tngtech/deepseek-r1t2-chimera:free',
-    llama: 'tngtech/deepseek-r1t2-chimera:free',
-    mistral: 'tngtech/deepseek-r1t2-chimera:free'
+    glm: 'z-ai/glm-4.5-air:free', // New working model!
+    // qwen3: 'qwen/qwen3-coder:free', // Rate limited often
 };
 
 // ============================================
@@ -50,7 +48,7 @@ KURALLAR:
         name: 'KAYA',
         role: 'Analyst',
         team: 'A',
-        model: FREE_MODELS.gemma,
+        model: FREE_MODELS.glm,
         emoji: '📊',
         systemPrompt: `Sen KAYA - CafeDuo'nun veri analistsin.
 Görevin: Performans analizi, metrik takibi, benchmark.
@@ -65,7 +63,7 @@ KURALLAR:
         name: 'ECE',
         role: 'Content',
         team: 'B',
-        model: FREE_MODELS.llama,
+        model: FREE_MODELS.deepseek,
         emoji: '📝',
         systemPrompt: `Sen ECE - CafeDuo'nun içerik ve dokümantasyon uzmanısın.
 Görevin: README, JSDoc, kullanıcı yardımı, UX yazıları.
@@ -78,7 +76,7 @@ KURALLAR:
         name: 'DEMIR',
         role: 'Strategist',
         team: 'B',
-        model: FREE_MODELS.mistral,
+        model: FREE_MODELS.glm,
         emoji: '🎯',
         systemPrompt: `Sen DEMIR - CafeDuo'nun strateji uzmanısın.
 Görevin: Mimari kararlar, roadmap planlaması, risk analizi.

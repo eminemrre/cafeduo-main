@@ -31,6 +31,7 @@
     "framer-motion": "^12.31.0",
     "google-auth-library": "^10.5.0",
     "helmet": "^8.1.0",
+    "ioredis": "^5.9.2",
     "jsonwebtoken": "^9.0.2",
     "kaboom": "^3000.1.17",
     "leaflet": "^1.9.4",

@@ -1,0 +1,18 @@
+const authenticateToken = async (req, res, next) => {
+ * Must be used AFTER authenticateToken
+ * Must be used AFTER authenticateToken
+app.get('/api/auth/me', authenticateToken, async (req, res) => {
+app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
+app.get('/api/admin/games', authenticateToken, requireAdmin, async (req, res) => {
+app.put('/api/admin/users/:id/role', authenticateToken, requireAdmin, async (req, res) => {
+app.put('/api/admin/cafes/:id', authenticateToken, requireAdmin, async (req, res) => {
+app.post('/api/admin/cafes', authenticateToken, requireAdmin, async (req, res) => {
+app.post('/api/shop/buy', authenticateToken, async (req, res) => {
+app.get('/api/users/:id/items', authenticateToken, requireOwnership('id'), async (req, res) => {
+app.post('/api/admin/cafe-admins', authenticateToken, requireAdmin, async (req, res) => {
+app.get('/api/shop/inventory/:userId', authenticateToken, requireOwnership('userId'), async (req, res) => {
+app.post('/api/cafes/check-in', authenticateToken, async (req, res) => {
+app.post('/api/admin/cafes', authenticateToken, requireAdmin, async (req, res) => {
+app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
+app.delete('/api/rewards/:id', authenticateToken, requireCafeAdmin, async (req, res) => {
+app.put('/api/users/:id', authenticateToken, requireOwnership('id'), async (req, res) => {

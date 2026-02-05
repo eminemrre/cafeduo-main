@@ -39,6 +39,10 @@ const { Server } = require("socket.io");
 
 // Local modules
 const { pool } = require('./db');
+const { cache, clearCache } = require('./middleware/cache'); // Redis Cache Import
+const authRoutes = require('./routes/authRoutes');
+const cafeRoutes = require('./routes/cafeRoutes'); // Cafe Routes Import
+const { authenticateToken, requireAdmin, requireOwnership, requireCafeAdmin } = require('./middleware/auth'); // Auth Middleware Imports
 
 // Simple Logger (can be replaced with Winston in production)
 const logger = {
@@ -205,151 +209,9 @@ console.log("🗄️  Database URL:", process.env.***REMOVED*** ? "Loaded ✅" :
  * Enhanced JWT Authentication Middleware
  * Verifies token and fetches fresh user data from DB
  */
-const authenticateToken = async (req, res, next) => {
-  try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+// Middleware (Moved to backend/middleware/auth.js)
+// authenticateToken, requireAdmin, requireCafeAdmin, requireOwnership
 
-    if (!token) {
-      return res.status(401).json({ 
-        error: 'Access token required',
-        code: 'TOKEN_MISSING'
-      });
-    }
-
-    // Verify token
-    const decoded = jwt.verify(token, ***REMOVED***);
-    
-    // Fetch fresh user data from database
-    if (await isDbConnected()) {
-      const result = await pool.query(
-        `SELECT id, username, email, role, is_admin as "isAdmin", 
-                cafe_id, points, wins, games_played as "gamesPlayed"
-         FROM users 
-         WHERE id = $1`,
-        [decoded.id]
-      );
-
-      if (result.rows.length === 0) {
-        return res.status(401).json({ 
-          error: 'User not found',
-          code: 'USER_NOT_FOUND'
-        });
-      }
-
-      req.user = result.rows[0];
-    } else {
-      // Memory fallback - basic validation
-      req.user = decoded;
-    }
-    
-    next();
-  } catch (err) {
-    if (err.name === 'JsonWebTokenError') {
-      return res.status(403).json({ 
-        error: 'Invalid token',
-        code: 'TOKEN_INVALID'
-      });
-    }
-    if (err.name === 'TokenExpiredError') {
-      return res.status(403).json({ 
-        error: 'Token expired',
-        code: 'TOKEN_EXPIRED'
-      });
-    }
-    
-    console.error('Auth middleware error:', err);
-    return res.status(500).json({ 
-      error: 'Authentication error',
-      code: 'AUTH_ERROR'
-    });
-  }
-};
-
-/**
- * Require Admin Role Middleware
- * Must be used AFTER authenticateToken
- */
-const requireAdmin = (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({ 
-      error: 'Authentication required',
-      code: 'AUTH_REQUIRED'
-    });
-  }
-
-  if (req.user.role !== 'admin' && !req.user.isAdmin) {
-    return res.status(403).json({ 
-      error: 'Admin access required',
-      code: 'ADMIN_REQUIRED'
-    });
-  }
-
-  next();
-};
-
-/**
- * Require Cafe Admin Role Middleware
- * Must be used AFTER authenticateToken
- */
-const requireCafeAdmin = (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({ 
-      error: 'Authentication required',
-      code: 'AUTH_REQUIRED'
-    });
-  }
-
-  if (req.user.role !== 'cafe_admin' && req.user.role !== 'admin') {
-    return res.status(403).json({ 
-      error: 'Cafe admin access required',
-      code: 'CAFE_ADMIN_REQUIRED'
-    });
-  }
-
-  next();
-};
-
-/**
- * Prevent IDOR - Verify user owns the resource or is admin
- * @param {string} paramName - URL parameter name for user ID
- */
-const requireOwnership = (paramName = 'id') => {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ 
-        error: 'Authentication required',
-        code: 'AUTH_REQUIRED'
-      });
-    }
-
-    const resourceUserId = req.params[paramName] || req.body.userId;
-    
-    // Admin can access any resource
-    if (req.user.role === 'admin') {
-      return next();
-    }
-    
-    // Check if user owns the resource
-    if (parseInt(resourceUserId) !== req.user.id) {
-      return res.status(403).json({ 
-        error: 'Access denied to this resource',
-        code: 'ACCESS_DENIED'
-      });
-    }
-
-    next();
-  };
-};
-
-// Helper to generate JWT
-const generateToken = (user) => {
-  return jwt.sign(
-    { id: user.id, email: user.email, username: user.username, role: user.role },
-    ***REMOVED***,
-    { expiresIn: '7d' } // Token valid for 7 days
-  );
-};
 
 // Security Middleware
 app.use(helmet()); // Secure HTTP headers
@@ -555,6 +417,7 @@ const initDb = async () => {
 };
 
 // --- IN-MEMORY FALLBACK DATA (For testing without DB) ---
+const memoryItems = []; // Code Review Fix: Define undefined variable
 let MEMORY_USERS = [
   { id: 1, username: 'DemoUser', email: 'demo@cafe.com', password: '123', points: 1250, wins: 12, gamesPlayed: 25 }
 ];
@@ -648,216 +511,26 @@ const verifyRecaptcha = async (token) => {
 };
 
 // 1. REGISTER (Doğrudan Kayıt - E-posta Doğrulaması Kaldırıldı)
-app.post('/api/auth/register', async (req, res) => {
-  const { username, email, password, department } = req.body;
+// --- API ROUTES ---
 
-  if (!username || !email || !password) {
-    return res.status(400).json({ error: 'Tüm alanlar zorunludur.' });
-  }
+// Auth Routes (Modularized)
+app.use('/api/auth', authRoutes);
 
-  // Check if user already exists
-  if (await isDbConnected()) {
-    const check = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
-    if (check.rows.length > 0) return res.status(400).json({ error: 'E-posta kullanımda.' });
+// Cafe Routes (Modularized)
+app.use('/api/cafes', cafeRoutes);
 
-    try {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const result = await pool.query(
-        'INSERT INTO users (username, email, password_hash, points, department) VALUES ($1, $2, $3, 100, $4) RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin"',
-        [username, email, hashedPassword, department || '']
-      );
-      res.json(result.rows[0]);
-    } catch (err) {
-      console.error('Register error:', err);
-      res.status(400).json({ error: 'Kullanıcı oluşturulamadı.' });
-    }
-  } else {
-    if (MEMORY_USERS.find(u => u.email === email)) return res.status(400).json({ error: 'E-posta kullanımda.' });
 
-    const newUser = {
-      id: Date.now(),
-      username,
-      email,
-      password,
-      points: 100,
-      wins: 0,
-      gamesPlayed: 0,
-      department
-    };
-    MEMORY_USERS.push(newUser);
-    res.json(newUser);
-  }
-});
+// 1. REGISTER (Moved to authController)
+
 
 // 1.5 VERIFY (Step 2: Create User)
-app.post('/api/auth/verify', async (req, res) => {
-  const { email, code } = req.body;
-
-  if (verificationCodes.get(email) !== code) {
-    return res.status(400).json({ error: 'Geçersiz doğrulama kodu.' });
-  }
-
-  const userData = pendingUsers.get(email);
-  if (!userData) {
-    return res.status(400).json({ error: 'Oturum zaman aşımına uğradı. Tekrar kayıt olun.' });
-  }
-
-  // Create User
-  if (await isDbConnected()) {
-    try {
-      const hashedPassword = await bcrypt.hash(userData.password, 10);
-      const result = await pool.query(
-        'INSERT INTO users (username, email, password_hash, points, department) VALUES ($1, $2, $3, 100, $4) RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin"',
-        [userData.username, userData.email, hashedPassword, userData.department || '']
-      );
-
-      // Cleanup
-      verificationCodes.delete(email);
-      pendingUsers.delete(email);
-
-      res.json(result.rows[0]);
-    } catch (err) {
-      res.status(400).json({ error: 'Kullanıcı oluşturulamadı.' });
-    }
-  } else {
-    // Fallback
-    const newUser = {
-      id: Date.now(),
-      username: userData.username,
-      email: userData.email,
-      password: userData.password,
-      points: 100,
-      wins: 0,
-      gamesPlayed: 0,
-      department: userData.department
-    };
-    MEMORY_USERS.push(newUser);
-
-    // Cleanup
-    verificationCodes.delete(email);
-    pendingUsers.delete(email);
-
-    res.json(newUser);
-  }
-});
+// 1.5 VERIFY (Moved to authController)
 
 // 2. LOGIN
-app.post('/api/auth/login', async (req, res) => {
-  const { email, password, captchaToken } = req.body;
-
-  // Verify reCAPTCHA
-  const isHuman = await verifyRecaptcha(captchaToken);
-  if (!isHuman) {
-    return res.status(400).json({ error: 'Robot doğrulaması başarısız.' });
-  }
-
-  if (await isDbConnected()) {
-    try {
-      const result = await pool.query('SELECT id, username, email, password_hash, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id FROM users WHERE email = $1', [email]);
-
-      if (result.rows.length > 0) {
-        const user = result.rows[0];
-        const match = await bcrypt.compare(password, user.password_hash);
-
-        if (match) {
-          // Daily Bonus Logic
-          let bonusReceived = false;
-
-          // 2. Daily Bonus Check (Only for regular users, not admins)
-          const today = new Date().toISOString().split('T')[0];
-          const lastBonus = user.last_daily_bonus ? new Date(user.last_daily_bonus).toISOString().split('T')[0] : null;
-
-          // Only give bonus if:
-          // 1. User is NOT an admin (is_admin is false)
-          // 2. User is NOT a cafe_admin (role is 'user' or null/undefined, but definitely not 'cafe_admin')
-          // 3. Has not received bonus today
-          const isEligibleForBonus = !user.is_admin && user.role !== 'cafe_admin' && user.role !== 'admin';
-
-          if (isEligibleForBonus && lastBonus !== today) {
-            console.log(`🎁 Awarding daily bonus to ${user.username}`);
-            await pool.query('UPDATE users SET points = points + 10, last_daily_bonus = NOW() WHERE id = $1', [user.id]);
-            user.points += 10;
-            bonusReceived = true;
-          }
-
-          // FORCE LOCATION RESET: Clear cafe_id on login (ONLY for regular users, NOT cafe admins)
-          if (user.role !== 'cafe_admin') {
-            await pool.query('UPDATE users SET cafe_id = NULL WHERE id = $1', [user.id]);
-            user.cafe_id = null;
-          }
-          // cafe_admin için cafe_id korunuyor
-
-          // Remove password_hash from response
-          delete user.password_hash;
-          delete user.last_daily_bonus; // Don't send internal date
-
-          // Generate JWT token
-          const token = generateToken(user);
-
-          res.json({ user: { ...user, bonusReceived }, token });
-        } else {
-          res.status(401).json({ error: 'Geçersiz e-posta veya şifre.' });
-        }
-      } else {
-        res.status(401).json({ error: 'Geçersiz e-posta veya şifre.' });
-      }
-    } catch (err) {
-      console.error("LOGIN ERROR:", err); // Detailed logging
-      res.status(500).json({ error: 'Sunucu hatası: ' + err.message });
-    }
-  } else {
-    // Fallback (Memory Mode)
-    const user = MEMORY_USERS.find(u => u.email === email && u.password === password);
-    if (user) {
-      // Reset cafe_id on login to force re-verification
-      if (await isDbConnected()) {
-        await pool.query('UPDATE users SET cafe_id = NULL WHERE id = $1', [user.id]);
-        user.cafe_id = null;
-      }
-      
-      // Generate JWT token for memory mode too!
-      const token = generateToken(user);
-      
-      res.json({ user, token });
-    }
-    else res.status(401).json({ error: 'Kullanıcı bulunamadı.' });
-  }
-});
+// 2. LOGIN (Moved to authController)
 
 // 2.1 VERIFY TOKEN (Get current user from JWT)
-app.get('/api/auth/me', authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    if (await isDbConnected()) {
-      const result = await pool.query(
-        'SELECT id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number FROM users WHERE id = $1',
-        [userId]
-      );
-
-      if (result.rows.length > 0) {
-        const user = result.rows[0];
-        // Format table_number for frontend (db stores int, frontend needs 'MASAxx')
-        if (user.table_number && !isNaN(user.table_number)) {
-          user.table_number = `MASA${user.table_number.toString().padStart(2, '0')}`;
-        }
-        res.json(user);
-      } else {
-        res.status(404).json({ error: 'User not found' });
-      }
-    } else {
-      const user = MEMORY_USERS.find(u => u.id === userId);
-      if (user) {
-        res.json(user);
-      } else {
-        res.status(404).json({ error: 'User not found' });
-      }
-    }
-  } catch (err) {
-    console.error('Auth verification error:', err);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
+// 2.1 VERIFY TOKEN (Moved to authController)
 
 // 2.5 GOOGLE LOGIN
 const { OAuth2Client } = require('google-auth-library');
@@ -929,147 +602,11 @@ app.post('/api/auth/google', async (req, res) => {
   }
 });
 
-// ===================================
-// 3. CAFE ENDPOINTS
-// ===================================
+// 3. CAFE ENDPOINTS (Moved to cafeController)
 
-// 3.1 GET ALL CAFES
-app.get('/api/cafes', async (req, res) => {
-  if (await isDbConnected()) {
-    try {
-      const result = await pool.query('SELECT id, name, address, total_tables, pin FROM cafes ORDER BY name');
-      res.json(result.rows);
-    } catch (err) {
-      console.error('Error fetching cafes:', err);
-      res.status(500).json({ error: 'Kafeler yüklenemedi.' });
-    }
-  } else {
-    // Fallback cafes
-    res.json([
-      { id: 1, name: 'PAÜ İİBF Kantin', address: 'İİBF Yerleşkesi', total_tables: 30, pin: '1234' },
-      { id: 2, name: 'PAÜ Mühendislik Kafeterya', address: 'Mühendislik Fakültesi', total_tables: 25, pin: '5678' }
-    ]);
-  }
-});
+// 3.3 CHECK-IN (Moved to cafeController)
 
-// 3.2 GET SINGLE CAFE
-app.get('/api/cafes/:id', async (req, res) => {
-  const { id } = req.params;
-
-  if (await isDbConnected()) {
-    try {
-      const result = await pool.query('SELECT id, name, address, total_tables, pin FROM cafes WHERE id = $1', [id]);
-      if (result.rows.length > 0) {
-        res.json(result.rows[0]);
-      } else {
-        res.status(404).json({ error: 'Kafe bulunamadı.' });
-      }
-    } catch (err) {
-      console.error('Error fetching cafe:', err);
-      res.status(500).json({ error: 'Kafe yüklenemedi.' });
-    }
-  } else {
-    res.status(404).json({ error: 'Kafe bulunamadı.' });
-  }
-});
-
-// 3.3 CHECK-IN TO CAFE (CRITICAL)
-app.post('/api/cafes/checkin', async (req, res) => {
-  const { userId, cafeId, tableNumber, pin } = req.body;
-
-  if (!userId || !cafeId || !tableNumber || !pin) {
-    return res.status(400).json({ error: 'Tüm alanlar zorunludur.' });
-  }
-
-  if (await isDbConnected()) {
-    try {
-      // 1. Verify cafe PIN
-      const cafeResult = await pool.query('SELECT pin FROM cafes WHERE id = $1', [cafeId]);
-      if (cafeResult.rows.length === 0) {
-        return res.status(404).json({ error: 'Kafe bulunamadı.' });
-      }
-
-      const cafe = cafeResult.rows[0];
-      if (cafe.pin !== pin) {
-        return res.status(401).json({ error: 'Hatalı PIN kodu.' });
-      }
-
-      // 2. Update user's cafe_id and table_number
-      const userResult = await pool.query(
-        `UPDATE users 
-         SET cafe_id = $1, table_number = $2 
-         WHERE id = $3 
-         RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number`,
-        [cafeId, tableNumber, userId]
-      );
-
-      if (userResult.rows.length === 0) {
-        return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
-      }
-
-      const updatedUser = userResult.rows[0];
-
-      // 3. Fetch cafe name
-      const cafeNameResult = await pool.query('SELECT name FROM cafes WHERE id = $1', [cafeId]);
-      if (cafeNameResult.rows.length > 0) {
-        updatedUser.cafe_name = cafeNameResult.rows[0].name;
-      }
-
-      res.json(updatedUser);
-    } catch (err) {
-      console.error('Check-in error:', err);
-      res.status(500).json({ error: 'Giriş yapılamadı.' });
-    }
-  } else {
-    // Memory fallback
-    const userIdx = MEMORY_USERS.findIndex(u => u.id == userId);
-    if (userIdx !== -1) {
-      MEMORY_USERS[userIdx].cafe_id = cafeId;
-      MEMORY_USERS[userIdx].table_number = tableNumber;
-      res.json(MEMORY_USERS[userIdx]);
-    } else {
-      res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
-    }
-  }
-});
-
-// 3.4 UPDATE CAFE PIN (Admin only)
-app.put('/api/cafes/:id/pin', async (req, res) => {
-  const { id } = req.params;
-  const { pin, userId } = req.body;
-
-  if (!pin || pin.length !== 4) {
-    return res.status(400).json({ error: 'PIN 4 haneli olmalıdır.' });
-  }
-
-  if (await isDbConnected()) {
-    try {
-      // Optional: Verify user is admin
-      if (userId) {
-        const userCheck = await pool.query('SELECT role FROM users WHERE id = $1', [userId]);
-        if (userCheck.rows.length === 0 || userCheck.rows[0].role !== 'cafe_admin') {
-          return res.status(403).json({ error: 'Yetkisiz işlem.' });
-        }
-      }
-
-      const result = await pool.query(
-        'UPDATE cafes SET pin = $1 WHERE id = $2 RETURNING id, name, pin',
-        [pin, id]
-      );
-
-      if (result.rows.length > 0) {
-        res.json(result.rows[0]);
-      } else {
-        res.status(404).json({ error: 'Kafe bulunamadı.' });
-      }
-    } catch (err) {
-      console.error('PIN update error:', err);
-      res.status(500).json({ error: 'PIN güncellenemedi.' });
-    }
-  } else {
-    res.status(501).json({ error: 'Demo modda PIN değiştirilemez.' });
-  }
-});
+// 3.4 UPDATE PIN (Moved to cafeController)
 
 // ===================================
 // 4. ADMIN ENDPOINTS
@@ -1348,42 +885,7 @@ app.delete('/api/rewards/:id', async (req, res) => {
   }
 });
 
-// 2.6 LOCATION CHECK-IN SYSTEM
-function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
-  var R = 6371; // Radius of the earth in km
-  var dLat = deg2rad(lat2 - lat1);
-  var dLon = deg2rad(lon2 - lon1);
-  var a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  var d = R * c; // Distance in km
-  return d * 1000; // Distance in meters
-}
-
-function deg2rad(deg) {
-  return deg * (Math.PI / 180);
-}
-
-// 2.6 LOCATION CHECK-IN SYSTEM (Moved to Section 19)
-function getDistanceFromLatLonInMeters(lat1, lon1, lat2, lon2) {
-  var R = 6371; // Radius of the earth in km
-  var dLat = deg2rad(lat2 - lat1);
-  var dLon = deg2rad(lon2 - lon1);
-  var a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
-    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  var d = R * c; // Distance in km
-  return d * 1000; // Distance in meters
-}
-
-function deg2rad(deg) {
-  return deg * (Math.PI / 180);
-}
-// Old endpoint removed to avoid conflict with Section 19
+// 2.6 FUNCTIONS REMOVED (Moved to backend/utils/geo.js)
 
 // 3. GET GAMES
 app.get('/api/games', async (req, res) => {
@@ -1556,13 +1058,13 @@ app.post('/api/shop/buy', authenticateToken, async (req, res) => {
     try {
       // Start transaction to prevent race condition
       await client.query('BEGIN');
-      
+
       // 1. Lock user row and check points (FOR UPDATE prevents race condition)
       const userRes = await client.query(
-        'SELECT points FROM users WHERE id = $1 FOR UPDATE', 
+        'SELECT points FROM users WHERE id = $1 FOR UPDATE',
         [userId]
       );
-      
+
       if (userRes.rows.length === 0) {
         await client.query('ROLLBACK');
         return res.status(404).json({ error: 'User not found' });
@@ -1668,23 +1170,7 @@ app.post('/api/coupons/use', async (req, res) => {
   }
 });
 
-// Get Cafes
-app.get('/api/cafes', async (req, res) => {
-  try {
-    if (await isDbConnected()) { // Check DB connection
-      const result = await pool.query('SELECT * FROM cafes ORDER BY name');
-      res.json(result.rows);
-    } else {
-      res.json([
-        { id: 1, name: 'PAÜ İİBF Kantin' },
-        { id: 2, name: 'PAÜ Yemekhane' }
-      ]);
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Database error' });
-  }
-});
+// Duplicate Get Cafes (Removed)
 
 // Create Cafe Admin (Super Admin only) - PROTECTED
 app.post('/api/admin/cafe-admins', authenticateToken, requireAdmin, async (req, res) => {
@@ -1738,123 +1224,11 @@ app.get('/api/shop/inventory/:userId', authenticateToken, requireOwnership('user
 
 // NOTE: Duplicate admin endpoints removed. Using protected versions above.
 
-// CHECK-IN (PIN Verification - STRICT MODE) - PROTECTED
-app.post('/api/cafes/check-in', authenticateToken, async (req, res) => {
-  // SECURITY FIX: Get userId from authenticated token
-  const userId = req.user.id;
-  const { cafeId, tableNumber, pin } = req.body;
-
-  // Validate input
-  if (!userId || !cafeId || !tableNumber) {
-    return res.status(400).json({ error: 'Eksik bilgi: userId, cafeId, tableNumber gerekli.' });
-  }
-
-  if (!pin || pin.length < 4) {
-    return res.status(400).json({ error: 'PIN kodu gerekli (en az 4 haneli).' });
-  }
-
-  if (await isDbConnected()) {
-    try {
-      // 1. Get Cafe
-      const cafeRes = await pool.query('SELECT * FROM cafes WHERE id = $1', [cafeId]);
-      if (cafeRes.rows.length === 0) return res.status(404).json({ error: 'Kafe bulunamadı.' });
-      const cafe = cafeRes.rows[0];
-
-      // 2. Verify PIN (STRICT: PIN must match)
-      const cafePin = (cafe.daily_pin || '0000').toString().trim();
-      const inputPin = (pin || '').toString().trim();
-
-      // DEBUG MODE: Show expected PIN (remove in production!)
-      const isDemoMode = process.env.NODE_ENV !== 'production';
-
-      console.log(`[CHECK-IN] Cafe: ${cafe.name} (ID: ${cafeId})`);
-      console.log(`[CHECK-IN] Expected PIN: "${cafePin}", Received PIN: "${inputPin}"`);
-
-      if (cafePin !== inputPin) {
-        if (isDemoMode) {
-          return res.status(400).json({
-            error: `Yanlış PIN! Doğru PIN: ${cafePin}`
-          });
-        }
-        return res.status(400).json({ error: 'Yanlış PIN kodu!' });
-      }
-
-      // 3. Update User (Check-in)
-      const formattedTable = `MASA${tableNumber.toString().padStart(2, '0')}`;
-      await pool.query('UPDATE users SET cafe_id = $1, table_number = $2 WHERE id = $3', [cafeId, tableNumber, userId]);
-
-      res.json({ success: true, cafeName: cafe.name, table: formattedTable });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Check-in işlemi başarısız.' });
-    }
-  } else {
-    // Memory Fallback - ALSO REQUIRES PIN CHECK
-    // For demo mode, default PIN is 0000
-    const demoPins = { 1: '1234', 2: '5678' };
-    const expectedPin = demoPins[cafeId] || '0000';
-
-    if (expectedPin !== pin) {
-      return res.status(400).json({ error: 'Yanlış PIN kodu! Demo için PIN: 0000, 1234 veya 5678' });
-    }
-
-    const user = MEMORY_USERS.find(u => u.id === userId);
-    if (user) {
-      user.cafe_id = cafeId;
-      user.table_number = `MASA${tableNumber.toString().padStart(2, '0')}`;
-    }
-    res.json({ success: true, cafeName: 'Demo Cafe', table: `MASA${tableNumber.toString().padStart(2, '0')}` });
-  }
-});
+// CHECK-IN (Moved to cafeController)
 
 // 19.5 UPDATE CAFE PIN (For Cafe Admins) - YENİ VERSİYON
 // userId ile çalışır, cafe_id'yi veritabanından alır
-app.put('/api/cafes/:id/pin', async (req, res) => {
-  const { id } = req.params;
-  const { pin, userId } = req.body;
-
-  console.log(`[PIN UPDATE] Request: cafeId=${id}, pin=${pin}, userId=${userId}`);
-
-  if (!pin || pin.length < 4 || pin.length > 6) {
-    return res.status(400).json({ error: 'PIN 4-6 karakter olmalı.' });
-  }
-
-  if (await isDbConnected()) {
-    try {
-      let targetCafeId = id;
-
-      // Eğer cafeId "null" veya "undefined" string olarak geldiyse, userId'den bul
-      if (!id || id === 'null' || id === 'undefined') {
-        if (!userId) {
-          return res.status(400).json({ error: 'userId gerekli.' });
-        }
-
-        // Kullanıcının cafe_id'sini veritabanından al
-        const userRes = await pool.query('SELECT cafe_id FROM users WHERE id = $1', [userId]);
-        if (userRes.rows.length === 0 || !userRes.rows[0].cafe_id) {
-          return res.status(400).json({ error: 'Bu kullanıcı bir kafeye bağlı değil.' });
-        }
-        targetCafeId = userRes.rows[0].cafe_id;
-        console.log(`[PIN UPDATE] Found cafe_id from user: ${targetCafeId}`);
-      }
-
-      // PIN'i güncelle
-      const result = await pool.query('UPDATE cafes SET daily_pin = $1 WHERE id = $2', [pin, targetCafeId]);
-      console.log(`[PIN UPDATE] Updated ${result.rowCount} rows for cafe ${targetCafeId}`);
-
-      if (result.rowCount === 0) {
-        return res.status(404).json({ error: 'Kafe bulunamadı.' });
-      }
-
-      res.json({ success: true, pin, cafeId: targetCafeId });
-    } catch (err) {
-      console.error('[PIN UPDATE] Error:', err);
-      res.status(500).json({ error: 'PIN güncellenemedi: ' + err.message });
-    }
-  } else {
-    res.json({ success: true, pin });
-  }
-});
+// 19.5 UPDATE CAFE PIN (Moved to cafeController)
 
 // 20. ADMIN: CREATE CAFE - PROTECTED
 app.post('/api/admin/cafes', authenticateToken, requireAdmin, async (req, res) => {
@@ -1895,7 +1269,7 @@ app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, 
 });
 
 // 11. REWARDS: GET ALL
-app.get('/api/rewards', async (req, res) => {
+app.get('/api/rewards', cache(600), async (req, res) => { // Cache for 10 mins
   if (await isDbConnected()) {
     try {
       const result = await pool.query('SELECT * FROM rewards WHERE is_active = true ORDER BY cost ASC');
@@ -1929,7 +1303,7 @@ app.delete('/api/rewards/:id', authenticateToken, requireCafeAdmin, async (req, 
 });
 
 // 15. LEADERBOARD
-app.get('/api/leaderboard', async (req, res) => {
+app.get('/api/leaderboard', cache(60), async (req, res) => { // Cache for 1 min (Real-time critical)
   const { type, department } = req.query; // type: 'general' or 'department'
 
   if (await isDbConnected()) {
@@ -2121,7 +1495,7 @@ app.get('/health', async (req, res) => {
     timestamp: Date.now(),
     database: false
   };
-  
+
   try {
     healthcheck.database = await isDbConnected();
     if (healthcheck.database) {
@@ -2161,7 +1535,7 @@ setInterval(async () => {
 
 // 404 Handler
 app.use((req, res) => {
-  res.status(404).json({ 
+  res.status(404).json({
     error: 'Route not found',
     code: 'ROUTE_NOT_FOUND',
     path: req.originalUrl
@@ -2225,7 +1599,7 @@ app.use((err, req, res, next) => {
 
 process.on('uncaughtException', (err) => {
   logger.error('CRITICAL: Uncaught Exception', err);
-  
+
   // Graceful shutdown
   setTimeout(() => {
     process.exit(1);
@@ -2234,7 +1608,7 @@ process.on('uncaughtException', (err) => {
 
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('CRITICAL: Unhandled Rejection', { reason, promise });
-  
+
   // Graceful shutdown
   setTimeout(() => {
     process.exit(1);

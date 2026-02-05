@@ -133,7 +133,7 @@ export const api = {
 
     checkIn: async (params: { cafeId: string | number; tableNumber: number; pin: string }) => {
       // NOTE: userId artık token'dan alınıyor, body'e gönderilmiyor
-      return await fetchAPI('/cafes/check-in', {
+      return await fetchAPI(`/cafes/${params.cafeId}/check-in`, {
         method: 'POST',
         body: JSON.stringify({
           cafeId: params.cafeId,

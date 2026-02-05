@@ -107,7 +107,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
       {/* Oyun Listesi */}
       {gamesLoading ? (
         <SkeletonGrid count={4} columns={2} />
-      ) : games.length === 0 ? (
+      ) : (games?.length ?? 0) === 0 ? (
         <div data-testid="game-lobby-empty">
           <EmptyState
             icon={GamepadIcon}
@@ -137,7 +137,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSubmit={onCreateGame}
-        maxPoints={currentUser.points}
+        maxPoints={currentUser?.points ?? 0}
       />
     </div>
   );

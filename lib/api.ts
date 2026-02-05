@@ -255,10 +255,10 @@ export const api = {
   },
 
   shop: {
-    buy: async (userId: string | number, rewardId: string | number): Promise<{ success: boolean; newPoints: number; reward?: any; error?: string }> => {
+    buy: async (rewardId: string | number): Promise<{ success: boolean; newPoints: number; reward?: any; error?: string }> => {
       return await fetchAPI('/shop/buy', {
         method: 'POST',
-        body: JSON.stringify({ userId, rewardId }),
+        body: JSON.stringify({ rewardId }),
       });
     },
 

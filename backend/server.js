@@ -194,8 +194,11 @@ io.on('connection', (socket) => {
   });
 });
 
-// JWT Secret from .env
-const ***REMOVED*** = process.env.***REMOVED*** || 'cafeduo_super_secret_key_2024';
+// JWT Secret from .env (required)
+const ***REMOVED*** = process.env.***REMOVED***;
+if (!***REMOVED***) {
+  throw new Error('***REMOVED*** is required. Refusing to start with an insecure fallback secret.');
+}
 
 console.log("🚀 Starting Server...");
 console.log("🔑 Google Client ID:", process.env.VITE_GOOGLE_CLIENT_ID ? "Loaded ✅" : "MISSING ❌");
@@ -810,7 +813,7 @@ app.post('/api/admin/cafes', authenticateToken, requireAdmin, async (req, res) =
 // ===================================
 
 // 5.1 CREATE REWARD (Cafe Admin)
-app.post('/api/rewards', async (req, res) => {
+app.post('/api/rewards', authenticateToken, requireCafeAdmin, async (req, res) => {
   const { title, cost, description, icon, cafeId } = req.body;
 
   if (!title || !cost) {
@@ -837,16 +840,16 @@ app.post('/api/rewards', async (req, res) => {
 });
 
 // 5.2 GET REWARDS (optionally by cafe)
-app.get('/api/rewards', async (req, res) => {
+app.get('/api/rewards', cache(600), async (req, res) => {
   const { cafeId } = req.query;
 
   if (await isDbConnected()) {
     try {
-      let query = 'SELECT * FROM rewards';
+      let query = 'SELECT * FROM rewards WHERE is_active = true';
       let params = [];
 
       if (cafeId) {
-        query += ' WHERE cafe_id = $1 OR cafe_id IS NULL';
+        query += ' AND (cafe_id = $1 OR cafe_id IS NULL)';
         params.push(cafeId);
       }
 
@@ -864,12 +867,15 @@ app.get('/api/rewards', async (req, res) => {
 });
 
 // 5.3 DELETE REWARD (Cafe Admin)
-app.delete('/api/rewards/:id', async (req, res) => {
+app.delete('/api/rewards/:id', authenticateToken, requireCafeAdmin, async (req, res) => {
   const { id } = req.params;
 
   if (await isDbConnected()) {
     try {
-      const result = await pool.query('DELETE FROM rewards WHERE id = $1 RETURNING *', [id]);
+      const result = await pool.query(
+        'UPDATE rewards SET is_active = false WHERE id = $1 RETURNING *',
+        [id]
+      );
 
       if (result.rows.length === 0) {
         return res.status(404).json({ error: 'Ödül bulunamadı.' });
@@ -1045,12 +1051,12 @@ app.delete('/api/games/:id', async (req, res) => {
 
 // 7. SHOP: BUY ITEM - PROTECTED (Fixed IDOR & Race Condition)
 app.post('/api/shop/buy', authenticateToken, async (req, res) => {
-  // SECURITY FIX: Get userId from authenticated token, NOT from body
   const userId = req.user.id;
-  const { item } = req.body; // item: { id, title, cost, icon }
+  const { rewardId, item } = req.body;
+  const requestedRewardId = rewardId || item?.id;
 
-  if (!item || !item.id || !item.cost) {
-    return res.status(400).json({ error: 'Invalid item data' });
+  if (!requestedRewardId) {
+    return res.status(400).json({ error: 'rewardId is required' });
   }
 
   if (await isDbConnected()) {
@@ -1070,14 +1076,26 @@ app.post('/api/shop/buy', authenticateToken, async (req, res) => {
         return res.status(404).json({ error: 'User not found' });
       }
 
+      // Always read reward cost/title from DB, do not trust client-provided price/title.
+      const rewardRes = await client.query(
+        'SELECT id, title, cost FROM rewards WHERE id = $1 AND is_active = true',
+        [requestedRewardId]
+      );
+
+      if (rewardRes.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Reward not found' });
+      }
+
+      const reward = rewardRes.rows[0];
       const currentPoints = userRes.rows[0].points;
-      if (currentPoints < item.cost) {
+      if (currentPoints < reward.cost) {
         await client.query('ROLLBACK');
         return res.status(400).json({ error: 'Yetersiz puan.' });
       }
 
       // 2. Deduct points
-      const newPoints = currentPoints - item.cost;
+      const newPoints = currentPoints - reward.cost;
       await client.query('UPDATE users SET points = $1 WHERE id = $2', [newPoints, userId]);
 
       // 3. Add to inventory
@@ -1085,7 +1103,7 @@ app.post('/api/shop/buy', authenticateToken, async (req, res) => {
       const code = `CD-${crypto.randomBytes(2).toString('hex').toUpperCase()}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
       const redeemRes = await client.query(
         'INSERT INTO user_items (user_id, item_id, item_title, code) VALUES ($1, $2, $3, $4) RETURNING *',
-        [userId, item.id, item.title, code]
+        [userId, reward.id, reward.title, code]
       );
 
       // Commit transaction
@@ -1138,7 +1156,7 @@ app.get('/api/users/:id/items', authenticateToken, requireOwnership('id'), async
 });
 
 // Use Coupon (Cafe Admin)
-app.post('/api/coupons/use', async (req, res) => {
+app.post('/api/coupons/use', authenticateToken, requireCafeAdmin, async (req, res) => {
   const { code } = req.body;
   try {
     if (await isDbConnected()) { // Check DB connection
@@ -1268,39 +1286,7 @@ app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, 
   }
 });
 
-// 11. REWARDS: GET ALL
-app.get('/api/rewards', cache(600), async (req, res) => { // Cache for 10 mins
-  if (await isDbConnected()) {
-    try {
-      const result = await pool.query('SELECT * FROM rewards WHERE is_active = true ORDER BY cost ASC');
-      res.json(result.rows);
-    } catch (err) {
-      res.status(500).json({ error: 'Ödüller yüklenemedi.' });
-    }
-  } else {
-    // Memory fallback
-    res.json([
-      { id: 1, title: 'Bedava Filtre Kahve', cost: 500, description: 'Günün yorgunluğunu at.', icon: 'coffee' },
-      { id: 2, title: '%20 Hesap İndirimi', cost: 850, description: 'Tüm masada geçerli.', icon: 'discount' },
-      { id: 3, title: 'Cheesecake İkramı', cost: 400, description: 'Tatlı bir mola ver.', icon: 'dessert' },
-    ]);
-  }
-});
-
-// 14. REWARDS: DELETE - PROTECTED (Admin or Cafe Admin)
-app.delete('/api/rewards/:id', authenticateToken, requireCafeAdmin, async (req, res) => {
-  const { id } = req.params;
-  if (await isDbConnected()) {
-    try {
-      await pool.query('UPDATE rewards SET is_active = false WHERE id = $1', [id]);
-      res.json({ success: true });
-    } catch (err) {
-      res.status(500).json({ error: 'Silme işlemi başarısız.' });
-    }
-  } else {
-    res.status(501).json({ error: 'Not implemented in memory mode' });
-  }
-});
+// Duplicate /api/rewards endpoints removed. The secured canonical handlers are defined above.
 
 // 15. LEADERBOARD
 app.get('/api/leaderboard', cache(60), async (req, res) => { // Cache for 1 min (Real-time critical)

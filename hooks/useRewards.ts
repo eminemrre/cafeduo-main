@@ -102,7 +102,7 @@ export function useRewards({ currentUser }: UseRewardsProps): UseRewardsReturn {
     }
 
     try {
-      const result = await api.shop.buy(currentUser.id, reward.id);
+      const result = await api.shop.buy(reward.id);
       
       if (!result.success) {
         throw new Error(result.error || 'Satın alma başarısız');
@@ -120,7 +120,7 @@ export function useRewards({ currentUser }: UseRewardsProps): UseRewardsReturn {
       console.error('Failed to buy reward:', err);
       throw err;
     }
-  }, [currentUser.id, currentUser.points, fetchInventory]);
+  }, [currentUser.points, fetchInventory]);
 
   /**
    * Puan yeterli mi kontrolü

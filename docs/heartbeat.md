@@ -1,6 +1,6 @@
 # System Heartbeat
 
-> **Status:** 🟡 In Progress (P0 Security Fixes Applied)
+> **Status:** 🟢 Stable (P0 + P1 Completed)
 
 ## Vital Signs
 - **Backend Security**: JWT fallback secret removed; `JWT_SECRET` is now required at startup.
@@ -8,9 +8,9 @@
 - **Data Integrity**: `/api/shop/buy` now uses DB-validated reward price/title instead of client-submitted values.
 - **API Contract**: Frontend buy flow updated to send only `rewardId`.
 - **Build**: `npm run build` passed on 2026-02-05.
-- **Tests**: `npm run test:ci` still fails due to pre-existing test suite issues (Jest+Playwright scope and two broken tests).
+- **Tests**: `npm run test:ci` passed on 2026-02-05 (unit suite separated from e2e).
+- **Auth API**: Deprecated `/api/auth/verify` route removed from router (dead 501 path removed).
+- **Cafe API**: `getAllCafes` now attempts DB query first and only falls back on DB error.
 
 ## Next Checkup
-- Fix pre-existing test suite issues (`jest.config.js` e2e scope, `Dashboard.test.tsx`, `OfflineFallback.test.tsx`).
-- Implement `/api/auth/verify` or remove route if deprecated.
-- Resolve `cafeController.getAllCafes` DB connection guard (`req.isDbConnected` usage).
+- P1 done; next target is P2 observability and endpoint modularization.

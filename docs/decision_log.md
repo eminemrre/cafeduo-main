@@ -14,6 +14,18 @@
 
 ## Decisions
 
+### 2026-02-05 P1 Reliability and Test Hygiene
+- **🚀 VOLT**: Keep CI fast by separating Jest unit tests from Playwright e2e scope.
+- **🛡️ AEGIS**: Remove dead auth surface (`/auth/verify`) and reduce fallback ambiguity in cafes endpoint.
+- **🎨 MUSE**: Fix fragile tests with minimum behavioral coupling to browser internals.
+- **⚖️ VERDICT**: Approved and applied.
+  1. `jest.config.js` now ignores `<rootDir>/e2e/`.
+  2. `components/Dashboard.test.tsx` leaderboard mock aligned with component API.
+  3. `components/OfflineFallback.test.tsx` stabilized for jsdom navigation limitations.
+  4. `hooks/useRewards.test.ts` aligned with new `api.shop.buy(rewardId)` contract.
+  5. Removed `/api/auth/verify` route and dead controller stub.
+  6. `getAllCafes` now uses DB-first query and fallback only on DB error.
+
 ### 2026-02-05 P0 Security Hardening
 - **🚀 VOLT**: Keep momentum by applying route-level guards first, then refactor.
 - **🛡️ AEGIS**: Eliminate insecure defaults and client-trusted purchase payloads.

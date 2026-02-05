@@ -30,7 +30,7 @@ describe('GameLobby', () => {
     gamesPlayed: 10,
     cafe_id: 1,
     role: 'user',
-    createdAt: new Date().toISOString(),
+    isAdmin: false,
   };
 
   const mockGames: GameRequest[] = [
@@ -39,20 +39,16 @@ describe('GameLobby', () => {
       gameType: 'Taş Kağıt Makas',
       points: 50,
       hostName: 'host1',
-      hostId: 2,
       status: 'waiting',
       table: 'A1',
-      createdAt: new Date().toISOString(),
     },
     {
       id: 2,
       gameType: 'Zindan Savaşı',
       points: 100,
       hostName: 'host2',
-      hostId: 3,
       status: 'waiting',
       table: 'B2',
-      createdAt: new Date().toISOString(),
     },
   ];
 

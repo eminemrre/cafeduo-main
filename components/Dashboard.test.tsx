@@ -207,7 +207,7 @@ describe('Dashboard Integration', () => {
     table_number: 'A1',
     cafe_id: 1,
     role: 'user',
-    createdAt: new Date().toISOString(),
+    isAdmin: false,
   };
 
   const mockOnUpdateUser = jest.fn();
@@ -215,6 +215,7 @@ describe('Dashboard Integration', () => {
   const defaultGamesState = {
     games: [],
     loading: false,
+    error: null,
     activeGameId: null,
     activeGameType: null,
     opponentName: null,
@@ -224,18 +225,22 @@ describe('Dashboard Integration', () => {
     joinGame: jest.fn().mockResolvedValue(undefined),
     leaveGame: jest.fn(),
     setActiveGame: jest.fn(),
+    refetch: jest.fn(),
   };
 
   const defaultRewardsState = {
     rewards: [],
     rewardsLoading: false,
+    rewardsError: null,
     inventory: [],
     inventoryLoading: false,
+    inventoryError: null,
     activeTab: 'shop' as const,
     setActiveTab: jest.fn(),
     buyReward: jest.fn().mockResolvedValue({ success: true, code: 'ABC123' }),
     refetchRewards: jest.fn(),
     refetchInventory: jest.fn(),
+    canAfford: (cost: number) => cost <= 1000,
   };
 
   const renderDashboard = (props = {}) => {
@@ -333,8 +338,8 @@ describe('Dashboard Integration', () => {
       mockUseGames.mockReturnValue({
         ...defaultGamesState,
         games: [
-          { id: 1, gameType: 'Taş Kağıt Makas', points: 50, hostName: 'user1' },
-          { id: 2, gameType: 'Zindan Savaşı', points: 100, hostName: 'user2' },
+          { id: 1, gameType: 'Taş Kağıt Makas', points: 50, hostName: 'user1', table: 'A1', status: 'waiting' },
+          { id: 2, gameType: 'Zindan Savaşı', points: 100, hostName: 'user2', table: 'B2', status: 'waiting' },
         ],
       });
 
@@ -365,7 +370,7 @@ describe('Dashboard Integration', () => {
       const mockJoinGame = jest.fn().mockResolvedValue(undefined);
       mockUseGames.mockReturnValue({
         ...defaultGamesState,
-        games: [{ id: 1, gameType: 'Taş Kağıt Makas', points: 50, hostName: 'user1' }],
+        games: [{ id: 1, gameType: 'Taş Kağıt Makas', points: 50, hostName: 'user1', table: 'A1', status: 'waiting' }],
         joinGame: mockJoinGame,
       });
 
@@ -470,8 +475,8 @@ describe('Dashboard Integration', () => {
       mockUseRewards.mockReturnValue({
         ...defaultRewardsState,
         inventory: [
-          { redeemId: 1, title: 'Kahve', code: 'ABC', redeemedAt: new Date().toISOString(), isUsed: false },
-          { redeemId: 2, title: 'Tatlı', code: 'DEF', redeemedAt: new Date().toISOString(), isUsed: false },
+          { redeemId: '1', id: 1, title: 'Kahve', description: 'Kahve', cost: 100, icon: 'coffee', code: 'ABC', redeemedAt: new Date(), isUsed: false },
+          { redeemId: '2', id: 2, title: 'Tatlı', description: 'Tatlı', cost: 200, icon: 'dessert', code: 'DEF', redeemedAt: new Date(), isUsed: false },
         ],
       });
 
@@ -586,6 +591,8 @@ describe('Dashboard Integration', () => {
           gameType: 'Taş Kağıt Makas',
           hostName: 'TestHost',
           points: 50,
+          table: 'A1',
+          status: 'active',
         },
       });
 

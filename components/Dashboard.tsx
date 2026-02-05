@@ -141,9 +141,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   };
 
   // Profil görüntüleme
-  const handleViewProfile = (user: User) => {
-    setProfileUser(user);
+  const handleViewProfile = (username: string) => {
+    setProfileUser({ id: 0, username, email: '', points: 0, wins: 0, gamesPlayed: 0 } as User);
     setIsProfileOpen(true);
+  };
+
+  const handleLeaveGame = () => {
+    leaveGame();
   };
 
   // Oyundan ayrılma (oyun sonu)
@@ -169,22 +173,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
           {/* Oyun component'leri */}
           {activeGameType === 'Taş Kağıt Makas' ? (
             <RockPaperScissors
-              gameId={activeGameId}
-              username={currentUser.username}
-              opponent={opponentName}
-              isHost={!opponentName}
+              gameId={String(activeGameId)}
+              currentUser={currentUser}
+              isBot={isBot}
+              onGameEnd={handleGameFinish}
+              onLeave={handleLeaveGame}
             />
           ) : activeGameType === 'Zindan Savaşı' ? (
             <DungeonClash
               gameId={activeGameId}
               currentUser={currentUser}
-              onFinish={handleGameFinish}
+              opponentName={opponentName || 'Rakip'}
+              isBot={isBot}
+              onGameEnd={handleGameFinish}
+              onLeave={handleLeaveGame}
             />
           ) : (
             <ArenaBattle
               gameId={activeGameId}
               currentUser={currentUser}
-              onFinish={handleGameFinish}
+              opponentName={opponentName || 'Rakip'}
+              isBot={isBot}
+              onGameEnd={handleGameFinish}
+              onLeave={handleLeaveGame}
             />
           )}
         </div>
@@ -299,7 +310,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
             )}
 
             {mainTab === 'leaderboard' && (
-              <Leaderboard currentUser={currentUser} />
+              <Leaderboard />
             )}
 
             {mainTab === 'achievements' && (

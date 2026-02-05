@@ -1,5 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useGames } from './useGames';
+import { User } from '../types';
 
 // Mock api
 jest.mock('../lib/api', () => ({
@@ -18,15 +19,15 @@ jest.mock('../lib/api', () => ({
 import { api } from '../lib/api';
 
 describe('useGames', () => {
-  const mockUser = { 
+  const mockUser: User = { 
     id: 1, 
     username: 'testuser', 
-    points: 100,
     email: 'test@test.com',
-    isAdmin: false,
-    role: 'user',
+    points: 100,
     wins: 0,
-    gamesPlayed: 0
+    gamesPlayed: 0,
+    role: 'user',
+    isAdmin: false
   };
   const mockTableCode = 'MASA01';
 

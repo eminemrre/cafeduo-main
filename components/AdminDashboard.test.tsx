@@ -7,6 +7,7 @@
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { AdminDashboard } from './AdminDashboard';
+import { User } from '../types';
 import * as apiModule from '../lib/api';
 
 // Mock api
@@ -41,13 +42,15 @@ Object.defineProperty(window, 'confirm', {
 });
 
 describe('AdminDashboard', () => {
-  const mockCurrentUser = {
+  const mockCurrentUser: User = {
     id: 1,
     username: 'admin_user',
     email: 'admin@example.com',
     role: 'admin',
     isAdmin: true,
     points: 1000,
+    wins: 50,
+    gamesPlayed: 100,
     department: 'Bilgisayar',
   };
 

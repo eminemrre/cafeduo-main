@@ -86,6 +86,8 @@ describe('GameSection', () => {
     username: 'testuser',
     email: 'test@example.com',
     points: 500,
+    wins: 10,
+    gamesPlayed: 20,
     role: 'user',
     isAdmin: false,
     department: 'Bilgisayar Mühendisliği'
@@ -94,35 +96,29 @@ describe('GameSection', () => {
   const mockGames: GameRequest[] = [
     {
       id: 1,
-      hostId: 2,
       hostName: 'hostuser1',
       gameType: 'rps',
       points: 100,
-      status: 'waiting',
-      tableCode: 'A1',
-      createdAt: '2024-02-04T10:00:00Z'
+      table: 'A1',
+      status: 'waiting'
     },
     {
       id: 2,
-      hostId: 3,
       hostName: 'hostuser2',
       gameType: 'arena',
       points: 200,
-      status: 'waiting',
-      tableCode: 'B2',
-      createdAt: '2024-02-04T11:00:00Z'
+      table: 'B2',
+      status: 'waiting'
     }
   ];
 
   const mockServerActiveGame: GameRequest = {
     id: 999,
-    hostId: 2,
     hostName: 'opponent',
     gameType: 'rps',
     points: 150,
-    status: 'active',
-    tableCode: 'A1',
-    createdAt: '2024-02-04T09:00:00Z'
+    table: 'A1',
+    status: 'active'
   };
 
   // Mock handler'lar

@@ -1,5 +1,6 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useRewards } from './useRewards';
+import { User } from '../types';
 
 // Mock api
 jest.mock('../lib/api', () => ({
@@ -17,15 +18,15 @@ jest.mock('../lib/api', () => ({
 import { api } from '../lib/api';
 
 describe('useRewards', () => {
-  const mockUser = {
+  const mockUser: User = {
     id: 1,
     username: 'testuser',
-    points: 500,
     email: 'test@test.com',
-    isAdmin: false,
-    role: 'user',
+    points: 500,
     wins: 0,
-    gamesPlayed: 0
+    gamesPlayed: 0,
+    role: 'user',
+    isAdmin: false
   };
 
   beforeEach(() => {
@@ -37,7 +38,18 @@ describe('useRewards', () => {
       { id: 1, title: 'Kahve', cost: 100, description: 'Kahve', icon: 'coffee' }
     ];
     const mockInventory = [
-      { id: 1, itemId: 1, title: 'Kahve', code: 'ABC123', redeemedAt: new Date().toISOString(), isUsed: false }
+      { 
+        id: 1, 
+        redeemId: 'ABC123',
+        itemId: 1, 
+        title: 'Kahve', 
+        code: 'ABC123', 
+        cost: 100,
+        description: 'Kahve',
+        icon: 'coffee',
+        redeemedAt: new Date(), 
+        isUsed: false 
+      }
     ];
 
     (api.rewards.list as jest.Mock).mockResolvedValue(mockRewards);

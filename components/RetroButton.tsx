@@ -9,6 +9,7 @@ interface RetroButtonProps {
   type?: 'button' | 'submit' | 'reset';
   disabled?: boolean;
   size?: 'sm' | 'md' | 'lg';
+  icon?: React.ReactNode;
 }
 
 export const RetroButton: React.FC<RetroButtonProps> = ({ 
@@ -18,7 +19,8 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
   className = '', 
   type = 'button', 
   disabled = false,
-  size = 'md'
+  size = 'md',
+  icon
 }) => {
   // Touch-friendly minimum sizes (44x44px for accessibility)
   const sizeStyles = {
@@ -94,6 +96,7 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
       
       {/* Content */}
       <span className="relative flex items-center justify-center gap-2">
+        {icon && <span className="flex-shrink-0">{icon}</span>}
         {children}
       </span>
     </motion.button>

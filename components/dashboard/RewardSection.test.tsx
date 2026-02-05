@@ -59,6 +59,8 @@ describe('RewardSection', () => {
     username: 'testuser',
     email: 'test@example.com',
     points: 500,
+    wins: 10,
+    gamesPlayed: 20,
     role: 'user',
     isAdmin: false,
     department: 'Bilgisayar Mühendisliği'
@@ -70,50 +72,56 @@ describe('RewardSection', () => {
       title: 'Türk Kahvesi',
       description: 'Geleneksel Türk kahvesi',
       cost: 100,
-      icon: 'coffee',
-      cafeId: 1
+      icon: 'coffee'
     },
     {
       id: 2,
       title: 'Çay',
       description: 'Sıcak demli çay',
       cost: 50,
-      icon: 'coffee',
-      cafeId: 1
+      icon: 'coffee'
     },
     {
       id: 3,
       title: 'Tatlı',
       description: 'Günün tatlısı',
       cost: 800, // Pahalı, kullanıcı alamaz
-      icon: 'dessert',
-      cafeId: 1
+      icon: 'dessert'
     }
   ];
 
   const mockInventory: RedeemedReward[] = [
     {
       redeemId: 'ABC123',
-      rewardId: 1,
+      id: 1,
       title: 'Türk Kahvesi',
+      description: 'Geleneksel Türk kahvesi',
+      cost: 100,
+      icon: 'coffee',
       code: 'ABC123',
-      redeemedAt: new Date().toISOString(),
+      redeemedAt: new Date(),
       isUsed: false
     },
     {
       redeemId: 'DEF456',
-      rewardId: 2,
+      id: 2,
       title: 'Çay',
+      description: 'Sıcak demli çay',
+      cost: 50,
+      icon: 'coffee',
       code: 'DEF456',
-      redeemedAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(), // Süresi dolmuş
+      redeemedAt: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000), // Süresi dolmuş
       isUsed: false
     },
     {
       redeemId: 'GHI789',
-      rewardId: 3,
+      id: 3,
       title: 'Tatlı',
+      description: 'Günün tatlısı',
+      cost: 800,
+      icon: 'dessert',
       code: 'GHI789',
-      redeemedAt: new Date().toISOString(),
+      redeemedAt: new Date(),
       isUsed: true // Kullanılmış
     }
   ];

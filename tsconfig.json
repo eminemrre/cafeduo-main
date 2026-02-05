@@ -9,6 +9,7 @@
       "DOM",
       "DOM.Iterable"
     ],
+    "types": ["jest", "@testing-library/jest-dom", "node", "vite/client"],
     "skipLibCheck": true,
     "moduleResolution": "bundler",
     "isolatedModules": true,
@@ -29,10 +30,20 @@
     "index.tsx",
     "types.ts",
     "constants.ts",
+    "env.d.ts",
+    "global.d.ts",
     "components",
     "hooks",
     "contexts",
     "lib",
-    "vite.config.ts"
+    "vite.config.ts",
+    "test-setup.ts",
+    "**/*.test.tsx",
+    "**/*.test.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "coverage"
   ]
 }

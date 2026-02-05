@@ -145,7 +145,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
 
                 {req.hostName !== currentUser.username ? (
                   <motion.button
-                    onClick={() => onJoinGame(req.id)}
+                    onClick={() => onJoinGame(Number(req.id))}
                     className="w-full sm:w-auto px-4 md:px-6 py-2 bg-green-600 hover:bg-green-500 text-white font-pixel text-xs tracking-wider rounded border-b-4 border-green-800 active:border-b-0 active:translate-y-1 transition-all shadow-lg shadow-green-900/20 flex-shrink-0"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}

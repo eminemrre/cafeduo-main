@@ -22,6 +22,21 @@ services:
     networks:
       - cafeduo-network
 
+  # Redis Cache
+  redis:
+    image: redis:alpine
+    container_name: cafeduo-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - cafeduo-network
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   # Backend API
   api:
     build:
@@ -32,6 +47,7 @@ services:
       NODE_ENV: production
       PORT: 3001
       DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-password}@db:5432/${DB_NAME:-cafeduo}
+      REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
@@ -43,6 +59,8 @@ services:
       - "3001:3001"
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
       - ./logs:/app/logs
@@ -68,6 +86,7 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
 
 networks:
   cafeduo-network:

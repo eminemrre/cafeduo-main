@@ -39,3 +39,9 @@ temp_assets/
 
 # Jest coverage outputs
 /coverage/
+
+# Agent configurations (keep workflows, ignore local)
+.agent/local/
+
+# Deprecated/temporary
+*.sh.log

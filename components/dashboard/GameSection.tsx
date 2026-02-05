@@ -109,16 +109,17 @@ export const GameSection: React.FC<GameSectionProps> = ({
         <SkeletonGrid count={4} columns={2} />
       ) : games.length === 0 ? (
         <div data-testid="game-lobby-empty">
-        <EmptyState
-          icon={GamepadIcon}
-          title="Henüz Oyun Yok"
-          description="Şu an lobide aktif bir oyun yok. İlk oyunu kuran sen ol!"
-          action={{
-            label: "Yeni Oyun Kur",
-            onClick: () => setIsCreateModalOpen(true),
-            icon: Users
-          }}
-        />
+          <EmptyState
+            icon={GamepadIcon}
+            title="Henüz Oyun Yok"
+            description="Şu an lobide aktif bir oyun yok. İlk oyunu kuran sen ol!"
+            action={{
+              label: "Yeni Oyun Kur",
+              onClick: () => setIsCreateModalOpen(true),
+              icon: Users
+            }}
+          />
+        </div>
       ) : (
         <div data-testid="game-lobby-list">
           <GameLobby
@@ -129,7 +130,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
             onViewProfile={onViewProfile}
           />
         </div>
-      )}</div>
+      )}
 
       {/* Create Game Modal */}
       <CreateGameModal

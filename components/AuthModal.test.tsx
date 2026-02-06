@@ -39,7 +39,7 @@ describe('AuthModal', () => {
       />
     );
 
-    expect(screen.getByText('GIRIS_YAP.EXE')).toBeInTheDocument();
+    expect(screen.getByText('GİRİŞ_YAP.EXE')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('E-posta')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Şifre')).toBeInTheDocument();
   });
@@ -55,7 +55,7 @@ describe('AuthModal', () => {
     );
 
     expect(screen.getByText('KAYIT_OL.EXE')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Kullanıcı Adı')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Kullanıcı adı')).toBeInTheDocument();
   });
 
   it('validates email format', async () => {

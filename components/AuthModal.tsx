@@ -200,11 +200,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setTouched({});
   };
 
+  const inputBaseClass =
+    'w-full h-12 bg-[#07132b]/80 border rounded-xl text-white text-base md:text-lg placeholder:text-slate-500 outline-none transition-all';
+  const inputBorderClass =
+    'border-slate-600 focus:border-cyan-300 focus:shadow-[0_0_20px_rgba(0,217,255,0.2)]';
+  const inputErrorClass =
+    'border-red-500 focus:border-red-500 focus:shadow-[0_0_20px_rgba(255,86,114,0.2)]';
+  const iconBaseClass =
+    'absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-cyan-300';
+
   if (!isOpen) return null;
 
   return (
     <AnimatePresence>
-      <motion.div 
+      <motion.div
         className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -220,8 +229,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         />
 
         {/* Modal Container - Full screen on mobile, centered on desktop */}
-        <motion.div 
-          className="relative w-full sm:max-w-md h-[85vh] sm:h-auto bg-[#1a1f2e] sm:border-4 sm:border-gray-500 sm:border-t-white sm:border-l-white sm:border-b-gray-800 sm:border-r-gray-800 sm:shadow-[0_30px_70px_rgba(0,0,0,0.5)] sm:rounded-lg overflow-hidden flex flex-col"
+        <motion.div
+          className="relative w-full sm:max-w-[520px] max-h-[92vh] bg-[linear-gradient(170deg,rgba(8,14,30,0.97),rgba(10,24,52,0.9))] border border-cyan-400/28 shadow-[0_30px_70px_rgba(0,0,0,0.55)] rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col"
           initial={{ y: '100%', opacity: 0.5 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: '100%', opacity: 0.5 }}
@@ -229,172 +238,201 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         >
           {/* Drag handle for mobile */}
           <div className="sm:hidden w-full pt-3 pb-1 flex justify-center" onClick={onClose}>
-            <div className="w-12 h-1.5 bg-gray-600 rounded-full" />
+            <div className="w-12 h-1.5 bg-cyan-200/25 rounded-full" />
           </div>
 
           {/* Header Bar */}
-          <div className="bg-gradient-to-r from-blue-900 to-purple-900 px-4 py-3 flex justify-between items-center border-b-4 border-gray-800 flex-shrink-0">
-            <span className="font-pixel text-white tracking-widest text-sm sm:text-base">
-              {mode === 'login' ? 'GIRIS_YAP.EXE' : 'KAYIT_OL.EXE'}
-            </span>
+          <div className="px-5 md:px-6 py-4 flex justify-between items-start border-b border-cyan-400/22 flex-shrink-0 bg-[#060f24]/86">
+            <div>
+              <p className="font-pixel text-cyan-200/85 tracking-[0.2em] text-[10px] md:text-xs uppercase">
+                Secure Access
+              </p>
+              <span className="font-display text-white tracking-[0.08em] text-base md:text-lg">
+                {mode === 'login' ? 'GİRİŞ_YAP.EXE' : 'KAYIT_OL.EXE'}
+              </span>
+            </div>
             <motion.button
               onClick={onClose}
-              className="bg-red-500 hover:bg-red-600 text-white p-2 border-2 border-red-300 border-b-red-800 border-r-red-800"
+              className="w-9 h-9 rounded-lg border border-cyan-300/45 text-cyan-100 bg-cyan-500/10 hover:bg-cyan-500/20 flex items-center justify-center transition-colors"
               whileTap={{ scale: 0.9 }}
             >
-              <X size={18} />
+              <X size={17} />
             </motion.button>
           </div>
 
-        {/* Content - Scrollable on mobile */}
-        <div className="p-4 sm:p-8 flex-1 overflow-y-auto flex flex-col gap-6">
+          {/* Content - Scrollable on mobile */}
+          <div className="p-4 sm:p-6 md:p-7 flex-1 overflow-y-auto flex flex-col gap-5">
 
-          <div className="flex justify-center gap-4 font-pixel text-sm mb-4">
-            <button
-              onClick={() => switchMode('login')}
-              className={`pb-1 border-b-2 transition-colors ${mode === 'login' ? 'text-white border-blue-500' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
-            >
-              Giriş Yap
-            </button>
-            <button
-              onClick={() => switchMode('register')}
-              className={`pb-1 border-b-2 transition-colors ${mode === 'register' ? 'text-white border-purple-500' : 'text-gray-500 border-transparent hover:text-gray-300'}`}
-            >
-              Kayıt Ol
-            </button>
-          </div>
-
-          {error && (
-            <div className="bg-red-500/20 border border-red-500 text-red-200 p-3 rounded flex items-center gap-2 text-sm">
-              <AlertTriangle size={16} />
-              {error}
-            </div>
-          )}
-
-          <form className="space-y-4" onSubmit={handleSubmit}>
-
-            {mode === 'register' && (
-              <>
-                <div className="relative group">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => handleChange('username', e.target.value)}
-                    onBlur={() => handleBlur('username')}
-                    placeholder="Kullanıcı Adı"
-                    className={`w-full bg-black/30 border-2 ${fieldErrors.username && touched.username ? 'border-red-500 focus:border-red-500' : 'border-gray-600 focus:border-blue-500'} text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all focus:shadow-[0_0_20px_rgba(59,130,246,0.25)]`}
-                  />
-                  {!fieldErrors.username && touched.username && username && (
-                    <Check className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500" size={18} />
-                  )}
-                </div>
-                {fieldErrors.username && touched.username && (
-                  <p className="text-red-400 text-xs mt-1 flex items-center gap-1">
-                    <AlertTriangle size={12} /> {fieldErrors.username}
-                  </p>
-                )}
-
-                <div className="relative group">
-                  <Briefcase className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400 z-10" size={20} />
-                  <div className="relative">
-                    <select
-                      value={department}
-                      onChange={(e) => setDepartment(e.target.value)}
-                      className="w-full bg-black/30 border-2 border-gray-600 focus:border-blue-500 text-white py-3 pl-10 pr-10 outline-none font-sans text-sm transition-all appearance-none cursor-pointer hover:bg-black/50 focus:shadow-[0_0_20px_rgba(59,130,246,0.25)]"
-                    >
-                      <option value="" className="bg-gray-900 text-gray-400">Bölüm Seçiniz (İsteğe Bağlı)</option>
-                      {PAU_DEPARTMENTS.map(dept => (
-                        <option key={dept} value={dept} className="bg-gray-900 text-white py-2">{dept}</option>
-                      ))}
-                    </select>
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-
-            <div className="relative group">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => handleChange('email', e.target.value)}
-                onBlur={() => handleBlur('email')}
-                placeholder="E-posta"
-                data-testid="auth-email-input"
-                className={`w-full bg-black/30 border-2 ${fieldErrors.email && touched.email ? 'border-red-500 focus:border-red-500' : 'border-gray-600 focus:border-blue-500'} text-white py-3 pl-10 pr-4 outline-none font-retro text-xl placeholder:text-gray-600 transition-all focus:shadow-[0_0_20px_rgba(59,130,246,0.25)]`}
-              />
-              {!fieldErrors.email && touched.email && email && (
-                <Check className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500" size={18} />
-              )}
-            </div>
-            {fieldErrors.email && touched.email && (
-              <p className="text-red-400 text-xs -mt-3 flex items-center gap-1">
-                <AlertTriangle size={12} /> {fieldErrors.email}
-              </p>
-            )}
-
-            <div className="relative group">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-400" size={20} />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => handleChange('password', e.target.value)}
-                onBlur={() => handleBlur('password')}
-                placeholder="Şifre"
-                data-testid="auth-password-input"
-                className={`w-full bg-black/30 border-2 ${fieldErrors.password && touched.password ? 'border-red-500 focus:border-red-500' : 'border-gray-600 focus:border-blue-500'} text-white py-3 pl-10 pr-12 outline-none font-retro text-xl placeholder:text-gray-600 transition-all focus:shadow-[0_0_20px_rgba(59,130,246,0.25)]`}
-              />
+            <div className="rounded-xl border border-cyan-400/20 bg-[#050d20]/90 p-1 grid grid-cols-2 gap-1">
               <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
+                onClick={() => switchMode('login')}
+                className={`h-10 rounded-lg text-sm md:text-base font-semibold transition-all ${
+                  mode === 'login'
+                    ? 'bg-cyan-500/18 text-cyan-100 border border-cyan-300/35'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
               >
-                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                Giriş Yap
               </button>
-            </div>
-            {fieldErrors.password && touched.password && (
-              <p className="text-red-400 text-xs -mt-3 flex items-center gap-1">
-                <AlertTriangle size={12} /> {fieldErrors.password}
-              </p>
-            )}
-
-            <RetroButton
-              type="submit"
-              disabled={isLoading}
-              data-testid="auth-submit-button"
-              className="w-full mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  {mode === 'login' ? 'Giriş Yapılıyor...' : 'Kayıt Yapılıyor...'}
-                </span>
-              ) : (
-                <span className="flex items-center justify-center gap-2">
-                  {mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}
-                  <ArrowRight size={18} />
-                </span>
-              )}
-            </RetroButton>
-          </form>
-
-          {mode === 'login' && (
-            <p className="text-center text-gray-500 text-sm">
-              Hesabınız yok mu?{' '}
               <button
                 onClick={() => switchMode('register')}
-                className="text-blue-400 hover:text-blue-300 transition-colors"
+                className={`h-10 rounded-lg text-sm md:text-base font-semibold transition-all ${
+                  mode === 'register'
+                    ? 'bg-cyan-500/18 text-cyan-100 border border-cyan-300/35'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
               >
-                Kayıt olun
+                Kayıt Ol
               </button>
-            </p>
-          )}
-        </div>
-      </motion.div>
+            </div>
+
+            {error && (
+              <div className="bg-red-500/15 border border-red-400/45 text-red-100 px-3 py-2.5 rounded-lg flex items-center gap-2 text-sm">
+                <AlertTriangle size={16} className="shrink-0" />
+                {error}
+              </div>
+            )}
+
+            <form className="space-y-3.5" onSubmit={handleSubmit}>
+
+              {mode === 'register' && (
+                <>
+                  <div className="relative group">
+                    <User className={iconBaseClass} size={18} />
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => handleChange('username', e.target.value)}
+                      onBlur={() => handleBlur('username')}
+                      placeholder="Kullanıcı adı"
+                      className={`${inputBaseClass} ${
+                        fieldErrors.username && touched.username ? inputErrorClass : inputBorderClass
+                      } pl-10 pr-10`}
+                    />
+                    {!fieldErrors.username && touched.username && username && (
+                      <Check className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-400" size={18} />
+                    )}
+                  </div>
+                  {fieldErrors.username && touched.username && (
+                    <p className="text-red-300 text-xs flex items-center gap-1">
+                      <AlertTriangle size={12} /> {fieldErrors.username}
+                    </p>
+                  )}
+
+                  <div className="relative group">
+                    <Briefcase className={`${iconBaseClass} z-10`} size={18} />
+                    <div className="relative">
+                      <select
+                        value={department}
+                        onChange={(e) => setDepartment(e.target.value)}
+                        className={`${inputBaseClass} ${inputBorderClass} pl-10 pr-10 appearance-none cursor-pointer text-sm md:text-base`}
+                      >
+                        <option value="" className="bg-[#0b152c] text-slate-300">
+                          Bölüm seçiniz (isteğe bağlı)
+                        </option>
+                        {PAU_DEPARTMENTS.map(dept => (
+                          <option key={dept} value={dept} className="bg-[#0b152c] text-white">
+                            {dept}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              <div className="relative group">
+                <Mail className={iconBaseClass} size={18} />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => handleChange('email', e.target.value)}
+                  onBlur={() => handleBlur('email')}
+                  placeholder="E-posta"
+                  data-testid="auth-email-input"
+                  className={`${inputBaseClass} ${
+                    fieldErrors.email && touched.email ? inputErrorClass : inputBorderClass
+                  } pl-10 pr-10`}
+                />
+                {!fieldErrors.email && touched.email && email && (
+                  <Check className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-400" size={18} />
+                )}
+              </div>
+              {fieldErrors.email && touched.email && (
+                <p className="text-red-300 text-xs flex items-center gap-1">
+                  <AlertTriangle size={12} /> {fieldErrors.email}
+                </p>
+              )}
+
+              <div className="relative group">
+                <Lock className={iconBaseClass} size={18} />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => handleChange('password', e.target.value)}
+                  onBlur={() => handleBlur('password')}
+                  placeholder="Şifre"
+                  data-testid="auth-password-input"
+                  className={`${inputBaseClass} ${
+                    fieldErrors.password && touched.password ? inputErrorClass : inputBorderClass
+                  } pl-10 pr-12`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
+                  aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+              {fieldErrors.password && touched.password && (
+                <p className="text-red-300 text-xs flex items-center gap-1">
+                  <AlertTriangle size={12} /> {fieldErrors.password}
+                </p>
+              )}
+
+              <RetroButton
+                type="submit"
+                disabled={isLoading}
+                data-testid="auth-submit-button"
+                className="w-full mt-2 normal-case tracking-[0.06em] text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    {mode === 'login' ? 'Giriş yapılıyor...' : 'Kayıt yapılıyor...'}
+                  </span>
+                ) : (
+                  <span className="flex items-center justify-center gap-2">
+                    {mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}
+                    <ArrowRight size={17} />
+                  </span>
+                )}
+              </RetroButton>
+            </form>
+
+            <div className="space-y-2">
+              {mode === 'login' && (
+                <p className="text-center text-slate-400 text-sm">
+                  Hesabınız yok mu?{' '}
+                  <button
+                    onClick={() => switchMode('register')}
+                    className="text-cyan-300 hover:text-cyan-200 transition-colors font-semibold"
+                  >
+                    Kayıt olun
+                  </button>
+                </p>
+              )}
+              <p className="text-center text-[11px] text-slate-500">
+                Giriş sonrası hesabınızın rolüne göre otomatik olarak uygun panele yönlendirilirsiniz.
+              </p>
+            </div>
+          </div>
+        </motion.div>
     </motion.div>
   </AnimatePresence>
   );

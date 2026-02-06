@@ -30,7 +30,7 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
   };
 
   const baseStyles = `
-    font-pixel uppercase tracking-wider transition-all relative group rounded-2xl
+    font-pixel tracking-wide transition-all relative group rounded-2xl
     select-none touch-manipulation
     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#050a19]
   `;

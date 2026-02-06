@@ -49,10 +49,10 @@ module.exports = {
         highlight: "#f5c16c",
       },
       fontFamily: {
-        sans: ['"Rajdhani"', '"Space Grotesk"', "sans-serif"],
-        display: ['"Orbitron"', '"Rajdhani"', "sans-serif"],
-        pixel: ['"Chakra Petch"', "sans-serif"],
-        retro: ['"JetBrains Mono"', "monospace"],
+        sans: ['"Exo 2"', '"Noto Sans"', "sans-serif"],
+        display: ['"Orbitron"', '"Exo 2"', '"Noto Sans"', "sans-serif"],
+        pixel: ['"Exo 2"', '"Noto Sans"', "sans-serif"],
+        retro: ['"JetBrains Mono"', '"Noto Sans"', "monospace"],
       },
       boxShadow: {
         soft: "0 10px 30px rgba(15, 17, 21, 0.35)",

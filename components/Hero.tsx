@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles, Coffee, TimerReset } from 'lucide-react';
 import { RetroButton } from './RetroButton';
 import { ABTest } from './ABTest';
 
@@ -26,78 +26,127 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
   };
 
   return (
-    <div id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24">
-      {/* Background Elements */}
-      <div className="absolute inset-0 bg-[#0f141a]">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-blue-900/30 via-[#0f141a] to-[#0f141a]"></div>
-        <div className="absolute inset-0 bg-[conic-gradient(from_180deg_at_50%_50%,rgba(59,130,246,0.12),rgba(168,85,247,0.12),rgba(244,114,182,0.12),rgba(59,130,246,0.12))] opacity-30 blur-3xl"></div>
-        <div className="absolute top-0 left-0 w-full h-full bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-15"></div>
-      </div>
+    <section id="home" className="relative min-h-screen pt-28 md:pt-32 overflow-hidden">
+      <div className="absolute inset-0 cd-dot-grid opacity-45" />
+      <div className="absolute -left-20 top-28 h-64 w-64 rounded-full bg-[#be7b43]/25 blur-3xl" />
+      <div className="absolute right-0 top-20 h-[22rem] w-[22rem] rounded-full bg-[#1f6f78]/22 blur-3xl" />
+      <div className="absolute left-1/2 -translate-x-1/2 bottom-8 h-32 w-11/12 max-w-5xl rounded-full bg-[#73543c]/14 blur-3xl" />
 
-      <div className="relative z-10 container mx-auto px-4 text-center">
-        <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-yellow-500/30 bg-yellow-500/10 px-4 py-1 text-yellow-300 text-xs font-pixel tracking-widest uppercase shadow-[0_0_20px_rgba(234,179,8,0.12)]">
-          <span className="inline-flex h-2 w-2 rounded-full bg-yellow-400 animate-pulse"></span>
-          Yeni Nesil Sosyal Kafe
-        </div>
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid lg:grid-cols-12 gap-10 items-center">
+          <div className="lg:col-span-7">
+            <span className="cd-kicker mb-5">Kafe icin sosyal oyun platformu</span>
+            <h1 className="font-display text-[2.6rem] md:text-[4.1rem] leading-[1.06] text-[#1f2328] tracking-tight">
+              Kahve ritmini
+              <span className="text-[#1f6f78]"> mini oyunlarla </span>
+              birlestiren yeni nesil deneyim.
+            </h1>
+            <p className="mt-6 text-lg md:text-xl text-[#4f5b68] max-w-2xl leading-relaxed">
+              CafeDuo, kafelerde oturan insanlari saniyeler icinde oyuna baglar.
+              Giris yap, masani sec, hizli oyunlarla puan topla ve odulleri aninda kullan.
+            </p>
 
-        <h1 className="font-black text-6xl md:text-8xl lg:text-9xl mb-6 tracking-tighter">
-          <span className="block text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">CAFE</span>
-          <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 font-pixel mt-[-10px] md:mt-[-20px]">
-            DUO
-          </span>
-        </h1>
+            <div className="mt-9 flex flex-col sm:flex-row gap-3">
+              {isLoggedIn ? (
+                <RetroButton
+                  onClick={handlePanelClick}
+                  className="min-w-[210px] py-3.5 text-[0.95rem] md:text-base"
+                  variant="primary"
+                >
+                  PANEL'E GIT <ArrowRight className="ml-2" size={18} />
+                </RetroButton>
+              ) : (
+                <>
+                  <ABTest
+                    testName="hero_cta_text"
+                    variantA={
+                      <RetroButton
+                        onClick={onRegister}
+                        className="min-w-[210px] py-3.5 text-[0.95rem] md:text-base"
+                        variant="primary"
+                      >
+                        HEMEN BASLA <ArrowRight className="ml-2" size={18} />
+                      </RetroButton>
+                    }
+                    variantB={
+                      <RetroButton
+                        onClick={onRegister}
+                        className="min-w-[210px] py-3.5 text-[0.95rem] md:text-base"
+                        variant="primary"
+                      >
+                        UCRETSIZ KAYDOL <Sparkles className="ml-2" size={18} />
+                      </RetroButton>
+                    }
+                  />
 
-        <p className="text-gray-300/80 text-lg md:text-xl max-w-2xl mx-auto mb-10 font-light leading-relaxed">
-          Kahveni yudumla, oyununu oyna, ödülleri topla.
-          <br />
-          <span className="text-white font-medium">Sosyalleşmenin en eğlenceli hali.</span>
-        </p>
-
-        <div className="flex flex-col md:flex-row gap-4 justify-center items-center">
-          {isLoggedIn ? (
-            <RetroButton
-              onClick={handlePanelClick}
-              className="min-w-[200px] py-4 text-lg group shadow-[0_12px_30px_rgba(59,130,246,0.25)]"
-              variant="primary"
-            >
-              PANEL'E GİT <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
-            </RetroButton>
-          ) : (
-            <>
-              <ABTest
-                testName="hero_cta_text"
-                variantA={
                   <RetroButton
-                    onClick={onRegister}
-                    className="min-w-[200px] py-4 text-lg group shadow-[0_12px_30px_rgba(59,130,246,0.25)]"
-                    variant="primary"
+                    onClick={onLogin}
+                    data-testid="hero-login-button"
+                    className="min-w-[210px] py-3.5 text-[0.95rem] md:text-base"
+                    variant="secondary"
                   >
-                    HEMEN BAŞLA <ArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+                    GIRIS YAP
                   </RetroButton>
-                }
-                variantB={
-                  <RetroButton
-                    onClick={onRegister}
-                    className="min-w-[200px] py-4 text-lg group shadow-[0_12px_30px_rgba(59,130,246,0.25)]"
-                    variant="primary"
-                  >
-                    ÜCRETSİZ KAYDOL <Sparkles className="ml-2 group-hover:rotate-12 transition-transform" />
-                  </RetroButton>
-                }
-              />
+                </>
+              )}
+            </div>
 
-              <RetroButton
-                onClick={onLogin}
-                data-testid="hero-login-button"
-                className="min-w-[200px] py-4 text-lg"
-                variant="secondary"
-              >
-                GİRİŞ YAP
-              </RetroButton>
-            </>
-          )}
+            <div className="mt-9 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl">
+              <div className="cd-panel p-4">
+                <p className="font-pixel text-[10px] tracking-[0.2em] text-[#6f7a86] uppercase">Sure</p>
+                <p className="text-2xl font-bold text-[#1f2328] mt-1">45 sn</p>
+                <p className="text-sm text-[#5f6b78] mt-1">Ortalama mac suresi</p>
+              </div>
+              <div className="cd-panel p-4">
+                <p className="font-pixel text-[10px] tracking-[0.2em] text-[#6f7a86] uppercase">Mod</p>
+                <p className="text-2xl font-bold text-[#1f2328] mt-1">3+</p>
+                <p className="text-sm text-[#5f6b78] mt-1">Hizli tuketilen oyun</p>
+              </div>
+              <div className="cd-panel p-4">
+                <p className="font-pixel text-[10px] tracking-[0.2em] text-[#6f7a86] uppercase">Odul</p>
+                <p className="text-2xl font-bold text-[#1f2328] mt-1">Anlik</p>
+                <p className="text-sm text-[#5f6b78] mt-1">Kupon ve puan dongusu</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-5">
+            <div className="cd-panel p-6 md:p-8 relative overflow-hidden">
+              <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[#1f6f78]/18" />
+              <div className="absolute -left-10 bottom-0 h-28 w-28 rounded-full bg-[#be7b43]/18" />
+
+              <h3 className="font-display text-3xl text-[#1f2328] mb-5">Mekanda oyunu baslat</h3>
+              <div className="space-y-4">
+                <div className="flex gap-3 items-start p-3 rounded-xl bg-white/60 border border-[#dcc7b1]">
+                  <div className="mt-0.5 w-9 h-9 rounded-lg bg-[#1f6f78]/15 text-[#1f6f78] flex items-center justify-center">
+                    <Coffee size={18} />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-[#1f2328]">Kafeye giris yap</p>
+                    <p className="text-sm text-[#5b6774]">QR ile masayi sec ve saniyeler icinde basla.</p>
+                  </div>
+                </div>
+                <div className="flex gap-3 items-start p-3 rounded-xl bg-white/60 border border-[#dcc7b1]">
+                  <div className="mt-0.5 w-9 h-9 rounded-lg bg-[#be7b43]/20 text-[#8c5527] flex items-center justify-center">
+                    <TimerReset size={18} />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-[#1f2328]">Hizli tur, yuksek tekrar</p>
+                    <p className="text-sm text-[#5b6774]">Kisa oyunlar sayesinde bekleme degil etkileşim olur.</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-xl bg-[#1f2328] p-4 text-white">
+                <p className="font-pixel text-[10px] tracking-[0.2em] text-[#c4d2dd] uppercase">Canli gozlem</p>
+                <p className="text-sm mt-2 text-[#d4dde6]">
+                  Oyun odakli bu yapi, kafe yoneticisi icin sureci izlenebilir hale getirir.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 };

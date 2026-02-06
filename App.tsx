@@ -24,8 +24,8 @@ const CafeDashboard = React.lazy(() => import('./components/CafeDashboard').then
 
 // Loading Component
 const PageLoader = () => (
-  <div className="min-h-[60vh] flex flex-col items-center justify-center text-white">
-    <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+  <div className="min-h-[60vh] flex flex-col items-center justify-center text-[#1f2328]">
+    <div className="w-14 h-14 border-4 border-[#1f6f78] border-t-transparent rounded-full animate-spin"></div>
   </div>
 );
 
@@ -192,7 +192,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f141a] text-white font-sans selection:bg-purple-500 selection:text-white">
+    <div className="min-h-screen text-[var(--cd-ink)] font-sans selection:bg-[#d7b89f] selection:text-[#1f2328]">
       <Navbar isLoggedIn={isLoggedIn} onLogout={handleLogout} />
 
       <main>

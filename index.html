@@ -8,10 +8,10 @@
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>">
   <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#1a1a2e">
-  <meta name="background-color" content="#0f141a">
+  <meta name="theme-color" content="#f4ede3">
+  <meta name="background-color" content="#f6efe6">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="CafeDuo">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="application-name" content="CafeDuo">
@@ -19,7 +19,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Chakra+Petch:wght@400;600;700&family=VT323&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Manrope:wght@400;500;700;800&family=Space+Grotesk:wght@400;500;700&display=swap"
     rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -27,82 +27,19 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Inter', 'sans-serif'],
+            sans: ['"Space Grotesk"', '"Manrope"', 'sans-serif'],
+            display: ['"Fraunces"', '"Playfair Display"', 'serif'],
             pixel: ['"Chakra Petch"', 'sans-serif'],
-            retro: ['"VT323"', 'monospace'],
+            retro: ['"IBM Plex Mono"', 'monospace'],
           },
-          animation: {
-            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            'float': 'float 3s ease-in-out infinite',
-            'scanline': 'scanline 8s linear infinite',
-          },
-          keyframes: {
-            float: {
-              '0%, 100%': { transform: 'translateY(0)' },
-              '50%': { transform: 'translateY(-10px)' },
-            },
-            scanline: {
-              '0%': { transform: 'translateY(-100%)' },
-              '100%': { transform: 'translateY(100%)' },
-            }
-          }
         }
       }
     }
   </script>
-  <style>
-    body {
-      background-color: #111827;
-      color: #ffffff;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-      width: 10px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: #1f2937;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #4b5563;
-      border-radius: 5px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #6b7280;
-    }
-
-    /* Retro Scanlines */
-    .scanlines {
-      background: linear-gradient(to bottom,
-          rgba(255, 255, 255, 0),
-          rgba(255, 255, 255, 0) 50%,
-          rgba(0, 0, 0, 0.1) 50%,
-          rgba(0, 0, 0, 0.1));
-      background-size: 100% 4px;
-      position: fixed;
-      pointer-events: none;
-      top: 0;
-      right: 0;
-      bottom: 0;
-      left: 0;
-      z-index: 100;
-      opacity: 0.6;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-  </style>
 </head>
 
 <body>
   <div id="root"></div>
-  <div class="scanlines"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
 

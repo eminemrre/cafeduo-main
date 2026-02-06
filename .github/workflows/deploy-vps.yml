@@ -90,11 +90,33 @@ jobs:
           DEPLOY_ENV_B64: ${{ secrets.DEPLOY_ENV_B64 }}
         run: |
           set -euo pipefail
-          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" "
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "DEPLOY_PATH='${DEPLOY_PATH}' DEPLOY_ENV_B64='${DEPLOY_ENV_B64}' bash -s" <<'REMOTE'
             set -euo pipefail
-            command -v docker >/dev/null 2>&1 || (apt-get update && apt-get install -y docker.io docker-compose-plugin && systemctl enable --now docker)
-            cd ${DEPLOY_PATH}
-            echo '${DEPLOY_ENV_B64}' | base64 -d > .env
-            docker compose -f deploy/docker-compose.prod.yml --env-file .env up -d --build --remove-orphans
+
+            if ! command -v docker >/dev/null 2>&1; then
+              apt-get update
+              apt-get install -y docker.io
+              systemctl enable --now docker
+            fi
+
+            if docker compose version >/dev/null 2>&1; then
+              run_compose() { docker compose "$@"; }
+            else
+              if ! command -v docker-compose >/dev/null 2>&1; then
+                apt-get update
+                apt-get install -y docker-compose-v2 || apt-get install -y docker-compose
+              fi
+
+              if docker compose version >/dev/null 2>&1; then
+                run_compose() { docker compose "$@"; }
+              else
+                run_compose() { docker-compose "$@"; }
+              fi
+            fi
+
+            cd "$DEPLOY_PATH"
+            echo "$DEPLOY_ENV_B64" | base64 -d > .env
+            run_compose -f deploy/docker-compose.prod.yml --env-file .env up -d --build --remove-orphans
             docker image prune -f
-          "
+          REMOTE

@@ -93,4 +93,29 @@ describe('cafeController.checkIn', () => {
       })
     );
   });
+
+  it('falls back to base pin when daily pin is default 0000', async () => {
+    pool.query
+      .mockResolvedValueOnce({
+        rows: [{ id: 1, name: 'Merkez', daily_pin: '0000', pin: '5555', table_count: 20 }],
+      })
+      .mockResolvedValueOnce({ rowCount: 1 });
+
+    const req = {
+      params: { id: '1' },
+      body: { pin: '5555', tableNumber: 6 },
+      user: { id: 77 },
+    };
+    const res = buildRes();
+
+    await cafeController.checkIn(req, res);
+
+    expect(res.status).not.toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        table: 'MASA06',
+      })
+    );
+  });
 });

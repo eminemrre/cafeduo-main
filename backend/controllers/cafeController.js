@@ -83,8 +83,10 @@ const cafeController = {
             }
 
             // 3. PIN Check
-            // Check both 'daily_pin' and 'pin' columns for backward compatibility logic from report
-            const activePin = String(cafe.daily_pin || cafe.pin || '').trim();
+            // '0000' is treated as unset daily pin fallback value.
+            const dailyPin = String(cafe.daily_pin || '').trim();
+            const basePin = String(cafe.pin || '').trim();
+            const activePin = dailyPin && dailyPin !== '0000' ? dailyPin : basePin;
             if (activePin && activePin !== normalizedPin) {
                 return res.status(400).json({ error: 'Hatalı PIN kodu.' });
             }

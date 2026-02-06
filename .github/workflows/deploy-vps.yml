@@ -13,7 +13,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: ${{ secrets.DEPLOY_HOST != '' && secrets.DEPLOY_USER != '' && secrets.DEPLOY_SSH_KEY != '' && secrets.DEPLOY_PATH != '' }}
+    if: ${{ secrets.DEPLOY_HOST != '' && secrets.DEPLOY_USER != '' && secrets.DEPLOY_SSH_KEY != '' && secrets.DEPLOY_PATH != '' && secrets.DEPLOY_ENV_B64 != '' }}
 
     steps:
       - name: Checkout
@@ -54,6 +54,7 @@ jobs:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
         run: |
           set -euo pipefail
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p ${DEPLOY_PATH}"
           rsync -az --delete \
             --exclude ".git" \
             --exclude ".env" \
@@ -71,15 +72,14 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_ENV_B64: ${{ secrets.DEPLOY_ENV_B64 }}
         run: |
           set -euo pipefail
           ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" "
             set -euo pipefail
+            command -v docker >/dev/null 2>&1 || (apt-get update && apt-get install -y docker.io docker-compose-plugin && systemctl enable --now docker)
             cd ${DEPLOY_PATH}
-            if [ ! -f .env ]; then
-              echo '.env missing on server. Copy deploy/.env.production.example to .env and set real values.'
-              exit 1
-            fi
+            echo '${DEPLOY_ENV_B64}' | base64 -d > .env
             docker compose -f deploy/docker-compose.prod.yml --env-file .env up -d --build --remove-orphans
             docker image prune -f
           "

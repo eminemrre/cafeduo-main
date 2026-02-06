@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import './index.css';
 
 
 const rootElement = document.getElementById('root');

@@ -49,8 +49,10 @@ module.exports = {
         highlight: "#f5c16c",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "-apple-system", "Segoe UI", "Roboto", "Helvetica", "Arial", "Noto Sans", "sans-serif"],
-        display: ["Cinzel", "Playfair Display", "Georgia", "serif"],
+        sans: ['"Space Grotesk"', '"Manrope"', "sans-serif"],
+        display: ['"Fraunces"', '"Playfair Display"', "serif"],
+        pixel: ['"Chakra Petch"', "sans-serif"],
+        retro: ['"IBM Plex Mono"', "monospace"],
       },
       boxShadow: {
         soft: "0 10px 30px rgba(15, 17, 21, 0.35)",

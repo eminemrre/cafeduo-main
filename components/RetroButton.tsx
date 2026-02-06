@@ -25,40 +25,36 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
   // Touch-friendly minimum sizes (44x44px for accessibility)
   const sizeStyles = {
     sm: 'min-h-[40px] px-4 py-2 text-sm',
-    md: 'min-h-[48px] px-6 md:px-8 py-3 text-base md:text-lg',
-    lg: 'min-h-[56px] px-8 md:px-10 py-4 text-lg md:text-xl'
+    md: 'min-h-[48px] px-6 py-3 text-sm md:text-base',
+    lg: 'min-h-[56px] px-8 py-3.5 text-base md:text-lg'
   };
 
   const baseStyles = `
-    font-pixel uppercase transition-all relative group
+    font-pixel uppercase tracking-wide transition-all relative group rounded-2xl
     select-none touch-manipulation
-    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#0f141a]
+    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#f6efe6]
   `;
 
   const variants = {
     primary: `
-      bg-gray-200 text-black border-2 border-white border-b-gray-600 border-r-gray-600
-      hover:bg-white hover:shadow-[0_0_20px_rgba(255,255,255,0.4)]
-      active:border-b-white active:border-r-white active:border-t-gray-600 active:border-l-gray-600
-      focus:ring-white/50
+      bg-gradient-to-r from-[#1f6f78] to-[#be7b43] text-white border border-transparent
+      hover:brightness-105 hover:shadow-[0_14px_28px_rgba(31,111,120,0.28)]
+      focus:ring-[#1f6f78]/50
     `,
     secondary: `
-      bg-slate-700 text-white border-2 border-slate-500 border-b-slate-900 border-r-slate-900
-      hover:bg-slate-600 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]
-      active:border-b-slate-500 active:border-r-slate-500 active:border-t-slate-900 active:border-l-slate-900
-      focus:ring-blue-500/50
+      bg-white/75 text-[#27333f] border border-[#d2b89f]
+      hover:bg-white hover:shadow-[0_10px_22px_rgba(50,37,25,0.12)]
+      focus:ring-[#be7b43]/40
     `,
     danger: `
-      bg-red-600 text-white border-2 border-red-400 border-b-red-900 border-r-red-900
-      hover:bg-red-500 hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]
-      active:border-b-red-400 active:border-r-red-400 active:border-t-red-900 active:border-l-red-900
+      bg-[#8d3a2d] text-white border border-[#7c3328]
+      hover:bg-[#a34231] hover:shadow-[0_12px_24px_rgba(141,58,45,0.34)]
       focus:ring-red-500/50
     `,
     ghost: `
-      bg-transparent text-gray-300 border-2 border-gray-700
-      hover:text-white hover:border-gray-500 hover:bg-white/5
-      active:bg-white/10
-      focus:ring-gray-500/50
+      bg-transparent text-[#4f5d6b] border border-[#c9b29b]
+      hover:text-[#1f2328] hover:border-[#b99a7f] hover:bg-white/60
+      focus:ring-[#8d725b]/40
     `
   };
 
@@ -79,11 +75,10 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
         ${className}
       `}
       whileTap={disabled ? {} : { 
-        scale: 0.96,
-        y: 2
+        scale: 0.97
       }}
       whileHover={disabled ? {} : {
-        scale: 1.02
+        y: -1
       }}
       transition={{ 
         type: 'spring', 

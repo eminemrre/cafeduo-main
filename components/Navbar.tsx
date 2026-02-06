@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Coffee, LogOut, User, ChevronRight } from 'lucide-react';
+import { Menu, X, Coffee, LogOut, ChevronRight, Sparkles } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { NAV_ITEMS } from '../constants';
 
@@ -16,20 +16,13 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
   const location = useLocation();
 
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
+    const handleScroll = () => setScrolled(window.scrollY > 16);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Lock body scroll when mobile menu is open
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
+    document.body.style.overflow = isOpen ? 'hidden' : '';
     return () => {
       document.body.style.overflow = '';
     };
@@ -37,112 +30,92 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
 
   const scrollToSection = (id: string) => {
     setIsOpen(false);
-    if (!isLoggedIn) {
-      if (location.pathname !== '/') {
-        navigate('/');
-        setTimeout(() => {
-          const element = document.getElementById(id);
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth' });
-          }
-        }, 100);
-      } else {
+    if (isLoggedIn) return;
+
+    if (location.pathname !== '/') {
+      navigate('/');
+      setTimeout(() => {
         const element = document.getElementById(id);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth' });
-        }
-      }
+        element?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      return;
     }
+
+    const element = document.getElementById(id);
+    element?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
     <>
-      <nav 
-        className={`fixed w-full z-50 transition-all duration-300 ${
-          scrolled || isLoggedIn 
-            ? 'bg-slate-900/95 backdrop-blur-xl shadow-[0_10px_30px_rgba(0,0,0,0.35)] py-2' 
-            : 'bg-transparent py-4 md:py-6'
+      <nav
+        className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
+          scrolled || isLoggedIn
+            ? 'bg-[#fbf7f1]/88 backdrop-blur-xl border-b border-[#d7c3ad] py-2 shadow-[0_14px_28px_rgba(30,26,21,0.08)]'
+            : 'bg-transparent py-4 md:py-5'
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 md:h-16">
-            {/* Logo */}
             <motion.div
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ y: -2 }}
               whileTap={{ scale: 0.98 }}
-              className="flex-shrink-0 flex items-center gap-2 cursor-pointer group"
+              className="flex items-center gap-3 cursor-pointer"
               onClick={() => {
-                if (!isLoggedIn) {
-                  scrollToSection('home');
-                } else {
+                if (isLoggedIn) {
                   navigate('/dashboard');
+                } else {
+                  scrollToSection('home');
                 }
               }}
             >
-              <motion.div 
-                className="bg-white text-black rounded-full p-1.5 shadow-[0_8px_20px_rgba(255,255,255,0.2)]"
-                whileHover={{ rotate: 12 }}
-                transition={{ type: 'spring', stiffness: 300 }}
-              >
-                <Coffee size={22} strokeWidth={3} />
-              </motion.div>
-              <span className="font-pixel text-2xl md:text-3xl text-white tracking-wider">
-                CAFE<span className="text-slate-400 text-lg md:text-xl align-top">DUO</span>
-              </span>
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#1f6f78] to-[#be7b43] text-white flex items-center justify-center shadow-[0_10px_20px_rgba(31,111,120,0.28)]">
+                <Coffee size={20} />
+              </div>
+              <div className="leading-tight">
+                <span className="font-display text-2xl md:text-[1.75rem] text-[#1f2328] block">CafeDuo</span>
+                <span className="font-pixel text-[10px] tracking-[0.28em] text-[#58616d] block -mt-1">
+                  SOCIAL CAFE ENGINE
+                </span>
+              </div>
             </motion.div>
 
-            {/* Desktop Menu */}
-            <div className="hidden md:block">
-              <div className="ml-10 flex items-baseline space-x-2">
-                {!isLoggedIn ? (
-                  NAV_ITEMS.map((item, index) => (
-                    <motion.button
-                      key={item.id}
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      onClick={() => scrollToSection(item.id)}
-                      className="relative text-gray-300 hover:text-white px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 font-pixel border border-transparent hover:border-white/10 hover:bg-white/5"
-                      whileHover={{ y: -2 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      {item.label}
-                    </motion.button>
-                  ))
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <motion.div 
-                      className="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-600 shadow-[0_0_20px_rgba(34,197,94,0.15)]"
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                    >
-                      <motion.div 
-                        className="w-2 h-2 rounded-full bg-green-500"
-                        animate={{ scale: [1, 1.2, 1] }}
-                        transition={{ repeat: Infinity, duration: 2 }}
-                      />
-                      <span className="font-pixel text-xs text-gray-300">ONLINE</span>
-                    </motion.div>
-                    <motion.button
-                      onClick={onLogout}
-                      data-testid="logout-button"
-                      className="flex items-center gap-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 font-pixel border border-transparent hover:border-red-500/50"
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <LogOut size={16} />
-                      <span className="hidden lg:inline">ÇIKIŞ YAP</span>
-                    </motion.button>
+            <div className="hidden md:flex items-center gap-2">
+              {!isLoggedIn ? (
+                NAV_ITEMS.map((item, index) => (
+                  <motion.button
+                    key={item.id}
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.06 }}
+                    onClick={() => scrollToSection(item.id)}
+                    className="px-4 py-2 rounded-full text-sm font-pixel tracking-wide text-[#37424f] hover:text-[#1f6f78] hover:bg-[#fff8ee] border border-transparent hover:border-[#d3b99f] transition-all"
+                  >
+                    {item.label}
+                  </motion.button>
+                ))
+              ) : (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 rounded-full border border-[#d3b99f] bg-[#fffaf3] px-3 py-1.5">
+                    <Sparkles size={14} className="text-[#be7b43]" />
+                    <span className="font-pixel text-xs text-[#3f4b57]">CANLI OTURUM</span>
                   </div>
-                )}
-              </div>
+                  <motion.button
+                    onClick={onLogout}
+                    data-testid="logout-button"
+                    className="flex items-center gap-2 rounded-full border border-[#d3b99f] px-4 py-2 text-sm font-pixel text-[#613024] hover:bg-[#fff4eb] transition-colors"
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <LogOut size={16} />
+                    <span className="hidden lg:inline">ÇIKIŞ YAP</span>
+                  </motion.button>
+                </div>
+              )}
             </div>
 
-            {/* Mobile menu button */}
             <motion.button
               onClick={() => setIsOpen(!isOpen)}
-              className="md:hidden relative w-12 h-12 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-colors"
-              whileTap={{ scale: 0.9 }}
+              className="md:hidden w-11 h-11 rounded-full border border-[#cfb79f] bg-[#fff8ee] text-[#1f2328] flex items-center justify-center"
+              whileTap={{ scale: 0.93 }}
               aria-label={isOpen ? 'Menüyü kapat' : 'Menüyü aç'}
             >
               <AnimatePresence mode="wait">
@@ -152,9 +125,9 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
                     initial={{ rotate: -90, opacity: 0 }}
                     animate={{ rotate: 0, opacity: 1 }}
                     exit={{ rotate: 90, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ duration: 0.18 }}
                   >
-                    <X size={24} className="text-white" />
+                    <X size={22} />
                   </motion.div>
                 ) : (
                   <motion.div
@@ -162,9 +135,9 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
                     initial={{ rotate: 90, opacity: 0 }}
                     animate={{ rotate: 0, opacity: 1 }}
                     exit={{ rotate: -90, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
+                    transition={{ duration: 0.18 }}
                   >
-                    <Menu size={24} className="text-white" />
+                    <Menu size={22} />
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -173,94 +146,70 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
         </div>
       </nav>
 
-      {/* Mobile Menu Overlay */}
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+              className="fixed inset-0 bg-[#24170f]/35 backdrop-blur-sm z-40 md:hidden"
               onClick={() => setIsOpen(false)}
             />
-            
-            {/* Menu Panel */}
+
             <motion.div
-              initial={{ x: '100%', opacity: 0.5 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: '100%', opacity: 0.5 }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className="fixed top-0 right-0 bottom-0 w-[280px] bg-slate-900 z-50 md:hidden shadow-2xl"
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 28, stiffness: 290 }}
+              className="fixed top-0 right-0 bottom-0 w-[300px] bg-[#fff9f1] border-l border-[#d3b99f] z-50 md:hidden shadow-[0_18px_40px_rgba(30,20,12,0.22)]"
             >
-              {/* Header */}
-              <div className="flex items-center justify-between p-4 border-b border-slate-800">
-                <span className="font-pixel text-white text-lg">MENÜ</span>
-                <motion.button
+              <div className="flex items-center justify-between px-5 py-4 border-b border-[#dfc8b1]">
+                <span className="font-pixel text-[#1f2328] text-lg">MENÜ</span>
+                <button
                   onClick={() => setIsOpen(false)}
-                  className="w-10 h-10 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10"
-                  whileTap={{ scale: 0.9 }}
+                  className="w-9 h-9 rounded-full border border-[#cfb79f] flex items-center justify-center text-[#1f2328]"
                 >
-                  <X size={20} className="text-white" />
-                </motion.button>
+                  <X size={18} />
+                </button>
               </div>
 
-              {/* Menu Items */}
               <div className="p-4 space-y-2">
                 {!isLoggedIn ? (
                   NAV_ITEMS.map((item, index) => (
                     <motion.button
                       key={item.id}
-                      initial={{ x: 50, opacity: 0 }}
+                      initial={{ x: 36, opacity: 0 }}
                       animate={{ x: 0, opacity: 1 }}
-                      transition={{ delay: index * 0.1 }}
+                      transition={{ delay: index * 0.08 }}
                       onClick={() => scrollToSection(item.id)}
-                      className="w-full flex items-center justify-between text-gray-300 hover:text-white hover:bg-white/5 px-4 py-4 rounded-xl text-base font-pixel transition-colors"
+                      className="w-full flex items-center justify-between rounded-xl px-4 py-3 text-left text-[#34404c] hover:bg-[#f2e5d6] transition-colors font-pixel text-sm"
                     >
                       {item.label}
-                      <ChevronRight size={18} className="text-gray-600" />
+                      <ChevronRight size={16} className="text-[#66727f]" />
                     </motion.button>
                   ))
                 ) : (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3 px-4 py-3 bg-slate-800/50 rounded-xl">
-                      <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                        <User size={20} className="text-green-400" />
-                      </div>
-                      <div>
-                        <p className="text-white font-medium">Kullanıcı</p>
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                          <span className="text-xs text-gray-400">Çevrimiçi</span>
-                        </div>
-                      </div>
+                  <>
+                    <div className="rounded-xl border border-[#d8c2ab] bg-[#fff5e8] p-4">
+                      <p className="text-xs uppercase tracking-[0.2em] text-[#7a5a3f] font-pixel mb-1">Durum</p>
+                      <p className="text-sm text-[#2f3a46]">Oturum açık. Paneline güvenli şekilde dönebilirsin.</p>
                     </div>
-                    
                     <motion.button
-                      initial={{ x: 50, opacity: 0 }}
+                      initial={{ x: 36, opacity: 0 }}
                       animate={{ x: 0, opacity: 1 }}
                       onClick={() => {
-                        if (onLogout) onLogout();
+                        onLogout?.();
                         setIsOpen(false);
                       }}
                       data-testid="logout-button-mobile"
-                      className="w-full flex items-center gap-3 text-red-400 hover:text-red-300 hover:bg-red-500/10 px-4 py-4 rounded-xl text-base font-pixel transition-colors border border-red-500/20"
+                      className="w-full flex items-center gap-3 rounded-xl border border-[#d6baa1] px-4 py-3 text-[#6b3528] font-pixel"
                     >
-                      <LogOut size={20} />
+                      <LogOut size={18} />
                       ÇIKIŞ YAP
                     </motion.button>
-                  </div>
+                  </>
                 )}
-              </div>
-
-              {/* Footer */}
-              <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-800">
-                <div className="flex items-center gap-2 text-gray-500 text-xs">
-                  <Coffee size={14} />
-                  <span>CafeDuo v1.0</span>
-                </div>
               </div>
             </motion.div>
           </>
@@ -269,5 +218,3 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
     </>
   );
 };
-
-export default Navbar;

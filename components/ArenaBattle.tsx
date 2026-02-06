@@ -1,6 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { User } from '../types';
 import { RetroButton } from './RetroButton';
+import { api } from '../lib/api';
+import { submitScoreAndWaitForWinner } from '../lib/multiplayer';
 
 interface ArenaBattleProps {
   currentUser: User;
@@ -17,6 +19,7 @@ const MAX_ROUNDS = 4;
 
 export const ArenaBattle: React.FC<ArenaBattleProps> = ({
   currentUser,
+  gameId,
   opponentName,
   isBot,
   onGameEnd,
@@ -31,8 +34,16 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
   const [opponentScore, setOpponentScore] = useState(0);
   const [message, setMessage] = useState('Diziyi izle, sonra birebir tekrar et.');
   const [done, setDone] = useState(false);
+  const [resolvingMatch, setResolvingMatch] = useState(false);
+  const matchStartedAtRef = useRef<number>(Date.now());
 
   const target = useMemo(() => (isBot ? 'BOT' : (opponentName || 'Rakip')), [isBot, opponentName]);
+
+  useEffect(() => {
+    if (round === 1) {
+      matchStartedAtRef.current = Date.now();
+    }
+  }, [round]);
 
   useEffect(() => {
     const length = Math.min(3 + round, 6);
@@ -61,13 +72,51 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
     return () => window.clearInterval(interval);
   }, [showing, sequence]);
 
+  const finalizeMatch = async (localWinner: string, playerScoreValue: number) => {
+    if (isBot || !gameId) {
+      const points = localWinner === currentUser.username ? 10 : 0;
+      setTimeout(() => onGameEnd(localWinner, points), 900);
+      return;
+    }
+
+    setResolvingMatch(true);
+    setMessage('Skorun kaydedildi. Rakip sonucu bekleniyor...');
+
+    try {
+      const durationMs = Math.max(1, Date.now() - matchStartedAtRef.current);
+      const { winner } = await submitScoreAndWaitForWinner({
+        gameId,
+        username: currentUser.username,
+        score: playerScoreValue,
+        roundsWon: playerScoreValue,
+        durationMs,
+      });
+
+      const resolvedWinner = winner || localWinner;
+      try {
+        await api.games.finish(gameId, resolvedWinner);
+      } catch {
+        // Finishing failures should not block the UI flow
+      }
+
+      const points = resolvedWinner === currentUser.username ? 10 : 0;
+      setMessage(points > 0 ? 'Maçı kazandın.' : 'Maçı rakip aldı.');
+      setTimeout(() => onGameEnd(resolvedWinner, points), 900);
+    } catch {
+      const fallbackPoints = localWinner === currentUser.username ? 10 : 0;
+      setMessage('Bağlantı dalgalandı, yerel sonuç uygulandı.');
+      setTimeout(() => onGameEnd(localWinner, fallbackPoints), 900);
+    } finally {
+      setResolvingMatch(false);
+    }
+  };
+
   const endMatchIfNeeded = (nextPlayer: number, nextOpponent: number, nextRound: number) => {
     if (nextRound <= MAX_ROUNDS) return;
     setDone(true);
-    const winner = nextPlayer >= nextOpponent ? currentUser.username : target;
-    const points = winner === currentUser.username ? 10 : 0;
-    setMessage(winner === currentUser.username ? 'Maçı kazandın.' : 'Maçı rakip aldı.');
-    setTimeout(() => onGameEnd(winner, points), 900);
+    const localWinner = nextPlayer >= nextOpponent ? currentUser.username : target;
+    setMessage(localWinner === currentUser.username ? 'Maç sonucu hesaplanıyor...' : 'Maç sonucu hesaplanıyor...');
+    void finalizeMatch(localWinner, nextPlayer);
   };
 
   const nextRound = (playerWon: boolean) => {
@@ -83,7 +132,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
   };
 
   const pressPad = (idx: number) => {
-    if (showing || done) return;
+    if (showing || done || resolvingMatch) return;
     if (sequence[cursor] === idx) {
       const nextCursor = cursor + 1;
       setCursor(nextCursor);
@@ -127,6 +176,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
             key={idx}
             data-testid={`rhythm-pad-${idx}`}
             onClick={() => pressPad(idx)}
+            disabled={resolvingMatch}
             className={`h-24 rounded-xl border-2 border-white/10 transition ${
               activePad === idx ? 'scale-95 opacity-100' : 'opacity-80'
             } ${color}`}

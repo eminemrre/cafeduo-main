@@ -220,27 +220,27 @@ describe('API Layer additional coverage', () => {
     clearIntervalSpy.mockRestore();
   });
 
-  it('users.getActiveGame returns active match for username', async () => {
-    const listSpy = jest.spyOn(api.games, 'list').mockResolvedValue([
-      { id: 1, hostName: 'emin', status: 'waiting' },
-      { id: 2, hostName: 'other', status: 'finished' },
-    ] as any);
+  it('users.getActiveGame calls dedicated active-game endpoint', async () => {
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: 1, hostName: 'emin', status: 'active' }),
+    });
 
     const result = await api.users.getActiveGame('emin');
-    expect(result).toEqual(expect.objectContaining({ id: 1 }));
 
-    listSpy.mockRestore();
+    expect(result).toEqual(expect.objectContaining({ id: 1, status: 'active' }));
+    expect(fetch).toHaveBeenCalledWith('/api/users/emin/active-game', expect.any(Object));
   });
 
-  it('users.getActiveGame returns null when no active match exists', async () => {
-    const listSpy = jest.spyOn(api.games, 'list').mockResolvedValue([
-      { id: 2, hostName: 'other', status: 'finished' },
-    ] as any);
+  it('users.getActiveGame returns null when endpoint fails', async () => {
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      json: async () => ({ error: 'Not found' }),
+    });
 
     const result = await api.users.getActiveGame('emin');
     expect(result).toBeNull();
-
-    listSpy.mockRestore();
   });
 
   it('cafes.get returns null on API error', async () => {
@@ -260,6 +260,7 @@ describe('API Layer additional coverage', () => {
       .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 12 }) }) // join
       .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }) // move
       .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }) // finish
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }) // submitScore
       .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }); // delete
 
     await api.games.get(11);
@@ -267,6 +268,7 @@ describe('API Layer additional coverage', () => {
     await api.games.join(12, 'guest');
     await api.games.move(12, { gameState: { turn: 1 } });
     await api.games.finish(12, 'emin');
+    await api.games.submitScore(12, { username: 'emin', score: 3, roundsWon: 3 });
     await api.games.delete(12);
 
     expect(fetch).toHaveBeenNthCalledWith(1, '/api/games/11', expect.any(Object));
@@ -278,7 +280,15 @@ describe('API Layer additional coverage', () => {
     );
     expect(fetch).toHaveBeenNthCalledWith(4, '/api/games/12/move', expect.any(Object));
     expect(fetch).toHaveBeenNthCalledWith(5, '/api/games/12/finish', expect.any(Object));
-    expect(fetch).toHaveBeenNthCalledWith(6, '/api/games/12', expect.objectContaining({ method: 'DELETE' }));
+    expect(fetch).toHaveBeenNthCalledWith(
+      6,
+      '/api/games/12/move',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ scoreSubmission: { username: 'emin', score: 3, roundsWon: 3 } }),
+      })
+    );
+    expect(fetch).toHaveBeenNthCalledWith(7, '/api/games/12', expect.objectContaining({ method: 'DELETE' }));
   });
 
   it('onLobbyChange polls and unsubscribe clears interval', async () => {

@@ -1156,28 +1156,75 @@ app.get('/api/games/:id', async (req, res) => {
 // 7. MAKE MOVE
 app.post('/api/games/:id/move', async (req, res) => {
   const { id } = req.params;
-  const { player, move, gameState } = req.body; // player: 'host' or 'guest'
+  const { player, move, gameState, scoreSubmission } = req.body; // player: 'host' or 'guest'
 
   if (await isDbConnected()) {
-    let query = '';
-    let params = [];
-    if (player === 'host') {
-      query = 'UPDATE games SET player1_move = $1 WHERE id = $2';
-      params = [move, id];
-    } else {
-      query = 'UPDATE games SET player2_move = $1 WHERE id = $2';
-      params = [move, id];
-    }
+    try {
+      if (scoreSubmission && scoreSubmission.username) {
+        const username = String(scoreSubmission.username).trim();
+        const scorePayload = {
+          score: Number(scoreSubmission.score || 0),
+          roundsWon: Number(scoreSubmission.roundsWon || 0),
+          durationMs: Number(scoreSubmission.durationMs || 0),
+          submittedAt: new Date().toISOString(),
+        };
 
-    if (gameState) {
-      query = 'UPDATE games SET game_state = $1 WHERE id = $2';
-      params = [gameState, id];
-    }
+        const result = await pool.query(
+          `
+            UPDATE games
+            SET game_state = jsonb_set(
+              COALESCE(game_state, '{}'::jsonb),
+              ARRAY['results', $1::text],
+              $2::jsonb,
+              true
+            )
+            WHERE id = $3
+            RETURNING game_state as "gameState"
+          `,
+          [username, JSON.stringify(scorePayload), id]
+        );
 
-    await pool.query(query, params);
-    res.json({ success: true });
+        return res.json({
+          success: true,
+          gameState: result.rows[0]?.gameState || null,
+        });
+      }
+
+      let query = '';
+      let params = [];
+      if (player === 'host') {
+        query = 'UPDATE games SET player1_move = $1 WHERE id = $2';
+        params = [move, id];
+      } else {
+        query = 'UPDATE games SET player2_move = $1 WHERE id = $2';
+        params = [move, id];
+      }
+
+      if (gameState) {
+        query = 'UPDATE games SET game_state = $1 WHERE id = $2';
+        params = [gameState, id];
+      }
+
+      await pool.query(query, params);
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Game move update error:', err);
+      res.status(500).json({ error: 'Hamle kaydedilemedi.' });
+    }
   } else {
     // Memory fallback
+    const game = MEMORY_GAMES.find(g => g.id == id);
+    if (game && scoreSubmission && scoreSubmission.username) {
+      const username = String(scoreSubmission.username).trim();
+      game.gameState = game.gameState || {};
+      game.gameState.results = game.gameState.results || {};
+      game.gameState.results[username] = {
+        score: Number(scoreSubmission.score || 0),
+        roundsWon: Number(scoreSubmission.roundsWon || 0),
+        durationMs: Number(scoreSubmission.durationMs || 0),
+        submittedAt: new Date().toISOString(),
+      };
+    }
     res.json({ success: true });
   }
 });
@@ -1576,7 +1623,8 @@ app.get('/api/users/:username/active-game', async (req, res) => {
           game_state as "gameState", 
           created_at as "createdAt" 
         FROM games 
-        WHERE (host_name = $1 OR guest_name = $1) AND status = 'active' 
+        WHERE (host_name = $1 OR guest_name = $1) AND status = 'active'
+        ORDER BY created_at DESC
         LIMIT 1
       `, [username]);
 

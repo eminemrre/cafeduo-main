@@ -9,6 +9,7 @@ jest.mock('../lib/api', () => ({
       list: jest.fn(),
       create: jest.fn(),
       join: jest.fn(),
+      get: jest.fn(),
     },
     users: {
       getActiveGame: jest.fn(),
@@ -159,6 +160,7 @@ describe('useGames', () => {
     (api.games.list as jest.Mock).mockResolvedValue([]);
     (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);
     (api.games.join as jest.Mock).mockResolvedValue(joinedGame);
+    (api.games.get as jest.Mock).mockResolvedValue(joinedGame);
 
     const { result } = renderHook(() => 
       useGames({ currentUser: mockUser, tableCode: mockTableCode })
@@ -169,6 +171,9 @@ describe('useGames', () => {
     });
 
     expect(api.games.join).toHaveBeenCalledWith(1, 'testuser');
+    expect(api.games.get).toHaveBeenCalledWith(1);
+    expect(result.current.activeGameId).toBe(1);
+    expect(result.current.opponentName).toBe('otheruser');
   });
 
   it('setActiveGame updates state', () => {

@@ -115,10 +115,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   // Aktif oyuna geri dön
   const handleRejoinGame = () => {
     if (serverActiveGame) {
+      const rejoinOpponent =
+        serverActiveGame.hostName === currentUser.username
+          ? serverActiveGame.guestName || 'Rakip'
+          : serverActiveGame.hostName;
+
       setActiveGame(
         serverActiveGame.id,
         serverActiveGame.gameType,
-        serverActiveGame.hostName
+        rejoinOpponent
       );
     }
   };
@@ -150,8 +155,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
     leaveGame();
   };
 
-  // Oyundan ayrılma (oyun sonu)
-  const handleGameFinish = () => {
+  // Manuel dönüş (istatistik işlemeden)
+  const handleBackToLobby = () => {
+    leaveGame();
+  };
+
+  // Oyun sonu (istatistik + puan güncelleme)
+  const handleGameFinish = (winner: string, earnedPoints: number) => {
+    const didWin = winner === currentUser.username;
+    const safeEarnedPoints = Number.isFinite(earnedPoints) ? Math.max(0, earnedPoints) : 0;
+
+    const updatedUser = {
+      ...currentUser,
+      points: (currentUser.points || 0) + safeEarnedPoints,
+      wins: (currentUser.wins || 0) + (didWin ? 1 : 0),
+      gamesPlayed: (currentUser.gamesPlayed || 0) + 1,
+    };
+
+    onUpdateUser(updatedUser);
     leaveGame();
   };
 
@@ -166,7 +187,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
         <div className="max-w-6xl mx-auto">
           {/* Geri butonu */}
           <div className="mb-6">
-            <RetroButton onClick={handleGameFinish} variant="secondary">
+            <RetroButton onClick={handleBackToLobby} variant="secondary">
               ← Lobiye Dön
             </RetroButton>
           </div>

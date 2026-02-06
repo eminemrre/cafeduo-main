@@ -131,12 +131,11 @@ export const api = {
     },
 
     getActiveGame: async (username: string): Promise<GameRequest | null> => {
-      const games = await api.games.list();
-      const activeGame = games.find((g: any) =>
-        (g.hostName === username || g.guestName === username) &&
-        (g.status === 'waiting' || g.status === 'playing' || g.status === 'active')
-      );
-      return activeGame || null;
+      try {
+        return await fetchAPI(`/users/${encodeURIComponent(username)}/active-game`);
+      } catch {
+        return null;
+      }
     }
   },
 
@@ -202,6 +201,18 @@ export const api = {
       return await fetchAPI(`/games/${gameId}/move`, {
         method: 'POST',
         body: JSON.stringify(data),
+      });
+    },
+
+    submitScore: async (
+      gameId: number | string,
+      payload: { username: string; score: number; roundsWon?: number; durationMs?: number }
+    ) => {
+      return await fetchAPI(`/games/${gameId}/move`, {
+        method: 'POST',
+        body: JSON.stringify({
+          scoreSubmission: payload,
+        }),
       });
     },
 

@@ -111,11 +111,12 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
 
       // Oyun listesine ekle
       setGames(prev => [newGame, ...prev]);
-      
-      // Otomatik olarak oyuna katıl (host olarak)
-      setActiveGameId(newGame.id);
-      setActiveGameType(gameType);
-      setOpponentName(undefined); // Rakip bekleniyor
+
+      // Host doğrudan oyuna alınmaz; lobby'de bekler.
+      // Rakip katıldığında active-game endpoint'i üzerinden geri döner.
+      setActiveGameId(null);
+      setActiveGameType('');
+      setOpponentName(undefined);
       setIsBot(false);
     } catch (err) {
       console.error('Failed to create game:', err);
@@ -129,20 +130,24 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
   const joinGame = useCallback(async (gameId: number) => {
     try {
       await api.games.join(gameId, currentUser.username);
-      
-      // Oyunu bul ve aktif yap
-      const game = games.find(g => g.id === gameId);
-      if (game) {
-        setActiveGameId(gameId);
-        setActiveGameType(game.gameType);
-        setOpponentName(game.hostName);
-        setIsBot(false);
-      }
+
+      // Katılım sonrası güncel oyunu sunucudan al
+      const joinedGame = await api.games.get(gameId);
+      const gameType = joinedGame?.gameType || games.find(g => g.id === gameId)?.gameType || '';
+      const hostName = joinedGame?.hostName || games.find(g => g.id === gameId)?.hostName;
+
+      setActiveGameId(gameId);
+      setActiveGameType(gameType);
+      setOpponentName(hostName);
+      setIsBot(false);
+
+      // Lobi listesini tazele (oyun waiting listesinden düşmeli)
+      await fetchGames();
     } catch (err) {
       console.error('Failed to join game:', err);
       throw new Error('Oyuna katılırken hata oluştu');
     }
-  }, [currentUser.username, games]);
+  }, [currentUser.username, games, fetchGames]);
 
   /**
    * Oyundan ayrıl

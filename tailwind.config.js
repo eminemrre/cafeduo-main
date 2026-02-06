@@ -50,7 +50,7 @@ module.exports = {
       },
       fontFamily: {
         sans: ['"Exo 2"', '"Noto Sans"', "sans-serif"],
-        display: ['"Exo 2"', '"Orbitron"', '"Noto Sans"', "sans-serif"],
+        display: ['"Exo 2"', '"Noto Sans"', "sans-serif"],
         pixel: ['"Exo 2"', '"Noto Sans"', "sans-serif"],
         retro: ['"JetBrains Mono"', '"Noto Sans"', "monospace"],
       },

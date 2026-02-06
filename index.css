@@ -3,19 +3,19 @@
 @tailwind utilities;
 
 :root {
-  --rf-bg: #040712;
-  --rf-bg-soft: #091126;
-  --rf-bg-deep: #03050d;
+  --rf-bg: #020814;
+  --rf-bg-soft: #05172f;
+  --rf-bg-deep: #01040d;
   --rf-ink: #ebf3ff;
-  --rf-muted: #8a9cb9;
-  --rf-primary: #00d9ff;
-  --rf-secondary: #ff7a18;
-  --rf-border: rgba(0, 217, 255, 0.28);
-  --rf-border-soft: rgba(139, 156, 185, 0.24);
-  --rf-card: rgba(8, 14, 30, 0.72);
-  --rf-card-strong: rgba(8, 14, 30, 0.92);
+  --rf-muted: #8ea3c4;
+  --rf-primary: #0ad7ff;
+  --rf-secondary: #f2a55a;
+  --rf-border: rgba(10, 215, 255, 0.26);
+  --rf-border-soft: rgba(142, 163, 196, 0.2);
+  --rf-card: rgba(6, 13, 29, 0.76);
+  --rf-card-strong: rgba(6, 13, 29, 0.93);
   --rf-shadow: 0 18px 55px rgba(0, 0, 0, 0.45);
-  --rf-neon: 0 0 0 1px rgba(0, 217, 255, 0.36), 0 10px 35px rgba(0, 217, 255, 0.2);
+  --rf-neon: 0 0 0 1px rgba(10, 215, 255, 0.34), 0 10px 35px rgba(10, 215, 255, 0.2);
 }
 
 html {
@@ -32,14 +32,15 @@ body {
   margin: 0;
   font-family: "Exo 2", "Noto Sans", sans-serif;
   background:
-    radial-gradient(circle at 12% 16%, rgba(0, 217, 255, 0.18), transparent 34%),
-    radial-gradient(circle at 82% 10%, rgba(255, 122, 24, 0.16), transparent 40%),
-    radial-gradient(circle at 50% 120%, rgba(96, 73, 255, 0.15), transparent 36%),
-    linear-gradient(160deg, var(--rf-bg) 0%, var(--rf-bg-soft) 52%, var(--rf-bg-deep) 100%);
+    radial-gradient(circle at 9% 12%, rgba(12, 198, 255, 0.22), transparent 34%),
+    radial-gradient(circle at 86% 8%, rgba(242, 165, 90, 0.18), transparent 38%),
+    radial-gradient(circle at 52% 72%, rgba(10, 62, 109, 0.28), transparent 58%),
+    linear-gradient(178deg, var(--rf-bg) 0%, var(--rf-bg-soft) 46%, var(--rf-bg-deep) 100%);
   color: var(--rf-ink);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   text-rendering: optimizeLegibility;
+  font-feature-settings: "calt" 0;
   overflow-x: hidden;
 }
 
@@ -49,11 +50,11 @@ body::before {
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(0, 217, 255, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 217, 255, 0.08) 1px, transparent 1px);
+    linear-gradient(rgba(10, 215, 255, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10, 215, 255, 0.07) 1px, transparent 1px);
   background-size: 44px 44px;
   mask-image: radial-gradient(circle at 50% 45%, rgba(0, 0, 0, 0.9), transparent 80%);
-  opacity: 0.3;
+  opacity: 0.24;
   animation: grid-drift 28s linear infinite;
   z-index: -2;
 }
@@ -101,7 +102,7 @@ body::after {
 
 .rf-panel,
 .cd-panel {
-  background: linear-gradient(160deg, rgba(8, 14, 30, 0.88), rgba(10, 22, 48, 0.76));
+  background: linear-gradient(160deg, rgba(6, 13, 29, 0.9), rgba(7, 21, 45, 0.8));
   border: 1px solid var(--rf-border-soft);
   border-radius: 1.6rem;
   backdrop-filter: blur(9px);
@@ -113,9 +114,9 @@ body::after {
   display: inline-flex;
   align-items: center;
   border-radius: 999px;
-  border: 1px solid rgba(0, 217, 255, 0.42);
-  background: rgba(3, 15, 36, 0.7);
-  color: #8ce8ff;
+  border: 1px solid rgba(10, 215, 255, 0.44);
+  background: rgba(4, 17, 38, 0.76);
+  color: #9de8ff;
   font-family: "Exo 2", "Noto Sans", sans-serif;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -126,8 +127,8 @@ body::after {
 .rf-grid,
 .cd-dot-grid {
   background-image:
-    linear-gradient(rgba(0, 217, 255, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 217, 255, 0.1) 1px, transparent 1px);
+    linear-gradient(rgba(10, 215, 255, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10, 215, 255, 0.09) 1px, transparent 1px);
   background-size: 28px 28px;
 }
 

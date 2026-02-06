@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { User } from '../types';
 import { RetroButton } from './RetroButton';
+import { api } from '../lib/api';
+import { submitScoreAndWaitForWinner } from '../lib/multiplayer';
 
 interface RockPaperScissorsProps {
   currentUser: User;
@@ -17,6 +19,7 @@ const MAX_ROUNDS = 3;
 export const RockPaperScissors: React.FC<RockPaperScissorsProps> = ({
   currentUser,
   isBot,
+  gameId,
   onGameEnd,
   onLeave,
 }) => {
@@ -27,9 +30,11 @@ export const RockPaperScissors: React.FC<RockPaperScissorsProps> = ({
   const [message, setMessage] = useState('Hazır olduğunda başla. Hedef yeşil olduğunda en hızlı tıklayan kazanır.');
   const [lastPlayerMs, setLastPlayerMs] = useState<number | null>(null);
   const [lastOpponentMs, setLastOpponentMs] = useState<number | null>(null);
+  const [resolvingMatch, setResolvingMatch] = useState(false);
 
   const roundStartRef = useRef<number>(0);
   const goTimerRef = useRef<number | null>(null);
+  const matchStartedAtRef = useRef<number>(Date.now());
 
   useEffect(() => {
     return () => {
@@ -40,7 +45,11 @@ export const RockPaperScissors: React.FC<RockPaperScissorsProps> = ({
   }, []);
 
   const beginRound = () => {
+    if (resolvingMatch) return;
     if (phase !== 'ready' && phase !== 'result') return;
+    if (round === 1) {
+      matchStartedAtRef.current = Date.now();
+    }
     setPhase('wait');
     setLastPlayerMs(null);
     setLastOpponentMs(null);
@@ -80,12 +89,51 @@ export const RockPaperScissors: React.FC<RockPaperScissorsProps> = ({
     }
 
     setPhase('done');
-    const overallWinner = nextPlayerWins >= nextOpponentWins ? currentUser.username : (isBot ? 'BOT' : 'Rakip');
-    const points = overallWinner === currentUser.username ? 10 : 0;
-    setTimeout(() => onGameEnd(overallWinner, points), 900);
+    const localWinner = nextPlayerWins >= nextOpponentWins ? currentUser.username : (isBot ? 'BOT' : 'Rakip');
+    void finalizeMatch(localWinner, nextPlayerWins);
+  };
+
+  const finalizeMatch = async (localWinner: string, playerRoundsWon: number) => {
+    if (isBot || !gameId) {
+      const points = localWinner === currentUser.username ? 10 : 0;
+      setTimeout(() => onGameEnd(localWinner, points), 900);
+      return;
+    }
+
+    setResolvingMatch(true);
+    setMessage('Skorun kaydedildi. Rakip sonucu bekleniyor...');
+
+    try {
+      const durationMs = Math.max(1, Date.now() - matchStartedAtRef.current);
+      const { winner } = await submitScoreAndWaitForWinner({
+        gameId,
+        username: currentUser.username,
+        score: playerRoundsWon,
+        roundsWon: playerRoundsWon,
+        durationMs,
+      });
+
+      const resolvedWinner = winner || localWinner;
+      try {
+        await api.games.finish(gameId, resolvedWinner);
+      } catch {
+        // Sonucu finalize etme başarısız olsa da oyuncu akışını durdurma
+      }
+
+      const points = resolvedWinner === currentUser.username ? 10 : 0;
+      setMessage(points > 0 ? 'Maçı kazandın.' : 'Maçı rakip aldı.');
+      setTimeout(() => onGameEnd(resolvedWinner, points), 900);
+    } catch {
+      const fallbackPoints = localWinner === currentUser.username ? 10 : 0;
+      setMessage('Bağlantı dalgalandı, yerel sonuç uygulandı.');
+      setTimeout(() => onGameEnd(localWinner, fallbackPoints), 900);
+    } finally {
+      setResolvingMatch(false);
+    }
   };
 
   const handleTap = () => {
+    if (resolvingMatch) return;
     if (phase === 'wait') {
       finishRound(9999, 300, true);
       return;
@@ -124,6 +172,7 @@ export const RockPaperScissors: React.FC<RockPaperScissorsProps> = ({
       <button
         onClick={handleTap}
         data-testid="reflex-target"
+        disabled={resolvingMatch}
         className={`w-full h-40 rounded-xl border-2 transition ${
           phase === 'go'
             ? 'bg-green-500/30 border-green-400'
@@ -144,7 +193,7 @@ export const RockPaperScissors: React.FC<RockPaperScissorsProps> = ({
       )}
 
       <div className="mt-5 flex gap-2">
-        <RetroButton onClick={beginRound} disabled={phase === 'wait' || phase === 'go' || phase === 'done'}>
+        <RetroButton onClick={beginRound} disabled={phase === 'wait' || phase === 'go' || phase === 'done' || resolvingMatch}>
           Yeni Tur
         </RetroButton>
       </div>

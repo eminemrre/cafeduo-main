@@ -55,6 +55,11 @@ export const GameSection: React.FC<GameSectionProps> = ({
 }) => {
   // Aktif oyun banner'ı göster
   if (serverActiveGame && !activeGameId) {
+    const opponentLabel =
+      serverActiveGame.hostName === currentUser.username
+        ? serverActiveGame.guestName || 'Rakip'
+        : serverActiveGame.hostName;
+
     return (
       <div className="bg-[#151921] border border-blue-500/30 rounded-xl p-6 mb-6">
         <div className="flex items-center justify-between">
@@ -63,7 +68,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
               🎮 Aktif Oyunun Var!
             </h3>
             <p className="text-gray-400 text-sm">
-              <span className="text-blue-400 font-semibold">{serverActiveGame.hostName}</span> ile 
+              <span className="text-blue-400 font-semibold">{opponentLabel}</span> ile 
               <span className="text-yellow-400 font-semibold"> {serverActiveGame.gameType}</span> oyunun devam ediyor.
             </p>
           </div>

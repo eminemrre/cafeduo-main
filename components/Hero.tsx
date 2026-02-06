@@ -34,7 +34,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
         transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
       />
       <motion.div
-        className="absolute -right-20 top-24 h-80 w-80 rounded-full bg-fuchsia-500/12 blur-3xl"
+        className="absolute -right-20 top-24 h-80 w-80 rounded-full bg-amber-400/14 blur-3xl"
         animate={{ x: [0, -30, 12, 0], y: [0, 12, -18, 0] }}
         transition={{ duration: 19, repeat: Infinity, ease: 'easeInOut' }}
       />
@@ -50,9 +50,9 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
           >
             <span className="rf-kicker mb-5">RETRO-FÜTÜRİSTİK SOSYAL KAFE AĞI</span>
 
-            <h1 className="font-display text-[2.25rem] sm:text-[2.8rem] md:text-[4.2rem] leading-[1.02] text-white tracking-wide">
+            <h1 className="font-display text-[2.25rem] sm:text-[2.8rem] md:text-[4.2rem] leading-[1.02] text-white tracking-tight">
               Kafenin ritmini
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-indigo-400">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-teal-300">
                 mini oyunlarla
               </span>
               gerçek zamanlı yaşat.

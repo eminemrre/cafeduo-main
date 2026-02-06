@@ -39,7 +39,7 @@ describe('AuthModal', () => {
       />
     );
 
-    expect(screen.getByText('GİRİŞ_YAP.EXE')).toBeInTheDocument();
+    expect(screen.getByText('Giriş Merkezi')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('E-posta')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Şifre')).toBeInTheDocument();
   });
@@ -54,7 +54,7 @@ describe('AuthModal', () => {
       />
     );
 
-    expect(screen.getByText('KAYIT_OL.EXE')).toBeInTheDocument();
+    expect(screen.getByText('Kayıt Merkezi')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Kullanıcı adı')).toBeInTheDocument();
   });
 

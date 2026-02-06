@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { User } from '../types';
 import { RetroButton } from './RetroButton';
+import { api } from '../lib/api';
+import { submitScoreAndWaitForWinner } from '../lib/multiplayer';
 
 interface DungeonClashProps {
   currentUser: User;
@@ -18,6 +20,7 @@ const MAX_ROUNDS = 5;
 
 export const DungeonClash: React.FC<DungeonClashProps> = ({
   currentUser,
+  gameId,
   opponentName,
   isBot,
   onGameEnd,
@@ -29,11 +32,52 @@ export const DungeonClash: React.FC<DungeonClashProps> = ({
   const [lastNumber, setLastNumber] = useState<number | null>(null);
   const [message, setMessage] = useState('Her tur çift veya tek seç. 5 tur sonunda skor belirlenir.');
   const [done, setDone] = useState(false);
+  const [resolvingMatch, setResolvingMatch] = useState(false);
+  const matchStartedAtRef = useRef<number>(Date.now());
 
   const target = isBot ? 'BOT' : (opponentName || 'Rakip');
 
+  const finalizeMatch = async (localWinner: string, playerScoreValue: number) => {
+    if (isBot || !gameId) {
+      const points = localWinner === currentUser.username ? 10 : 0;
+      setTimeout(() => onGameEnd(localWinner, points), 900);
+      return;
+    }
+
+    setResolvingMatch(true);
+    setMessage('Skorun kaydedildi. Rakip sonucu bekleniyor...');
+
+    try {
+      const durationMs = Math.max(1, Date.now() - matchStartedAtRef.current);
+      const { winner } = await submitScoreAndWaitForWinner({
+        gameId,
+        username: currentUser.username,
+        score: playerScoreValue,
+        roundsWon: playerScoreValue,
+        durationMs,
+      });
+
+      const resolvedWinner = winner || localWinner;
+      try {
+        await api.games.finish(gameId, resolvedWinner);
+      } catch {
+        // Finishing failures should not block the game flow
+      }
+
+      const points = resolvedWinner === currentUser.username ? 10 : 0;
+      setMessage(points > 0 ? 'Maçı kazandın.' : 'Maçı rakip aldı.');
+      setTimeout(() => onGameEnd(resolvedWinner, points), 900);
+    } catch {
+      const fallbackPoints = localWinner === currentUser.username ? 10 : 0;
+      setMessage('Bağlantı dalgalandı, yerel sonuç uygulandı.');
+      setTimeout(() => onGameEnd(localWinner, fallbackPoints), 900);
+    } finally {
+      setResolvingMatch(false);
+    }
+  };
+
   const handleGuess = (guess: Guess) => {
-    if (done) return;
+    if (done || resolvingMatch) return;
     const number = 1 + Math.floor(Math.random() * 20);
     setLastNumber(number);
 
@@ -48,9 +92,8 @@ export const DungeonClash: React.FC<DungeonClashProps> = ({
 
     if (round >= MAX_ROUNDS) {
       setDone(true);
-      const winner = nextPlayer >= nextOpponent ? currentUser.username : target;
-      const points = winner === currentUser.username ? 10 : 0;
-      setTimeout(() => onGameEnd(winner, points), 900);
+      const localWinner = nextPlayer >= nextOpponent ? currentUser.username : target;
+      void finalizeMatch(localWinner, nextPlayer);
       return;
     }
 
@@ -85,7 +128,7 @@ export const DungeonClash: React.FC<DungeonClashProps> = ({
         <button
           data-testid="guess-even"
           onClick={() => handleGuess('cift')}
-          disabled={done}
+          disabled={done || resolvingMatch}
           className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 rounded-xl p-4 font-semibold"
         >
           ÇİFT
@@ -93,7 +136,7 @@ export const DungeonClash: React.FC<DungeonClashProps> = ({
         <button
           data-testid="guess-odd"
           onClick={() => handleGuess('tek')}
-          disabled={done}
+          disabled={done || resolvingMatch}
           className="flex-1 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 rounded-xl p-4 font-semibold"
         >
           TEK

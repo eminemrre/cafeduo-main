@@ -3,17 +3,18 @@ import { Shield, Lock, Eye, Trash2, Mail, Clock, Users, FileText } from 'lucide-
 
 export const PrivacyPolicy: React.FC = () => {
     return (
-        <div className="min-h-screen bg-[#0f141a] text-white py-20 px-4">
+        <div className="min-h-screen bg-[var(--rf-bg)] text-white py-20 px-4 relative overflow-hidden">
+            <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
             <div className="max-w-4xl mx-auto">
                 <div className="text-center mb-12">
-                    <Shield className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                    <Shield className="w-16 h-16 text-cyan-300 mx-auto mb-4" />
                     <h1 className="text-3xl font-bold mb-2">Gizlilik Politikası ve KVKK Aydınlatma Metni</h1>
-                    <p className="text-gray-400">Son güncelleme: {new Date().toLocaleDateString('tr-TR')}</p>
+                    <p className="text-[var(--rf-muted)]">Son güncelleme: {new Date().toLocaleDateString('tr-TR')}</p>
                 </div>
 
-                <div className="space-y-8 text-gray-300">
+                <div className="space-y-8 text-gray-300 relative z-10">
                     {/* Veri Sorumlusu */}
-                    <section className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+                    <section className="bg-[#0a1834]/80 rounded-xl p-6 border border-cyan-400/20">
                         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                             <Users size={20} className="text-blue-400" /> 1. Veri Sorumlusu
                         </h2>
@@ -24,7 +25,7 @@ export const PrivacyPolicy: React.FC = () => {
                     </section>
 
                     {/* Toplanan Veriler */}
-                    <section className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+                    <section className="bg-[#0a1834]/80 rounded-xl p-6 border border-cyan-400/20">
                         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                             <FileText size={20} className="text-purple-400" /> 2. Toplanan Kişisel Veriler
                         </h2>
@@ -39,7 +40,7 @@ export const PrivacyPolicy: React.FC = () => {
                     </section>
 
                     {/* İşleme Amaçları */}
-                    <section className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+                    <section className="bg-[#0a1834]/80 rounded-xl p-6 border border-cyan-400/20">
                         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                             <Eye size={20} className="text-yellow-400" /> 3. Verilerin İşlenme Amaçları
                         </h2>
@@ -53,7 +54,7 @@ export const PrivacyPolicy: React.FC = () => {
                     </section>
 
                     {/* Hukuki Dayanak */}
-                    <section className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+                    <section className="bg-[#0a1834]/80 rounded-xl p-6 border border-cyan-400/20">
                         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                             <Lock size={20} className="text-green-400" /> 4. Kişisel Verilerin İşlenmesinin Hukuki Dayanağı
                         </h2>
@@ -67,7 +68,7 @@ export const PrivacyPolicy: React.FC = () => {
                     </section>
 
                     {/* Veri Saklama */}
-                    <section className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+                    <section className="bg-[#0a1834]/80 rounded-xl p-6 border border-cyan-400/20">
                         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                             <Clock size={20} className="text-orange-400" /> 5. Verilerin Saklanma Süresi
                         </h2>
@@ -79,7 +80,7 @@ export const PrivacyPolicy: React.FC = () => {
                     </section>
 
                     {/* Kullanıcı Hakları */}
-                    <section className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+                    <section className="bg-[#0a1834]/80 rounded-xl p-6 border border-cyan-400/20">
                         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                             <Trash2 size={20} className="text-red-400" /> 6. KVKK Kapsamındaki Haklarınız
                         </h2>
@@ -97,7 +98,7 @@ export const PrivacyPolicy: React.FC = () => {
                     </section>
 
                     {/* İletişim */}
-                    <section className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+                    <section className="bg-[#0a1834]/80 rounded-xl p-6 border border-cyan-400/20">
                         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                             <Mail size={20} className="text-cyan-400" /> 7. İletişim
                         </h2>
@@ -110,7 +111,7 @@ export const PrivacyPolicy: React.FC = () => {
                     </section>
 
                     {/* Çerezler */}
-                    <section className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
+                    <section className="bg-[#0a1834]/80 rounded-xl p-6 border border-cyan-400/20">
                         <h2 className="text-xl font-bold text-white mb-4">8. Çerez Politikası</h2>
                         <p className="mb-4">
                             Web sitemiz, kullanıcı deneyimini iyileştirmek için çerezler kullanmaktadır.
@@ -128,7 +129,7 @@ export const PrivacyPolicy: React.FC = () => {
                 </div>
 
                 <div className="mt-12 text-center">
-                    <a href="/" className="inline-block bg-green-600 hover:bg-green-500 text-white px-6 py-3 rounded-lg transition-colors">
+                    <a href="/" className="inline-block bg-cyan-500 hover:bg-cyan-400 text-[#041226] font-semibold px-6 py-3 rounded-lg transition-colors">
                         Ana Sayfaya Dön
                     </a>
                 </div>

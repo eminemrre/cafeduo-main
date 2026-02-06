@@ -161,7 +161,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   
   if (activeGameId) {
     return (
-      <div className="min-h-screen bg-[#0f141a] py-8 px-4">
+      <div className="min-h-screen bg-[var(--rf-bg)] text-[var(--rf-ink)] py-8 px-4 relative overflow-hidden">
+        <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
         <div className="max-w-6xl mx-auto">
           {/* Geri butonu */}
           <div className="mb-6">
@@ -208,7 +209,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   // ==========================================
   
   return (
-    <div className="min-h-screen bg-[#0f141a] py-8 px-4">
+    <div className="min-h-screen bg-[var(--rf-bg)] text-[var(--rf-ink)] py-8 px-4 relative overflow-hidden">
+      <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Status Bar */}

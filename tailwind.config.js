@@ -49,10 +49,10 @@ module.exports = {
         highlight: "#f5c16c",
       },
       fontFamily: {
-        sans: ['"Space Grotesk"', '"Manrope"', "sans-serif"],
-        display: ['"Fraunces"', '"Playfair Display"', "serif"],
+        sans: ['"Rajdhani"', '"Space Grotesk"', "sans-serif"],
+        display: ['"Orbitron"', '"Rajdhani"', "sans-serif"],
         pixel: ['"Chakra Petch"', "sans-serif"],
-        retro: ['"IBM Plex Mono"', "monospace"],
+        retro: ['"JetBrains Mono"', "monospace"],
       },
       boxShadow: {
         soft: "0 10px 30px rgba(15, 17, 21, 0.35)",

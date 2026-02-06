@@ -30,31 +30,31 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
   };
 
   const baseStyles = `
-    font-pixel uppercase tracking-wide transition-all relative group rounded-2xl
+    font-pixel uppercase tracking-wider transition-all relative group rounded-2xl
     select-none touch-manipulation
-    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#f6efe6]
+    focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#050a19]
   `;
 
   const variants = {
     primary: `
-      bg-gradient-to-r from-[#1f6f78] to-[#be7b43] text-white border border-transparent
-      hover:brightness-105 hover:shadow-[0_14px_28px_rgba(31,111,120,0.28)]
-      focus:ring-[#1f6f78]/50
+      bg-gradient-to-r from-[#00d9ff] via-[#06b4ff] to-[#4f7cff] text-[#041226] border border-cyan-300/60
+      hover:brightness-105 hover:shadow-[0_0_28px_rgba(0,217,255,0.42)]
+      focus:ring-cyan-300/55
     `,
     secondary: `
-      bg-white/75 text-[#27333f] border border-[#d2b89f]
-      hover:bg-white hover:shadow-[0_10px_22px_rgba(50,37,25,0.12)]
-      focus:ring-[#be7b43]/40
+      bg-[#0b1630]/86 text-cyan-100 border border-cyan-400/35
+      hover:bg-[#11214a] hover:shadow-[0_0_24px_rgba(0,217,255,0.22)]
+      focus:ring-cyan-300/45
     `,
     danger: `
-      bg-[#8d3a2d] text-white border border-[#7c3328]
-      hover:bg-[#a34231] hover:shadow-[0_12px_24px_rgba(141,58,45,0.34)]
-      focus:ring-red-500/50
+      bg-[#440e24] text-pink-100 border border-pink-400/45
+      hover:bg-[#5b1530] hover:shadow-[0_0_24px_rgba(255,77,141,0.36)]
+      focus:ring-pink-300/55
     `,
     ghost: `
-      bg-transparent text-[#4f5d6b] border border-[#c9b29b]
-      hover:text-[#1f2328] hover:border-[#b99a7f] hover:bg-white/60
-      focus:ring-[#8d725b]/40
+      bg-transparent text-[#9eb4d3] border border-cyan-500/28
+      hover:text-cyan-100 hover:border-cyan-300/50 hover:bg-cyan-900/20
+      focus:ring-cyan-200/40
     `
   };
 
@@ -75,10 +75,12 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
         ${className}
       `}
       whileTap={disabled ? {} : { 
-        scale: 0.97
+        scale: 0.97,
+        y: 1
       }}
       whileHover={disabled ? {} : {
-        y: -1
+        y: -1,
+        scale: 1.01
       }}
       transition={{ 
         type: 'spring', 
@@ -87,7 +89,7 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
       }}
     >
       {/* Shine effect overlay */}
-      <span className="absolute inset-0 bg-gradient-to-b from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+      <span className="absolute inset-0 bg-gradient-to-b from-cyan-200/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
       
       {/* Content */}
       <span className="relative flex items-center justify-center gap-2">

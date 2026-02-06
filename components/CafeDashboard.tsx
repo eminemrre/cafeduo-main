@@ -134,15 +134,16 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
     };
 
     return (
-        <div className="min-h-screen bg-[#0f141a] pt-24 px-4 pb-12">
+        <div className="min-h-screen bg-[var(--rf-bg)] text-[var(--rf-ink)] pt-24 px-4 pb-12 relative overflow-hidden">
+            <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
             <div className="max-w-6xl mx-auto">
                 <div className="flex items-center gap-4 mb-8">
-                    <div className="w-16 h-16 bg-orange-900/30 rounded-2xl border border-orange-500/30 flex items-center justify-center">
-                        <Coffee size={32} className="text-orange-500" />
+                    <div className="w-16 h-16 bg-cyan-500/15 rounded-2xl border border-cyan-400/30 flex items-center justify-center">
+                        <Coffee size={32} className="text-cyan-300" />
                     </div>
                     <div>
                         <h1 className="text-3xl font-bold text-white mb-1">Kafe Yönetim Paneli</h1>
-                        <p className="text-gray-400">Kupon doğrulama, ödül ve PIN yönetimi</p>
+                        <p className="text-[var(--rf-muted)]">Kupon doğrulama, ödül ve PIN yönetimi</p>
                     </div>
                 </div>
 
@@ -152,7 +153,7 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
                         onClick={() => setActiveTab('verification')}
                         className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'verification'
                             ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/50'
-                            : 'bg-[#1a1f2e] text-gray-400 hover:bg-[#252b3d]'
+                            : 'bg-[#0a1630]/70 text-gray-400 hover:bg-[#102447]'
                             }`}
                     >
                         <QrCode size={20} />
@@ -162,7 +163,7 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
                         onClick={() => setActiveTab('rewards')}
                         className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'rewards'
                             ? 'bg-orange-600 text-white shadow-lg shadow-orange-900/50'
-                            : 'bg-[#1a1f2e] text-gray-400 hover:bg-[#252b3d]'
+                            : 'bg-[#0a1630]/70 text-gray-400 hover:bg-[#102447]'
                             }`}
                     >
                         <Gift size={20} />
@@ -172,7 +173,7 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
                         onClick={() => setActiveTab('settings')}
                         className={`px-6 py-3 rounded-xl font-bold transition-all flex items-center gap-2 ${activeTab === 'settings'
                             ? 'bg-green-600 text-white shadow-lg shadow-green-900/50'
-                            : 'bg-[#1a1f2e] text-gray-400 hover:bg-[#252b3d]'
+                            : 'bg-[#0a1630]/70 text-gray-400 hover:bg-[#102447]'
                             }`}
                     >
                         <Settings size={20} />
@@ -183,7 +184,7 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
                 {activeTab === 'verification' ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Coupon Verification Form */}
-                        <div className="bg-[#1a1f2e] border border-gray-800 rounded-2xl p-8 shadow-xl">
+                        <div className="bg-[linear-gradient(170deg,rgba(8,14,30,0.96),rgba(10,24,52,0.88))] border border-cyan-400/20 rounded-2xl p-8 shadow-xl">
                             <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
                                 <QrCode className="text-blue-400" />
                                 Kupon Kullan
@@ -221,7 +222,7 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
                         </div>
 
                         {/* Last Transaction Details */}
-                        <div className="bg-[#1a1f2e] border border-gray-800 rounded-2xl p-8 shadow-xl relative overflow-hidden">
+                        <div className="bg-[linear-gradient(170deg,rgba(8,14,30,0.96),rgba(10,24,52,0.88))] border border-cyan-400/20 rounded-2xl p-8 shadow-xl relative overflow-hidden">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl"></div>
 
                             <h2 className="text-xl font-bold text-white mb-6">Son İşlem Detayı</h2>

@@ -102,18 +102,19 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
     };
 
     return (
-        <div className="min-h-screen bg-[#0f141a] flex items-center justify-center p-4 font-sans">
-            <div className="max-w-md w-full bg-[#1a1f2e] border border-gray-700 rounded-2xl p-8 shadow-[0_30px_70px_rgba(0,0,0,0.45)] relative overflow-hidden">
+        <div className="min-h-screen bg-[var(--rf-bg)] text-[var(--rf-ink)] flex items-center justify-center p-4 font-sans relative overflow-hidden">
+            <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
+            <div className="max-w-md w-full bg-[linear-gradient(170deg,rgba(8,14,30,0.96),rgba(10,24,52,0.88))] border border-cyan-400/25 rounded-2xl p-8 shadow-[0_30px_70px_rgba(0,0,0,0.45)] relative overflow-hidden">
 
                 {/* Background Glow */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-2 bg-gradient-to-r from-transparent via-green-500 to-transparent opacity-60 blur-sm"></div>
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-2 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-60 blur-sm"></div>
 
                 <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-4 border border-green-500/30 shadow-[0_10px_25px_rgba(34,197,94,0.2)]">
-                        <KeyRound size={32} className="text-green-400" />
+                    <div className="w-16 h-16 bg-cyan-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-cyan-400/35 shadow-[0_10px_25px_rgba(0,217,255,0.2)]">
+                        <KeyRound size={32} className="text-cyan-300" />
                     </div>
                     <h1 className="text-2xl font-bold text-white mb-2">Kafe Giriş</h1>
-                    <p className="text-gray-400 text-sm">Oyunlara katılmak için kafe PIN kodunu girin.</p>
+                    <p className="text-[var(--rf-muted)] text-sm">Oyunlara katılmak için kafe PIN kodunu girin.</p>
                 </div>
 
                 {error && (
@@ -131,7 +132,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                 <div className="space-y-5">
                     {/* Cafe Selection */}
                     <div>
-                        <label className="block text-gray-400 text-sm mb-2 font-bold">Kafe Seçimi</label>
+                        <label className="block text-[var(--rf-muted)] text-sm mb-2 font-bold">Kafe Seçimi</label>
                         <div className="relative">
                             <Coffee className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
                             <select
@@ -141,7 +142,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                                     setPin(''); // Clear PIN when cafe changes
                                     setError(null);
                                 }}
-                                className="w-full bg-black/40 border border-gray-600 rounded-xl py-3 pl-10 pr-4 text-white outline-none focus:border-green-500 appearance-none cursor-pointer focus:shadow-[0_0_20px_rgba(34,197,94,0.2)]"
+                                className="w-full bg-black/40 border border-gray-600 rounded-xl py-3 pl-10 pr-4 text-white outline-none focus:border-cyan-400 appearance-none cursor-pointer focus:shadow-[0_0_20px_rgba(0,217,255,0.2)]"
                             >
                                 {cafes.map(cafe => (
                                     <option key={cafe.id} value={cafe.id}>{cafe.name}</option>
@@ -153,7 +154,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
 
                     {/* Table Number */}
                     <div>
-                        <label className="block text-gray-400 text-sm mb-2 font-bold">Masa Numarası</label>
+                        <label className="block text-[var(--rf-muted)] text-sm mb-2 font-bold">Masa Numarası</label>
                         <div className="relative">
                             <Navigation className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
                             <input
@@ -163,14 +164,14 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                                 onChange={(e) => setTableNumber(e.target.value)}
                                 min="1"
                                 max={selectedCafe?.table_count || 20}
-                                className="w-full bg-black/40 border border-gray-600 rounded-xl py-3 pl-10 pr-4 text-white outline-none focus:border-green-500 focus:shadow-[0_0_20px_rgba(34,197,94,0.2)]"
+                                className="w-full bg-black/40 border border-gray-600 rounded-xl py-3 pl-10 pr-4 text-white outline-none focus:border-cyan-400 focus:shadow-[0_0_20px_rgba(0,217,255,0.2)]"
                             />
                         </div>
                     </div>
 
                     {/* PIN Code with Visual Boxes */}
                     <div>
-                        <label className="block text-gray-400 text-sm mb-2 font-bold flex items-center gap-2">
+                        <label className="block text-[var(--rf-muted)] text-sm mb-2 font-bold flex items-center gap-2">
                             <KeyRound size={14} />
                             Kafe PIN Kodu (4 Haneli)
                         </label>
@@ -213,9 +214,9 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                         </div>
 
                         {/* PIN Hint - KVKK compliant, no demo PIN shown */}
-                        <div className="mt-3 p-3 bg-blue-900/20 border border-blue-800/30 rounded-lg text-center">
-                            <p className="text-xs text-blue-300">
-                                💡 PIN kodunu kafe personelinden veya masadaki etiketten öğrenin.
+                            <div className="mt-3 p-3 bg-cyan-900/20 border border-cyan-700/30 rounded-lg text-center">
+                            <p className="text-xs text-cyan-200">
+                                PIN kodunu kafe personelinden veya masadaki etiketten öğrenin.
                             </p>
                         </div>
                     </div>
@@ -226,7 +227,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                         disabled={loading || !isPinValid || !tableNumber}
                         className={`w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all ${loading || !isPinValid || !tableNumber
                             ? 'bg-gray-700 cursor-not-allowed opacity-50'
-                            : 'bg-green-600 hover:bg-green-500 shadow-lg shadow-green-600/30 hover:scale-[1.02] active:scale-95'
+                            : 'bg-cyan-500 hover:bg-cyan-400 text-[#041226] shadow-lg shadow-cyan-500/30 hover:scale-[1.02] active:scale-95'
                             }`}
                     >
                         {loading ? (

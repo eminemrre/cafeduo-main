@@ -24,8 +24,8 @@ const CafeDashboard = React.lazy(() => import('./components/CafeDashboard').then
 
 // Loading Component
 const PageLoader = () => (
-  <div className="min-h-[60vh] flex flex-col items-center justify-center text-[#1f2328]">
-    <div className="w-14 h-14 border-4 border-[#1f6f78] border-t-transparent rounded-full animate-spin"></div>
+  <div className="min-h-[60vh] flex flex-col items-center justify-center text-[var(--rf-ink)]">
+    <div className="w-14 h-14 border-4 border-cyan-300 border-t-transparent rounded-full animate-spin"></div>
   </div>
 );
 
@@ -192,7 +192,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen text-[var(--cd-ink)] font-sans selection:bg-[#d7b89f] selection:text-[#1f2328]">
+    <div className="min-h-screen text-[var(--rf-ink)] font-sans selection:bg-cyan-300/30 selection:text-white">
       <Navbar isLoggedIn={isLoggedIn} onLogout={handleLogout} />
 
       <main>
@@ -254,8 +254,8 @@ const App: React.FC = () => {
       />
       <CookieConsent />
 
-      {/* Debug overlay - only show in development */}
-      {import.meta.env.DEV && (
+      {/* Debug overlay - opt-in only */}
+      {import.meta.env.DEV && import.meta.env.VITE_SHOW_DEBUG === 'true' && (
         <div className="fixed bottom-0 right-0 bg-black/80 text-green-400 p-2 text-xs font-mono z-[100] pointer-events-none opacity-50 hover:opacity-100">
           <p>v2.1 - Debug</p>
           <p>User: {currentUser?.username || 'Guest'}</p>

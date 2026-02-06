@@ -1,63 +1,73 @@
 import React from 'react';
-import { Timer, Zap, Shuffle, Swords, Shield, Sparkles, ArrowUpRight } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Timer, Zap, Shuffle, Swords, Shield, Sparkles, Gauge, ArrowUpRight } from 'lucide-react';
 
 interface FeaturedGame {
   title: string;
   subtitle: string;
   duration: string;
-  vibe: string;
+  mode: string;
   accent: string;
   icon: React.ReactNode;
   badge: string;
+  cta: string;
   disabled?: boolean;
 }
 
 const featuredGames: FeaturedGame[] = [
   {
-    title: 'REFLEKS AVI',
-    subtitle: 'Ekramda aniden beliren hedefleri en hizli sen yakala.',
-    duration: '35-50 sn',
-    vibe: 'Yuksek tempo',
-    accent: 'from-[#1f6f78] to-[#4a9da8]',
+    title: 'Refleks Avı',
+    subtitle: 'Ani beliren hedefleri milisaniyeler içinde yakala, zincir kaçırma.',
+    duration: '35-45 sn',
+    mode: 'Yüksek tempo',
+    accent: 'from-cyan-400/90 to-blue-500/90',
     icon: <Zap size={26} />,
-    badge: 'Canli',
+    badge: 'Canlı',
+    cta: 'Anında başlat',
   },
   {
-    title: 'RITIM KOPYALA',
-    subtitle: 'Sesi ve isigi takip et, diziyi bozmadan ritmi tam tuttur.',
-    duration: '40-60 sn',
-    vibe: 'Odak + hafiza',
-    accent: 'from-[#be7b43] to-[#d79b57]',
+    title: 'Ritim Kopyala',
+    subtitle: 'Işık ve ses dizisini takip et; hata yapmadan komboyu sürdür.',
+    duration: '40-55 sn',
+    mode: 'Odak + hafıza',
+    accent: 'from-fuchsia-400/90 to-violet-500/90',
     icon: <Shuffle size={26} />,
     badge: 'Yeni',
+    cta: 'Sıralamaya gir',
   },
   {
-    title: 'DUO HAFIZA',
-    subtitle: 'Kisa turda kartlari ac, eslesmeleri rakibinden once bitir.',
+    title: 'Duo Hafıza',
+    subtitle: 'Kart eşleşmelerini rakibinden önce tamamla, hata puanını düşük tut.',
     duration: '45 sn',
-    vibe: 'Zihin oyunu',
-    accent: 'from-[#5d6b7d] to-[#8a9aaa]',
+    mode: 'Zihin oyunu',
+    accent: 'from-amber-400/90 to-orange-500/90',
     icon: <Shield size={26} />,
-    badge: 'Canli',
+    badge: 'Canlı',
+    cta: 'Düelloya katıl',
   },
   {
-    title: 'ARENA DUELLOSU',
-    subtitle: 'Anlik hamlelerle mini duello turu. Cok yakinda aciliyor.',
+    title: 'Arena Düellosu',
+    subtitle: 'Tek hamlede karar verilen kısa 1v1 turu. Çok yakında.',
     duration: '55 sn',
-    vibe: '1v1 baski',
-    accent: 'from-[#7a4f37] to-[#9f6a47]',
+    mode: '1v1 baskı',
+    accent: 'from-slate-500/90 to-slate-700/90',
     icon: <Swords size={26} />,
-    badge: 'Yakinda',
+    badge: 'Yakında',
+    cta: 'Açılış bekleniyor',
     disabled: true,
   },
 ];
 
-const GameCard: React.FC<FeaturedGame> = ({ title, subtitle, duration, vibe, accent, icon, badge, disabled }) => (
-  <article
+const GameCard: React.FC<FeaturedGame> = ({ title, subtitle, duration, mode, accent, icon, badge, cta, disabled }) => (
+  <motion.article
+    initial={{ opacity: 0, y: 14 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true, margin: '-60px' }}
+    transition={{ duration: 0.5 }}
     className={`relative rounded-[1.6rem] border p-6 md:p-7 transition-all ${
       disabled
-        ? 'border-[#d9c5b0] bg-[#f5ece0]/80'
-        : 'border-[#d2b89f] bg-white/70 backdrop-blur-sm hover:-translate-y-1 hover:shadow-[0_22px_45px_rgba(44,31,20,0.16)]'
+        ? 'border-slate-700/75 bg-[#090f22]/72'
+        : 'border-cyan-300/25 bg-[linear-gradient(170deg,rgba(8,14,30,0.94),rgba(10,24,52,0.88))] hover:-translate-y-1 hover:shadow-[0_20px_44px_rgba(0,0,0,0.48)]'
     }`}
   >
     <div className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${accent} text-white px-3 py-1.5 shadow-lg`}>
@@ -65,26 +75,25 @@ const GameCard: React.FC<FeaturedGame> = ({ title, subtitle, duration, vibe, acc
       <span className="font-pixel text-[11px] tracking-[0.16em] uppercase">{badge}</span>
     </div>
 
-    <h3 className="mt-5 text-2xl font-bold text-[#1f2328]">{title}</h3>
-    <p className="mt-3 text-[#54616f] leading-relaxed">{subtitle}</p>
+    <h3 className="mt-5 text-2xl font-display text-white tracking-wide">{title}</h3>
+    <p className="mt-3 text-[var(--rf-muted)] leading-relaxed">{subtitle}</p>
 
-    <div className="mt-6 pt-5 border-t border-[#d9c8b6] flex items-center justify-between gap-3">
+    <div className="mt-6 pt-5 border-t border-slate-700/75 flex items-center justify-between gap-3">
       <div className="space-y-1">
-        <p className="text-xs uppercase tracking-[0.14em] font-pixel text-[#6f7b87]">Ortalama sure</p>
-        <p className="text-[#24303b] font-semibold">{duration}</p>
+        <p className="text-xs uppercase tracking-[0.14em] font-pixel text-cyan-300/80">Ortalama süre</p>
+        <p className="text-white font-semibold">{duration}</p>
       </div>
       <div className="space-y-1 text-right">
-        <p className="text-xs uppercase tracking-[0.14em] font-pixel text-[#6f7b87]">Tarz</p>
-        <p className="text-[#24303b] font-semibold">{vibe}</p>
+        <p className="text-xs uppercase tracking-[0.14em] font-pixel text-cyan-300/80">Mod</p>
+        <p className="text-white font-semibold">{mode}</p>
       </div>
     </div>
 
-    {!disabled && (
-      <div className="absolute right-5 top-5 text-[#355163]">
-        <ArrowUpRight size={20} />
-      </div>
-    )}
-  </article>
+    <div className="mt-5 text-sm font-semibold text-cyan-200 flex items-center gap-2">
+      <span>{cta}</span>
+      <ArrowUpRight size={16} />
+    </div>
+  </motion.article>
 );
 
 export const Games: React.FC = () => {
@@ -93,15 +102,15 @@ export const Games: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-10">
           <div>
-            <span className="cd-kicker">Hizli tuketilen oyunlar</span>
-            <h2 className="mt-4 text-4xl md:text-5xl font-display text-[#1f2328] max-w-2xl">
-              Mekanda bekleme suresini etkileşime ceviren oyun kutuphanesi.
+            <span className="cd-kicker">Hızlı tüketilen oyunlar</span>
+            <h2 className="mt-4 text-3xl md:text-5xl font-display text-white max-w-2xl leading-tight">
+              Kısa tur mantığıyla çalışan, tekrar oranı yüksek oyun kütüphanesi.
             </h2>
           </div>
-          <div className="cd-panel px-5 py-4 max-w-sm">
-            <p className="font-pixel text-[10px] uppercase tracking-[0.2em] text-[#6f7b87]">Neden bu format?</p>
-            <p className="mt-2 text-[#54616f]">
-              Turler 1 dakikanin altinda kalir. Kullanici tekrar eder, puan dongusu hizlanir.
+          <div className="cd-panel px-5 py-4 max-w-sm border-cyan-400/25">
+            <p className="font-pixel text-[10px] uppercase tracking-[0.2em] text-cyan-300/80">Neden bu format?</p>
+            <p className="mt-2 text-[var(--rf-muted)]">
+              Turlar bir dakikanın altında kalır. Kullanıcı hızlı karar verir, puan döngüsü kesilmez.
             </p>
           </div>
         </div>
@@ -113,25 +122,25 @@ export const Games: React.FC = () => {
         </div>
 
         <div className="mt-10 grid sm:grid-cols-3 gap-3">
-          <div className="cd-panel p-4 flex items-center gap-3">
-            <Timer className="text-[#1f6f78]" size={20} />
+          <div className="cd-panel p-4 flex items-center gap-3 border-cyan-400/20">
+            <Timer className="text-cyan-300" size={20} />
             <div>
-              <p className="font-semibold text-[#1f2328]">Kisa Seans</p>
-              <p className="text-sm text-[#5c6875]">Her oyun 1 dakikanin altinda.</p>
+              <p className="font-semibold text-white">Kısa Seans</p>
+              <p className="text-sm text-[var(--rf-muted)]">Her oyun 1 dakikanın altında.</p>
             </div>
           </div>
-          <div className="cd-panel p-4 flex items-center gap-3">
-            <Sparkles className="text-[#be7b43]" size={20} />
+          <div className="cd-panel p-4 flex items-center gap-3 border-cyan-400/20">
+            <Sparkles className="text-fuchsia-300" size={20} />
             <div>
-              <p className="font-semibold text-[#1f2328]">Tekrar Motivasyonu</p>
-              <p className="text-sm text-[#5c6875]">Anlik puan ve odul geri bildirimi.</p>
+              <p className="font-semibold text-white">Tekrar Motivasyonu</p>
+              <p className="text-sm text-[var(--rf-muted)]">Anlık puan ve ödül geri bildirimi.</p>
             </div>
           </div>
-          <div className="cd-panel p-4 flex items-center gap-3">
-            <Swords className="text-[#5d6b7d]" size={20} />
+          <div className="cd-panel p-4 flex items-center gap-3 border-cyan-400/20">
+            <Gauge className="text-amber-300" size={20} />
             <div>
-              <p className="font-semibold text-[#1f2328]">Rekabet Dengesi</p>
-              <p className="text-sm text-[#5c6875]">Hem solo hem karsilikli akis.</p>
+              <p className="font-semibold text-white">Denge ve Ölçüm</p>
+              <p className="text-sm text-[var(--rf-muted)]">Solo ve rekabetçi modlar aynı ekonomiye bağlı.</p>
             </div>
           </div>
         </div>

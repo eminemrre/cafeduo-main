@@ -160,18 +160,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     };
 
     return (
-        <div className="min-h-screen bg-[#0f141a] pt-24 px-4 pb-12 font-sans">
+        <div className="min-h-screen bg-[var(--rf-bg)] text-[var(--rf-ink)] pt-24 px-4 pb-12 font-sans relative overflow-hidden">
+            <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
             <div className="max-w-7xl mx-auto">
 
                 {/* Header */}
-                <div className="flex items-center justify-between mb-8 bg-gradient-to-r from-red-900/40 to-black p-6 rounded-2xl border border-red-900/30 backdrop-blur-md">
+                <div className="flex items-center justify-between mb-8 bg-gradient-to-r from-[#0a1834]/90 to-[#060d20]/85 p-6 rounded-2xl border border-cyan-400/25 backdrop-blur-md">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 bg-red-600 rounded-xl shadow-lg shadow-red-600/20">
-                            <Shield size={32} className="text-white" />
+                        <div className="p-3 bg-cyan-500/20 rounded-xl shadow-lg shadow-cyan-500/20 border border-cyan-300/35">
+                            <Shield size={32} className="text-cyan-200" />
                         </div>
                         <div>
                             <h1 className="font-pixel text-3xl text-white tracking-wide">YÖNETİM PANELİ</h1>
-                            <p className="text-red-300/80 font-mono text-sm">SİSTEM YÖNETİCİSİ: {currentUser.username}</p>
+                            <p className="text-cyan-200/80 font-mono text-sm">SİSTEM YÖNETİCİSİ: {currentUser.username}</p>
                         </div>
                     </div>
                     <div className="flex gap-2">
@@ -184,8 +185,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as any)}
                                 className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 ${activeTab === tab.id
-                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 scale-105'
-                                    : 'bg-gray-800/50 text-gray-400 hover:bg-gray-800 hover:text-white'
+                                    ? 'bg-cyan-500 text-[#041226] shadow-lg shadow-cyan-500/30 scale-105'
+                                    : 'bg-[#0a1630]/70 text-gray-400 hover:bg-[#102447] hover:text-white'
                                     }`}
                             >
                                 <tab.icon size={18} />
@@ -196,7 +197,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                 </div>
 
                 {/* Content Area */}
-                <div className="bg-[#1a1f2e]/80 backdrop-blur-xl border border-gray-700/50 rounded-2xl overflow-hidden shadow-2xl min-h-[600px]">
+                <div className="bg-[linear-gradient(170deg,rgba(8,14,30,0.94),rgba(10,24,52,0.88))] backdrop-blur-xl border border-cyan-400/20 rounded-2xl overflow-hidden shadow-2xl min-h-[600px]">
 
                     {/* USERS TAB */}
                     {activeTab === 'users' && (
@@ -403,7 +404,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
             {/* Add Cafe Modal */}
             {showAddCafeModal && (
                 <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-                    <div className="bg-[#1a1f2e] border border-gray-700 rounded-2xl p-8 max-w-md w-full relative">
+                    <div className="bg-[linear-gradient(170deg,rgba(8,14,30,0.96),rgba(10,24,52,0.88))] border border-cyan-400/25 rounded-2xl p-8 max-w-md w-full relative">
                         <h2 className="text-2xl font-bold text-white mb-6">Yeni Kafe Ekle</h2>
 
                         <div className="space-y-4">
@@ -474,7 +475,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
             {/* Cafe Admin Assignment Modal */}
             {showRoleModal && selectedUser && (
                 <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-                    <div className="bg-[#1a1f2e] border border-gray-700 rounded-2xl p-8 max-w-md w-full relative">
+                    <div className="bg-[linear-gradient(170deg,rgba(8,14,30,0.96),rgba(10,24,52,0.88))] border border-cyan-400/25 rounded-2xl p-8 max-w-md w-full relative">
                         <h2 className="text-2xl font-bold text-white mb-2">Kafe Yöneticisi Ata</h2>
                         <p className="text-gray-400 mb-6">
                             <span className="text-white font-bold">{selectedUser.username}</span> kullanıcısını hangi kafenin yöneticisi yapmak istiyorsunuz?

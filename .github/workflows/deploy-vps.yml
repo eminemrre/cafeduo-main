@@ -13,11 +13,26 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    if: ${{ secrets.DEPLOY_HOST != '' && secrets.DEPLOY_USER != '' && secrets.DEPLOY_SSH_KEY != '' && secrets.DEPLOY_PATH != '' && secrets.DEPLOY_ENV_B64 != '' }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Validate deploy secrets
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_ENV_B64: ${{ secrets.DEPLOY_ENV_B64 }}
+        run: |
+          set -euo pipefail
+          for var in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_PATH DEPLOY_ENV_B64; do
+            if [ -z "${!var:-}" ]; then
+              echo "Missing required secret: ${var}"
+              exit 1
+            fi
+          done
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

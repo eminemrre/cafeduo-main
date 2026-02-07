@@ -11,9 +11,9 @@ interface CreateGameModalProps {
 }
 
 const GAME_TYPES = [
-  { id: 'rps', name: 'Refleks Avı', description: 'Işık yandığında en hızlı tıkla', minPoints: 0 },
-  { id: 'arena', name: 'Ritim Kopyala', description: 'Diziyi doğru sırada tekrar et', minPoints: 40 },
-  { id: 'dungeon', name: 'Çift Tek Sprint', description: '5 turda çift-tek tahmin yarışı', minPoints: 80 }
+  { id: 'reflex', name: 'Refleks Avı', description: 'Işık yandığında en hızlı tıkla', minPoints: 0 },
+  { id: 'rhythm', name: 'Ritim Kopyala', description: 'Diziyi doğru sırada tekrar et', minPoints: 40 },
+  { id: 'odd-even', name: 'Çift Tek Sprint', description: '5 turda çift-tek tahmin yarışı', minPoints: 80 }
 ];
 
 interface ValidationError {

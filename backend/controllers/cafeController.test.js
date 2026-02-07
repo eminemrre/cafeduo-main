@@ -2,6 +2,7 @@ jest.mock('../db', () => ({
   pool: {
     query: jest.fn(),
   },
+  isDbConnected: jest.fn(),
 }));
 
 jest.mock('../middleware/cache', () => ({
@@ -13,7 +14,7 @@ jest.mock('../utils/geo', () => ({
   getDistanceFromLatLonInMeters: jest.fn(() => 10),
 }));
 
-const { pool } = require('../db');
+const { pool, isDbConnected } = require('../db');
 const cafeController = require('./cafeController');
 
 const buildRes = () => {
@@ -26,6 +27,7 @@ const buildRes = () => {
 describe('cafeController.checkIn', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    isDbConnected.mockResolvedValue(true);
   });
 
   it('returns 400 for wrong pin', async () => {

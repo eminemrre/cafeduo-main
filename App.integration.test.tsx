@@ -10,7 +10,7 @@ const mockUserUpdate = jest.fn();
 const mockSocketConnect = jest.fn();
 const mockSocketDisconnect = jest.fn();
 
-const CHECKIN_SESSION_KEY = 'cafeduo_checked_in_user';
+const CHECKIN_SESSION_KEY = 'cafeduo_checked_in_token';
 
 let nextAuthUser: User | null = null;
 

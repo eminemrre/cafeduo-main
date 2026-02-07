@@ -243,7 +243,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           <div className="px-5 md:px-6 py-4 flex justify-between items-start border-b border-cyan-400/22 flex-shrink-0 bg-[#050f23]/88">
             <div>
               <p className="font-pixel text-cyan-200/85 tracking-[0.2em] text-[10px] md:text-xs uppercase">
-                Secure Access
+                Güvenli Erişim
               </p>
               <span className="font-display text-white tracking-[0.03em] text-base md:text-lg">
                 {mode === 'login' ? 'Giriş Merkezi' : 'Kayıt Merkezi'}

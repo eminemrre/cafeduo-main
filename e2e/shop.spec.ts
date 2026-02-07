@@ -4,6 +4,8 @@ import {
   checkInUser,
   fetchCurrentUser,
   bootstrapAuthenticatedPage,
+  resolveApiBaseUrl,
+  waitForApiReady,
 } from './helpers/session';
 
 test.describe('Shop & Inventory Flow', () => {
@@ -13,6 +15,8 @@ test.describe('Shop & Inventory Flow', () => {
     baseURL,
   }) => {
     const root = baseURL || 'http://localhost:3000';
+    const apiRoot = resolveApiBaseUrl(root);
+    await waitForApiReady(request, apiRoot);
     const session = await provisionUser(request, root, 'shop_user');
 
     await checkInUser(request, root, session.token, { tableNumber: 6 });
@@ -20,7 +24,7 @@ test.describe('Shop & Inventory Flow', () => {
 
     // Test için puanı yükseltip satın almayı deterministik hale getiriyoruz.
     const boostedPoints = 1500;
-    const updateRes = await request.put(`${root}/api/users/${currentUser.id}`, {
+    const updateRes = await request.put(`${apiRoot}/api/users/${currentUser.id}`, {
       headers: {
         Authorization: `Bearer ${session.token}`,
         'Content-Type': 'application/json',

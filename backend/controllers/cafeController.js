@@ -1,6 +1,28 @@
-const { pool } = require('../db');
+const { pool, isDbConnected } = require('../db');
 const { cache, clearCache } = require('../middleware/cache');
 const { getDistanceFromLatLonInMeters } = require('../utils/geo');
+const memoryState = require('../store/memoryState');
+
+const FALLBACK_CAFES = [
+    {
+        id: 1,
+        name: 'PAÜ İİBF Kantin',
+        latitude: 37.741,
+        longitude: 29.101,
+        table_count: 20,
+        pin: '1234',
+        daily_pin: '0000',
+    },
+    {
+        id: 2,
+        name: 'PAÜ Yemekhane',
+        latitude: 37.742,
+        longitude: 29.102,
+        table_count: 20,
+        pin: '1234',
+        daily_pin: '0000',
+    },
+];
 
 const cafeController = {
     // GET ALL CAFES
@@ -11,10 +33,9 @@ const cafeController = {
         } catch (err) {
             console.error('getAllCafes DB error, returning fallback list:', err.message);
             // Fallback for demo mode and temporary DB outages
-            res.json([
-                { id: 1, name: 'PAÜ İİBF Kantin', latitude: 37.741, longitude: 29.101 },
-                { id: 2, name: 'PAÜ Yemekhane', latitude: 37.742, longitude: 29.102 }
-            ]);
+            res.json(
+                FALLBACK_CAFES.map(({ pin, daily_pin, ...publicCafe }) => publicCafe)
+            );
         }
     },
 
@@ -35,8 +56,8 @@ const cafeController = {
         const { id } = req.params;
         const { pin } = req.body;
 
-        if (!pin || pin.length !== 4) {
-            return res.status(400).json({ error: '4 haneli PIN giriniz.' });
+        if (!pin || !/^\d{4,6}$/.test(String(pin))) {
+            return res.status(400).json({ error: '4-6 haneli PIN giriniz.' });
         }
 
         try {
@@ -61,6 +82,49 @@ const cafeController = {
         const { latitude, longitude, pin, tableNumber } = req.body;
         const userId = req.user.id;
         const normalizedPin = String(pin || '').trim();
+        if (!/^\d{4,6}$/.test(normalizedPin)) {
+            return res.status(400).json({ error: 'PIN kodu 4-6 haneli sayısal olmalıdır.' });
+        }
+
+        if (!(await isDbConnected())) {
+            const cafe = FALLBACK_CAFES.find((item) => Number(item.id) === Number(id));
+            if (!cafe) return res.status(404).json({ error: 'Kafe bulunamadı.' });
+
+            const dailyPin = String(cafe.daily_pin || '').trim();
+            const basePin = String(cafe.pin || '').trim();
+            const activePin = dailyPin && dailyPin !== '0000' ? dailyPin : basePin;
+            if (activePin && activePin !== normalizedPin) {
+                return res.status(400).json({ error: 'Hatalı PIN kodu.' });
+            }
+
+            const maxTableCount = Number(cafe.table_count || 20);
+            const parsedTableNumber = Number(tableNumber);
+            if (!Number.isInteger(parsedTableNumber) || parsedTableNumber < 1 || parsedTableNumber > maxTableCount) {
+                return res.status(400).json({ error: `Masa numarası 1-${maxTableCount} aralığında olmalıdır.` });
+            }
+
+            const userIndex = memoryState.users.findIndex((user) => Number(user.id) === Number(userId));
+            if (userIndex >= 0) {
+                memoryState.users[userIndex] = {
+                    ...memoryState.users[userIndex],
+                    cafe_id: Number(id),
+                    table_number: parsedTableNumber,
+                };
+            }
+
+            return res.json({
+                success: true,
+                message: 'Giriş başarılı!',
+                cafe: {
+                    id: cafe.id,
+                    name: cafe.name,
+                    latitude: cafe.latitude,
+                    longitude: cafe.longitude,
+                },
+                cafeName: cafe.name,
+                table: `MASA${String(parsedTableNumber).padStart(2, '0')}`
+            });
+        }
 
         try {
             // 1. Get Cafe Details

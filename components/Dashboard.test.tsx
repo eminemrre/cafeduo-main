@@ -173,7 +173,7 @@ jest.mock('./ArenaBattle', () => ({
 
 jest.mock('./OddEvenSprint', () => ({
   OddEvenSprint: ({ gameId, currentUser, onGameEnd }: any) => (
-    <div data-testid="dungeon-clash">
+    <div data-testid="odd-even-sprint">
       <span>Çift Tek Sprint - {currentUser.username}</span>
       <button onClick={() => onGameEnd?.(currentUser.username, 10)}>Savaşı Bitir</button>
     </div>
@@ -414,7 +414,7 @@ describe('Dashboard Integration', () => {
 
       renderDashboard();
 
-      expect(screen.getByTestId('dungeon-clash')).toBeInTheDocument();
+      expect(screen.getByTestId('odd-even-sprint')).toBeInTheDocument();
       expect(screen.getByText(/Çift Tek Sprint - testuser/)).toBeInTheDocument();
     });
 

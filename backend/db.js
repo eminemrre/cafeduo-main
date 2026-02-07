@@ -38,6 +38,13 @@ const pool = new Pool({
 });
 
 const logger = require('./utils/logger');
+const DB_STATUS_CACHE_MS = Number(process.env.DB_STATUS_CACHE_MS || 5000);
+
+let dbStatusCache = {
+  value: false,
+  checkedAt: 0,
+  inFlight: null,
+};
 
 // Connection test
 // Connection Test with Retry Logic
@@ -62,7 +69,38 @@ const connectWithRetry = (attempts = 5) => {
 
 connectWithRetry();
 
+const isDbConnected = async ({ force = false } = {}) => {
+  const now = Date.now();
+  if (!force && dbStatusCache.checkedAt > 0 && now - dbStatusCache.checkedAt < DB_STATUS_CACHE_MS) {
+    return dbStatusCache.value;
+  }
+
+  if (dbStatusCache.inFlight) {
+    return dbStatusCache.inFlight;
+  }
+
+  dbStatusCache.inFlight = pool
+    .connect()
+    .then((client) => {
+      client.release();
+      dbStatusCache.value = true;
+      dbStatusCache.checkedAt = Date.now();
+      return true;
+    })
+    .catch(() => {
+      dbStatusCache.value = false;
+      dbStatusCache.checkedAt = Date.now();
+      return false;
+    })
+    .finally(() => {
+      dbStatusCache.inFlight = null;
+    });
+
+  return dbStatusCache.inFlight;
+};
+
 module.exports = {
   query: (text, params) => pool.query(text, params),
   pool,
+  isDbConnected,
 };

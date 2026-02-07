@@ -45,6 +45,7 @@ jest.mock('framer-motion', () => {
     useMotionValue: () => ({ set: jest.fn(), get: () => 0 }),
     useSpring: (value: unknown) => value,
     useTransform: () => '50%',
+    useScroll: () => ({ scrollYProgress: 0 }),
   };
 });
 

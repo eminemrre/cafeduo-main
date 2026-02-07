@@ -32,7 +32,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
       <div className="grid grid-cols-2 gap-3 md:gap-4">
         <motion.button
           onClick={onCreateGameClick}
-          className="group relative bg-gradient-to-b from-cyan-600 to-sky-600 hover:from-cyan-500 hover:to-sky-500 transition-all duration-200 h-24 md:h-32 rounded-xl border-b-4 md:border-b-8 border-cyan-900/70 active:border-b-0 active:translate-y-1 md:active:translate-y-2 overflow-hidden flex flex-col items-center justify-center gap-1.5 md:gap-2"
+          className="group relative bg-[#0e3159] hover:bg-[#15487f] transition-all duration-200 h-24 md:h-32 rounded-xl border border-cyan-300/35 active:translate-y-[1px] overflow-hidden flex flex-col items-center justify-center gap-1.5 md:gap-2"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -47,7 +47,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
         </motion.button>
 
         <motion.button 
-          className="group relative bg-gradient-to-b from-slate-700 to-slate-800 hover:from-slate-600 hover:to-slate-700 transition-all duration-200 h-24 md:h-32 rounded-xl border-b-4 md:border-b-8 border-slate-900 active:border-b-0 active:translate-y-1 md:active:translate-y-2 overflow-hidden flex flex-col items-center justify-center gap-1.5 md:gap-2"
+          className="group relative bg-[#1e2534] hover:bg-[#2a3448] transition-all duration-200 h-24 md:h-32 rounded-xl border border-slate-400/25 active:translate-y-[1px] overflow-hidden flex flex-col items-center justify-center gap-1.5 md:gap-2"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
         >
@@ -109,7 +109,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.1 }}
                 whileHover={{ x: 4 }}
-                className="bg-[#0c1b38]/80 hover:bg-[#10234a]/85 p-3 md:p-4 rounded-lg border border-cyan-400/18 transition-colors group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative overflow-hidden"
+                className="bg-[#0c1b38]/78 hover:bg-[#12274e]/82 p-3 md:p-4 rounded-lg border border-cyan-400/16 transition-colors group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative overflow-hidden"
               >
                 {/* Hover highlight */}
                 <motion.div 
@@ -151,7 +151,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                 {req.hostName !== currentUser.username ? (
                   <motion.button
                     onClick={() => onJoinGame(Number(req.id))}
-                    className="w-full sm:w-auto px-4 md:px-6 py-2 bg-gradient-to-r from-emerald-600 to-green-500 hover:from-emerald-500 hover:to-green-400 text-white font-pixel text-xs tracking-wider rounded border-b-4 border-emerald-900 active:border-b-0 active:translate-y-1 transition-all shadow-lg shadow-emerald-900/20 flex-shrink-0"
+                    className="w-full sm:w-auto px-4 md:px-6 py-2 bg-[#17663d] hover:bg-[#219354] text-white font-pixel text-xs tracking-wider rounded border border-emerald-300/35 active:translate-y-[1px] transition-all shadow-lg shadow-emerald-900/20 flex-shrink-0"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >

@@ -4,11 +4,41 @@ import {
   checkInUser,
   fetchCurrentUser,
   bootstrapAuthenticatedPage,
+  resolveApiBaseUrl,
+  waitForApiReady,
 } from './helpers/session';
 
 const authHeader = (token: string) => ({ Authorization: `Bearer ${token}` });
 
 test.describe('Game Flow & Multiplayer Integrity', () => {
+  test('blocks unauthenticated and non-checkin game creation attempts', async ({ request, baseURL }) => {
+    const root = baseURL || 'http://localhost:3000';
+    const apiRoot = resolveApiBaseUrl(root);
+    await waitForApiReady(request, apiRoot);
+
+    const noAuthRes = await request.post(`${apiRoot}/api/games`, {
+      data: {
+        hostName: 'spoofed-user',
+        gameType: 'Refleks Avı',
+        points: 10,
+        table: 'MASA01',
+      },
+    });
+    expect(noAuthRes.status()).toBe(401);
+
+    const session = await provisionUser(request, root, 'guard_create');
+    const withoutCheckInRes = await request.post(`${apiRoot}/api/games`, {
+      headers: authHeader(session.token),
+      data: {
+        hostName: 'spoofed-user',
+        gameType: 'Refleks Avı',
+        points: 10,
+        table: 'MASA01',
+      },
+    });
+    expect(withoutCheckInRes.status()).toBe(403);
+  });
+
   test('forces check-in before dashboard for regular users', async ({ page, request, baseURL }) => {
     const root = baseURL || 'http://localhost:3000';
     const session = await provisionUser(request, root, 'checkin_guard');
@@ -38,6 +68,8 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
 
   test('enforces join race safely and keeps consistent winner resolution', async ({ request, baseURL }) => {
     const root = baseURL || 'http://localhost:3000';
+    const apiRoot = resolveApiBaseUrl(root);
+    await waitForApiReady(request, apiRoot);
     const host = await provisionUser(request, root, 'host');
     const guest = await provisionUser(request, root, 'guest');
     const intruder = await provisionUser(request, root, 'intruder');
@@ -46,7 +78,7 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
     await checkInUser(request, root, guest.token, { tableNumber: 5 });
     await checkInUser(request, root, intruder.token, { tableNumber: 5 });
 
-    const createRes = await request.post(`${root}/api/games`, {
+    const createRes = await request.post(`${apiRoot}/api/games`, {
       headers: authHeader(host.token),
       data: {
         hostName: host.user.username,
@@ -61,11 +93,11 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
     expect(gameId).toBeTruthy();
 
     const [joinGuestRes, joinIntruderRes] = await Promise.all([
-      request.post(`${root}/api/games/${gameId}/join`, {
+      request.post(`${apiRoot}/api/games/${gameId}/join`, {
         headers: authHeader(guest.token),
         data: { guestName: guest.user.username },
       }),
-      request.post(`${root}/api/games/${gameId}/join`, {
+      request.post(`${apiRoot}/api/games/${gameId}/join`, {
         headers: authHeader(intruder.token),
         data: { guestName: intruder.user.username },
       }),
@@ -77,7 +109,7 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
     const joinedPlayer = joinGuestRes.status() === 200 ? guest : intruder;
     const rejectedPlayer = joinGuestRes.status() === 200 ? intruder : guest;
 
-    const rejectedScoreRes = await request.post(`${root}/api/games/${gameId}/move`, {
+    const rejectedScoreRes = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
       headers: authHeader(rejectedPlayer.token),
       data: {
         scoreSubmission: {
@@ -90,7 +122,7 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
     });
     expect(rejectedScoreRes.status()).toBe(403);
 
-    const hostScoreRes = await request.post(`${root}/api/games/${gameId}/move`, {
+    const hostScoreRes = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
       headers: authHeader(host.token),
       data: {
         scoreSubmission: {
@@ -103,7 +135,7 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
     });
     expect(hostScoreRes.ok()).toBeTruthy();
 
-    const joinedScoreRes = await request.post(`${root}/api/games/${gameId}/move`, {
+    const joinedScoreRes = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
       headers: authHeader(joinedPlayer.token),
       data: {
         scoreSubmission: {
@@ -117,7 +149,7 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
     expect(joinedScoreRes.ok()).toBeTruthy();
 
     // winner param manipülasyonu yapılsa bile backend sonuç tablosundan doğru kazananı seçmeli
-    const finishRes = await request.post(`${root}/api/games/${gameId}/finish`, {
+    const finishRes = await request.post(`${apiRoot}/api/games/${gameId}/finish`, {
       headers: authHeader(joinedPlayer.token),
       data: { winner: rejectedPlayer.user.username },
     });
@@ -125,7 +157,7 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
     expect(finishRes.ok(), `finish failed: ${JSON.stringify(finishBody)}`).toBeTruthy();
     expect(finishBody.winner).toBe(host.user.username);
 
-    const gameStateRes = await request.get(`${root}/api/games/${gameId}`, {
+    const gameStateRes = await request.get(`${apiRoot}/api/games/${gameId}`, {
       headers: authHeader(host.token),
     });
     expect(gameStateRes.ok()).toBeTruthy();

@@ -33,13 +33,13 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
 
   const variants = {
     primary: `
-      bg-gradient-to-r from-[#00d9ff] via-[#06b4ff] to-[#4f7cff] text-[#041226] border border-cyan-300/60
-      hover:brightness-105 hover:shadow-[0_0_28px_rgba(0,217,255,0.42)]
+      bg-[#0c2f57] text-cyan-50 border border-cyan-300/45
+      hover:bg-[#11457a] hover:shadow-[0_0_26px_rgba(0,217,255,0.24)]
       focus:ring-cyan-300/55
     `,
     secondary: `
-      bg-[#0b1630]/86 text-cyan-100 border border-cyan-400/35
-      hover:bg-[#11214a] hover:shadow-[0_0_24px_rgba(0,217,255,0.22)]
+      bg-[#0a162f]/88 text-cyan-100 border border-cyan-400/30
+      hover:bg-[#112447] hover:shadow-[0_0_20px_rgba(0,217,255,0.16)]
       focus:ring-cyan-300/45
     `,
     danger: `

@@ -46,7 +46,7 @@ describe('socketService', () => {
     socketService.connect();
     socketService.emitMove('11', { pick: 'rock' });
 
-    expect(mockSocket.emit).toHaveBeenCalledWith('rps_move', {
+    expect(mockSocket.emit).toHaveBeenCalledWith('game_move', {
       gameId: '11',
       move: { pick: 'rock' },
     });

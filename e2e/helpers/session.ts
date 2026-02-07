@@ -16,6 +16,53 @@ export interface E2ESession {
 const normalizeBaseUrl = (rawBase: string) => rawBase.replace(/\/+$/, '');
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+export const resolveApiBaseUrl = (appBaseURL: string): string => {
+  const override = process.env.E2E_API_BASE_URL?.trim();
+  if (override) {
+    return normalizeBaseUrl(override);
+  }
+
+  try {
+    const parsed = new URL(appBaseURL);
+    if (parsed.port === '3000') {
+      parsed.port = '3001';
+      return normalizeBaseUrl(parsed.toString());
+    }
+    if (!parsed.port && (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')) {
+      parsed.port = '3001';
+      return normalizeBaseUrl(parsed.toString());
+    }
+    return normalizeBaseUrl(parsed.toString());
+  } catch {
+    return 'http://localhost:3001';
+  }
+};
+
+export const waitForApiReady = async (
+  request: APIRequestContext,
+  apiBaseURL: string,
+  timeoutMs = 45000
+) => {
+  const root = normalizeBaseUrl(apiBaseURL);
+  const deadline = Date.now() + timeoutMs;
+  let lastError = 'API unavailable';
+
+  while (Date.now() < deadline) {
+    try {
+      const res = await request.get(`${root}/api/health`);
+      if (res.status() < 500) {
+        return;
+      }
+      lastError = `status=${res.status()}`;
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : String(error);
+    }
+    await sleep(500);
+  }
+
+  throw new Error(`API readiness timeout (${timeoutMs}ms): ${lastError}`);
+};
+
 export const generateCredentials = (prefix = 'e2e'): E2ECredentials => {
   const timePart = Date.now().toString(36);
   const randomPart = Math.random().toString(36).slice(2, 7);
@@ -35,12 +82,13 @@ export const provisionUser = async (
   baseURL: string,
   prefix = 'e2e'
 ): Promise<E2ESession> => {
-  const root = normalizeBaseUrl(baseURL);
+  const apiRoot = resolveApiBaseUrl(baseURL);
+  await waitForApiReady(request, apiRoot);
   let lastRegisterError = 'unknown';
 
   for (let attempt = 1; attempt <= 6; attempt += 1) {
     const credentials = generateCredentials(prefix);
-    const registerRes = await request.post(`${root}/api/auth/register`, {
+    const registerRes = await request.post(`${apiRoot}/api/auth/register`, {
       data: {
         username: credentials.username,
         email: credentials.email,
@@ -68,7 +116,7 @@ export const provisionUser = async (
       }
     }
 
-    const loginRes = await request.post(`${root}/api/auth/login`, {
+    const loginRes = await request.post(`${apiRoot}/api/auth/login`, {
       data: {
         email: credentials.email,
         password: credentials.password,
@@ -103,8 +151,9 @@ export const fetchCurrentUser = async (
   baseURL: string,
   token: string
 ) => {
-  const root = normalizeBaseUrl(baseURL);
-  const meRes = await request.get(`${root}/api/auth/me`, {
+  const apiRoot = resolveApiBaseUrl(baseURL);
+  await waitForApiReady(request, apiRoot);
+  const meRes = await request.get(`${apiRoot}/api/auth/me`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -119,8 +168,9 @@ export const checkInUser = async (
   token: string,
   options: { cafeId?: number; tableNumber?: number } = {}
 ) => {
-  const root = normalizeBaseUrl(baseURL);
-  const cafesRes = await request.get(`${root}/api/cafes`);
+  const apiRoot = resolveApiBaseUrl(baseURL);
+  await waitForApiReady(request, apiRoot);
+  const cafesRes = await request.get(`${apiRoot}/api/cafes`);
   expect(cafesRes.ok()).toBeTruthy();
   const cafes = await cafesRes.json();
   expect(Array.isArray(cafes)).toBeTruthy();
@@ -133,7 +183,7 @@ export const checkInUser = async (
       : String(selectedCafe?.pin || '1234');
   const tableNumber = options.tableNumber || 1;
 
-  const checkInRes = await request.post(`${root}/api/cafes/${selectedCafe.id}/check-in`, {
+  const checkInRes = await request.post(`${apiRoot}/api/cafes/${selectedCafe.id}/check-in`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
@@ -168,7 +218,7 @@ export const bootstrapAuthenticatedPage = async (
       localStorage.setItem('token', token);
       localStorage.setItem('cafe_user', JSON.stringify(userData));
       if (checkedIn) {
-        sessionStorage.setItem('cafeduo_checked_in_user', String(userData.id));
+        sessionStorage.setItem('cafeduo_checked_in_token', token);
       }
     },
     {
@@ -196,5 +246,7 @@ export const bootstrapAuthenticatedPage = async (
   if (panelReady) {
     await panelButton.click();
   }
-  await page.waitForLoadState('networkidle');
+  // Socket/polling trafiği olduğu için networkidle burada false-negative üretebiliyor.
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForTimeout(300);
 };

@@ -168,6 +168,8 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
                 <span className="font-pixel text-cyan-100 text-lg">MENÜ</span>
                 <button
                   onClick={() => setIsOpen(false)}
+                  aria-label="Panel menüsünü kapat"
+                  data-testid="mobile-menu-close-button"
                   className="w-9 h-9 rounded-full border border-cyan-400/40 flex items-center justify-center text-cyan-100"
                 >
                   <X size={18} />

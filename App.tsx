@@ -37,7 +37,7 @@ interface ProtectedRouteProps {
   requiredRole?: string;
 }
 
-const CHECKIN_SESSION_KEY = 'cafeduo_checked_in_user';
+const CHECKIN_SESSION_KEY = 'cafeduo_checked_in_token';
 
 // Protected Route Component
 const ProtectedRoute = ({ children, user, isAdminRoute = false, requiredRole }: ProtectedRouteProps) => {
@@ -124,8 +124,8 @@ const App: React.FC = () => {
     setCurrentUser(user);
     setIsLoggedIn(true);
     setIsAuthOpen(false);
-    localStorage.setItem('cafe_user', JSON.stringify(user));
-    sessionStorage.removeItem(CHECKIN_SESSION_KEY);
+      localStorage.setItem('cafe_user', JSON.stringify(user));
+      sessionStorage.removeItem(CHECKIN_SESSION_KEY);
 
     // Check for Daily Bonus
     if ((user as any).bonusReceived) {
@@ -153,8 +153,8 @@ const App: React.FC = () => {
     }
     setIsLoggedIn(false);
     setCurrentUser(null);
-    localStorage.removeItem('cafe_user');
-    sessionStorage.removeItem(CHECKIN_SESSION_KEY);
+      localStorage.removeItem('cafe_user');
+      sessionStorage.removeItem(CHECKIN_SESSION_KEY);
     navigate('/');
   };
 
@@ -176,7 +176,13 @@ const App: React.FC = () => {
       // Ideally we should fetch the full updated user from backend, but this is enough for UI
       setCurrentUser(updatedUser);
       localStorage.setItem('cafe_user', JSON.stringify(updatedUser));
-      sessionStorage.setItem(CHECKIN_SESSION_KEY, String(currentUser.id));
+      const token = localStorage.getItem('token');
+      if (token) {
+        sessionStorage.setItem(CHECKIN_SESSION_KEY, token);
+      } else {
+        // Test ve token restore edge-case'lerinde legacy işaretleyici.
+        sessionStorage.setItem(CHECKIN_SESSION_KEY, String(currentUser.id));
+      }
       navigate('/dashboard');
     }
   };
@@ -188,13 +194,15 @@ const App: React.FC = () => {
     const hasCafe = Boolean(user.cafe_id);
     const table = String(user.table_number || '').trim().toUpperCase();
     const hasTable = Boolean(table) && table !== 'NULL' && table !== 'UNDEFINED';
-    const hasSessionCheckIn = sessionStorage.getItem(CHECKIN_SESSION_KEY) === String(user.id);
+    const token = localStorage.getItem('token');
+    const marker = sessionStorage.getItem(CHECKIN_SESSION_KEY);
+    const hasSessionCheckIn = token ? marker === token : marker === String(user.id);
 
     return !(hasCafe && hasTable && hasSessionCheckIn);
   };
 
   return (
-    <div className="min-h-screen text-[var(--rf-ink)] font-sans selection:bg-cyan-300/30 selection:text-white">
+    <div className="rf-app-shell min-h-screen text-[var(--rf-ink)] font-sans selection:bg-cyan-300/30 selection:text-white">
       <Navbar isLoggedIn={isLoggedIn} onLogout={handleLogout} />
 
       <main>

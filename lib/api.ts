@@ -10,10 +10,18 @@ const withProtocol = (url: string): string => {
   return `${isLocal ? 'http' : 'https'}://${url}`;
 };
 
+const enforceBrowserHttps = (url: string): string => {
+  if (typeof window === 'undefined') return url;
+  if (window.location.protocol !== 'https:') return url;
+  if (!url.startsWith('http://')) return url;
+  if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(url)) return url;
+  return url.replace(/^http:\/\//i, 'https://');
+};
+
 export const normalizeApiBaseUrl = (url: string): string => {
   const trimmed = url.trim();
   if (!trimmed) return '';
-  return withProtocol(trimmed).replace(/\/+$/, '').replace(/\/api$/, '');
+  return enforceBrowserHttps(withProtocol(trimmed)).replace(/\/+$/, '').replace(/\/api$/, '');
 };
 
 const resolveApiBaseUrl = (): string => {
@@ -107,10 +115,24 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}): Promise<an
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 12000);
+  try {
+    response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error && error.name === 'AbortError'
+        ? 'İstek zaman aşımına uğradı. Lütfen bağlantınızı kontrol edip tekrar deneyin.'
+        : 'Sunucuya bağlanılamadı. Ağ bağlantınızı ve API adresini kontrol edin.';
+    throw new Error(message);
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     throw new Error(await parseApiError(response));

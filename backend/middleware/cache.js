@@ -1,6 +1,14 @@
 const redis = require('../config/redis');
 const logger = require('../utils/logger');
 
+const hasRedisClient = Boolean(
+    redis &&
+    typeof redis.get === 'function' &&
+    typeof redis.setex === 'function' &&
+    typeof redis.keys === 'function' &&
+    typeof redis.del === 'function'
+);
+
 /**
  * Redis Caching Middleware
  * @param {number} duration - Cache duration in seconds
@@ -8,7 +16,7 @@ const logger = require('../utils/logger');
 const cache = (duration = 300) => {
     return async (req, res, next) => {
         // Skip caching for non-GET requests
-        if (req.method !== 'GET') {
+        if (req.method !== 'GET' || !hasRedisClient) {
             return next();
         }
 
@@ -47,6 +55,9 @@ const cache = (duration = 300) => {
  * @param {string} pattern - Redis key pattern (e.g. "cache:/api/cafes*")
  */
 const clearCache = async (pattern) => {
+    if (!hasRedisClient) {
+        return;
+    }
     try {
         const keys = await redis.keys(pattern);
         if (keys.length > 0) {

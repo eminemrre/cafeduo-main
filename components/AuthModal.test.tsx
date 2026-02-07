@@ -2,12 +2,16 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AuthModal } from './AuthModal';
 
+const mockToastSuccess = jest.fn();
+const mockToastError = jest.fn();
+const mockToastWarning = jest.fn();
+
 // Mock useToast
 jest.mock('../contexts/ToastContext', () => ({
   useToast: () => ({
-    success: jest.fn(),
-    error: jest.fn(),
-    warning: jest.fn()
+    success: mockToastSuccess,
+    error: mockToastError,
+    warning: mockToastWarning
   })
 }));
 
@@ -24,13 +28,21 @@ jest.mock('../lib/api', () => ({
 describe('AuthModal', () => {
   const mockOnClose = jest.fn();
   const mockOnLoginSuccess = jest.fn();
+  const mockLoginUser = {
+    id: 1,
+    username: 'emin',
+    email: 'emin3619@gmail.com',
+    points: 0,
+    wins: 0,
+    gamesPlayed: 0,
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   it('renders login form by default', () => {
-    render(
+    const { container } = render(
       <AuthModal
         isOpen={true}
         onClose={mockOnClose}
@@ -59,7 +71,7 @@ describe('AuthModal', () => {
   });
 
   it('validates email format', async () => {
-    render(
+    const { container } = render(
       <AuthModal
         isOpen={true}
         onClose={mockOnClose}
@@ -78,7 +90,7 @@ describe('AuthModal', () => {
   });
 
   it('validates password minimum length', async () => {
-    render(
+    const { container } = render(
       <AuthModal
         isOpen={true}
         onClose={mockOnClose}
@@ -107,5 +119,131 @@ describe('AuthModal', () => {
     );
 
     expect(container.firstChild).toBeNull();
+  });
+
+  it('toggles password visibility', () => {
+    const { container } = render(
+      <AuthModal
+        isOpen={true}
+        onClose={mockOnClose}
+        initialMode="login"
+        onLoginSuccess={mockOnLoginSuccess}
+      />
+    );
+
+    const passwordInput = screen.getByTestId('auth-password-input');
+    expect(passwordInput).toHaveAttribute('type', 'password');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Şifreyi göster' }));
+    expect(passwordInput).toHaveAttribute('type', 'text');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Şifreyi gizle' }));
+    expect(passwordInput).toHaveAttribute('type', 'password');
+  });
+
+  it('submits login successfully and returns user', async () => {
+    const { api } = await import('../lib/api');
+    (api.auth.login as jest.Mock).mockResolvedValue(mockLoginUser);
+
+    const { container } = render(
+      <AuthModal
+        isOpen={true}
+        onClose={mockOnClose}
+        initialMode="login"
+        onLoginSuccess={mockOnLoginSuccess}
+      />
+    );
+
+    fireEvent.change(screen.getByTestId('auth-email-input'), {
+      target: { value: 'emin3619@gmail.com' },
+    });
+    fireEvent.change(screen.getByTestId('auth-password-input'), {
+      target: { value: 'secret123' },
+    });
+
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
+
+    await waitFor(() => {
+      expect(api.auth.login).toHaveBeenCalledWith('emin3619@gmail.com', 'secret123');
+      expect(mockOnLoginSuccess).toHaveBeenCalledWith(mockLoginUser);
+    });
+  });
+
+  it('submits register successfully and returns user', async () => {
+    const { api } = await import('../lib/api');
+    (api.auth.register as jest.Mock).mockResolvedValue(mockLoginUser);
+
+    const { container } = render(
+      <AuthModal
+        isOpen={true}
+        onClose={mockOnClose}
+        initialMode="register"
+        onLoginSuccess={mockOnLoginSuccess}
+      />
+    );
+
+    fireEvent.change(screen.getByPlaceholderText('Kullanıcı adı'), {
+      target: { value: 'eminemre' },
+    });
+    fireEvent.change(screen.getByTestId('auth-email-input'), {
+      target: { value: 'emin3619@gmail.com' },
+    });
+    fireEvent.change(screen.getByTestId('auth-password-input'), {
+      target: { value: 'secret123' },
+    });
+
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
+
+    await waitFor(() => {
+      expect(api.auth.register).toHaveBeenCalledWith('eminemre', 'emin3619@gmail.com', 'secret123');
+      expect(mockOnLoginSuccess).toHaveBeenCalledWith(mockLoginUser);
+    });
+  });
+
+  it('shows mapped auth error message on wrong password', async () => {
+    const { api } = await import('../lib/api');
+    (api.auth.login as jest.Mock).mockRejectedValue({ code: 'auth/wrong-password' });
+
+    const { container } = render(
+      <AuthModal
+        isOpen={true}
+        onClose={mockOnClose}
+        initialMode="login"
+        onLoginSuccess={mockOnLoginSuccess}
+      />
+    );
+
+    fireEvent.change(screen.getByTestId('auth-email-input'), {
+      target: { value: 'emin3619@gmail.com' },
+    });
+    fireEvent.change(screen.getByTestId('auth-password-input'), {
+      target: { value: 'secret123' },
+    });
+
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
+
+    await waitFor(() => {
+      expect(screen.getByText('E-posta veya şifre hatalı.')).toBeInTheDocument();
+      expect(mockToastError).toHaveBeenCalledWith('E-posta veya şifre hatalı.');
+    });
+  });
+
+  it('blocks submit when form is invalid and shows toast', async () => {
+    const { container } = render(
+      <AuthModal
+        isOpen={true}
+        onClose={mockOnClose}
+        initialMode="login"
+        onLoginSuccess={mockOnLoginSuccess}
+      />
+    );
+
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
+
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith('Lütfen form hatalarını düzeltin');
+      expect(screen.getByText('E-posta adresi gereklidir')).toBeInTheDocument();
+      expect(screen.getByText('Şifre gereklidir')).toBeInTheDocument();
+    });
   });
 });

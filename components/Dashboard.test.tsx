@@ -403,6 +403,61 @@ describe('Dashboard Integration', () => {
       // Should show lobby return button (with arrow character ←)
       expect(screen.getByText('← Lobiye Dön')).toBeInTheDocument();
     });
+
+    it('renders Çift Tek Sprint component when active game type matches', () => {
+      mockUseGames.mockReturnValue({
+        ...defaultGamesState,
+        activeGameId: 'game456',
+        activeGameType: 'Çift Tek Sprint',
+        opponentName: 'rakip',
+      });
+
+      renderDashboard();
+
+      expect(screen.getByTestId('dungeon-clash')).toBeInTheDocument();
+      expect(screen.getByText(/Çift Tek Sprint - testuser/)).toBeInTheDocument();
+    });
+
+    it('falls back to arena component for unknown game type and processes finish', async () => {
+      const mockLeaveGame = jest.fn();
+      mockUseGames.mockReturnValue({
+        ...defaultGamesState,
+        activeGameId: 'game789',
+        activeGameType: 'Ritim Kopyala',
+        leaveGame: mockLeaveGame,
+      });
+
+      renderDashboard();
+
+      fireEvent.click(screen.getByRole('button', { name: 'Savaşı Bitir' }));
+
+      await waitFor(() => {
+        expect(mockOnUpdateUser).toHaveBeenCalledWith(
+          expect.objectContaining({
+            username: 'testuser',
+            points: 1010,
+            wins: 6,
+            gamesPlayed: 11,
+          })
+        );
+        expect(mockLeaveGame).toHaveBeenCalled();
+      });
+    });
+
+    it('returns to lobby from active game screen', () => {
+      const mockLeaveGame = jest.fn();
+      mockUseGames.mockReturnValue({
+        ...defaultGamesState,
+        activeGameId: 'active1',
+        activeGameType: 'Refleks Avı',
+        leaveGame: mockLeaveGame,
+      });
+
+      renderDashboard();
+
+      fireEvent.click(screen.getByText('← Lobiye Dön'));
+      expect(mockLeaveGame).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe('Reward Flow', () => {
@@ -467,6 +522,11 @@ describe('Dashboard Integration', () => {
       await waitFor(() => {
         expect(mockBuyReward).toHaveBeenCalledWith(
           expect.objectContaining({ id: 1, title: 'Kahve', cost: 100 })
+        );
+        expect(mockOnUpdateUser).toHaveBeenCalledWith(
+          expect.objectContaining({
+            points: 900,
+          })
         );
       });
     });
@@ -600,6 +660,28 @@ describe('Dashboard Integration', () => {
 
       expect(screen.getByText('🎮 Aktif Oyunun Var!')).toBeInTheDocument();
       expect(screen.getByText('Oyuna Dön')).toBeInTheDocument();
+    });
+
+    it('rejoins active game and resolves opponent based on host/guest', () => {
+      const mockSetActiveGame = jest.fn();
+      mockUseGames.mockReturnValue({
+        ...defaultGamesState,
+        setActiveGame: mockSetActiveGame,
+        serverActiveGame: {
+          id: 42,
+          gameType: 'Refleks Avı',
+          hostName: 'testuser',
+          guestName: 'rakipX',
+          points: 50,
+          table: 'A1',
+          status: 'active',
+        },
+      });
+
+      renderDashboard();
+
+      fireEvent.click(screen.getByText('Oyuna Dön'));
+      expect(mockSetActiveGame).toHaveBeenCalledWith(42, 'Refleks Avı', 'rakipX');
     });
   });
 });

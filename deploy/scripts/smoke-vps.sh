@@ -7,8 +7,16 @@ echo "[smoke-vps] Base URL: ${BASE_URL}"
 
 curl_flags=(-sS -L)
 if [[ "${BASE_URL}" == http://127.0.0.1* || "${BASE_URL}" == https://127.0.0.1* || "${BASE_URL}" == http://localhost* || "${BASE_URL}" == https://localhost* ]]; then
-  # Local smoke checks may hit HTTPS redirect with a domain certificate.
-  curl_flags+=(-k)
+  site_address="$(grep -E '^SITE_ADDRESS=' .env 2>/dev/null | head -n1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs || true)"
+  if [[ -n "${site_address}" && "${site_address}" != "localhost" ]]; then
+    # Caddy TLS sertifikası domain üzerinden çalıştığı için localhost smoke'u SNI resolve ile domain'e yönlendir.
+    BASE_URL="https://${site_address}"
+    curl_flags+=(--resolve "${site_address}:443:127.0.0.1")
+    echo "[smoke-vps] Resolved local smoke URL to ${BASE_URL} via 127.0.0.1"
+  else
+    # Fallback: local URL için self-signed/hostname uyumsuz TLS olasılığına izin ver.
+    curl_flags+=(-k)
+  fi
 fi
 
 HEALTH_JSON="$(curl -f "${curl_flags[@]}" "${BASE_URL}/health")"

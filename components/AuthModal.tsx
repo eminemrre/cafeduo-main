@@ -263,6 +263,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
             <div className="rounded-xl border border-cyan-400/20 bg-[#050d20]/90 p-1 grid grid-cols-2 gap-1">
               <button
+                type="button"
                 onClick={() => switchMode('login')}
                 className={`h-10 rounded-lg text-sm md:text-base font-semibold transition-all ${
                   mode === 'login'
@@ -273,6 +274,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 Giriş Yap
               </button>
               <button
+                type="button"
                 onClick={() => switchMode('register')}
                 className={`h-10 rounded-lg text-sm md:text-base font-semibold transition-all ${
                   mode === 'register'
@@ -418,6 +420,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <p className="text-center text-slate-400 text-sm">
                   Hesabınız yok mu?{' '}
                   <button
+                    type="button"
                     onClick={() => switchMode('register')}
                     className="text-cyan-300 hover:text-cyan-200 transition-colors font-semibold"
                   >

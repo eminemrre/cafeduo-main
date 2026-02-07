@@ -1,112 +1,136 @@
-/**
- * E2E Tests - Game Flow
- * 
- * @description Table matching, game creation, and joining tests
- */
-
 import { test, expect } from '@playwright/test';
+import {
+  provisionUser,
+  checkInUser,
+  fetchCurrentUser,
+  bootstrapAuthenticatedPage,
+} from './helpers/session';
 
-test.describe('Game Flow', () => {
-  // Helper function to login before tests using data-testid
-  const login = async (page) => {
-    await page.goto('/');
-    await page.locator('[data-testid="hero-login-button"]').click();
-    await page.locator('[data-testid="auth-email-input"]').fill('test@example.com');
-    await page.locator('[data-testid="auth-password-input"]').fill('testpassword123');
-    await page.locator('[data-testid="auth-submit-button"]').click();
-    await expect(page.locator('[data-testid="dashboard-tab-games"]')).toBeVisible({ timeout: 5000 });
-  };
+const authHeader = (token: string) => ({ Authorization: `Bearer ${token}` });
 
-  test.beforeEach(async ({ page }) => {
-    await page.goto('/');
-    await page.evaluate(() => localStorage.clear());
+test.describe('Game Flow & Multiplayer Integrity', () => {
+  test('forces check-in before dashboard for regular users', async ({ page, request, baseURL }) => {
+    const root = baseURL || 'http://localhost:3000';
+    const session = await provisionUser(request, root, 'checkin_guard');
+
+    await bootstrapAuthenticatedPage(page, root, session, { checkedIn: false });
+    await expect(page.getByText('Kafe Giriş')).toBeVisible();
   });
 
-  test('should show table matching UI when not matched', async ({ page }) => {
-    await login(page);
-    
-    // Should show "Masa bağlı değil" or table matching section using data-testid
-    await expect(page.locator('[data-testid="table-status"]')).toContainText(/Masa bağlı değil|masa kodu/i);
+  test('shows dashboard + stats after authenticated check-in', async ({ page, request, baseURL }) => {
+    const root = baseURL || 'http://localhost:3000';
+    const session = await provisionUser(request, root, 'dashboard_ready');
+
+    await checkInUser(request, root, session.token, { tableNumber: 3 });
+    const user = await fetchCurrentUser(request, root, session.token);
+
+    await bootstrapAuthenticatedPage(page, root, session, {
+      checkedIn: true,
+      userOverride: user,
+    });
+
+    await expect(page.locator('[data-testid="dashboard-tab-games"]')).toBeVisible();
+    await expect(page.locator('[data-testid="user-points"]')).toContainText(/\d+/);
+    await expect(page.locator('[data-testid="user-wins"]')).toContainText(/\d+/);
+    await expect(page.locator('[data-testid="user-games"]')).toContainText(/\d+/);
+    await expect(page.locator('[data-testid="create-game-button"]')).toBeEnabled();
   });
 
-  test('should disable game buttons when not matched to table', async ({ page }) => {
-    await login(page);
-    
-    // Game creation button should be disabled using data-testid
-    const createButton = page.locator('[data-testid="create-game-button"]');
-    await expect(createButton).toBeDisabled();
-  });
+  test('enforces join race safely and keeps consistent winner resolution', async ({ request, baseURL }) => {
+    const root = baseURL || 'http://localhost:3000';
+    const host = await provisionUser(request, root, 'host');
+    const guest = await provisionUser(request, root, 'guest');
+    const intruder = await provisionUser(request, root, 'intruder');
 
-  test('should show user stats in status bar', async ({ page }) => {
-    await login(page);
-    
-    // Status bar should show user info using data-testid
-    await expect(page.locator('[data-testid="user-points"]')).toBeVisible();
-    await expect(page.locator('[data-testid="user-wins"]')).toBeVisible();
-    await expect(page.locator('[data-testid="user-games"]')).toBeVisible();
-  });
+    await checkInUser(request, root, host.token, { tableNumber: 5 });
+    await checkInUser(request, root, guest.token, { tableNumber: 5 });
+    await checkInUser(request, root, intruder.token, { tableNumber: 5 });
 
-  test('should navigate between tabs', async ({ page }) => {
-    await login(page);
-    
-    // Click on Leaderboard tab using data-testid
-    await page.locator('[data-testid="dashboard-tab-leaderboard"]').click();
-    await expect(page.getByText(/Sıralama Tablosu|Leaderboard/i).first()).toBeVisible();
-    
-    // Click on Achievements tab using data-testid
-    await page.locator('[data-testid="dashboard-tab-achievements"]').click();
-    await expect(page.getByText(/Başarımlar|Achievements/i).first()).toBeVisible();
-    
-    // Click back to Games tab using data-testid
-    await page.locator('[data-testid="dashboard-tab-games"]').click();
-    await expect(page.locator('[data-testid="game-lobby-container"]').or(page.locator('[data-testid="game-lobby-empty"]'))).toBeVisible();
-  });
+    const createRes = await request.post(`${root}/api/games`, {
+      headers: authHeader(host.token),
+      data: {
+        hostName: host.user.username,
+        gameType: 'Refleks Avı',
+        points: 40,
+        table: 'MASA05',
+      },
+    });
+    expect(createRes.ok()).toBeTruthy();
+    const createdGame = await createRes.json();
+    const gameId = createdGame.id;
+    expect(gameId).toBeTruthy();
 
-  test('should show game lobby with available games or empty state', async ({ page }) => {
-    await login(page);
-    
-    // Should show lobby section
-    await expect(page.getByText(/Oyun Lobisi|Aktif Oyunlar/i).first()).toBeVisible();
-    
-    // Either show games list or empty state using data-testid
-    const hasGames = await page.locator('[data-testid="game-lobby-list"]').isVisible().catch(() => false);
-    const isEmpty = await page.locator('[data-testid="empty-state"]').or(page.locator('[data-testid="game-lobby-empty"]')).isVisible().catch(() => false);
-    
-    expect(hasGames || isEmpty).toBe(true);
-  });
+    const [joinGuestRes, joinIntruderRes] = await Promise.all([
+      request.post(`${root}/api/games/${gameId}/join`, {
+        headers: authHeader(guest.token),
+        data: { guestName: guest.user.username },
+      }),
+      request.post(`${root}/api/games/${gameId}/join`, {
+        headers: authHeader(intruder.token),
+        data: { guestName: intruder.user.username },
+      }),
+    ]);
 
-  test('should open create game modal when button enabled', async ({ page }) => {
-    await login(page);
-    
-    // This test assumes user is already matched to a table
-    // First check if create button exists and is enabled
-    const createButton = page.locator('[data-testid="create-game-button"]');
-    
-    if (await createButton.isEnabled().catch(() => false)) {
-      await createButton.click();
-      
-      // Modal should open using data-testid
-      await expect(page.locator('[data-testid="create-game-modal"]')).toBeVisible();
-      await expect(page.locator('[data-testid="game-type-rps"]')).toBeVisible();
-    }
-  });
+    const joinStatuses = [joinGuestRes.status(), joinIntruderRes.status()].sort();
+    expect(joinStatuses).toEqual([200, 409]);
 
-  test('should select game type and points in create modal', async ({ page }) => {
-    await login(page);
-    
-    const createButton = page.locator('[data-testid="create-game-button"]');
-    
-    if (await createButton.isEnabled().catch(() => false)) {
-      await createButton.click();
-      
-      // Select game type using data-testid
-      await page.locator('[data-testid="game-type-rps"]').click();
-      
-      // Select points using data-testid
-      await page.locator('[data-testid="game-points-input"]').fill('50');
-      
-      // Submit button should be visible using data-testid
-      await expect(page.locator('[data-testid="create-game-submit"]')).toBeVisible();
-    }
+    const joinedPlayer = joinGuestRes.status() === 200 ? guest : intruder;
+    const rejectedPlayer = joinGuestRes.status() === 200 ? intruder : guest;
+
+    const rejectedScoreRes = await request.post(`${root}/api/games/${gameId}/move`, {
+      headers: authHeader(rejectedPlayer.token),
+      data: {
+        scoreSubmission: {
+          username: rejectedPlayer.user.username,
+          score: 9999,
+          roundsWon: 9999,
+          durationMs: 1,
+        },
+      },
+    });
+    expect(rejectedScoreRes.status()).toBe(403);
+
+    const hostScoreRes = await request.post(`${root}/api/games/${gameId}/move`, {
+      headers: authHeader(host.token),
+      data: {
+        scoreSubmission: {
+          username: host.user.username,
+          score: 6,
+          roundsWon: 3,
+          durationMs: 9000,
+        },
+      },
+    });
+    expect(hostScoreRes.ok()).toBeTruthy();
+
+    const joinedScoreRes = await request.post(`${root}/api/games/${gameId}/move`, {
+      headers: authHeader(joinedPlayer.token),
+      data: {
+        scoreSubmission: {
+          username: joinedPlayer.user.username,
+          score: 4,
+          roundsWon: 2,
+          durationMs: 8500,
+        },
+      },
+    });
+    expect(joinedScoreRes.ok()).toBeTruthy();
+
+    // winner param manipülasyonu yapılsa bile backend sonuç tablosundan doğru kazananı seçmeli
+    const finishRes = await request.post(`${root}/api/games/${gameId}/finish`, {
+      headers: authHeader(joinedPlayer.token),
+      data: { winner: rejectedPlayer.user.username },
+    });
+    const finishBody = await finishRes.json();
+    expect(finishRes.ok(), `finish failed: ${JSON.stringify(finishBody)}`).toBeTruthy();
+    expect(finishBody.winner).toBe(host.user.username);
+
+    const gameStateRes = await request.get(`${root}/api/games/${gameId}`, {
+      headers: authHeader(host.token),
+    });
+    expect(gameStateRes.ok()).toBeTruthy();
+    const gameState = await gameStateRes.json();
+    expect(gameState.status).toBe('finished');
+    expect(gameState.gameState?.resolvedWinner).toBe(host.user.username);
   });
 });

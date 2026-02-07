@@ -165,6 +165,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                                     setPin(''); // Clear PIN when cafe changes
                                     setError(null);
                                 }}
+                                data-testid="checkin-cafe-select"
                                 className="w-full bg-black/40 border border-gray-600 rounded-xl py-3 pl-10 pr-4 text-white outline-none focus:border-cyan-400 appearance-none cursor-pointer focus:shadow-[0_0_20px_rgba(0,217,255,0.2)]"
                             >
                                 {cafes.map(cafe => (
@@ -187,6 +188,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                                 onChange={(e) => setTableNumber(e.target.value)}
                                 min="1"
                                 max={selectedCafe?.table_count || 20}
+                                data-testid="checkin-table-input"
                                 className="w-full bg-black/40 border border-gray-600 rounded-xl py-3 pl-10 pr-4 text-white outline-none focus:border-cyan-400 focus:shadow-[0_0_20px_rgba(0,217,255,0.2)]"
                             />
                         </div>
@@ -220,6 +222,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                             className="sr-only"
                             autoComplete="one-time-code"
                             id="pin-input"
+                            data-testid="checkin-pin-input"
                             aria-label="PIN kodu girişi"
                         />
 
@@ -248,6 +251,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                     <button
                         onClick={handleCheckIn}
                         disabled={loading || !isPinValid || !tableNumber}
+                        data-testid="checkin-submit-button"
                         className={`w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all ${loading || !isPinValid || !tableNumber
                             ? 'bg-gray-700 cursor-not-allowed opacity-50'
                             : 'bg-cyan-500 hover:bg-cyan-400 text-[#041226] shadow-lg shadow-cyan-500/30 hover:scale-[1.02] active:scale-95'

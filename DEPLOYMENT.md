@@ -17,7 +17,7 @@
 
 ---
 
-## Quick Paths (2026-02-06)
+## Quick Paths (2026-02-07)
 
 - Fast VPS path (recommended now):
   - `deploy/docker-compose.prod.yml`
@@ -28,6 +28,10 @@
   - `render.yaml`
 - CI based VPS deploy path:
   - `.github/workflows/deploy-vps.yml`
+- Smoke and rollback scripts:
+  - `scripts/smoke/prod-smoke.mjs`
+  - `deploy/scripts/smoke-vps.sh`
+  - `deploy/scripts/rollback.sh`
 
 ---
 
@@ -139,6 +143,7 @@ SMTP_FROM=noreply@cafeduo.com
 ```bash
 LOG_LEVEL=info           # debug, info, warn, error
 LOG_FILE=logs/app.log    # Log file path
+REQUEST_LOG_SLOW_MS=1200 # Slow request warning threshold (ms)
 ```
 
 ---
@@ -426,7 +431,20 @@ services:
 curl http://localhost:3001/health
 
 # Expected response:
-# {"status":"ok","timestamp":"2024-01-01T00:00:00.000Z"}
+# {"uptime":123.45,"message":"OK","timestamp":1700000000000,"database":true}
+```
+
+### Smoke Checks
+
+```bash
+# Local/remote configurable smoke check (defaults to https://cafeduotr.com)
+npm run smoke:prod
+
+# Force live domain check
+npm run smoke:live
+
+# VPS-local smoke check (run on server)
+bash deploy/scripts/smoke-vps.sh http://127.0.0.1
 ```
 
 ### Log Management
@@ -580,6 +598,20 @@ docker-compose build --no-cache
 docker system prune -a
 ```
 
+#### Deploy Succeeded But Login/Realtime Fails
+
+```bash
+# 1) Run smoke checks first
+bash deploy/scripts/smoke-vps.sh http://127.0.0.1
+npm run smoke:prod
+
+# 2) Check API logs for request IDs and 4xx/5xx warnings
+docker compose -f deploy/docker-compose.prod.yml --env-file .env logs --tail=200 api
+
+# 3) Ensure frontend and backend share correct origin/socket config
+grep -E "CORS_ORIGIN|VITE_API_BASE_URL|VITE_SOCKET_URL|SITE_ADDRESS" .env
+```
+
 #### Database Won't Initialize
 
 ```bash
@@ -655,6 +687,8 @@ Before going live, ensure:
 - [ ] API responding to requests
 - [ ] SSL certificate installed
 - [ ] Backups configured
+- [ ] Smoke checks passed (`npm run smoke:prod` + VPS smoke script)
+- [ ] Rollback command validated (`bash deploy/scripts/rollback.sh <deploy_path>`)
 - [ ] Monitoring set up
 - [ ] Documentation updated
 
@@ -673,4 +707,4 @@ For deployment issues:
 
 ---
 
-*Last updated: 2026-02-04*
+*Last updated: 2026-02-07*

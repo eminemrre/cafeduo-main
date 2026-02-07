@@ -1,13 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-interface RetroButtonProps {
-  children: React.ReactNode;
-  onClick?: () => void;
+interface RetroButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
-  className?: string;
-  type?: 'button' | 'submit' | 'reset';
-  disabled?: boolean;
   size?: 'sm' | 'md' | 'lg';
   icon?: React.ReactNode;
 }
@@ -20,7 +15,8 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
   type = 'button', 
   disabled = false,
   size = 'md',
-  icon
+  icon,
+  ...rest
 }) => {
   // Touch-friendly minimum sizes (44x44px for accessibility)
   const sizeStyles = {
@@ -67,6 +63,7 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
       type={type}
       onClick={onClick}
       disabled={disabled}
+      {...rest}
       className={`
         ${baseStyles} 
         ${sizeStyles[size]} 

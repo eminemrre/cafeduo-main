@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "start": "node backend/server.js",
-    "server": "nodemon backend/server.js",
+    "server": "nodemon --watch backend --ext js,mjs,cjs,json backend/server.js",
     "client": "vite",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
     "build": "vite build",
@@ -15,7 +15,9 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
-    "test:all": "npm run test && npm run test:e2e"
+    "test:all": "npm run test && npm run test:e2e",
+    "smoke:prod": "node scripts/smoke/prod-smoke.mjs",
+    "smoke:live": "SMOKE_BASE_URL=https://cafeduotr.com node scripts/smoke/prod-smoke.mjs"
   },
   "dependencies": {
     "@openrouter/sdk": "^0.5.1",

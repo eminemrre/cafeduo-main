@@ -1,6 +1,6 @@
 # 🗺️ CafeDuo Yol Haritası (Roadmap)
 
-> **Son Güncelleme:** 2026-02-06  
+> **Son Güncelleme:** 2026-02-07  
 > **Mevcut Faz:** Faz 6 + Faz 8 hazırlıkları 🔄  
 > **Sonraki Faz:** Production Cutover (VPS + Domain) 🚀
 
@@ -16,7 +16,7 @@ Faz 4: Responsive & Animation ████████████ 100% ✅
 Faz 5: Testing & QA           ████████████ 100% ✅
 Faz 6: Performance            ░░░░░░░░░░░░ 0%  ⏳
 Faz 7: Advanced Features      ░░░░░░░░░░░░ 0%  ⏳
-Faz 8: Production Ready       ███░░░░░░░░░ 25% ⏳
+Faz 8: Production Ready       ███████░░░░░ 60% ⏳
 ```
 
 ---
@@ -30,6 +30,18 @@ Faz 8: Production Ready       ███░░░░░░░░░ 25% ⏳
 - `deploy/Caddyfile` eklendi (domain + TLS + reverse proxy + socket route).
 - `.github/workflows/deploy-vps.yml` eklendi (SSH + rsync + docker compose deploy).
 - `docs/deployment_runbook.md` lokalden canliya adim adim guncellendi.
+
+### 2026-02-07 Production Hardening (In Progress) 🔄
+
+- `scripts/smoke/prod-smoke.mjs` eklendi (health + auth + socket smoke).
+- `deploy/scripts/smoke-vps.sh` eklendi (VPS local smoke).
+- `deploy/scripts/rollback.sh` eklendi (backup restore + redeploy + smoke).
+- `.github/workflows/deploy-vps.yml` backup + deploy sonrası smoke adımları ile güçlendirildi.
+- `REQUEST_LOG_SLOW_MS` eklendi (`.env.example`, `deploy/.env.production.example`, compose env).
+- CORS allowlist dev/test localhost originleri ile genişletildi (`backend/server.js`).
+- `auth/me` için cache devre dışı bırakıldı (`backend/routes/authRoutes.js`) ve API `etag` kapatıldı.
+- `npm run server` scripti sadece `backend/**/*` izleyecek şekilde güncellendi (nodemon restart flake azaltımı).
+- Chromium E2E tekrar yeşile çekildi: `8/8` test passing.
 
 ### Faz 1: Güvenlik Hardening ✅
 **Süre:** 5 gün | **Branch:** `feat/phase-1-security-hardening`
@@ -238,4 +250,4 @@ Faz 8: Production Ready       ███░░░░░░░░░ 25% ⏳
 ---
 
 **Hazırlayan:** CafeDuo Dev Team  
-**Son Güncelleme:** 2026-02-04
+**Son Güncelleme:** 2026-02-07

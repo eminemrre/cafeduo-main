@@ -19,8 +19,8 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /* Keep one worker to avoid auth rate-limit flakiness on shared test data. */
+  workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
@@ -72,9 +72,10 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run dev',
+    command:
+      'AUTH_RATE_LIMIT_WINDOW_MS=60000 AUTH_LOGIN_RATE_LIMIT_MAX_REQUESTS=500 AUTH_REGISTER_RATE_LIMIT_MAX_REQUESTS=500 API_RATE_LIMIT_MAX_REQUESTS=5000 RATE_LIMIT_MAX_REQUESTS=5000 npm run dev',
     url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 120 * 1000,
   },
 });

@@ -61,6 +61,21 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -p "${DEPLOY_PORT:-22}" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
 
+      - name: Create deployment backup on VPS
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "if [ -d '${DEPLOY_PATH}' ]; then \
+               rm -rf '${DEPLOY_PATH}_backup_latest'; \
+               mkdir -p '${DEPLOY_PATH}_backup_latest'; \
+               rsync -a --delete '${DEPLOY_PATH}/' '${DEPLOY_PATH}_backup_latest/'; \
+             fi"
+
       - name: Sync project to VPS
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -120,3 +135,20 @@ jobs:
             run_compose -f deploy/docker-compose.prod.yml --env-file .env up -d --build --remove-orphans
             docker image prune -f
           REMOTE
+
+      - name: Run VPS smoke checks
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "cd '${DEPLOY_PATH}' && bash deploy/scripts/smoke-vps.sh http://127.0.0.1"
+
+      - name: Run public smoke checks
+        if: ${{ secrets.DEPLOY_SITE_URL != '' }}
+        env:
+          SMOKE_BASE_URL: ${{ secrets.DEPLOY_SITE_URL }}
+        run: npm run smoke:prod

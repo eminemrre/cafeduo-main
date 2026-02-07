@@ -47,6 +47,16 @@ const registerLimiter = buildAuthLimiter(
 
 router.post('/register', registerLimiter, authController.register);
 router.post('/login', loginLimiter, authController.login);
-router.get('/me', authenticateToken, authController.getMe);
+router.get(
+  '/me',
+  authenticateToken,
+  (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    next();
+  },
+  authController.getMe
+);
 
 module.exports = router;

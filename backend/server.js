@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 /**
  * Load environment variables from .env file
@@ -62,18 +63,24 @@ const logger = {
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://cafeduotr.com',
   'https://www.cafeduotr.com',
-  'http://localhost:3000',
-  'http://localhost:5173',
   'https://cafeduo-api.onrender.com'
+];
+const LOCAL_ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
 ];
 
 const parseAllowedOrigins = (originsValue) => {
-  if (!originsValue) return DEFAULT_ALLOWED_ORIGINS;
-  const parsed = originsValue
+  const parsed = (originsValue || '')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
-  return parsed.length > 0 ? parsed : DEFAULT_ALLOWED_ORIGINS;
+
+  const baseOrigins = parsed.length > 0 ? parsed : DEFAULT_ALLOWED_ORIGINS;
+  // Localhost UI (dev, e2e, smoke) her zaman güvenli şekilde erişebilsin.
+  return Array.from(new Set([...baseOrigins, ...LOCAL_ALLOWED_ORIGINS]));
 };
 
 const parseAdminEmails = (emailsValue, fallback = []) => {
@@ -93,7 +100,10 @@ const allowedOrigins = parseAllowedOrigins(process.env.CORS_ORIGIN);
 
 const app = express();
 const server = http.createServer(app); // Wrap Express
+// API cevaplarında koşullu 304 akışını kapat; token restore sırasında false-negative logout üretiyordu.
+app.set('etag', false);
 const PORT = process.env.PORT || 3001;
+const REQUEST_LOG_SLOW_MS = Number(process.env.REQUEST_LOG_SLOW_MS || 1200);
 const LEGACY_RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
 const LEGACY_RATE_LIMIT_MAX_REQUESTS = Number(process.env.RATE_LIMIT_MAX_REQUESTS || 0);
 const API_RATE_LIMIT_WINDOW_MS = Number(process.env.API_RATE_LIMIT_WINDOW_MS || LEGACY_RATE_LIMIT_WINDOW_MS);
@@ -111,6 +121,42 @@ if (process.env.TRUST_PROXY) {
 }
 
 logger.info('Allowed CORS origins:', allowedOrigins);
+
+app.use((req, res, next) => {
+  const incomingRequestId = String(req.headers['x-request-id'] || '').trim();
+  const requestId = incomingRequestId || crypto.randomUUID();
+  const startedAt = process.hrtime.bigint();
+
+  req.requestId = requestId;
+  res.setHeader('X-Request-ID', requestId);
+
+  res.once('finish', () => {
+    const durationMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+    const payload = {
+      requestId,
+      method: req.method,
+      path: req.originalUrl || req.url,
+      statusCode: res.statusCode,
+      durationMs: Number(durationMs.toFixed(2)),
+      ip: req.ip,
+      userId: req.user?.id || null,
+    };
+
+    if (res.statusCode >= 500) {
+      logger.error('HTTP request failed', payload);
+      return;
+    }
+
+    if (res.statusCode >= 400 || durationMs >= REQUEST_LOG_SLOW_MS) {
+      logger.warn('HTTP request completed with warning', payload);
+      return;
+    }
+
+    logger.info('HTTP request completed', payload);
+  });
+
+  next();
+});
 
 // Socket.IO Setup
 const io = new Server(server, {
@@ -394,6 +440,7 @@ const initDb = async () => {
       await addColumn('games', 'player1_move', 'VARCHAR(50)');
       await addColumn('games', 'player2_move', 'VARCHAR(50)');
       await addColumn('games', 'game_state', 'JSONB');
+      await addColumn('games', 'winner', 'VARCHAR(255)');
 
       // Cafes Table Updates (Location System)
       await addColumn('cafes', 'latitude', 'DECIMAL(10, 8)');
@@ -1588,10 +1635,11 @@ app.post('/api/games/:id/finish', async (req, res) => {
       const participants = getGameParticipants(game);
       const stateResults =
         game.game_state && typeof game.game_state.results === 'object' ? game.game_state.results : {};
-      const winnerFromRequest = normalizeParticipantName(requestedWinner, game);
       const winnerFromState = normalizeParticipantName(game.game_state?.resolvedWinner, game);
       const winnerFromResults = pickWinnerFromResults(stateResults, participants);
-      const finalWinner = winnerFromRequest || winnerFromState || winnerFromResults;
+      const winnerFromRequest = normalizeParticipantName(requestedWinner, game);
+      // Security: prefer server-derived winner sources over client payload.
+      const finalWinner = winnerFromState || winnerFromResults || winnerFromRequest;
 
       if (!finalWinner) {
         await client.query('ROLLBACK');
@@ -1610,7 +1658,7 @@ app.post('/api/games/:id/finish', async (req, res) => {
         `
           UPDATE games
           SET status = 'finished',
-              winner = $1,
+              winner = $1::text,
               game_state = jsonb_set(
                 COALESCE(game_state, '{}'::jsonb),
                 ARRAY['resolvedWinner'],
@@ -1642,16 +1690,16 @@ app.post('/api/games/:id/finish', async (req, res) => {
     host_name: game.hostName,
     guest_name: game.guestName,
   });
-  const winnerFromRequest = normalizeParticipantName(requestedWinner, {
-    host_name: game.hostName,
-    guest_name: game.guestName,
-  });
   const winnerFromState = normalizeParticipantName(game.gameState?.resolvedWinner, {
     host_name: game.hostName,
     guest_name: game.guestName,
   });
   const winnerFromResults = pickWinnerFromResults(game.gameState?.results || {}, participants);
-  const finalWinner = winnerFromRequest || winnerFromState || winnerFromResults;
+  const winnerFromRequest = normalizeParticipantName(requestedWinner, {
+    host_name: game.hostName,
+    guest_name: game.guestName,
+  });
+  const finalWinner = winnerFromState || winnerFromResults || winnerFromRequest;
 
   if (!finalWinner) {
     return res.status(409).json({ error: 'Kazanan belirlenemedi. Her iki oyuncu da skoru göndermeli.' });
@@ -2159,7 +2207,8 @@ app.use((req, res) => {
   res.status(404).json({
     error: 'Route not found',
     code: 'ROUTE_NOT_FOUND',
-    path: req.originalUrl
+    path: req.originalUrl,
+    requestId: req.requestId,
   });
 });
 
@@ -2171,6 +2220,7 @@ app.use((err, req, res, next) => {
     stack: err.stack,
     path: req.originalUrl,
     method: req.method,
+    requestId: req.requestId,
     userId: req.user?.id,
     ip: req.ip,
     timestamp: new Date().toISOString()
@@ -2180,28 +2230,32 @@ app.use((err, req, res, next) => {
   if (err.code === '23505') { // PostgreSQL unique violation
     return res.status(409).json({
       error: 'Resource already exists',
-      code: 'DUPLICATE_ENTRY'
+      code: 'DUPLICATE_ENTRY',
+      requestId: req.requestId,
     });
   }
 
   if (err.code === '23503') { // PostgreSQL foreign key violation
     return res.status(400).json({
       error: 'Referenced resource not found',
-      code: 'FOREIGN_KEY_VIOLATION'
+      code: 'FOREIGN_KEY_VIOLATION',
+      requestId: req.requestId,
     });
   }
 
   if (err.name === 'JsonWebTokenError') {
     return res.status(403).json({
       error: 'Invalid token',
-      code: 'TOKEN_INVALID'
+      code: 'TOKEN_INVALID',
+      requestId: req.requestId,
     });
   }
 
   if (err.name === 'TokenExpiredError') {
     return res.status(403).json({
       error: 'Token expired',
-      code: 'TOKEN_EXPIRED'
+      code: 'TOKEN_EXPIRED',
+      requestId: req.requestId,
     });
   }
 
@@ -2210,6 +2264,7 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({
     error: isDev ? err.message : 'Internal server error',
     code: err.code || 'INTERNAL_ERROR',
+    requestId: req.requestId,
     ...(isDev && { stack: err.stack })
   });
 });

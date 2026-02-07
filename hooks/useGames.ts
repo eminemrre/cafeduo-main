@@ -35,6 +35,9 @@ interface UseGamesReturn {
   setActiveGame: (gameId: string | number | null, gameType?: string, opponent?: string, bot?: boolean) => void;
 }
 
+const toMessage = (err: unknown, fallback: string) =>
+  err instanceof Error && err.message ? err.message : fallback;
+
 export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesReturn {
   // Oyun listesi state'leri
   const [games, setGames] = useState<GameRequest[]>([]);
@@ -120,7 +123,7 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
       setIsBot(false);
     } catch (err) {
       console.error('Failed to create game:', err);
-      throw new Error('Oyun kurulurken hata oluştu');
+      throw new Error(toMessage(err, 'Oyun kurulurken hata oluştu'));
     }
   }, [currentUser.username, currentUser.table_number, tableCode]);
 
@@ -145,7 +148,7 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
       await fetchGames();
     } catch (err) {
       console.error('Failed to join game:', err);
-      throw new Error('Oyuna katılırken hata oluştu');
+      throw new Error(toMessage(err, 'Oyuna katılırken hata oluştu'));
     }
   }, [currentUser.username, games, fetchGames]);
 

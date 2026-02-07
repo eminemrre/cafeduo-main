@@ -43,6 +43,12 @@ const { cache, clearCache } = require('./middleware/cache'); // Redis Cache Impo
 const { buildRateLimiterOptions } = require('./middleware/rateLimit');
 const authRoutes = require('./routes/authRoutes');
 const cafeRoutes = require('./routes/cafeRoutes'); // Cafe Routes Import
+const {
+  getGameParticipants,
+  normalizeParticipantName,
+  sanitizeScoreSubmission,
+  pickWinnerFromResults,
+} = require('./utils/gameResults');
 const { authenticateToken, requireAdmin, requireOwnership, requireCafeAdmin } = require('./middleware/auth'); // Auth Middleware Imports
 
 // Simple Logger (can be replaced with Winston in production)
@@ -1093,71 +1099,291 @@ app.get('/api/games', async (req, res) => {
 
 // 4. CREATE GAME
 app.post('/api/games', async (req, res) => {
-  const { hostName, gameType, points, table } = req.body;
+  const hostName = String(req.body?.hostName || '').trim();
+  const gameType = String(req.body?.gameType || '').trim();
+  const points = Math.max(0, Math.floor(Number(req.body?.points || 0)));
+  const table = String(req.body?.table || 'MASA00').trim() || 'MASA00';
+
+  if (!hostName || !gameType) {
+    return res.status(400).json({ error: 'hostName ve gameType zorunludur.' });
+  }
 
   if (await isDbConnected()) {
+    const client = await pool.connect();
     try {
-      const result = await pool.query(
-        'INSERT INTO games (host_name, game_type, points, table_code, status) VALUES ($1, $2, $3, $4, \'waiting\') RETURNING id, host_name as "hostName", game_type as "gameType", points, table_code as "table", status, created_at as "createdAt"',
+      await client.query('BEGIN');
+
+      const existingGame = await client.query(
+        `
+          SELECT
+            id,
+            host_name as "hostName",
+            game_type as "gameType",
+            points,
+            table_code as "table",
+            status,
+            guest_name as "guestName",
+            created_at as "createdAt"
+          FROM games
+          WHERE (host_name = $1 OR guest_name = $1)
+            AND status IN ('waiting', 'active')
+          ORDER BY created_at DESC
+          LIMIT 1
+          FOR UPDATE
+        `,
+        [hostName]
+      );
+
+      if (existingGame.rows.length > 0) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({
+          error: 'Önce mevcut oyunu tamamla veya lobiye dön.',
+          game: existingGame.rows[0],
+        });
+      }
+
+      const result = await client.query(
+        `
+          INSERT INTO games (host_name, game_type, points, table_code, status, game_state)
+          VALUES ($1, $2, $3, $4, 'waiting', '{}'::jsonb)
+          RETURNING
+            id,
+            host_name as "hostName",
+            game_type as "gameType",
+            points,
+            table_code as "table",
+            status,
+            guest_name as "guestName",
+            game_state as "gameState",
+            created_at as "createdAt"
+        `,
         [hostName, gameType, points, table]
       );
-      res.json(result.rows[0]);
+
+      await client.query('COMMIT');
+      return res.status(201).json(result.rows[0]);
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      await client.query('ROLLBACK');
+      logger.error('Create game error', err);
+      return res.status(500).json({ error: 'Oyun kurulamadı.' });
+    } finally {
+      client.release();
     }
-  } else {
-    const newGame = { id: Date.now(), hostName, gameType, points, table, status: 'waiting' };
-    MEMORY_GAMES.unshift(newGame);
-    res.json(newGame);
   }
+
+  const existingMemoryGame = MEMORY_GAMES.find(
+    (g) =>
+      (g.hostName === hostName || g.guestName === hostName) &&
+      (g.status === 'waiting' || g.status === 'active')
+  );
+  if (existingMemoryGame) {
+    return res.status(409).json({
+      error: 'Önce mevcut oyunu tamamla veya lobiye dön.',
+      game: existingMemoryGame,
+    });
+  }
+
+  const newGame = {
+    id: Date.now(),
+    hostName,
+    gameType,
+    points,
+    table,
+    status: 'waiting',
+    guestName: null,
+    gameState: {},
+    createdAt: new Date().toISOString(),
+  };
+  MEMORY_GAMES.unshift(newGame);
+  return res.status(201).json(newGame);
 });
 
 // 5. JOIN GAME
 app.post('/api/games/:id/join', async (req, res) => {
   const { id } = req.params;
-  const { guestName } = req.body;
+  const guestName = String(req.body?.guestName || '').trim();
+
+  if (!guestName) {
+    return res.status(400).json({ error: 'guestName zorunludur.' });
+  }
 
   if (await isDbConnected()) {
-    await pool.query('UPDATE games SET status = \'active\', guest_name = $1 WHERE id = $2', [guestName, id]);
-    res.json({ success: true });
-  } else {
-    const game = MEMORY_GAMES.find(g => g.id == id);
-    if (game) {
-      game.status = 'active';
-      game.guestName = guestName;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const gameResult = await client.query(
+        `
+          SELECT
+            id,
+            host_name,
+            game_type,
+            points,
+            table_code,
+            status,
+            guest_name,
+            game_state,
+            created_at
+          FROM games
+          WHERE id = $1
+          FOR UPDATE
+        `,
+        [id]
+      );
+
+      if (gameResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Oyun bulunamadı.' });
+      }
+
+      const game = gameResult.rows[0];
+      if (String(game.host_name || '').toLowerCase() === guestName.toLowerCase()) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Kendi oyununa katılamazsın.' });
+      }
+
+      if (game.status === 'finished') {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'Bu oyun zaten tamamlandı.' });
+      }
+
+      if (game.status === 'active') {
+        const canonicalGuest = normalizeParticipantName(guestName, game);
+        if (
+          canonicalGuest &&
+          String(game.guest_name || '').trim() &&
+          canonicalGuest.toLowerCase() === String(game.guest_name).toLowerCase()
+        ) {
+          await client.query('COMMIT');
+          return res.json({
+            success: true,
+            game: {
+              id: game.id,
+              hostName: game.host_name,
+              gameType: game.game_type,
+              points: game.points,
+              table: game.table_code,
+              status: game.status,
+              guestName: game.guest_name,
+              gameState: game.game_state,
+              createdAt: game.created_at,
+            },
+          });
+        }
+
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'Oyun dolu.' });
+      }
+
+      const playerBusy = await client.query(
+        `
+          SELECT id
+          FROM games
+          WHERE id <> $1
+            AND status = 'active'
+            AND (host_name = $2 OR guest_name = $2)
+          LIMIT 1
+        `,
+        [id, guestName]
+      );
+
+      if (playerBusy.rows.length > 0) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'Bu kullanıcı zaten aktif bir oyunda.' });
+      }
+
+      const updatedResult = await client.query(
+        `
+          UPDATE games
+          SET status = 'active',
+              guest_name = $1
+          WHERE id = $2
+            AND status = 'waiting'
+          RETURNING
+            id,
+            host_name as "hostName",
+            game_type as "gameType",
+            points,
+            table_code as "table",
+            status,
+            guest_name as "guestName",
+            game_state as "gameState",
+            created_at as "createdAt"
+        `,
+        [guestName, id]
+      );
+
+      if (updatedResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'Bu oyun artık katılıma uygun değil.' });
+      }
+
+      await client.query('COMMIT');
+      return res.json({ success: true, game: updatedResult.rows[0] });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      logger.error('Join game error', err);
+      return res.status(500).json({ error: 'Oyuna katılım sırasında hata oluştu.' });
+    } finally {
+      client.release();
     }
-    res.json({ success: true });
   }
+
+  const game = MEMORY_GAMES.find((item) => String(item.id) === String(id));
+  if (!game) {
+    return res.status(404).json({ error: 'Oyun bulunamadı.' });
+  }
+  if (String(game.hostName || '').toLowerCase() === guestName.toLowerCase()) {
+    return res.status(400).json({ error: 'Kendi oyununa katılamazsın.' });
+  }
+  if (game.status === 'finished') {
+    return res.status(409).json({ error: 'Bu oyun zaten tamamlandı.' });
+  }
+  if (game.status === 'active') {
+    if (String(game.guestName || '').toLowerCase() === guestName.toLowerCase()) {
+      return res.json({ success: true, game });
+    }
+    return res.status(409).json({ error: 'Oyun dolu.' });
+  }
+  game.status = 'active';
+  game.guestName = guestName;
+  return res.json({ success: true, game });
 });
 
 // 6. GET GAME STATE (Polling)
 app.get('/api/games/:id', async (req, res) => {
   const { id } = req.params;
   if (await isDbConnected()) {
-    const result = await pool.query(`
-      SELECT 
-        id, 
-        host_name as "hostName", 
-        game_type as "gameType", 
-        points, 
-        table_code as "table", 
-        status, 
-        guest_name as "guestName", 
-        player1_move as "player1Move", 
-        player2_move as "player2Move", 
-        game_state as "gameState", 
-        created_at as "createdAt" 
-      FROM games 
+    const result = await pool.query(
+      `
+      SELECT
+        id,
+        host_name as "hostName",
+        game_type as "gameType",
+        points,
+        table_code as "table",
+        status,
+        guest_name as "guestName",
+        player1_move as "player1Move",
+        player2_move as "player2Move",
+        game_state as "gameState",
+        created_at as "createdAt"
+      FROM games
       WHERE id = $1
-    `, [id]);
+    `,
+      [id]
+    );
     if (result.rows.length > 0) {
       res.json(result.rows[0]);
     } else {
       res.status(404).json({ error: 'Game not found' });
     }
   } else {
-    const game = MEMORY_GAMES.find(g => g.id == id);
-    res.json(game || {});
+    const game = MEMORY_GAMES.find((g) => String(g.id) === String(id));
+    if (!game) {
+      return res.status(404).json({ error: 'Game not found' });
+    }
+    res.json(game);
   }
 });
 
@@ -1167,94 +1393,277 @@ app.post('/api/games/:id/move', async (req, res) => {
   const { player, move, gameState, scoreSubmission } = req.body; // player: 'host' or 'guest'
 
   if (await isDbConnected()) {
+    const client = await pool.connect();
     try {
+      await client.query('BEGIN');
+      const gameResult = await client.query(
+        `
+          SELECT id, host_name, guest_name, status, game_state
+          FROM games
+          WHERE id = $1
+          FOR UPDATE
+        `,
+        [id]
+      );
+
+      if (gameResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Oyun bulunamadı.' });
+      }
+
+      const game = gameResult.rows[0];
+      if (game.status === 'finished') {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'Bu oyun tamamlandı, hamle kabul edilmiyor.' });
+      }
+
+      const currentState = game.game_state && typeof game.game_state === 'object' ? game.game_state : {};
+
       if (scoreSubmission && scoreSubmission.username) {
-        const username = String(scoreSubmission.username).trim();
-        const scorePayload = {
-          score: Number(scoreSubmission.score || 0),
-          roundsWon: Number(scoreSubmission.roundsWon || 0),
-          durationMs: Number(scoreSubmission.durationMs || 0),
-          submittedAt: new Date().toISOString(),
+        if (game.status !== 'active') {
+          await client.query('ROLLBACK');
+          return res.status(409).json({ error: 'Skor gönderimi için oyun aktif olmalı.' });
+        }
+
+        const canonicalParticipant = normalizeParticipantName(scoreSubmission.username, game);
+        if (!canonicalParticipant) {
+          await client.query('ROLLBACK');
+          return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
+        }
+
+        const nextResults = {
+          ...(currentState.results && typeof currentState.results === 'object' ? currentState.results : {}),
+          [canonicalParticipant]: sanitizeScoreSubmission(scoreSubmission),
         };
 
-        const result = await pool.query(
+        const participants = getGameParticipants(game);
+        const resolvedWinner = pickWinnerFromResults(nextResults, participants);
+        const nextState = {
+          ...currentState,
+          results: nextResults,
+          ...(resolvedWinner ? { resolvedWinner } : {}),
+        };
+
+        await client.query(
           `
             UPDATE games
-            SET game_state = jsonb_set(
-              COALESCE(game_state, '{}'::jsonb),
-              ARRAY['results', $1::text],
-              $2::jsonb,
-              true
-            )
-            WHERE id = $3
-            RETURNING game_state as "gameState"
+            SET game_state = $1::jsonb
+            WHERE id = $2
           `,
-          [username, JSON.stringify(scorePayload), id]
+          [JSON.stringify(nextState), id]
         );
 
+        await client.query('COMMIT');
         return res.json({
           success: true,
-          gameState: result.rows[0]?.gameState || null,
+          gameState: nextState,
+          resolvedWinner: resolvedWinner || null,
+          waitingFor: participants.filter((name) => !nextResults[name]),
         });
       }
 
-      let query = '';
-      let params = [];
-      if (player === 'host') {
-        query = 'UPDATE games SET player1_move = $1 WHERE id = $2';
-        params = [move, id];
-      } else {
-        query = 'UPDATE games SET player2_move = $1 WHERE id = $2';
-        params = [move, id];
+      if (gameState && typeof gameState === 'object') {
+        const mergedState = {
+          ...currentState,
+          ...gameState,
+        };
+
+        // Sonuç tablosu varsa istemci overwrite etmesin, güvenli tarafta kal.
+        if (currentState.results && !mergedState.results) {
+          mergedState.results = currentState.results;
+        }
+
+        await client.query(
+          `
+            UPDATE games
+            SET game_state = $1::jsonb
+            WHERE id = $2
+          `,
+          [JSON.stringify(mergedState), id]
+        );
+        await client.query('COMMIT');
+        return res.json({ success: true, gameState: mergedState });
       }
 
-      if (gameState) {
-        query = 'UPDATE games SET game_state = $1 WHERE id = $2';
-        params = [gameState, id];
+      if (player !== 'host' && player !== 'guest') {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Geçersiz oyuncu tipi.' });
       }
 
-      await pool.query(query, params);
-      res.json({ success: true });
+      const query =
+        player === 'host'
+          ? 'UPDATE games SET player1_move = $1 WHERE id = $2'
+          : 'UPDATE games SET player2_move = $1 WHERE id = $2';
+      await client.query(query, [move, id]);
+      await client.query('COMMIT');
+      return res.json({ success: true });
     } catch (err) {
+      await client.query('ROLLBACK');
       console.error('Game move update error:', err);
-      res.status(500).json({ error: 'Hamle kaydedilemedi.' });
+      return res.status(500).json({ error: 'Hamle kaydedilemedi.' });
+    } finally {
+      client.release();
     }
-  } else {
-    // Memory fallback
-    const game = MEMORY_GAMES.find(g => g.id == id);
-    if (game && scoreSubmission && scoreSubmission.username) {
-      const username = String(scoreSubmission.username).trim();
-      game.gameState = game.gameState || {};
-      game.gameState.results = game.gameState.results || {};
-      game.gameState.results[username] = {
-        score: Number(scoreSubmission.score || 0),
-        roundsWon: Number(scoreSubmission.roundsWon || 0),
-        durationMs: Number(scoreSubmission.durationMs || 0),
-        submittedAt: new Date().toISOString(),
-      };
-    }
-    res.json({ success: true });
   }
+
+  const game = MEMORY_GAMES.find((g) => String(g.id) === String(id));
+  if (!game) {
+    return res.status(404).json({ error: 'Oyun bulunamadı.' });
+  }
+  if (game.status === 'finished') {
+    return res.status(409).json({ error: 'Bu oyun tamamlandı, hamle kabul edilmiyor.' });
+  }
+
+  if (scoreSubmission && scoreSubmission.username) {
+    const canonicalParticipant = normalizeParticipantName(scoreSubmission.username, {
+      host_name: game.hostName,
+      guest_name: game.guestName,
+    });
+    if (!canonicalParticipant) {
+      return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
+    }
+    game.gameState = game.gameState || {};
+    game.gameState.results = game.gameState.results || {};
+    game.gameState.results[canonicalParticipant] = sanitizeScoreSubmission(scoreSubmission);
+
+    const participants = getGameParticipants({
+      host_name: game.hostName,
+      guest_name: game.guestName,
+    });
+    const resolvedWinner = pickWinnerFromResults(game.gameState.results, participants);
+    if (resolvedWinner) {
+      game.gameState.resolvedWinner = resolvedWinner;
+    }
+
+    return res.json({
+      success: true,
+      gameState: game.gameState,
+      resolvedWinner: resolvedWinner || null,
+      waitingFor: participants.filter((name) => !game.gameState.results[name]),
+    });
+  }
+
+  if (gameState && typeof gameState === 'object') {
+    game.gameState = { ...(game.gameState || {}), ...gameState };
+    return res.json({ success: true, gameState: game.gameState });
+  }
+
+  if (player === 'host') {
+    game.player1Move = move;
+  } else if (player === 'guest') {
+    game.player2Move = move;
+  } else {
+    return res.status(400).json({ error: 'Geçersiz oyuncu tipi.' });
+  }
+
+  return res.json({ success: true });
 });
-
-
 
 // 8. FINISH GAME
 app.post('/api/games/:id/finish', async (req, res) => {
   const { id } = req.params;
-  const { winner } = req.body;
+  const requestedWinner = req.body?.winner;
 
   if (await isDbConnected()) {
-    await pool.query('UPDATE games SET status = \'finished\', winner = $1 WHERE id = $2', [winner, id]);
-    res.json({ success: true });
-  } else {
-    const game = MEMORY_GAMES.find(g => g.id == id);
-    if (game) {
-      game.status = 'finished';
-      game.winner = winner;
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const gameResult = await client.query(
+        `
+          SELECT id, host_name, guest_name, status, winner, game_state
+          FROM games
+          WHERE id = $1
+          FOR UPDATE
+        `,
+        [id]
+      );
+
+      if (gameResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(404).json({ error: 'Oyun bulunamadı.' });
+      }
+
+      const game = gameResult.rows[0];
+      const participants = getGameParticipants(game);
+      const stateResults =
+        game.game_state && typeof game.game_state.results === 'object' ? game.game_state.results : {};
+      const winnerFromRequest = normalizeParticipantName(requestedWinner, game);
+      const winnerFromState = normalizeParticipantName(game.game_state?.resolvedWinner, game);
+      const winnerFromResults = pickWinnerFromResults(stateResults, participants);
+      const finalWinner = winnerFromRequest || winnerFromState || winnerFromResults;
+
+      if (!finalWinner) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'Kazanan belirlenemedi. Her iki oyuncu da skoru göndermeli.' });
+      }
+
+      if (game.status === 'finished') {
+        await client.query('ROLLBACK');
+        if (String(game.winner || '').toLowerCase() === finalWinner.toLowerCase()) {
+          return res.json({ success: true, winner: game.winner, alreadyFinished: true });
+        }
+        return res.status(409).json({ error: 'Oyun zaten farklı bir sonuçla tamamlandı.' });
+      }
+
+      await client.query(
+        `
+          UPDATE games
+          SET status = 'finished',
+              winner = $1,
+              game_state = jsonb_set(
+                COALESCE(game_state, '{}'::jsonb),
+                ARRAY['resolvedWinner'],
+                to_jsonb($1::text),
+                true
+              )
+          WHERE id = $2
+        `,
+        [finalWinner, id]
+      );
+
+      await client.query('COMMIT');
+      return res.json({ success: true, winner: finalWinner });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      logger.error('Finish game error', err);
+      return res.status(500).json({ error: 'Oyun tamamlanamadı.' });
+    } finally {
+      client.release();
     }
-    res.json({ success: true });
   }
+
+  const game = MEMORY_GAMES.find((g) => String(g.id) === String(id));
+  if (!game) {
+    return res.status(404).json({ error: 'Oyun bulunamadı.' });
+  }
+
+  const participants = getGameParticipants({
+    host_name: game.hostName,
+    guest_name: game.guestName,
+  });
+  const winnerFromRequest = normalizeParticipantName(requestedWinner, {
+    host_name: game.hostName,
+    guest_name: game.guestName,
+  });
+  const winnerFromState = normalizeParticipantName(game.gameState?.resolvedWinner, {
+    host_name: game.hostName,
+    guest_name: game.guestName,
+  });
+  const winnerFromResults = pickWinnerFromResults(game.gameState?.results || {}, participants);
+  const finalWinner = winnerFromRequest || winnerFromState || winnerFromResults;
+
+  if (!finalWinner) {
+    return res.status(409).json({ error: 'Kazanan belirlenemedi. Her iki oyuncu da skoru göndermeli.' });
+  }
+
+  game.status = 'finished';
+  game.winner = finalWinner;
+  game.gameState = {
+    ...(game.gameState || {}),
+    resolvedWinner: finalWinner,
+  };
+  return res.json({ success: true, winner: finalWinner });
 });
 
 // 9. DELETE GAME

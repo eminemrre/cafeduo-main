@@ -10,10 +10,35 @@ export interface ScoreResult {
 type Scoreboard = Record<string, ScoreResult>;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const normalizeName = (value: unknown) => String(value || '').trim();
 
 const toSafeNumber = (value: unknown, fallback = 0): number => {
   const num = Number(value);
   return Number.isFinite(num) ? num : fallback;
+};
+
+const filterScoreboardToParticipants = (
+  scoreboard: Scoreboard,
+  participants: string[]
+): Scoreboard => {
+  if (!participants.length) return scoreboard;
+
+  const participantByLower = new Map(
+    participants
+      .map((participant) => normalizeName(participant))
+      .filter(Boolean)
+      .map((participant) => [participant.toLowerCase(), participant])
+  );
+
+  const filtered: Scoreboard = {};
+  for (const [name, result] of Object.entries(scoreboard || {})) {
+    const canonical = participantByLower.get(normalizeName(name).toLowerCase());
+    if (canonical) {
+      filtered[canonical] = result;
+    }
+  }
+
+  return filtered;
 };
 
 export const pickWinnerFromScoreboard = (scoreboard: Scoreboard): string | null => {
@@ -73,7 +98,9 @@ export const submitScoreAndWaitForWinner = async (params: {
   while (Date.now() < deadline) {
     try {
       const game = await api.games.get(gameId);
-      scoreboard = (game?.gameState?.results as Scoreboard) || {};
+      const participants = [normalizeName(game?.hostName), normalizeName(game?.guestName)].filter(Boolean);
+      const rawScoreboard = (game?.gameState?.results as Scoreboard) || {};
+      scoreboard = filterScoreboardToParticipants(rawScoreboard, participants);
       const winner = pickWinnerFromScoreboard(scoreboard);
       if (winner) {
         return { winner, timedOut: false, scoreboard };

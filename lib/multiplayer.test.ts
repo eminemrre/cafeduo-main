@@ -160,4 +160,32 @@ describe('submitScoreAndWaitForWinner', () => {
       emin: { score: 2 },
     });
   });
+
+  it('ignores non-participant submissions while waiting for winner', async () => {
+    (api.games.submitScore as jest.Mock).mockResolvedValue(undefined);
+    (api.games.get as jest.Mock).mockResolvedValue({
+      hostName: 'emin',
+      guestName: 'rakip',
+      gameState: {
+        results: {
+          emin: { score: 4 },
+          attacker: { score: 9999 },
+        },
+      },
+    });
+
+    const result = await submitScoreAndWaitForWinner({
+      gameId: 81,
+      username: 'emin',
+      score: 4,
+      timeoutMs: 10,
+      pollIntervalMs: 0,
+    });
+
+    expect(result.timedOut).toBe(true);
+    expect(result.winner).toBeNull();
+    expect(result.scoreboard).toEqual({
+      emin: { score: 4 },
+    });
+  });
 });

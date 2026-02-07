@@ -148,7 +148,12 @@ jobs:
             "cd '${DEPLOY_PATH}' && bash deploy/scripts/smoke-vps.sh http://127.0.0.1"
 
       - name: Run public smoke checks
-        if: ${{ secrets.DEPLOY_SITE_URL != '' }}
         env:
           SMOKE_BASE_URL: ${{ secrets.DEPLOY_SITE_URL }}
-        run: npm run smoke:prod
+        run: |
+          set -euo pipefail
+          if [ -z "${SMOKE_BASE_URL:-}" ]; then
+            echo "DEPLOY_SITE_URL secret is not set. Skipping public smoke checks."
+            exit 0
+          fi
+          npm run smoke:prod

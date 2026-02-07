@@ -36,7 +36,7 @@ body,
 
 body {
   margin: 0;
-  font-family: "Exo 2", "Noto Sans", sans-serif;
+  font-family: "Noto Sans", "Exo 2", sans-serif;
   background:
     radial-gradient(circle at 8% 10%, rgba(12, 214, 255, 0.13), transparent 30%),
     radial-gradient(circle at 88% 6%, rgba(217, 160, 105, 0.12), transparent 35%),
@@ -187,7 +187,7 @@ body::after {
   border: 1px solid rgba(10, 215, 255, 0.44);
   background: rgba(4, 17, 38, 0.76);
   color: #9de8ff;
-  font-family: "Exo 2", "Noto Sans", sans-serif;
+  font-family: "Noto Sans", "Exo 2", sans-serif;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   font-size: 0.72rem;

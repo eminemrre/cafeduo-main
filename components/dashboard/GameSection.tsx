@@ -111,7 +111,9 @@ export const GameSection: React.FC<GameSectionProps> = ({
 
       {/* Oyun Listesi */}
       {gamesLoading ? (
-        <SkeletonGrid count={4} columns={2} />
+        <div data-testid="game-lobby-empty">
+          <SkeletonGrid count={4} columns={2} />
+        </div>
       ) : (games?.length ?? 0) === 0 ? (
         <div data-testid="game-lobby-empty">
           <EmptyState

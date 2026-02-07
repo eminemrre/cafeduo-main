@@ -7,7 +7,14 @@ interface ABTestProps {
 }
 
 export const ABTest: React.FC<ABTestProps> = ({ testName, variantA, variantB }) => {
-    const [variant, setVariant] = useState<'A' | 'B' | null>(null);
+    const resolveInitialVariant = (): 'A' | 'B' => {
+        if (typeof window === 'undefined') return 'A';
+        const storedVariant = localStorage.getItem(`ab_test_${testName}`);
+        if (storedVariant === 'A' || storedVariant === 'B') return storedVariant;
+        return 'A';
+    };
+
+    const [variant, setVariant] = useState<'A' | 'B'>(resolveInitialVariant);
 
     useEffect(() => {
         // Check local storage
@@ -25,8 +32,6 @@ export const ABTest: React.FC<ABTestProps> = ({ testName, variantA, variantB }) 
             console.log(`📊 A/B Test Exposure: ${testName} -> Variant ${newVariant}`);
         }
     }, [testName]);
-
-    if (!variant) return null; // or loading spinner
 
     return <>{variant === 'A' ? variantA : variantB}</>;
 };

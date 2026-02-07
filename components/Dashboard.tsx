@@ -63,6 +63,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   const {
     games,
     loading: gamesLoading,
+    refetch,
     activeGameId,
     activeGameType,
     opponentName,
@@ -120,7 +121,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
     try {
       await joinGame(gameId);
     } catch (err) {
-      alert('Oyuna katılırken hata oluştu.');
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : 'Oyuna katılırken hata oluştu.';
+      alert(message);
     }
   };
 
@@ -165,11 +170,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
 
   const handleLeaveGame = () => {
     leaveGame();
+    void refetch();
   };
 
   // Manuel dönüş (istatistik işlemeden)
   const handleBackToLobby = () => {
     leaveGame();
+    void refetch();
   };
 
   // Oyun sonu (istatistik + puan güncelleme)
@@ -194,7 +201,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   
   if (activeGameId) {
     return (
-      <div className="min-h-screen rf-dashboard-shell text-[var(--rf-ink)] pt-[calc(5.25rem+env(safe-area-inset-top))] md:pt-24 pb-12 px-4 relative overflow-hidden">
+      <div className="min-h-screen rf-dashboard-shell text-[var(--rf-ink)] pt-[calc(6rem+env(safe-area-inset-top))] md:pt-24 pb-12 px-4 relative overflow-hidden">
         <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
         <div className="max-w-6xl mx-auto">
           {/* Geri butonu */}
@@ -242,7 +249,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   // ==========================================
   
   return (
-    <div className="min-h-screen rf-dashboard-shell text-[var(--rf-ink)] pt-[calc(5.25rem+env(safe-area-inset-top))] md:pt-24 pb-12 px-4 relative overflow-hidden">
+    <div className="min-h-screen rf-dashboard-shell text-[var(--rf-ink)] pt-[calc(6rem+env(safe-area-inset-top))] md:pt-24 pb-12 px-4 relative overflow-hidden">
       <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
       <div className="max-w-7xl mx-auto space-y-8">
         
@@ -257,9 +264,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
         <div className="relative rf-panel p-1.5 md:p-2 rounded-xl border-cyan-400/20">
           <div className="flex items-center gap-1 md:gap-2">
             {[
-              { id: 'games', label: 'Oyunlar', icon: Gamepad2, color: 'cyan' },
-              { id: 'leaderboard', label: 'Sıralama', icon: Trophy, color: 'amber' },
-              { id: 'achievements', label: 'Başarımlar', icon: Gift, color: 'slate' }
+              { id: 'games', label: 'Oyunlar', mobileLabel: 'Oyun', icon: Gamepad2, color: 'cyan' },
+              { id: 'leaderboard', label: 'Sıralama', mobileLabel: 'Sıra', icon: Trophy, color: 'amber' },
+              { id: 'achievements', label: 'Başarımlar', mobileLabel: 'Başarı', icon: Gift, color: 'slate' }
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = mainTab === tab.id;
@@ -269,7 +276,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
                   key={tab.id}
                   onClick={() => setMainTab(tab.id as typeof mainTab)}
                   data-testid={`dashboard-tab-${tab.id}`}
-                  className={`rf-tab-button relative flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3 rounded-lg font-medium text-sm md:text-base ${
+                  className={`rf-tab-button relative flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-2.5 md:px-6 py-2.5 md:py-3 rounded-lg font-medium text-[13px] md:text-base ${
                     isActive ? 'rf-tab-active' : ''
                   }`}
                   whileTap={{ scale: 0.98 }}
@@ -287,10 +294,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
                       transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                     />
                   )}
-                  <span className="relative z-10 flex items-center gap-1.5 md:gap-2">
-                    <Icon size={18} className="md:w-5 md:h-5" />
+                  <span className="relative z-10 flex items-center gap-1.5 md:gap-2 min-w-0">
+                    <Icon size={16} className="md:w-5 md:h-5 shrink-0" />
                     <span className="hidden sm:inline">{tab.label}</span>
-                    <span className="sm:hidden">{tab.label.slice(0, 3)}</span>
+                    <span className="sm:hidden truncate">{tab.mobileLabel}</span>
                   </span>
                 </motion.button>
               );

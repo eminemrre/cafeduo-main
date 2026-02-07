@@ -1087,8 +1087,27 @@ app.delete('/api/rewards/:id', authenticateToken, requireCafeAdmin, async (req, 
 
 // 3. GET GAMES
 app.get('/api/games', authenticateToken, async (req, res) => {
+  const isAdminActor = req.user?.role === 'admin' || req.user?.isAdmin === true;
+  const actorTableCode = normalizeTableCode(req.user?.table_number);
+
+  // Check-in olmayan kullanıcıya boş lobi dön: backend join kuralıyla uyumlu olsun.
+  if (!isAdminActor && !actorTableCode) {
+    return res.json([]);
+  }
+
   if (await isDbConnected()) {
-    const result = await pool.query(`
+    const params = [[...SUPPORTED_GAME_TYPES]];
+    const tableClause =
+      !isAdminActor && actorTableCode
+        ? `AND table_code = $2`
+        : '';
+
+    if (!isAdminActor && actorTableCode) {
+      params.push(actorTableCode);
+    }
+
+    const result = await pool.query(
+      `
       SELECT 
         id, 
         host_name as "hostName", 
@@ -1101,13 +1120,24 @@ app.get('/api/games', authenticateToken, async (req, res) => {
       FROM games 
       WHERE status = 'waiting'
         AND game_type = ANY($1::text[])
+        ${tableClause}
       ORDER BY created_at DESC
-    `, [[...SUPPORTED_GAME_TYPES]]);
+    `,
+      params
+    );
     res.json(result.rows);
   } else {
-    res.json(
-      MEMORY_GAMES.filter((game) => SUPPORTED_GAME_TYPES.has(String(game.gameType || '').trim()))
-    );
+    const filtered = MEMORY_GAMES.filter((game) => {
+      if (!SUPPORTED_GAME_TYPES.has(String(game.gameType || '').trim())) {
+        return false;
+      }
+      if (isAdminActor) {
+        return true;
+      }
+      const gameTableCode = normalizeTableCode(game.table);
+      return Boolean(actorTableCode) && actorTableCode === gameTableCode;
+    });
+    res.json(filtered);
   }
 });
 

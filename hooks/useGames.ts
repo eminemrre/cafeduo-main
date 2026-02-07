@@ -41,7 +41,7 @@ const toMessage = (err: unknown, fallback: string) =>
 export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesReturn {
   // Oyun listesi state'leri
   const [games, setGames] = useState<GameRequest[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
   // Aktif oyun state'leri
@@ -53,13 +53,17 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
   
   // Polling interval ref'i
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const missingActivePollCountRef = useRef(0);
 
   /**
    * Oyun listesini API'den çek
    */
-  const fetchGames = useCallback(async () => {
+  const fetchGames = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = Boolean(options?.silent);
     try {
-      setLoading(true);
+      if (!silent) {
+        setLoading(true);
+      }
       const data = await api.games.list();
       
       // Bilinmeyen kullanıcıları filtrele
@@ -73,20 +77,35 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
       console.error('Failed to load games:', err);
       setError('Oyunlar yüklenemedi');
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, []);
 
   /**
    * Kullanıcının aktif oyununu kontrol et
    */
-  const checkActiveGame = useCallback(async () => {
+  const checkActiveGame = useCallback(async (options?: { preserveUntilConfirmedEmpty?: boolean; ignoreLocalActive?: boolean }) => {
     // Eğer lokalde aktif oyun varsa, server'dan gelen null ile üzerine yazma
-    if (activeGameId) return;
+    if (activeGameId && !options?.ignoreLocalActive) return;
     
     try {
       const game = await api.users.getActiveGame(currentUser.username);
-      setServerActiveGame(game);
+      if (game) {
+        missingActivePollCountRef.current = 0;
+        setServerActiveGame(game);
+        return;
+      }
+
+      // Polling sırasında tek seferlik null cevaplarda banner'ı hemen düşürme.
+      if (options?.preserveUntilConfirmedEmpty) {
+        missingActivePollCountRef.current += 1;
+        if (missingActivePollCountRef.current < 2) return;
+      }
+
+      missingActivePollCountRef.current = 0;
+      setServerActiveGame(null);
     } catch (err) {
       console.error('Failed to check active game:', err);
     }
@@ -96,8 +115,10 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
    * Oyun listesini yenile
    */
   const refetch = useCallback(async () => {
-    await fetchGames();
-    await checkActiveGame();
+    await Promise.all([
+      fetchGames(),
+      checkActiveGame(),
+    ]);
   }, [fetchGames, checkActiveGame]);
 
   /**
@@ -143,9 +164,11 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
       setActiveGameType(gameType);
       setOpponentName(hostName);
       setIsBot(false);
+      setServerActiveGame(null);
+      missingActivePollCountRef.current = 0;
 
       // Lobi listesini tazele (oyun waiting listesinden düşmeli)
-      await fetchGames();
+      await fetchGames({ silent: true });
     } catch (err) {
       console.error('Failed to join game:', err);
       throw new Error(toMessage(err, 'Oyuna katılırken hata oluştu'));
@@ -156,12 +179,42 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
    * Oyundan ayrıl
    */
   const leaveGame = useCallback(() => {
+    const fallbackTable =
+      tableCode ||
+      currentUser.table_number ||
+      'MASA00';
+
+    if (activeGameId) {
+      setServerActiveGame((prev) =>
+        prev ?? {
+          id: activeGameId,
+          hostName: currentUser.username,
+          guestName: opponentName,
+          gameType: activeGameType || 'Oyun',
+          points: 0,
+          table: fallbackTable,
+          status: 'active',
+        }
+      );
+    }
+
     setActiveGameId(null);
     setActiveGameType('');
     setOpponentName(undefined);
     setIsBot(false);
-    setServerActiveGame(null);
-  }, []);
+    missingActivePollCountRef.current = 0;
+
+    // Oyundan çıkınca rejoin bilgisini anında tazele.
+    void checkActiveGame({ ignoreLocalActive: true });
+  }, [
+    activeGameId,
+    activeGameType,
+    checkActiveGame,
+    currentUser.table_number,
+    currentUser.username,
+    opponentName,
+    tableCode,
+  ]);
 
   /**
    * Aktif oyunu manuel olarak ayarla
@@ -176,6 +229,10 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
     setActiveGameType(gameType);
     setOpponentName(opponent);
     setIsBot(bot);
+    if (gameId) {
+      setServerActiveGame(null);
+      missingActivePollCountRef.current = 0;
+    }
   }, []);
 
   /**
@@ -188,8 +245,8 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
 
     // Polling başlat (5 saniyede bir)
     intervalRef.current = setInterval(() => {
-      fetchGames();
-      checkActiveGame();
+      fetchGames({ silent: true });
+      checkActiveGame({ preserveUntilConfirmedEmpty: true });
     }, 5000);
 
     // Cleanup

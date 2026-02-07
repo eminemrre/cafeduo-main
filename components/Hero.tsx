@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform, useScroll } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Sparkles, Coffee, ShieldCheck, Gamepad2, Zap } from 'lucide-react';
@@ -18,14 +18,15 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
   const sectionRef = useRef<HTMLElement | null>(null);
   const pointerX = useMotionValue(0);
   const pointerY = useMotionValue(0);
+  const pointerPxX = useMotionValue(-120);
+  const pointerPxY = useMotionValue(-120);
+  const [reticleVisible, setReticleVisible] = useState(false);
   const smoothX = useSpring(pointerX, { stiffness: 110, damping: 18 });
   const smoothY = useSpring(pointerY, { stiffness: 110, damping: 18 });
   const panelX = useTransform(smoothX, [-0.5, 0.5], [-20, 20]);
   const panelY = useTransform(smoothY, [-0.5, 0.5], [-14, 14]);
   const glowX = useTransform(smoothX, [-0.5, 0.5], ['20%', '80%']);
   const glowY = useTransform(smoothY, [-0.5, 0.5], ['26%', '72%']);
-  const reticleX = useTransform(smoothX, [-0.5, 0.5], ['8%', '92%']);
-  const reticleY = useTransform(smoothY, [-0.5, 0.5], ['18%', '82%']);
   const layerDriftX = useTransform(smoothX, [-0.5, 0.5], [-18, 18]);
   const layerDriftY = useTransform(smoothY, [-0.5, 0.5], [-12, 12]);
   const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end start'] });
@@ -49,31 +50,37 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
     const y = (event.clientY - rect.top) / rect.height - 0.5;
     pointerX.set(x);
     pointerY.set(y);
+    pointerPxX.set(event.clientX - rect.left);
+    pointerPxY.set(event.clientY - rect.top);
+    setReticleVisible(true);
   };
 
   return (
     <section
       ref={sectionRef}
       id="home"
-      className="relative min-h-[calc(100vh-72px)] md:min-h-screen pt-24 md:pt-32 overflow-hidden"
+      className="relative min-h-[calc(100vh-64px)] md:min-h-screen pt-[calc(5.5rem+env(safe-area-inset-top))] md:pt-32 overflow-hidden"
       onMouseMove={handlePointerMove}
       onMouseLeave={() => {
         pointerX.set(0);
         pointerY.set(0);
+        pointerPxX.set(-120);
+        pointerPxY.set(-120);
+        setReticleVisible(false);
       }}
     >
       <motion.div
-        className="absolute -top-20 -left-16 h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl"
+        className="absolute -top-20 -left-16 h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl pointer-events-none"
         animate={{ x: [0, 24, -12, 0], y: [0, -16, 10, 0] }}
         transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
       />
       <motion.div
-        className="absolute -right-20 top-24 h-80 w-80 rounded-full bg-amber-400/14 blur-3xl"
+        className="absolute -right-20 top-24 h-80 w-80 rounded-full bg-amber-400/14 blur-3xl pointer-events-none"
         animate={{ x: [0, -30, 12, 0], y: [0, 12, -18, 0] }}
         transition={{ duration: 19, repeat: Infinity, ease: 'easeInOut' }}
       />
-      <motion.div className="absolute inset-0 rf-grid opacity-20" style={{ y: starsY }} />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(8,197,255,0.18),transparent_35%),radial-gradient(circle_at_82%_14%,rgba(242,165,90,0.15),transparent_42%)] animate-aurora-pan" />
+      <motion.div className="absolute inset-0 rf-grid opacity-20 pointer-events-none" style={{ y: starsY }} />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(8,197,255,0.18),transparent_35%),radial-gradient(circle_at_82%_14%,rgba(242,165,90,0.15),transparent_42%)] animate-aurora-pan pointer-events-none" />
       <motion.div
         className="absolute h-40 w-40 rounded-full pointer-events-none bg-cyan-400/20 blur-3xl"
         style={{ left: glowX, top: glowY }}
@@ -91,13 +98,23 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
         />
       </motion.div>
       <motion.div
-        className="pointer-events-none absolute z-20 hidden lg:flex items-center justify-center h-16 w-16 rounded-full border border-cyan-300/45 bg-cyan-400/10 backdrop-blur-[2px] -translate-x-1/2 -translate-y-1/2"
-        style={{ left: reticleX, top: reticleY }}
+        className="pointer-events-none absolute left-0 top-0 z-20 hidden lg:flex items-center justify-center h-16 w-16 rounded-full border border-cyan-300/45 bg-cyan-400/10 backdrop-blur-[2px] -translate-x-1/2 -translate-y-1/2"
+        style={{ x: pointerPxX, y: pointerPxY, opacity: reticleVisible ? 1 : 0 }}
       >
         <motion.div
           className="absolute inset-2 rounded-full border border-cyan-300/55"
           animate={{ rotate: 360 }}
           transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+        />
+        <motion.div
+          className="absolute w-8 h-[1px] bg-cyan-200/70"
+          animate={{ opacity: [0.4, 0.8, 0.4] }}
+          transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute h-8 w-[1px] bg-cyan-200/70"
+          animate={{ opacity: [0.4, 0.8, 0.4] }}
+          transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
         />
         <div className="w-1.5 h-1.5 rounded-full bg-cyan-200 shadow-[0_0_12px_rgba(10,215,255,0.9)]" />
       </motion.div>

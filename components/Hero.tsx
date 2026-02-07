@@ -122,7 +122,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-center">
           <motion.div
-            className="lg:col-span-7"
+            className="lg:col-span-7 min-w-0"
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
@@ -205,9 +205,9 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
               </div>
             </div>
 
-            <div className="mt-6 overflow-hidden rounded-full border border-cyan-400/25 bg-[#06142b]/78">
+            <div className="mt-6 max-w-full overflow-hidden rounded-full border border-cyan-400/25 bg-[#06142b]/78">
               <motion.div
-                className="flex items-center gap-8 whitespace-nowrap px-5 py-2 text-[11px] uppercase tracking-[0.2em] font-pixel text-cyan-200/85"
+                className="flex items-center gap-8 sm:whitespace-nowrap px-5 py-2 text-[11px] uppercase tracking-[0.2em] font-pixel text-cyan-200/85"
                 animate={{ x: ['0%', '-50%'] }}
                 transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
               >
@@ -222,7 +222,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
           </motion.div>
 
           <motion.div
-            className="lg:col-span-5"
+            className="lg:col-span-5 min-w-0"
             initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.12 }}

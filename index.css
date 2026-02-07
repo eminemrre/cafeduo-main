@@ -1,6 +1,12 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "./tailwind.config.js";
+@source "./index.html";
+@source "./App.tsx";
+@source "./index.tsx";
+@source "./components/**/*.{js,ts,jsx,tsx}";
+@source "./contexts/**/*.{js,ts,jsx,tsx}";
+@source "./hooks/**/*.{js,ts,jsx,tsx}";
+@source "./lib/**/*.{js,ts,jsx,tsx}";
 
 :root {
   --rf-bg: #020713;

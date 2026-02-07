@@ -91,4 +91,4 @@ Last updated: 2026-02-06
 - `NODE_ENV=production`.
 - `TRUST_PROXY=1` behind reverse proxy.
 - `CORS_ORIGIN` uses explicit origins (no `*`).
-- rate limit settings are active.
+- API/auth rate limit settings are active (`API_RATE_LIMIT_*`, `AUTH_*_RATE_LIMIT_*`).

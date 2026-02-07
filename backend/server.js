@@ -87,8 +87,11 @@ const allowedOrigins = parseAllowedOrigins(process.env.CORS_ORIGIN);
 const app = express();
 const server = http.createServer(app); // Wrap Express
 const PORT = process.env.PORT || 3001;
-const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
-const RATE_LIMIT_MAX_REQUESTS = Number(process.env.RATE_LIMIT_MAX_REQUESTS || 100);
+const LEGACY_RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
+const LEGACY_RATE_LIMIT_MAX_REQUESTS = Number(process.env.RATE_LIMIT_MAX_REQUESTS || 0);
+const API_RATE_LIMIT_WINDOW_MS = Number(process.env.API_RATE_LIMIT_WINDOW_MS || LEGACY_RATE_LIMIT_WINDOW_MS);
+const API_RATE_LIMIT_MAX_REQUESTS =
+  Number(process.env.API_RATE_LIMIT_MAX_REQUESTS || 0) || Math.max(LEGACY_RATE_LIMIT_MAX_REQUESTS, 600);
 
 if (process.env.TRUST_PROXY) {
   const trustProxyEnv = process.env.TRUST_PROXY.trim();
@@ -259,13 +262,16 @@ console.log("🗄️  Database URL:", process.env.DATABASE_URL ? "Loaded ✅" : 
 // Security Middleware
 app.use(helmet()); // Secure HTTP headers
 
-// Rate Limiting
-const limiter = rateLimit({
-  windowMs: RATE_LIMIT_WINDOW_MS,
-  max: RATE_LIMIT_MAX_REQUESTS,
-  message: 'Çok fazla istek gönderdiniz, lütfen daha sonra tekrar deneyin.'
+// Apply a higher baseline limiter only to API routes.
+// Auth brute-force protection is handled separately in authRoutes.
+const apiLimiter = rateLimit({
+  windowMs: API_RATE_LIMIT_WINDOW_MS,
+  max: API_RATE_LIMIT_MAX_REQUESTS,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Çok fazla API isteği gönderdiniz, lütfen daha sonra tekrar deneyin.' },
 });
-app.use(limiter);
+app.use('/api', apiLimiter);
 
 app.use(cors({
   origin: (origin, callback) => {

@@ -101,8 +101,13 @@ JWT_REFRESH_EXPIRES_IN=30d
 BCRYPT_ROUNDS=10
 
 # Rate Limiting
-RATE_LIMIT_WINDOW_MS=900000      # 15 minutes
-RATE_LIMIT_MAX_REQUESTS=100       # requests per window
+RATE_LIMIT_WINDOW_MS=900000       # Legacy fallback (15 minutes)
+RATE_LIMIT_MAX_REQUESTS=600       # Legacy fallback request budget
+API_RATE_LIMIT_WINDOW_MS=900000   # Global API limiter window
+API_RATE_LIMIT_MAX_REQUESTS=600   # Global API limiter budget
+AUTH_RATE_LIMIT_WINDOW_MS=900000  # Auth limiter window
+AUTH_LOGIN_RATE_LIMIT_MAX_REQUESTS=20
+AUTH_REGISTER_RATE_LIMIT_MAX_REQUESTS=10
 ```
 
 ### Optional Integrations

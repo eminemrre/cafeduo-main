@@ -29,6 +29,65 @@ const resolveApiBaseUrl = (): string => {
 const API_BASE_URL = resolveApiBaseUrl();
 const API_URL = API_BASE_URL ? `${API_BASE_URL}/api` : '/api';
 
+const parseApiError = async (response: Response): Promise<string> => {
+  const readJson = async (): Promise<any | null> => {
+    try {
+      if (typeof (response as any).clone === 'function') {
+        return await (response as any).clone().json();
+      }
+      if (typeof (response as any).json === 'function') {
+        return await (response as any).json();
+      }
+    } catch {
+      // fall through
+    }
+    return null;
+  };
+
+  const readText = async (): Promise<string> => {
+    try {
+      if (typeof (response as any).clone === 'function') {
+        return String(await (response as any).clone().text()).trim();
+      }
+      if (typeof (response as any).text === 'function') {
+        return String(await (response as any).text()).trim();
+      }
+    } catch {
+      // fall through
+    }
+    return '';
+  };
+
+  const retryAfterRaw = response.headers?.get?.('retry-after');
+  const retryAfterSeconds = retryAfterRaw ? Number(retryAfterRaw) : Number.NaN;
+
+  const withRetryHint = (message: string): string => {
+    if (response.status === 429 && Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0) {
+      return `${message} ${Math.ceil(retryAfterSeconds)} sn sonra tekrar deneyin.`;
+    }
+    return message;
+  };
+
+  const jsonPayload = await readJson();
+  if (jsonPayload) {
+    const jsonMessage =
+      (typeof jsonPayload === 'string' && jsonPayload) ||
+      jsonPayload?.error ||
+      jsonPayload?.message ||
+      jsonPayload?.detail;
+    if (jsonMessage) {
+      return withRetryHint(String(jsonMessage));
+    }
+  }
+
+  const textPayload = await readText();
+  if (textPayload) {
+    return withRetryHint(textPayload);
+  }
+
+  return withRetryHint(`HTTP ${response.status}`);
+};
+
 /**
  * Generic API fetch wrapper with authentication
  * @param endpoint - API endpoint (e.g., '/auth/login')
@@ -54,8 +113,7 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}): Promise<an
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Network error' }));
-    throw new Error(error.error || `HTTP ${response.status}`);
+    throw new Error(await parseApiError(response));
   }
 
   return response.json();

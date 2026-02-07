@@ -182,7 +182,7 @@ describe('API Layer additional coverage', () => {
     );
   });
 
-  it('throws fallback error when error body is not json', async () => {
+  it('throws HTTP status when error body is not json/text', async () => {
     (fetch as jest.Mock).mockResolvedValueOnce({
       ok: false,
       status: 500,
@@ -191,7 +191,25 @@ describe('API Layer additional coverage', () => {
       },
     });
 
-    await expect(api.games.list()).rejects.toThrow('Network error');
+    await expect(api.games.list()).rejects.toThrow('HTTP 500');
+  });
+
+  it('surfaces plain-text rate-limit message and retry hint', async () => {
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 429,
+      json: async () => {
+        throw new Error('not json');
+      },
+      text: async () => 'Çok fazla istek gönderdiniz, lütfen daha sonra tekrar deneyin.',
+      headers: {
+        get: (name: string) => (name.toLowerCase() === 'retry-after' ? '120' : null),
+      },
+    });
+
+    await expect(api.auth.login('test@example.com', 'wrongpass')).rejects.toThrow(
+      'Çok fazla istek gönderdiniz, lütfen daha sonra tekrar deneyin. 120 sn sonra tekrar deneyin.'
+    );
   });
 
   it('onGameChange polls and unsubscribe stops further polling', async () => {

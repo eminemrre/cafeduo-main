@@ -5,7 +5,7 @@
  * @version 2.0 - Custom hooks ile refactor edilmiş
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { User } from '../types';
 import { UserProfileModal } from './UserProfileModal';
 import { ReflexRush } from './ReflexRush';
@@ -34,6 +34,12 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser }) => {
+  const normalizeTableCode = (raw: unknown): string => {
+    const value = String(raw || '').trim().toUpperCase();
+    if (!value || value === 'NULL' || value === 'UNDEFINED') return '';
+    return value.startsWith('MASA') ? value : `MASA${value.padStart(2, '0')}`;
+  };
+
   // ==========================================
   // LOCAL STATE (Sadece UI state'leri)
   // ==========================================
@@ -42,8 +48,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   const [mainTab, setMainTab] = useState<'games' | 'leaderboard' | 'achievements'>('games');
   
   // Masa kodu state
-  const [tableCode, setTableCode] = useState(currentUser.table_number || '');
-  const [isMatched, setIsMatched] = useState(!!currentUser.table_number);
+  const [tableCode, setTableCode] = useState(normalizeTableCode(currentUser.table_number));
+  const [isMatched, setIsMatched] = useState(Boolean(currentUser.cafe_id) && Boolean(normalizeTableCode(currentUser.table_number)));
   
   // Modal state'leri
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -77,6 +83,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
     setActiveTab: setRewardTab,
     buyReward
   } = useRewards({ currentUser });
+
+  useEffect(() => {
+    const normalizedTable = normalizeTableCode(currentUser.table_number);
+    setTableCode(normalizedTable);
+    setIsMatched(Boolean(currentUser.cafe_id) && Boolean(normalizedTable));
+  }, [currentUser.cafe_id, currentUser.table_number]);
 
   // ==========================================
   // HANDLER'LAR
@@ -182,7 +194,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   
   if (activeGameId) {
     return (
-      <div className="min-h-screen bg-[var(--rf-bg)] text-[var(--rf-ink)] pt-24 pb-12 px-4 relative overflow-hidden">
+      <div className="min-h-screen rf-dashboard-shell text-[var(--rf-ink)] pt-[calc(5.25rem+env(safe-area-inset-top))] md:pt-24 pb-12 px-4 relative overflow-hidden">
         <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
         <div className="max-w-6xl mx-auto">
           {/* Geri butonu */}
@@ -230,7 +242,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   // ==========================================
   
   return (
-    <div className="min-h-screen bg-[var(--rf-bg)] text-[var(--rf-ink)] pt-24 pb-12 px-4 relative overflow-hidden">
+    <div className="min-h-screen rf-dashboard-shell text-[var(--rf-ink)] pt-[calc(5.25rem+env(safe-area-inset-top))] md:pt-24 pb-12 px-4 relative overflow-hidden">
       <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
       <div className="max-w-7xl mx-auto space-y-8">
         
@@ -257,20 +269,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
                   key={tab.id}
                   onClick={() => setMainTab(tab.id as typeof mainTab)}
                   data-testid={`dashboard-tab-${tab.id}`}
-                  className={`relative flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3 rounded-lg font-medium transition-colors text-sm md:text-base ${
-                    isActive
-                      ? tab.color === 'amber' ? 'text-[#07101f]' : 'text-white'
-                      : 'text-gray-400 hover:text-white'
+                  className={`rf-tab-button relative flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-6 py-2.5 md:py-3 rounded-lg font-medium text-sm md:text-base ${
+                    isActive ? 'rf-tab-active' : ''
                   }`}
                   whileTap={{ scale: 0.98 }}
                 >
                   {isActive && (
                     <motion.div
                       layoutId="activeTab"
-                      className={`absolute inset-0 rounded-lg ${
-                        tab.color === 'cyan' ? 'bg-gradient-to-r from-cyan-600 to-sky-500' : 
-                        tab.color === 'amber' ? 'bg-gradient-to-r from-amber-400 to-orange-300' : 
-                        'bg-gradient-to-r from-slate-700 to-slate-600'
+                      className={`absolute inset-0 rounded-lg border ${
+                        tab.color === 'cyan'
+                          ? 'bg-[#0d2a4b] border-cyan-300/35'
+                          : tab.color === 'amber'
+                            ? 'bg-[#3a2e20] border-amber-300/35'
+                            : 'bg-[#232b3b] border-slate-300/20'
                       }`}
                       transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                     />
@@ -298,7 +310,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
             {mainTab === 'games' && (
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
                 {/* Sol: Oyun Lobisi */}
-                <div className="xl:col-span-2 order-2 xl:order-1">
+                <div className="xl:col-span-2 order-1">
                   <GameSection
                     currentUser={currentUser}
                     tableCode={tableCode}
@@ -317,7 +329,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
                 </div>
 
                 {/* Sağ: Mağaza & Envanter */}
-                <div className="xl:col-span-1 order-1 xl:order-2">
+                <div className="xl:col-span-1 order-2">
                   <RewardSection
                     currentUser={currentUser}
                     rewards={rewards}

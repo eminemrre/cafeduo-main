@@ -11,6 +11,7 @@ jest.mock('../db', () => ({
   pool: {
     query: jest.fn(),
   },
+  isDbConnected: jest.fn(),
 }));
 
 jest.mock('../utils/logger', () => ({
@@ -23,7 +24,7 @@ jest.mock('../utils/logger', () => ({
 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const { pool } = require('../db');
+const { pool, isDbConnected } = require('../db');
 const { logger } = require('../utils/logger');
 process.env.JWT_SECRET = 'test-secret';
 process.env.BOOTSTRAP_ADMIN_EMAILS = 'emin3619@gmail.com';
@@ -41,6 +42,7 @@ describe('authController security-critical auth flows', () => {
     jest.clearAllMocks();
     process.env.RECAPTCHA_SECRET_KEY = '';
     global.fetch = jest.fn();
+    isDbConnected.mockResolvedValue(true);
   });
 
   afterEach(() => {
@@ -117,6 +119,45 @@ describe('authController security-critical auth flows', () => {
 
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({ error: 'Robot doğrulaması başarısız.' });
+    expect(pool.query).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when recaptcha service errors out while secret is configured', async () => {
+    process.env.RECAPTCHA_SECRET_KEY = 'captcha-secret';
+    global.fetch.mockRejectedValue(new Error('network down'));
+
+    const req = {
+      body: {
+        email: 'user@example.com',
+        password: 'Password1!',
+        captchaToken: 'captcha-token',
+      },
+    };
+    const res = buildRes();
+
+    await authController.login(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Robot doğrulaması başarısız.' });
+    expect(pool.query).not.toHaveBeenCalled();
+  });
+
+  it('rejects register when username format is invalid', async () => {
+    const req = {
+      body: {
+        username: 'ab',
+        email: 'valid@example.com',
+        password: 'StrongPass123',
+      },
+    };
+    const res = buildRes();
+
+    await authController.register(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Kullanıcı adı 3-20 karakter ve sadece harf/rakam/_ içermelidir.',
+    });
     expect(pool.query).not.toHaveBeenCalled();
   });
 

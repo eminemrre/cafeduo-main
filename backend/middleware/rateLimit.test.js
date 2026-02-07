@@ -1,4 +1,5 @@
 jest.mock('../config/redis', () => ({
+  status: 'ready',
   eval: jest.fn(),
   multi: jest.fn(),
   del: jest.fn(),

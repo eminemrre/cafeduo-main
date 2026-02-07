@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
-const { pool } = require('../db');
+const { pool, isDbConnected } = require('../db');
+const memoryState = require('../store/memoryState');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -7,28 +8,25 @@ if (!JWT_SECRET) {
     throw new Error('JWT_SECRET is required. Refusing to start with an insecure fallback secret.');
 }
 
-const isDbConnected = async () => {
-    try {
-        const client = await pool.connect();
-        client.release();
-        return true;
-    } catch (e) {
-        return false;
-    }
-};
-
 /**
  * Enhanced JWT Authentication Middleware
  */
 const authenticateToken = async (req, res, next) => {
     try {
         const authHeader = req.headers['authorization'];
-        const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
+        const isBearer = typeof authHeader === 'string' && authHeader.startsWith('Bearer ');
+        const token = isBearer ? authHeader.slice(7).trim() : null;
 
         if (!token) {
             return res.status(401).json({
                 error: 'Access token required',
                 code: 'TOKEN_MISSING'
+            });
+        }
+        if (token.length > 2048) {
+            return res.status(401).json({
+                error: 'Invalid token format',
+                code: 'TOKEN_INVALID_FORMAT'
             });
         }
 
@@ -55,8 +53,23 @@ const authenticateToken = async (req, res, next) => {
 
             req.user = result.rows[0];
         } else {
-            // Memory fallback or just decoded
-            req.user = decoded;
+            const memoryUser = Array.isArray(memoryState.users)
+                ? memoryState.users.find((user) => Number(user.id) === Number(decoded.id))
+                : null;
+
+            if (memoryUser) {
+                req.user = {
+                    ...decoded,
+                    ...memoryUser,
+                    id: Number(memoryUser.id),
+                    isAdmin: Boolean(memoryUser.isAdmin ?? memoryUser.is_admin ?? decoded.isAdmin),
+                    gamesPlayed: Number(
+                        memoryUser.gamesPlayed ?? memoryUser.games_played ?? decoded.gamesPlayed ?? 0
+                    ),
+                };
+            } else {
+                req.user = decoded;
+            }
         }
 
         next();

@@ -129,7 +129,7 @@ export const OddEvenSprint: React.FC<OddEvenSprintProps> = ({
           data-testid="guess-even"
           onClick={() => handleGuess('cift')}
           disabled={done || resolvingMatch}
-          className="flex-1 bg-gradient-to-r from-cyan-600 to-sky-500 hover:from-cyan-500 hover:to-sky-400 disabled:opacity-50 rounded-xl p-4 font-semibold"
+          className="flex-1 bg-[#0f3a67] hover:bg-[#145289] disabled:opacity-50 rounded-xl p-4 font-semibold border border-cyan-300/35"
         >
           ÇİFT
         </button>
@@ -137,7 +137,7 @@ export const OddEvenSprint: React.FC<OddEvenSprintProps> = ({
           data-testid="guess-odd"
           onClick={() => handleGuess('tek')}
           disabled={done || resolvingMatch}
-          className="flex-1 bg-gradient-to-r from-slate-700 to-slate-600 hover:from-slate-600 hover:to-slate-500 disabled:opacity-50 rounded-xl p-4 font-semibold"
+          className="flex-1 bg-[#273145] hover:bg-[#35435e] disabled:opacity-50 rounded-xl p-4 font-semibold border border-slate-300/30"
         >
           TEK
         </button>

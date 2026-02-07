@@ -20,66 +20,56 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   isMatched
 }) => {
   return (
-    <div className="rf-panel border-cyan-400/20 rounded-xl p-4 mb-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        {/* Kullanıcı Bilgileri */}
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-cyan-600 to-sky-500 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-[0_10px_24px_rgba(0,215,255,0.26)]">
-            {user.username.charAt(0).toUpperCase()}
+    <div className="rf-panel border-cyan-400/20 rounded-xl p-4 md:p-5 mb-6">
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-full bg-[#0a2d52] border border-cyan-300/35 flex items-center justify-center text-cyan-100 font-semibold text-base shadow-[0_8px_20px_rgba(0,0,0,0.28)]">
+              {user.username.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-white font-semibold truncate">{user.username}</h3>
+              <p className="text-[var(--rf-muted)] text-sm truncate">{user.department || 'Öğrenci'}</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-white font-bold">{user.username}</h3>
-            <p className="text-[var(--rf-muted)] text-sm">{user.department || 'Öğrenci'}</p>
+
+          <div
+            className={`inline-flex items-center gap-2 self-start sm:self-auto rounded-full px-3 py-1.5 border ${
+              isMatched
+                ? 'border-emerald-400/35 bg-emerald-500/10 text-emerald-300'
+                : 'border-slate-400/30 bg-slate-600/10 text-[var(--rf-muted)]'
+            }`}
+            data-testid="table-status"
+          >
+            {isMatched ? <Wifi className="animate-pulse" size={16} /> : <MapPin size={16} />}
+            <span className="text-xs font-medium">{isMatched ? tableCode : 'Masa bağlı değil'}</span>
           </div>
         </div>
 
-        {/* İstatistikler */}
-        <div className="flex items-center gap-6">
-          {/* Puan */}
-          <div className="flex items-center gap-2 bg-amber-400/10 border border-amber-300/20 px-4 py-2 rounded-lg" data-testid="user-points">
-            <Star className="text-amber-300" size={20} />
-            <div>
-              <span className="text-amber-300 font-bold text-lg">{user.points}</span>
-              <span className="text-[var(--rf-muted)] text-xs block">Puan</span>
+        <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+          <div className="rf-card-quiet p-2.5 sm:p-3" data-testid="user-points">
+            <div className="flex items-center gap-1.5 text-amber-300 mb-1">
+              <Star size={15} />
+              <span className="text-[10px] uppercase tracking-[0.14em]">Puan</span>
             </div>
+            <div className="text-white text-lg sm:text-xl font-semibold leading-none">{user.points}</div>
           </div>
 
-          {/* Galibiyet */}
-          <div className="flex items-center gap-2 bg-cyan-400/10 border border-cyan-300/20 px-4 py-2 rounded-lg" data-testid="user-wins">
-            <Trophy className="text-cyan-300" size={20} />
-            <div>
-              <span className="text-cyan-300 font-bold text-lg">{user.wins}</span>
-              <span className="text-[var(--rf-muted)] text-xs block">Galibiyet</span>
+          <div className="rf-card-quiet p-2.5 sm:p-3" data-testid="user-wins">
+            <div className="flex items-center gap-1.5 text-cyan-300 mb-1">
+              <Trophy size={15} />
+              <span className="text-[10px] uppercase tracking-[0.14em]">Galibiyet</span>
             </div>
+            <div className="text-white text-lg sm:text-xl font-semibold leading-none">{user.wins}</div>
           </div>
 
-          {/* Oynanan Oyun */}
-          <div className="flex items-center gap-2 bg-slate-500/10 border border-slate-300/20 px-4 py-2 rounded-lg" data-testid="user-games">
-            <Gamepad2 className="text-slate-300" size={20} />
-            <div>
-              <span className="text-slate-200 font-bold text-lg">{user.gamesPlayed}</span>
-              <span className="text-[var(--rf-muted)] text-xs block">Oyun</span>
+          <div className="rf-card-quiet p-2.5 sm:p-3" data-testid="user-games">
+            <div className="flex items-center gap-1.5 text-slate-300 mb-1">
+              <Gamepad2 size={15} />
+              <span className="text-[10px] uppercase tracking-[0.14em]">Oyun</span>
             </div>
+            <div className="text-white text-lg sm:text-xl font-semibold leading-none">{user.gamesPlayed}</div>
           </div>
-        </div>
-
-        {/* Masa Durumu */}
-        <div className="flex items-center gap-2" data-testid="table-status">
-          {isMatched ? (
-            <>
-              <Wifi className="text-green-500 animate-pulse" size={18} />
-              <span className="text-green-400 text-sm font-medium">
-                {tableCode}
-              </span>
-            </>
-          ) : (
-            <>
-              <MapPin className="text-[var(--rf-muted)]" size={18} />
-              <span className="text-[var(--rf-muted)] text-sm">
-                Masa bağlı değil
-              </span>
-            </>
-          )}
         </div>
       </div>
     </div>

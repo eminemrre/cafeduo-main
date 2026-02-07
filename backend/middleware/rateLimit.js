@@ -123,6 +123,14 @@ const createRateLimitStore = ({ scope, windowMs }) => {
     return undefined;
   }
 
+  if (redis.status !== 'ready') {
+    logger.warn('Redis client is not ready, using in-memory rate-limit store.', {
+      scope,
+      redisStatus: redis.status,
+    });
+    return undefined;
+  }
+
   return new RedisRateLimitStore({
     redisClient: redis,
     windowMs,

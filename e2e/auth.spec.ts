@@ -86,7 +86,7 @@ test.describe('Authentication Flow', () => {
       ({ token, user }) => {
         localStorage.setItem('token', token);
         localStorage.setItem('cafe_user', JSON.stringify(user));
-        sessionStorage.setItem('cafeduo_checked_in_user', String(user.id));
+        sessionStorage.setItem('cafeduo_checked_in_token', token);
       },
       { token: session.token, user: currentUser }
     );

@@ -39,11 +39,12 @@ const jwt = require('jsonwebtoken');
 const { Server } = require("socket.io");
 
 // Local modules
-const { pool } = require('./db');
+const { pool, isDbConnected } = require('./db');
 const { cache, clearCache } = require('./middleware/cache'); // Redis Cache Import
 const { buildRateLimiterOptions } = require('./middleware/rateLimit');
 const authRoutes = require('./routes/authRoutes');
 const cafeRoutes = require('./routes/cafeRoutes'); // Cafe Routes Import
+const memoryState = require('./store/memoryState');
 const {
   getGameParticipants,
   normalizeParticipantName,
@@ -71,6 +72,50 @@ const LOCAL_ALLOWED_ORIGINS = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
 ];
+
+const SUPPORTED_GAME_TYPES = new Set([
+  'Refleks Avı',
+  'Ritim Kopyala',
+  'Çift Tek Sprint',
+]);
+
+const normalizeGameType = (value) => {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+  if (SUPPORTED_GAME_TYPES.has(raw)) return raw;
+
+  const aliasMap = {
+    refleks: 'Refleks Avı',
+    reflex: 'Refleks Avı',
+    rps: 'Refleks Avı',
+    arena: 'Ritim Kopyala',
+    rhythm: 'Ritim Kopyala',
+    dungeon: 'Çift Tek Sprint',
+    odd_even: 'Çift Tek Sprint',
+    odd_even_sprint: 'Çift Tek Sprint',
+    sprint: 'Çift Tek Sprint',
+  };
+
+  const normalizedKey = raw
+    .toLowerCase()
+    .replace(/\s+/g, '_')
+    .replace(/[^\w]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  return aliasMap[normalizedKey] || null;
+};
+
+const normalizeTableCode = (rawValue) => {
+  const raw = String(rawValue || '').trim().toUpperCase();
+  if (!raw) return null;
+  if (raw.startsWith('MASA')) return raw;
+  const numeric = Number(raw);
+  if (Number.isInteger(numeric) && numeric > 0) {
+    return `MASA${String(numeric).padStart(2, '0')}`;
+  }
+  return null;
+};
 
 const parseAllowedOrigins = (originsValue) => {
   const parsed = (originsValue || '')
@@ -102,6 +147,7 @@ const app = express();
 const server = http.createServer(app); // Wrap Express
 // API cevaplarında koşullu 304 akışını kapat; token restore sırasında false-negative logout üretiyordu.
 app.set('etag', false);
+app.disable('x-powered-by');
 const PORT = process.env.PORT || 3001;
 const REQUEST_LOG_SLOW_MS = Number(process.env.REQUEST_LOG_SLOW_MS || 1200);
 const LEGACY_RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
@@ -167,126 +213,43 @@ const io = new Server(server, {
   }
 });
 
-// Socket.IO Logic
-const rpsGames = new Map(); // Store active RPS games in memory: { gameId: { p1: { id, move, score }, p2: { ... }, round: 1 } }
-
 io.on('connection', (socket) => {
   console.log(`⚡ Client connected: ${socket.id}`);
 
-  // General Join
+  // Genel oyun odasına katılım
   socket.on('join_game', (gameId) => {
-    socket.join(gameId);
-    console.log(`Socket ${socket.id} joined game: ${gameId}`);
-  });
-
-  // --- Rock Paper Scissors Logic ---
-  socket.on('rps_join', ({ gameId, username }) => {
-    socket.join(gameId);
-
-    if (!rpsGames.has(gameId)) {
-      rpsGames.set(gameId, {
-        players: {},
-        rounds: 0,
-        history: []
-      });
+    const normalizedGameId = String(gameId || '').trim();
+    if (!normalizedGameId || normalizedGameId.length > 64) {
+      return;
     }
 
-    const game = rpsGames.get(gameId);
-
-    // Add player if not exists
-    if (!game.players[socket.id]) {
-      // Limit to 2 players
-      if (Object.keys(game.players).length < 2) {
-        game.players[socket.id] = { id: socket.id, username, move: null, score: 0 };
-        console.log(`Player ${username} (${socket.id}) joined RPS game ${gameId}`);
-      } else {
-        socket.emit('error', 'Game full');
-        return;
-      }
-    }
-
-    // Notify everyone in room about updated player list
-    io.to(gameId).emit('rps_update_players', Object.values(game.players));
-  });
-
-  socket.on('rps_move', ({ gameId, move }) => {
-    const game = rpsGames.get(gameId);
-    if (!game || !game.players[socket.id]) return;
-
-    game.players[socket.id].move = move;
-    console.log(`Player ${socket.id} moved in ${gameId}`);
-
-    // Notify opponent that a move was made (but not WHAT move)
-    socket.to(gameId).emit('rps_opponent_moved');
-
-    // Check if both players moved
-    const playerIds = Object.keys(game.players);
-    if (playerIds.length === 2) {
-      const p1 = game.players[playerIds[0]];
-      const p2 = game.players[playerIds[1]];
-
-      if (p1.move && p2.move) {
-        // Calculate Winner
-        let winner = 'draw';
-        if (p1.move !== p2.move) {
-          if (
-            (p1.move === 'rock' && p2.move === 'scissors') ||
-            (p1.move === 'scissors' && p2.move === 'paper') ||
-            (p1.move === 'paper' && p2.move === 'rock')
-          ) {
-            winner = p1.id;
-            p1.score += 1;
-          } else {
-            winner = p2.id;
-            p2.score += 1;
-          }
-        }
-
-        const result = {
-          p1: { id: p1.id, move: p1.move, score: p1.score },
-          p2: { id: p2.id, move: p2.move, score: p2.score },
-          winner
-        };
-
-        // Reset moves for next round
-        p1.move = null;
-        p2.move = null;
-        game.rounds += 1;
-
-        // Emit result to specific game room after delay
-        setTimeout(() => {
-          io.to(gameId).emit('rps_round_result', result);
-        }, 500); // 500ms delay for suspense
-      }
-    }
+    socket.join(normalizedGameId);
+    console.log(`Socket ${socket.id} joined game: ${normalizedGameId}`);
   });
 
   socket.on('game_move', (data) => {
-    // data: { gameId, move, player }
-    console.log(`Move received in game ${data.gameId}:`, data);
-    socket.to(data.gameId).emit('opponent_move', data);
+    const normalizedGameId = String(data?.gameId || '').trim();
+    if (!normalizedGameId || normalizedGameId.length > 64) return;
+
+    const sanitizedMove = {
+      gameId: normalizedGameId,
+      move: data?.move ?? null,
+      player: typeof data?.player === 'string' ? data.player.slice(0, 64) : undefined,
+      ts: Date.now(),
+    };
+
+    socket.to(normalizedGameId).emit('opponent_move', sanitizedMove);
   });
 
   // Game state sync
   socket.on('update_game_state', (data) => {
-    // data: { gameId, state }
-    socket.to(data.gameId).emit('game_state_updated', data.state);
+    const normalizedGameId = String(data?.gameId || '').trim();
+    if (!normalizedGameId || normalizedGameId.length > 64) return;
+    socket.to(normalizedGameId).emit('game_state_updated', data?.state ?? {});
   });
 
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
-    // Optional: Handle cleanup if needed, or leave for room auto-cleanup
-    // For robust app, we should remove player from rpsGames
-    for (const [gameId, game] of rpsGames.entries()) {
-      if (game.players[socket.id]) {
-        delete game.players[socket.id];
-        io.to(gameId).emit('rps_player_disconnected', socket.id);
-        if (Object.keys(game.players).length === 0) {
-          rpsGames.delete(gameId);
-        }
-        break;
-      }
-    }
   });
 });
 
@@ -340,7 +303,8 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
-app.use(express.json());
+app.use(express.json({ limit: '200kb' }));
+app.use(express.urlencoded({ extended: false, limit: '100kb', parameterLimit: 100 }));
 
 
 // Initialize Database Schema (Robust Version)
@@ -512,25 +476,10 @@ const initDb = async () => {
 };
 
 // --- IN-MEMORY FALLBACK DATA (For testing without DB) ---
-const memoryItems = []; // Code Review Fix: Define undefined variable
-let MEMORY_USERS = [
-  { id: 1, username: 'DemoUser', email: 'demo@cafe.com', password: '123', points: 1250, wins: 12, gamesPlayed: 25 }
-];
-let MEMORY_GAMES = [
-  { id: 1, hostName: 'GamerTr_99', gameType: 'Refleks Avı', points: 150, table: 'MASA04', status: 'waiting' }
-];
-let MEMORY_REWARDS = [];
-
-// Helper to check DB status
-const isDbConnected = async () => {
-  try {
-    const client = await pool.connect();
-    client.release();
-    return true;
-  } catch (e) {
-    return false;
-  }
-};
+const memoryItems = memoryState.items;
+let MEMORY_USERS = memoryState.users;
+let MEMORY_GAMES = memoryState.games;
+let MEMORY_REWARDS = memoryState.rewards;
 
 const promoteBootstrapAdmins = async () => {
   if (BOOTSTRAP_ADMIN_EMAILS.length === 0) return;
@@ -584,6 +533,7 @@ setInterval(async () => {
       const createdAt = new Date(g.createdAt || Date.now()); // Fallback if createdAt missing in memory
       return g.status !== 'waiting' || createdAt > new Date(Date.now() - 30 * 60 * 1000);
     });
+    memoryState.games = MEMORY_GAMES;
     const deletedCount = initialCount - MEMORY_GAMES.length;
     if (deletedCount > 0) {
       console.log(`🗑️ Deleted ${deletedCount} stale games from Memory.`);
@@ -687,9 +637,12 @@ app.post('/api/auth/google', async (req, res) => {
         check.rows[0].cafe_id = null;
 
         const user = check.rows[0];
-        // Daily Bonus Logic (Same as regular login)
-        // ... (Simplified for brevity, ideally refactor bonus logic to a function)
-        res.json(user);
+        const authToken = jwt.sign(
+          { id: user.id, email: user.email, username: user.username, role: user.role },
+          JWT_SECRET,
+          { expiresIn: '7d' }
+        );
+        res.json({ user, token: authToken });
       } else {
         // User new -> Register
         const randomPassword = Math.random().toString(36).slice(-8);
@@ -699,7 +652,13 @@ app.post('/api/auth/google', async (req, res) => {
           'INSERT INTO users (username, email, password_hash, points, department, avatar_url) VALUES ($1, $2, $3, 100, $4, $5) RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, avatar_url',
           [name, email, hashedPassword, 'Google User', picture]
         );
-        res.json(result.rows[0]);
+        const user = result.rows[0];
+        const authToken = jwt.sign(
+          { id: user.id, email: user.email, username: user.username, role: user.role },
+          JWT_SECRET,
+          { expiresIn: '7d' }
+        );
+        res.json({ user, token: authToken });
       }
     } else {
       // Memory Fallback
@@ -717,7 +676,12 @@ app.post('/api/auth/google', async (req, res) => {
         };
         MEMORY_USERS.push(user);
       }
-      res.json(user);
+      const authToken = jwt.sign(
+        { id: user.id, email: user.email, username: user.username, role: user.role || 'user' },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+      );
+      res.json({ user, token: authToken });
     }
   } catch (error) {
     console.error('Google Auth Error:', error);
@@ -1122,7 +1086,7 @@ app.delete('/api/rewards/:id', authenticateToken, requireCafeAdmin, async (req, 
 // 2.6 FUNCTIONS REMOVED (Moved to backend/utils/geo.js)
 
 // 3. GET GAMES
-app.get('/api/games', async (req, res) => {
+app.get('/api/games', authenticateToken, async (req, res) => {
   if (await isDbConnected()) {
     const result = await pool.query(`
       SELECT 
@@ -1135,24 +1099,40 @@ app.get('/api/games', async (req, res) => {
         guest_name as "guestName", 
         created_at as "createdAt" 
       FROM games 
-      WHERE status = 'waiting' 
+      WHERE status = 'waiting'
+        AND game_type = ANY($1::text[])
       ORDER BY created_at DESC
-    `);
+    `, [[...SUPPORTED_GAME_TYPES]]);
     res.json(result.rows);
   } else {
-    res.json(MEMORY_GAMES);
+    res.json(
+      MEMORY_GAMES.filter((game) => SUPPORTED_GAME_TYPES.has(String(game.gameType || '').trim()))
+    );
   }
 });
 
 // 4. CREATE GAME
-app.post('/api/games', async (req, res) => {
-  const hostName = String(req.body?.hostName || '').trim();
-  const gameType = String(req.body?.gameType || '').trim();
+app.post('/api/games', authenticateToken, async (req, res) => {
+  const hostName = String(req.user?.username || '').trim();
+  const gameType = normalizeGameType(req.body?.gameType);
   const points = Math.max(0, Math.floor(Number(req.body?.points || 0)));
-  const table = String(req.body?.table || 'MASA00').trim() || 'MASA00';
+  const actorTableCode = normalizeTableCode(req.user?.table_number);
+  const table = actorTableCode || normalizeTableCode(req.body?.table) || 'MASA00';
+  const isAdminActor = req.user?.role === 'admin' || req.user?.isAdmin === true;
+  const hasCheckIn = Boolean(req.user?.cafe_id) && Boolean(actorTableCode);
+  const actorPoints = Math.max(0, Math.floor(Number(req.user?.points || 0)));
 
   if (!hostName || !gameType) {
     return res.status(400).json({ error: 'hostName ve gameType zorunludur.' });
+  }
+  if (!isAdminActor && !hasCheckIn) {
+    return res.status(403).json({ error: 'Oyun kurmak için önce kafe check-in işlemi yapmalısın.' });
+  }
+  if (points > actorPoints && !isAdminActor) {
+    return res.status(400).json({ error: 'Katılım puanı mevcut bakiyenden yüksek olamaz.' });
+  }
+  if (points > 5000) {
+    return res.status(400).json({ error: 'Katılım puanı üst limiti aşıldı.' });
   }
 
   if (await isDbConnected()) {
@@ -1246,12 +1226,18 @@ app.post('/api/games', async (req, res) => {
 });
 
 // 5. JOIN GAME
-app.post('/api/games/:id/join', async (req, res) => {
+app.post('/api/games/:id/join', authenticateToken, async (req, res) => {
   const { id } = req.params;
-  const guestName = String(req.body?.guestName || '').trim();
+  const guestName = String(req.user?.username || '').trim();
+  const isAdminActor = req.user?.role === 'admin' || req.user?.isAdmin === true;
+  const actorTableCode = normalizeTableCode(req.user?.table_number);
+  const hasCheckIn = Boolean(req.user?.cafe_id) && Boolean(actorTableCode);
 
   if (!guestName) {
     return res.status(400).json({ error: 'guestName zorunludur.' });
+  }
+  if (!isAdminActor && !hasCheckIn) {
+    return res.status(403).json({ error: 'Oyuna katılmak için önce kafe check-in işlemi yapmalısın.' });
   }
 
   if (await isDbConnected()) {
@@ -1284,6 +1270,11 @@ app.post('/api/games/:id/join', async (req, res) => {
       }
 
       const game = gameResult.rows[0];
+      const gameTableCode = normalizeTableCode(game.table_code);
+      if (!isAdminActor && actorTableCode && gameTableCode && actorTableCode !== gameTableCode) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ error: 'Sadece aynı masadaki oyuna katılabilirsin.' });
+      }
       if (String(game.host_name || '').toLowerCase() === guestName.toLowerCase()) {
         await client.query('ROLLBACK');
         return res.status(400).json({ error: 'Kendi oyununa katılamazsın.' });
@@ -1380,6 +1371,10 @@ app.post('/api/games/:id/join', async (req, res) => {
   if (!game) {
     return res.status(404).json({ error: 'Oyun bulunamadı.' });
   }
+  const gameTableCode = normalizeTableCode(game.table);
+  if (!isAdminActor && actorTableCode && gameTableCode && actorTableCode !== gameTableCode) {
+    return res.status(403).json({ error: 'Sadece aynı masadaki oyuna katılabilirsin.' });
+  }
   if (String(game.hostName || '').toLowerCase() === guestName.toLowerCase()) {
     return res.status(400).json({ error: 'Kendi oyununa katılamazsın.' });
   }
@@ -1398,7 +1393,7 @@ app.post('/api/games/:id/join', async (req, res) => {
 });
 
 // 6. GET GAME STATE (Polling)
-app.get('/api/games/:id', async (req, res) => {
+app.get('/api/games/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
   if (await isDbConnected()) {
     const result = await pool.query(
@@ -1435,9 +1430,10 @@ app.get('/api/games/:id', async (req, res) => {
 });
 
 // 7. MAKE MOVE
-app.post('/api/games/:id/move', async (req, res) => {
+app.post('/api/games/:id/move', authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { player, move, gameState, scoreSubmission } = req.body; // player: 'host' or 'guest'
+  const actorName = String(req.user?.username || '').trim();
 
   if (await isDbConnected()) {
     const client = await pool.connect();
@@ -1464,23 +1460,35 @@ app.post('/api/games/:id/move', async (req, res) => {
         return res.status(409).json({ error: 'Bu oyun tamamlandı, hamle kabul edilmiyor.' });
       }
 
+      const actorParticipant = normalizeParticipantName(actorName, game);
+      const isAdminActor = req.user?.role === 'admin' || req.user?.isAdmin === true;
+      if (!actorParticipant && !isAdminActor) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
+      }
+
       const currentState = game.game_state && typeof game.game_state === 'object' ? game.game_state : {};
 
-      if (scoreSubmission && scoreSubmission.username) {
+      if (scoreSubmission) {
         if (game.status !== 'active') {
           await client.query('ROLLBACK');
           return res.status(409).json({ error: 'Skor gönderimi için oyun aktif olmalı.' });
         }
 
-        const canonicalParticipant = normalizeParticipantName(scoreSubmission.username, game);
-        if (!canonicalParticipant) {
+        if (!actorParticipant) {
           await client.query('ROLLBACK');
           return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
         }
 
+        const scorePayload =
+          scoreSubmission && typeof scoreSubmission === 'object' ? scoreSubmission : {};
+
         const nextResults = {
           ...(currentState.results && typeof currentState.results === 'object' ? currentState.results : {}),
-          [canonicalParticipant]: sanitizeScoreSubmission(scoreSubmission),
+          [actorParticipant]: sanitizeScoreSubmission({
+            ...scorePayload,
+            username: actorName,
+          }),
         };
 
         const participants = getGameParticipants(game);
@@ -1532,16 +1540,27 @@ app.post('/api/games/:id/move', async (req, res) => {
         return res.json({ success: true, gameState: mergedState });
       }
 
-      if (player !== 'host' && player !== 'guest') {
+      const hostName = String(game.host_name || '').trim().toLowerCase();
+      const guestName = String(game.guest_name || '').trim().toLowerCase();
+      const actorNormalized = String(actorParticipant || '').trim().toLowerCase();
+      const resolvedPlayer = isAdminActor
+        ? (player === 'guest' ? 'guest' : 'host')
+        : actorNormalized === hostName
+          ? 'host'
+          : actorNormalized === guestName
+            ? 'guest'
+            : null;
+
+      if (resolvedPlayer !== 'host' && resolvedPlayer !== 'guest') {
         await client.query('ROLLBACK');
-        return res.status(400).json({ error: 'Geçersiz oyuncu tipi.' });
+        return res.status(403).json({ error: 'Bu hamleyi yapmaya yetkin yok.' });
       }
 
       const query =
-        player === 'host'
+        resolvedPlayer === 'host'
           ? 'UPDATE games SET player1_move = $1 WHERE id = $2'
           : 'UPDATE games SET player2_move = $1 WHERE id = $2';
-      await client.query(query, [move, id]);
+      await client.query(query, [String(move || '').slice(0, 64), id]);
       await client.query('COMMIT');
       return res.json({ success: true });
     } catch (err) {
@@ -1561,8 +1580,20 @@ app.post('/api/games/:id/move', async (req, res) => {
     return res.status(409).json({ error: 'Bu oyun tamamlandı, hamle kabul edilmiyor.' });
   }
 
-  if (scoreSubmission && scoreSubmission.username) {
-    const canonicalParticipant = normalizeParticipantName(scoreSubmission.username, {
+  const actorParticipant = normalizeParticipantName(actorName, {
+    host_name: game.hostName,
+    guest_name: game.guestName,
+  });
+  const isAdminActor = req.user?.role === 'admin' || req.user?.isAdmin === true;
+  if (!actorParticipant && !isAdminActor) {
+    return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
+  }
+
+  if (scoreSubmission) {
+    if (!actorParticipant) {
+      return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
+    }
+    const canonicalParticipant = normalizeParticipantName(actorName, {
       host_name: game.hostName,
       guest_name: game.guestName,
     });
@@ -1571,7 +1602,10 @@ app.post('/api/games/:id/move', async (req, res) => {
     }
     game.gameState = game.gameState || {};
     game.gameState.results = game.gameState.results || {};
-    game.gameState.results[canonicalParticipant] = sanitizeScoreSubmission(scoreSubmission);
+    game.gameState.results[canonicalParticipant] = sanitizeScoreSubmission({
+      ...(typeof scoreSubmission === 'object' ? scoreSubmission : {}),
+      username: actorName,
+    });
 
     const participants = getGameParticipants({
       host_name: game.hostName,
@@ -1595,21 +1629,32 @@ app.post('/api/games/:id/move', async (req, res) => {
     return res.json({ success: true, gameState: game.gameState });
   }
 
-  if (player === 'host') {
-    game.player1Move = move;
-  } else if (player === 'guest') {
-    game.player2Move = move;
+  const hostName = String(game.hostName || '').trim().toLowerCase();
+  const guestName = String(game.guestName || '').trim().toLowerCase();
+  const actorNormalized = String(actorParticipant || '').trim().toLowerCase();
+  const resolvedPlayer = isAdminActor
+    ? (player === 'guest' ? 'guest' : 'host')
+    : actorNormalized === hostName
+      ? 'host'
+      : actorNormalized === guestName
+        ? 'guest'
+        : null;
+  if (resolvedPlayer === 'host') {
+    game.player1Move = String(move || '').slice(0, 64);
+  } else if (resolvedPlayer === 'guest') {
+    game.player2Move = String(move || '').slice(0, 64);
   } else {
-    return res.status(400).json({ error: 'Geçersiz oyuncu tipi.' });
+    return res.status(403).json({ error: 'Bu hamleyi yapmaya yetkin yok.' });
   }
 
   return res.json({ success: true });
 });
 
 // 8. FINISH GAME
-app.post('/api/games/:id/finish', async (req, res) => {
+app.post('/api/games/:id/finish', authenticateToken, async (req, res) => {
   const { id } = req.params;
   const requestedWinner = req.body?.winner;
+  const actorName = String(req.user?.username || '').trim();
 
   if (await isDbConnected()) {
     const client = await pool.connect();
@@ -1632,6 +1677,13 @@ app.post('/api/games/:id/finish', async (req, res) => {
       }
 
       const game = gameResult.rows[0];
+      const actorParticipant = normalizeParticipantName(actorName, game);
+      const isAdminActor = req.user?.role === 'admin' || req.user?.isAdmin === true;
+      if (!actorParticipant && !isAdminActor) {
+        await client.query('ROLLBACK');
+        return res.status(403).json({ error: 'Bu oyunu kapatma yetkin yok.' });
+      }
+
       const participants = getGameParticipants(game);
       const stateResults =
         game.game_state && typeof game.game_state.results === 'object' ? game.game_state.results : {};
@@ -1686,6 +1738,15 @@ app.post('/api/games/:id/finish', async (req, res) => {
     return res.status(404).json({ error: 'Oyun bulunamadı.' });
   }
 
+  const actorParticipant = normalizeParticipantName(actorName, {
+    host_name: game.hostName,
+    guest_name: game.guestName,
+  });
+  const isAdminActor = req.user?.role === 'admin' || req.user?.isAdmin === true;
+  if (!actorParticipant && !isAdminActor) {
+    return res.status(403).json({ error: 'Bu oyunu kapatma yetkin yok.' });
+  }
+
   const participants = getGameParticipants({
     host_name: game.hostName,
     guest_name: game.guestName,
@@ -1715,13 +1776,38 @@ app.post('/api/games/:id/finish', async (req, res) => {
 });
 
 // 9. DELETE GAME
-app.delete('/api/games/:id', async (req, res) => {
+app.delete('/api/games/:id', authenticateToken, async (req, res) => {
   const { id } = req.params;
   if (await isDbConnected()) {
-    await pool.query('DELETE FROM games WHERE id = $1', [id]);
+    const result = await pool.query(
+      `
+        DELETE FROM games
+        WHERE id = $1
+          AND (
+            LOWER(host_name) = LOWER($2)
+            OR LOWER(COALESCE(guest_name, '')) = LOWER($2)
+            OR $3 = true
+          )
+        RETURNING id
+      `,
+      [id, req.user?.username || '', req.user?.role === 'admin' || req.user?.isAdmin === true]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Oyun bulunamadı veya silme yetkiniz yok.' });
+    }
     res.json({ success: true });
   } else {
-    MEMORY_GAMES = MEMORY_GAMES.filter(g => g.id != id);
+    const currentLength = MEMORY_GAMES.length;
+    MEMORY_GAMES = MEMORY_GAMES.filter((game) => {
+      if (String(game.id) !== String(id)) return true;
+      if (req.user?.role === 'admin' || req.user?.isAdmin === true) return false;
+      const actor = String(req.user?.username || '').toLowerCase();
+      return String(game.hostName || '').toLowerCase() !== actor && String(game.guestName || '').toLowerCase() !== actor;
+    });
+    memoryState.games = MEMORY_GAMES;
+    if (MEMORY_GAMES.length === currentLength) {
+      return res.status(404).json({ error: 'Oyun bulunamadı veya silme yetkiniz yok.' });
+    }
     res.json({ success: true });
   }
 });
@@ -1964,6 +2050,7 @@ app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, 
     res.json({ success: true });
   } else {
     MEMORY_USERS = MEMORY_USERS.filter(u => u.id != id);
+    memoryState.users = MEMORY_USERS;
     res.json({ success: true });
   }
 });
@@ -2003,7 +2090,7 @@ app.get('/api/leaderboard', cache(60), async (req, res) => { // Cache for 1 min 
 });
 
 // 16. ACHIEVEMENTS: GET ALL & USER STATUS
-app.get('/api/achievements/:userId', async (req, res) => {
+app.get('/api/achievements/:userId', authenticateToken, requireOwnership('userId'), async (req, res) => {
   const { userId } = req.params;
 
   if (await isDbConnected()) {
@@ -2069,8 +2156,14 @@ const checkAchievements = async (userId) => {
 };
 
 // 17. GET ACTIVE GAME FOR USER
-app.get('/api/users/:username/active-game', async (req, res) => {
+app.get('/api/users/:username/active-game', authenticateToken, async (req, res) => {
   const { username } = req.params;
+  const actor = String(req.user?.username || '').trim().toLowerCase();
+  const target = String(username || '').trim().toLowerCase();
+  const isAdminActor = req.user?.role === 'admin' || req.user?.isAdmin === true;
+  if (!isAdminActor && actor !== target) {
+    return res.status(403).json({ error: 'Sadece kendi aktif oyununuzu görüntüleyebilirsiniz.' });
+  }
 
   if (await isDbConnected()) {
     try {
@@ -2088,10 +2181,12 @@ app.get('/api/users/:username/active-game', async (req, res) => {
           game_state as "gameState", 
           created_at as "createdAt" 
         FROM games 
-        WHERE (host_name = $1 OR guest_name = $1) AND status = 'active'
+        WHERE (host_name = $1 OR guest_name = $1)
+          AND status = 'active'
+          AND game_type = ANY($2::text[])
         ORDER BY created_at DESC
         LIMIT 1
-      `, [username]);
+      `, [username, [...SUPPORTED_GAME_TYPES]]);
 
       if (result.rows.length > 0) {
         res.json(result.rows[0]);
@@ -2104,7 +2199,9 @@ app.get('/api/users/:username/active-game', async (req, res) => {
     }
   } else {
     const game = MEMORY_GAMES.find(g =>
-      (g.hostName === username || g.guestName === username) && g.status === 'active'
+      (g.hostName === username || g.guestName === username) &&
+      g.status === 'active' &&
+      SUPPORTED_GAME_TYPES.has(String(g.gameType || '').trim())
     );
     res.json(game || null);
   }
@@ -2114,11 +2211,19 @@ app.get('/api/users/:username/active-game', async (req, res) => {
 app.put('/api/users/:id', authenticateToken, requireOwnership('id'), async (req, res) => {
   const { id } = req.params;
   const { points, wins, gamesPlayed } = req.body;
+  const nextPoints = Math.floor(Number(points));
+  const nextWins = Math.floor(Number(wins));
+  const nextGamesPlayed = Math.floor(Number(gamesPlayed));
+  const safeDepartment = String(req.body.department || '').slice(0, 120);
+
+  if (![nextPoints, nextWins, nextGamesPlayed].every((value) => Number.isFinite(value) && value >= 0)) {
+    return res.status(400).json({ error: 'Puan, galibiyet ve oyun sayısı geçerli pozitif sayılar olmalıdır.' });
+  }
 
   if (await isDbConnected()) {
     const result = await pool.query(
       'UPDATE users SET points = $1, wins = $2, games_played = $3, department = $4 WHERE id = $5 RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number, avatar_url',
-      [points, wins, gamesPlayed, req.body.department, id]
+      [nextPoints, nextWins, nextGamesPlayed, safeDepartment, id]
     );
 
     const user = result.rows[0];
@@ -2138,7 +2243,7 @@ app.put('/api/users/:id', authenticateToken, requireOwnership('id'), async (req,
   } else {
     const idx = MEMORY_USERS.findIndex(u => u.id == id);
     if (idx !== -1) {
-      MEMORY_USERS[idx] = { ...MEMORY_USERS[idx], points, wins, gamesPlayed };
+      MEMORY_USERS[idx] = { ...MEMORY_USERS[idx], points: nextPoints, wins: nextWins, gamesPlayed: nextGamesPlayed };
       res.json(MEMORY_USERS[idx]);
     } else {
       res.status(404).json({ error: 'User not found' });
@@ -2315,9 +2420,8 @@ initDb().then(async () => {
 
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
-      const fallbackPort = Number(PORT) + 1;
-      console.warn(`⚠️  Port ${PORT} is in use. Trying ${fallbackPort}...`);
-      startServer(fallbackPort);
+      logger.error(`Port ${PORT} is already in use. Server will exit to avoid mismatched proxy routing.`);
+      process.exit(1);
       return;
     }
     console.error('Server error:', err);

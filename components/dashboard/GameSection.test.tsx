@@ -33,7 +33,7 @@ jest.mock('../CreateGameModal', () => ({
         <button data-testid="modal-close" onClick={onClose}>Kapat</button>
         <button 
           data-testid="modal-submit" 
-          onClick={() => onSubmit('rps', 100)}
+          onClick={() => onSubmit('Refleks Avı', 100)}
         >
           Oluştur
         </button>
@@ -97,7 +97,7 @@ describe('GameSection', () => {
     {
       id: 1,
       hostName: 'hostuser1',
-      gameType: 'rps',
+      gameType: 'Refleks Avı',
       points: 100,
       table: 'A1',
       status: 'waiting'
@@ -105,7 +105,7 @@ describe('GameSection', () => {
     {
       id: 2,
       hostName: 'hostuser2',
-      gameType: 'arena',
+      gameType: 'Ritim Kopyala',
       points: 200,
       table: 'B2',
       status: 'waiting'
@@ -115,7 +115,7 @@ describe('GameSection', () => {
   const mockServerActiveGame: GameRequest = {
     id: 999,
     hostName: 'opponent',
-    gameType: 'rps',
+    gameType: 'Refleks Avı',
     points: 150,
     table: 'A1',
     status: 'active'
@@ -161,7 +161,7 @@ describe('GameSection', () => {
       // BUG CHECK: Banner görünüyor mu?
       expect(screen.getByText(/🎮 Aktif Oyunun Var!/i)).toBeInTheDocument();
       expect(screen.getByText(/opponent/i)).toBeInTheDocument();
-      expect(screen.getByText(/rps/i)).toBeInTheDocument();
+      expect(screen.getByText(/Refleks Avı/i)).toBeInTheDocument();
       
       // Oyuna dön butonu
       const rejoinButton = screen.getByText(/Oyuna Dön/i);
@@ -542,7 +542,7 @@ describe('GameSection', () => {
       fireEvent.click(submitButton);
       
       await waitFor(() => {
-        expect(mockHandlers.onCreateGame).toHaveBeenCalledWith('rps', 100);
+        expect(mockHandlers.onCreateGame).toHaveBeenCalledWith('Refleks Avı', 100);
       });
     });
 

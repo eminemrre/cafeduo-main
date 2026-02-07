@@ -7,8 +7,16 @@ const withProtocol = (url: string): string => {
     return `${isLocal ? 'http' : 'https'}://${url}`;
 };
 
+const enforceBrowserHttps = (url: string): string => {
+    if (typeof window === 'undefined') return url;
+    if (window.location.protocol !== 'https:') return url;
+    if (!url.startsWith('http://')) return url;
+    if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(url)) return url;
+    return url.replace(/^http:\/\//i, 'https://');
+};
+
 export const normalizeBaseUrl = (url: string): string =>
-    withProtocol(url.trim()).replace(/\/+$/, '').replace(/\/api$/, '');
+    enforceBrowserHttps(withProtocol(url.trim())).replace(/\/+$/, '').replace(/\/api$/, '');
 
 const resolveSocketUrl = () => {
     try {
@@ -78,7 +86,7 @@ class SocketService {
     }
 
     emitMove(gameId: string, move: any) {
-        this.socket?.emit('rps_move', { gameId, move });
+        this.socket?.emit('game_move', { gameId, move });
     }
 }
 

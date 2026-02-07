@@ -1,5 +1,5 @@
-import React from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import React, { useRef } from 'react';
+import { motion, useMotionValue, useSpring, useTransform, useScroll } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Sparkles, Coffee, ShieldCheck, Gamepad2, Zap } from 'lucide-react';
 import { RetroButton } from './RetroButton';
@@ -15,6 +15,7 @@ interface HeroProps {
 
 export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, userRole, isAdmin }) => {
   const navigate = useNavigate();
+  const sectionRef = useRef<HTMLElement | null>(null);
   const pointerX = useMotionValue(0);
   const pointerY = useMotionValue(0);
   const smoothX = useSpring(pointerX, { stiffness: 110, damping: 18 });
@@ -23,6 +24,14 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
   const panelY = useTransform(smoothY, [-0.5, 0.5], [-14, 14]);
   const glowX = useTransform(smoothX, [-0.5, 0.5], ['20%', '80%']);
   const glowY = useTransform(smoothY, [-0.5, 0.5], ['26%', '72%']);
+  const reticleX = useTransform(smoothX, [-0.5, 0.5], ['8%', '92%']);
+  const reticleY = useTransform(smoothY, [-0.5, 0.5], ['18%', '82%']);
+  const layerDriftX = useTransform(smoothX, [-0.5, 0.5], [-18, 18]);
+  const layerDriftY = useTransform(smoothY, [-0.5, 0.5], [-12, 12]);
+  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end start'] });
+  const starsY = useTransform(scrollYProgress, [0, 1], [0, -70]);
+  const farRidgeY = useTransform(scrollYProgress, [0, 1], [0, -42]);
+  const nearRidgeY = useTransform(scrollYProgress, [0, 1], [0, -18]);
 
   const handlePanelClick = () => {
     if (isAdmin) {
@@ -44,6 +53,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
 
   return (
     <section
+      ref={sectionRef}
       id="home"
       className="relative min-h-[calc(100vh-72px)] md:min-h-screen pt-24 md:pt-32 overflow-hidden"
       onMouseMove={handlePointerMove}
@@ -62,12 +72,35 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
         animate={{ x: [0, -30, 12, 0], y: [0, 12, -18, 0] }}
         transition={{ duration: 19, repeat: Infinity, ease: 'easeInOut' }}
       />
-      <div className="absolute inset-0 rf-grid opacity-20" />
+      <motion.div className="absolute inset-0 rf-grid opacity-20" style={{ y: starsY }} />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(8,197,255,0.18),transparent_35%),radial-gradient(circle_at_82%_14%,rgba(242,165,90,0.15),transparent_42%)] animate-aurora-pan" />
       <motion.div
         className="absolute h-40 w-40 rounded-full pointer-events-none bg-cyan-400/20 blur-3xl"
         style={{ left: glowX, top: glowY }}
       />
+      <motion.div className="absolute inset-x-0 bottom-0 h-[32vh] opacity-70 pointer-events-none" style={{ y: farRidgeY, x: layerDriftX }}>
+        <div
+          className="absolute inset-0 bg-[#0a1730]/70"
+          style={{ clipPath: 'polygon(0 74%, 12% 62%, 22% 70%, 34% 58%, 49% 74%, 62% 60%, 76% 68%, 88% 54%, 100% 72%, 100% 100%, 0 100%)' }}
+        />
+      </motion.div>
+      <motion.div className="absolute inset-x-0 bottom-0 h-[28vh] opacity-90 pointer-events-none" style={{ y: nearRidgeY, x: layerDriftY }}>
+        <div
+          className="absolute inset-0 bg-[#050d1f]"
+          style={{ clipPath: 'polygon(0 84%, 8% 72%, 17% 80%, 28% 64%, 41% 84%, 52% 70%, 63% 82%, 74% 68%, 86% 78%, 94% 66%, 100% 74%, 100% 100%, 0 100%)' }}
+        />
+      </motion.div>
+      <motion.div
+        className="pointer-events-none absolute z-20 hidden lg:flex items-center justify-center h-16 w-16 rounded-full border border-cyan-300/45 bg-cyan-400/10 backdrop-blur-[2px] -translate-x-1/2 -translate-y-1/2"
+        style={{ left: reticleX, top: reticleY }}
+      >
+        <motion.div
+          className="absolute inset-2 rounded-full border border-cyan-300/55"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+        />
+        <div className="w-1.5 h-1.5 rounded-full bg-cyan-200 shadow-[0_0_12px_rgba(10,215,255,0.9)]" />
+      </motion.div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-center">

@@ -40,10 +40,9 @@ export const HowItWorks: React.FC = () => {
 
         <motion.div
           className="hidden md:block h-px mb-6 bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent"
-          initial={{ opacity: 0.2, scaleX: 0.65 }}
-          whileInView={{ opacity: 1, scaleX: 1 }}
-          viewport={{ once: true, margin: '-40px' }}
-          transition={{ duration: 0.8 }}
+          initial={{ opacity: 0.25, scaleX: 0.7 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ duration: 0.7, ease: 'easeOut' }}
         />
 
         <div className="grid md:grid-cols-3 gap-5">
@@ -52,9 +51,8 @@ export const HowItWorks: React.FC = () => {
               key={step.id}
               className="cd-panel p-6 md:p-7 relative overflow-hidden border-cyan-400/20"
               initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: '-50px' }}
-              transition={{ duration: 0.5, delay: index * 0.08 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.48, delay: index * 0.08, ease: 'easeOut' }}
             >
               <div className="absolute top-4 right-4 text-slate-700 font-display text-5xl">{step.id}</div>
 

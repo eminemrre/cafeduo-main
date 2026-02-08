@@ -18,6 +18,7 @@ const createMockRes = () => {
 describe('commerceHandlers', () => {
   let memoryItems;
   let memoryRewards;
+  let memoryUsers;
   let handlers;
   let isDbConnected;
 
@@ -50,8 +51,16 @@ describe('commerceHandlers', () => {
         redeemId: 100,
         id: 11,
         title: 'Bedava Kahve',
+        cost: 110,
         code: 'X1',
         redeemedAt: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      },
+    ];
+    memoryUsers = [
+      {
+        id: 5,
+        username: 'demo',
+        points: 650,
       },
     ];
 
@@ -62,6 +71,10 @@ describe('commerceHandlers', () => {
       logger: { error: jest.fn() },
       getMemoryItems: () => memoryItems,
       getMemoryRewards: () => memoryRewards,
+      getMemoryUsers: () => memoryUsers,
+      setMemoryUsers: (nextUsers) => {
+        memoryUsers = nextUsers;
+      },
     });
   });
 
@@ -109,14 +122,17 @@ describe('commerceHandlers', () => {
     expect(res.payload[0].title).toBe('Bedava Kahve');
   });
 
-  it('returns database error for buy when db disconnected', async () => {
-    const req = { user: { id: 5 }, body: { rewardId: 1 } };
+  it('supports buy flow in memory mode when db is disconnected', async () => {
+    const req = { user: { id: 5 }, body: { rewardId: 11 } };
     const res = createMockRes();
 
     await handlers.buyShopItem(req, res);
 
-    expect(res.status).toHaveBeenCalledWith(500);
-    expect(String(res.payload.error)).toContain('Veritabanı');
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.success).toBe(true);
+    expect(res.payload.newPoints).toBe(540);
+    expect(memoryUsers[0].points).toBe(540);
+    expect(memoryItems[0].user_id).toBe(5);
+    expect(memoryItems[0].code).toMatch(/^CD-/);
   });
 });
-

@@ -63,8 +63,14 @@ test.describe('Shop & Inventory Flow', () => {
     let pointsAfter = pointsBefore;
     let lastDialogMessage = '';
     for (let attempt = 1; attempt <= 3; attempt += 1) {
+      const cookieAcceptButton = page.getByRole('button', { name: 'Kabul Et' }).first();
+      if (await cookieAcceptButton.isVisible().catch(() => false)) {
+        await cookieAcceptButton.click({ timeout: 1500 });
+      }
+
       const dialogPromise = page.waitForEvent('dialog', { timeout: 3000 }).catch(() => null);
-      await affordableBuyButton.click();
+      await affordableBuyButton.scrollIntoViewIfNeeded();
+      await affordableBuyButton.click({ force: true });
 
       const dialog = await dialogPromise;
       if (dialog) {

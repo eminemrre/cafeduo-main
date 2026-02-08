@@ -2,6 +2,12 @@ const crypto = require('crypto');
 const { executeDataMode, sendApiError } = require('../utils/routeHelpers');
 
 const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
+const BASELINE_REWARDS = [
+  { id: 9001, title: 'Bedava Filtre Kahve', cost: 500, description: 'Günün yorgunluğunu at.', icon: 'coffee' },
+  { id: 9002, title: '%20 Hesap İndirimi', cost: 850, description: 'Tüm masada geçerli.', icon: 'discount' },
+  { id: 9003, title: 'Cheesecake İkramı', cost: 400, description: 'Tatlı bir mola ver.', icon: 'dessert' },
+  { id: 9004, title: 'Oyun Jetonu x5', cost: 100, description: 'Ekstra oyun hakkı.', icon: 'game' },
+];
 
 const createCommerceHandlers = ({
   pool,
@@ -9,7 +15,26 @@ const createCommerceHandlers = ({
   logger,
   getMemoryItems,
   getMemoryRewards,
+  getMemoryUsers = () => [],
+  setMemoryUsers = () => {},
 }) => {
+  const ensureActiveRewardsDb = async () => {
+    const activeRewardsResult = await pool.query('SELECT COUNT(*) FROM rewards WHERE is_active = true');
+    if (Number(activeRewardsResult.rows?.[0]?.count || 0) > 0) {
+      return;
+    }
+
+    await pool.query(`
+      INSERT INTO rewards (title, cost, description, icon, is_active)
+      VALUES
+        ('Bedava Filtre Kahve', 500, 'Günün yorgunluğunu at.', 'coffee', true),
+        ('%20 Hesap İndirimi', 850, 'Tüm masada geçerli.', 'discount', true),
+        ('Cheesecake İkramı', 400, 'Tatlı bir mola ver.', 'dessert', true),
+        ('Oyun Jetonu x5', 100, 'Ekstra oyun hakkı.', 'game', true)
+    `);
+    logger.warn('No active rewards remained. Baseline rewards were re-seeded.');
+  };
+
   const createReward = async (req, res) => {
     const { title, cost, description, icon, cafeId } = req.body || {};
 
@@ -41,6 +66,8 @@ const createCommerceHandlers = ({
     return executeDataMode(isDbConnected, {
       db: async () => {
         try {
+          await ensureActiveRewardsDb();
+
           let query = 'SELECT * FROM rewards WHERE is_active = true';
           const params = [];
 
@@ -56,7 +83,12 @@ const createCommerceHandlers = ({
           return sendApiError(res, logger, 'Error fetching rewards', err, 'Ödüller yüklenemedi.');
         }
       },
-      memory: async () => res.json([]),
+      memory: async () => {
+        const rewards = Array.isArray(getMemoryRewards()) && getMemoryRewards().length > 0
+          ? getMemoryRewards()
+          : BASELINE_REWARDS;
+        return res.json(rewards);
+      },
     });
   };
 
@@ -94,7 +126,52 @@ const createCommerceHandlers = ({
     }
 
     if (!(await isDbConnected())) {
-      return res.status(500).json({ error: 'Veritabanı bağlantısı yok.' });
+      try {
+        const users = getMemoryUsers();
+        const userIndex = users.findIndex((entry) => Number(entry.id) === Number(userId));
+        if (userIndex === -1) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+
+        const rewards = Array.isArray(getMemoryRewards()) && getMemoryRewards().length > 0
+          ? getMemoryRewards()
+          : BASELINE_REWARDS;
+        const reward = rewards.find((entry) => Number(entry.id) === Number(requestedRewardId));
+        if (!reward) {
+          return res.status(404).json({ error: 'Reward not found' });
+        }
+
+        const rewardCost = Number(reward.cost);
+        if (!Number.isFinite(rewardCost) || rewardCost < 0) {
+          return res.status(500).json({ error: 'Ödül maliyeti geçersiz.' });
+        }
+
+        const currentPoints = Number(users[userIndex].points || 0);
+        if (currentPoints < rewardCost) {
+          return res.status(400).json({ error: 'Yetersiz puan.' });
+        }
+
+        const newPoints = currentPoints - rewardCost;
+        const nextUsers = [...users];
+        nextUsers[userIndex] = { ...nextUsers[userIndex], points: newPoints };
+        setMemoryUsers(nextUsers);
+
+        const coupon = {
+          id: Date.now(),
+          user_id: Number(userId),
+          item_id: Number(reward.id),
+          item_title: reward.title,
+          code: `CD-${crypto.randomBytes(2).toString('hex').toUpperCase()}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`,
+          redeemed_at: new Date(),
+          is_used: false,
+          used_at: null,
+        };
+        getMemoryItems().unshift(coupon);
+
+        return res.json({ success: true, newPoints, reward: coupon });
+      } catch (err) {
+        return sendApiError(res, logger, 'Shop buy memory mode error', err, 'İşlem başarısız.');
+      }
     }
 
     const client = await pool.connect();
@@ -254,10 +331,21 @@ const createCommerceHandlers = ({
       memory: async () => {
         const fiveDaysAgo = new Date();
         fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
-        const rewards = getMemoryRewards().filter(
-          (reward) => reward.userId == userId && new Date(reward.redeemedAt) > fiveDaysAgo
-        );
-        return res.json(rewards);
+        const inventory = getMemoryItems()
+          .filter(
+            (item) =>
+              Number(item.user_id) === Number(userId) &&
+              new Date(item.redeemed_at || item.redeemedAt || Date.now()) > fiveDaysAgo
+          )
+          .map((item) => ({
+            redeemId: item.id,
+            id: item.item_id,
+            title: item.item_title,
+            code: item.code,
+            redeemedAt: item.redeemed_at || item.redeemedAt,
+            isUsed: Boolean(item.is_used || item.isUsed),
+          }));
+        return res.json(inventory);
       },
     });
   };
@@ -276,4 +364,3 @@ const createCommerceHandlers = ({
 module.exports = {
   createCommerceHandlers,
 };
-

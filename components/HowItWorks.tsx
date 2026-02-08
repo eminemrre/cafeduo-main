@@ -29,7 +29,8 @@ export const HowItWorks: React.FC = () => {
   const renderStepCard = (step: (typeof steps)[number], index: number, showConnector: boolean) => (
     <article
       key={step.id}
-      className="cd-panel p-5 sm:p-6 md:p-7 relative overflow-hidden border-cyan-400/20 snap-start shrink-0"
+      data-testid={`how-step-${step.id}`}
+      className="cd-panel p-5 sm:p-6 md:p-7 relative overflow-hidden border-cyan-400/20 w-full"
     >
       <div className="absolute top-4 right-4 text-slate-700 font-display text-4xl md:text-5xl">{step.id}</div>
 
@@ -66,17 +67,10 @@ export const HowItWorks: React.FC = () => {
 
         <div className="hidden md:block h-px mb-6 bg-gradient-to-r from-transparent via-cyan-400/60 to-transparent" />
 
-        <div className="md:hidden">
-          <div className="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 rf-no-scrollbar">
-            {steps.map((step, index) =>
-              renderStepCard(step, index, false)
-            )}
-          </div>
-          <div className="mt-3 flex justify-center gap-1.5" aria-hidden="true">
-            {steps.map((step) => (
-              <span key={`dot-${step.id}`} className="w-2 h-2 rounded-full bg-cyan-300/35" />
-            ))}
-          </div>
+        <div className="md:hidden grid grid-cols-1 gap-4">
+          {steps.map((step, index) =>
+            renderStepCard(step, index, false)
+          )}
         </div>
 
         <div className="hidden md:grid md:grid-cols-3 gap-5">

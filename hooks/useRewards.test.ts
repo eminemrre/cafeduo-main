@@ -191,4 +191,18 @@ describe('useRewards', () => {
 
     expect(api.shop.inventory).toHaveBeenCalledWith(mockUser.id);
   });
+
+  it('guards against malformed rewards/inventory payloads', async () => {
+    (api.rewards.list as jest.Mock).mockResolvedValue({ rewards: [] });
+    (api.shop.inventory as jest.Mock).mockResolvedValue({ items: [] });
+
+    const { result } = renderHook(() => useRewards({ currentUser: mockUser }));
+
+    await waitFor(() => {
+      expect(result.current.rewards).toEqual([]);
+      expect(result.current.inventory).toEqual([]);
+      expect(result.current.rewardsError).toBeNull();
+      expect(result.current.inventoryError).toBeNull();
+    });
+  });
 });

@@ -323,7 +323,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
                   onClick={() => setMainTab(tab.id as typeof mainTab)}
                   data-testid={`dashboard-tab-${tab.id}`}
                   aria-label={tab.label}
-                  className={`rf-tab-button relative flex-1 min-w-0 flex items-center justify-center gap-1 md:gap-2 px-2 md:px-6 py-2.5 md:py-3 rounded-lg font-medium text-[12px] md:text-base ${
+                  className={`rf-tab-button relative flex-1 min-w-0 flex items-center justify-center gap-1 md:gap-2 px-2 md:px-6 py-2.5 md:py-3 rounded-lg font-medium text-[11px] sm:text-sm md:text-base ${
                     isActive ? 'rf-tab-active' : ''
                   }`}
                   whileTap={{ scale: 0.98 }}
@@ -344,7 +344,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
                   <span className="relative z-10 flex items-center gap-1 md:gap-2 min-w-0">
                     <Icon size={16} className="md:w-5 md:h-5 shrink-0" />
                     <span className="hidden sm:inline truncate">{tab.label}</span>
-                    <span className="sm:hidden max-[360px]:hidden truncate">{tab.mobileLabel}</span>
+                    <span className="sm:hidden truncate whitespace-nowrap">{tab.mobileLabel}</span>
                   </span>
                 </motion.button>
               );

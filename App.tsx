@@ -34,14 +34,22 @@ const PageLoader = () => (
 interface ProtectedRouteProps {
   children: React.ReactElement;
   user: User | null;
+  authReady: boolean;
   isAdminRoute?: boolean;
   requiredRole?: string;
 }
 
-const CHECKIN_SESSION_KEY = 'cafeduo_checked_in_token';
-
 // Protected Route Component
-const ProtectedRoute = ({ children, user, isAdminRoute = false, requiredRole }: ProtectedRouteProps) => {
+const ProtectedRoute = ({
+  children,
+  user,
+  authReady,
+  isAdminRoute = false,
+  requiredRole,
+}: ProtectedRouteProps) => {
+  if (!authReady) {
+    return <PageLoader />;
+  }
   if (!user) {
     return <Navigate to="/" replace />;
   }
@@ -62,6 +70,7 @@ const App: React.FC = () => {
   // User session state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authHydrating, setAuthHydrating] = useState(true);
   
   // Toast hook
   const toast = useToast();
@@ -78,29 +87,65 @@ const App: React.FC = () => {
 
   // Restore user session on load
   useEffect(() => {
+    let isMounted = true;
+
     const restoreSession = async () => {
       const token = localStorage.getItem('token');
+      const cachedUserRaw = localStorage.getItem('cafe_user');
+      const syncSessionState = (user: User | null) => {
+        if (!isMounted) return;
+        setCurrentUser(user);
+        setIsLoggedIn(Boolean(user));
+      };
 
-      if (token) {
+      if (!token) {
+        localStorage.removeItem('cafe_user');
+        syncSessionState(null);
+        if (isMounted) setAuthHydrating(false);
+        return;
+      }
+
+      // Cache-first hydrate for snappy UI, then strict token verification.
+      if (cachedUserRaw) {
         try {
-          // Verify token with backend
-          const user = await api.auth.verifyToken();
-          if (user) {
-            console.log("Token verified, restoring session for:", user.username);
-            setCurrentUser(user);
-            setIsLoggedIn(true);
-            localStorage.setItem('cafe_user', JSON.stringify(user));
-            return;
+          const cachedUser = JSON.parse(cachedUserRaw) as User;
+          if (cachedUser?.id) {
+            syncSessionState(cachedUser);
+          } else {
+            localStorage.removeItem('cafe_user');
           }
-        } catch (e) {
-          console.error("Token verification failed", e);
-          localStorage.removeItem('token');
+        } catch (parseErr) {
+          console.warn('Cached user parse failed, clearing stale cache.', parseErr);
           localStorage.removeItem('cafe_user');
         }
       }
+
+      try {
+        const verifiedUser = await api.auth.verifyToken();
+        if (verifiedUser?.id) {
+          console.log('Token verified, restoring session for:', verifiedUser.username);
+          syncSessionState(verifiedUser);
+          localStorage.setItem('cafe_user', JSON.stringify(verifiedUser));
+        } else {
+          localStorage.removeItem('token');
+          localStorage.removeItem('cafe_user');
+          syncSessionState(null);
+        }
+      } catch (e) {
+        console.error('Token verification failed', e);
+        localStorage.removeItem('token');
+        localStorage.removeItem('cafe_user');
+        syncSessionState(null);
+      } finally {
+        if (isMounted) setAuthHydrating(false);
+      }
     };
 
-    restoreSession();
+    void restoreSession();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const openLogin = () => {
@@ -125,8 +170,7 @@ const App: React.FC = () => {
     setCurrentUser(user);
     setIsLoggedIn(true);
     setIsAuthOpen(false);
-      localStorage.setItem('cafe_user', JSON.stringify(user));
-      sessionStorage.removeItem(CHECKIN_SESSION_KEY);
+    localStorage.setItem('cafe_user', JSON.stringify(user));
 
     // Check for Daily Bonus
     if (user.bonusReceived) {
@@ -154,8 +198,7 @@ const App: React.FC = () => {
     }
     setIsLoggedIn(false);
     setCurrentUser(null);
-      localStorage.removeItem('cafe_user');
-      sessionStorage.removeItem(CHECKIN_SESSION_KEY);
+    localStorage.removeItem('cafe_user');
     navigate('/');
   };
 
@@ -177,13 +220,6 @@ const App: React.FC = () => {
       // Ideally we should fetch the full updated user from backend, but this is enough for UI
       setCurrentUser(updatedUser);
       localStorage.setItem('cafe_user', JSON.stringify(updatedUser));
-      const token = localStorage.getItem('token');
-      if (token) {
-        sessionStorage.setItem(CHECKIN_SESSION_KEY, token);
-      } else {
-        // Test ve token restore edge-case'lerinde legacy işaretleyici.
-        sessionStorage.setItem(CHECKIN_SESSION_KEY, String(currentUser.id));
-      }
       navigate('/dashboard');
     }
   };
@@ -195,11 +231,7 @@ const App: React.FC = () => {
     const hasCafe = Boolean(user.cafe_id);
     const table = String(user.table_number || '').trim().toUpperCase();
     const hasTable = Boolean(table) && table !== 'NULL' && table !== 'UNDEFINED';
-    const token = localStorage.getItem('token');
-    const marker = sessionStorage.getItem(CHECKIN_SESSION_KEY);
-    const hasSessionCheckIn = token ? marker === token : marker === String(user.id);
-
-    return !(hasCafe && hasTable && hasSessionCheckIn);
+    return !(hasCafe && hasTable);
   };
 
   return (
@@ -225,7 +257,7 @@ const App: React.FC = () => {
             } />
 
             <Route path="/dashboard" element={
-              <ProtectedRoute user={currentUser}>
+              <ProtectedRoute user={currentUser} authReady={!authHydrating}>
                 <ErrorBoundary>
                   {requiresCheckIn(currentUser) ? (
                     <CafeSelection currentUser={currentUser!} onCheckInSuccess={handleCheckInSuccess} />
@@ -237,7 +269,7 @@ const App: React.FC = () => {
             } />
 
             <Route path="/admin" element={
-              <ProtectedRoute user={currentUser} isAdminRoute={true}>
+              <ProtectedRoute user={currentUser} authReady={!authHydrating} isAdminRoute={true}>
                 <ErrorBoundary>
                   <AdminDashboard currentUser={currentUser!} />
                 </ErrorBoundary>
@@ -245,7 +277,7 @@ const App: React.FC = () => {
             } />
 
             <Route path="/cafe-admin" element={
-              <ProtectedRoute user={currentUser} requiredRole="cafe_admin">
+              <ProtectedRoute user={currentUser} authReady={!authHydrating} requiredRole="cafe_admin">
                 <ErrorBoundary>
                   <CafeDashboard currentUser={currentUser!} />
                 </ErrorBoundary>

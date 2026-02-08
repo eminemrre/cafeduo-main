@@ -39,6 +39,11 @@ interface FieldErrors {
   password?: string;
 }
 
+interface AuthLikeError {
+  code?: string;
+  message?: string;
+}
+
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
@@ -167,21 +172,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         const user = await api.auth.login(email, password);
         onLoginSuccess(user);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Auth error:', err);
       let errorMessage = 'Bir hata oluştu.';
+      const authErr = (typeof err === 'object' && err !== null ? err : {}) as AuthLikeError;
+      const errCode = String(authErr.code || '');
       
       // Firebase error messages
-      if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+      if (errCode === 'auth/wrong-password' || errCode === 'auth/user-not-found') {
         errorMessage = 'E-posta veya şifre hatalı.';
-      } else if (err.code === 'auth/email-already-in-use') {
+      } else if (errCode === 'auth/email-already-in-use') {
         errorMessage = 'Bu e-posta zaten kullanımda.';
-      } else if (err.code === 'auth/weak-password') {
+      } else if (errCode === 'auth/weak-password') {
         errorMessage = 'Şifre çok zayıf, en az 6 karakter olmalı.';
-      } else if (err.code === 'auth/invalid-email') {
+      } else if (errCode === 'auth/invalid-email') {
         errorMessage = 'Geçersiz e-posta adresi.';
-      } else if (err.message) {
-        errorMessage = err.message;
+      } else if (authErr.message) {
+        errorMessage = authErr.message;
       }
 
       setError(errorMessage);

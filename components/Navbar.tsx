@@ -72,7 +72,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
                 <Coffee size={19} />
               </div>
               <div className="leading-tight min-w-0">
-                <span className="font-display text-[1.95rem] max-[430px]:text-[1.7rem] md:text-[1.65rem] text-cyan-100 block tracking-wide truncate">CafeDuo</span>
+                <span className="font-display text-[1.7rem] max-[430px]:text-[1.45rem] md:text-[1.65rem] text-cyan-100 block tracking-wide truncate">CafeDuo</span>
                 <span className="font-pixel text-[10px] tracking-[0.24em] text-cyan-300/80 block -mt-1 max-[430px]:hidden">
                   SOCIAL CAFE ENGINE
                 </span>

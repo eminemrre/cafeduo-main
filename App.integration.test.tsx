@@ -10,8 +10,6 @@ const mockUserUpdate = jest.fn();
 const mockSocketConnect = jest.fn();
 const mockSocketDisconnect = jest.fn();
 
-const CHECKIN_SESSION_KEY = 'cafeduo_checked_in_token';
-
 let nextAuthUser: User | null = null;
 
 jest.mock('./lib/api', () => ({
@@ -193,7 +191,7 @@ describe('App critical session and routing integration', () => {
     });
   });
 
-  it('forces check-in when marker is missing, even if user has table and cafe', async () => {
+  it('skips check-in when user has cafe and table information', async () => {
     renderAt('/');
     await loginFromHero({
       ...baseUser,
@@ -201,12 +199,12 @@ describe('App critical session and routing integration', () => {
       table_number: 'MASA12',
     });
 
-    expect(await screen.findByTestId('cafe-selection-view')).toBeInTheDocument();
-    expect(screen.queryByTestId('dashboard-view')).not.toBeInTheDocument();
+    expect(await screen.findByTestId('dashboard-view')).toBeInTheDocument();
+    expect(screen.queryByTestId('cafe-selection-view')).not.toBeInTheDocument();
   });
 
-  it('invalidates stale session marker on login and still requires a fresh check-in', async () => {
-    sessionStorage.setItem(CHECKIN_SESSION_KEY, String(baseUser.id));
+  it('ignores stale session marker and still trusts cafe/table state', async () => {
+    sessionStorage.setItem('cafeduo_checked_in_token', 'stale-token');
     renderAt('/');
 
     await loginFromHero({
@@ -215,11 +213,11 @@ describe('App critical session and routing integration', () => {
       table_number: 'MASA03',
     });
 
-    expect(sessionStorage.getItem(CHECKIN_SESSION_KEY)).toBeNull();
-    expect(await screen.findByTestId('cafe-selection-view')).toBeInTheDocument();
+    expect(await screen.findByTestId('dashboard-view')).toBeInTheDocument();
+    expect(screen.queryByTestId('cafe-selection-view')).not.toBeInTheDocument();
   });
 
-  it('marks check-in session and transitions to dashboard after successful check-in callback', async () => {
+  it('transitions to dashboard after successful check-in callback', async () => {
     renderAt('/');
 
     await loginFromHero({
@@ -232,19 +230,17 @@ describe('App critical session and routing integration', () => {
     fireEvent.click(checkInButton);
 
     await waitFor(() => {
-      expect(sessionStorage.getItem(CHECKIN_SESSION_KEY)).toBe(String(baseUser.id));
       expect(screen.getByTestId('dashboard-view')).toBeInTheDocument();
     });
   });
 
-  it('clears session marker on logout and returns user to landing view', async () => {
-    sessionStorage.setItem(CHECKIN_SESSION_KEY, String(baseUser.id));
+  it('returns user to landing view on logout', async () => {
     renderAt('/');
 
     await loginFromHero({
       ...baseUser,
-      cafe_id: 1,
-      table_number: 'MASA08',
+      cafe_id: undefined,
+      table_number: undefined,
     });
     mockLogout.mockResolvedValue({});
 
@@ -254,7 +250,6 @@ describe('App critical session and routing integration', () => {
 
     await waitFor(() => {
       expect(mockLogout).toHaveBeenCalledTimes(1);
-      expect(sessionStorage.getItem(CHECKIN_SESSION_KEY)).toBeNull();
       expect(screen.getByTestId('hero-view')).toBeInTheDocument();
     });
   });

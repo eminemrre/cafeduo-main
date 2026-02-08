@@ -62,10 +62,11 @@ export function useRewards({ currentUser }: UseRewardsProps): UseRewardsReturn {
     try {
       setRewardsLoading(true);
       const data = await api.rewards.list();
-      setRewards(data);
+      setRewards(Array.isArray(data) ? data : []);
       setRewardsError(null);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to load rewards:', err);
+      setRewards([]);
       setRewardsError('Ödüller yüklenemedi');
     } finally {
       setRewardsLoading(false);
@@ -79,17 +80,19 @@ export function useRewards({ currentUser }: UseRewardsProps): UseRewardsReturn {
     try {
       setInventoryLoading(true);
       const data = await api.shop.inventory(currentUser.id);
-      
+
       // Tarih dönüşümü
-      const formattedData = (data as InventoryApiItem[]).map((item) => ({
+      const rows = (Array.isArray(data) ? data : []) as InventoryApiItem[];
+      const formattedData = rows.map((item) => ({
         ...item,
         redeemedAt: new Date(item.redeemedAt)
       }));
-      
+
       setInventory(formattedData);
       setInventoryError(null);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Failed to load inventory:', err);
+      setInventory([]);
       setInventoryError('Envanter yüklenemedi');
     } finally {
       setInventoryLoading(false);

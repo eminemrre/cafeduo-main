@@ -217,6 +217,7 @@ export const bootstrapAuthenticatedPage = async (
     ({ token, userData, checkedIn }) => {
       localStorage.setItem('token', token);
       localStorage.setItem('cafe_user', JSON.stringify(userData));
+      localStorage.setItem('cookie_consent', 'true');
       if (checkedIn) {
         sessionStorage.setItem('cafeduo_checked_in_token', token);
       }

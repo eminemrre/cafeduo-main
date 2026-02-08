@@ -462,8 +462,8 @@ const initDb = async () => {
         console.log('🏆 Başlangıç başarımları eklendi.');
       }
 
-      // 8. Seed Initial Rewards (If empty)
-      const rewardsCheck = await pool.query('SELECT COUNT(*) FROM rewards');
+      // 8. Seed Initial Rewards (If there is no active reward left)
+      const rewardsCheck = await pool.query('SELECT COUNT(*) FROM rewards WHERE is_active = true');
       if (parseInt(rewardsCheck.rows[0].count) === 0) {
         await pool.query(`
             INSERT INTO rewards (title, cost, description, icon, is_active) VALUES
@@ -508,6 +508,11 @@ const commerceHandlers = createCommerceHandlers({
   logger,
   getMemoryItems: () => memoryItems,
   getMemoryRewards: () => MEMORY_REWARDS,
+  getMemoryUsers: () => MEMORY_USERS,
+  setMemoryUsers: (nextUsers) => {
+    MEMORY_USERS = nextUsers;
+    memoryState.users = nextUsers;
+  },
 });
 
 const gameHandlers = createGameHandlers({

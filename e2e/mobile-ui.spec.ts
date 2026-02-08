@@ -24,6 +24,13 @@ test.describe('Mobile UI Stability', () => {
     await loginButton.click();
     await expect(page.locator('[data-testid="auth-email-input"]')).toBeVisible();
 
+    // Akış kartları mobilde kaybolmamalı: 3 adım da görünür olmalı.
+    const flowHeading = page.getByRole('heading', { name: 'Akışı 3 adımda çalıştır.' });
+    await flowHeading.scrollIntoViewIfNeeded();
+    await expect(page.getByText('Hesabını aç').first()).toBeVisible();
+    await expect(page.getByText('Masanı doğrula').first()).toBeVisible();
+    await expect(page.getByText('Yarış ve kazan').first()).toBeVisible();
+
     const hasHorizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth + 1
     );
@@ -62,12 +69,9 @@ test.describe('Mobile UI Stability', () => {
 
     await gamesTab.click();
     await expect(gamesTab).toHaveClass(/rf-tab-active/);
-    const hasLobbyContent = await page
-      .locator('[data-testid="game-lobby-container"], [data-testid="game-lobby-empty"]')
-      .first()
-      .isVisible()
-      .catch(() => false);
-    expect(hasLobbyContent).toBeTruthy();
+    await expect(
+      page.locator('[data-testid="game-lobby-container"], [data-testid="game-lobby-empty"]').first()
+    ).toBeVisible({ timeout: 10000 });
 
     const hasHorizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth + 1

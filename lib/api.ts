@@ -37,14 +37,83 @@ const resolveApiBaseUrl = (): string => {
 const API_BASE_URL = resolveApiBaseUrl();
 const API_URL = API_BASE_URL ? `${API_BASE_URL}/api` : '/api';
 
-const parseApiError = async (response: Response): Promise<string> => {
-  const readJson = async (): Promise<any | null> => {
+interface ShopRewardPayload {
+  id: number;
+  user_id: number;
+  item_id: number;
+  item_title: string;
+  code: string;
+  redeemed_at: string;
+  is_used: boolean;
+  used_at: string | null;
+}
+
+interface ShopBuyResponse {
+  success: boolean;
+  newPoints: number;
+  reward?: ShopRewardPayload;
+  error?: string;
+}
+
+interface ShopInventoryRow {
+  redeemId: string | number;
+  id: string | number;
+  title: string;
+  code: string;
+  redeemedAt: string;
+  isUsed: boolean;
+}
+
+interface CouponUseItem {
+  id?: number;
+  user_id?: number;
+  item_id?: number;
+  item_title?: string;
+  code: string;
+  redeemed_at?: string;
+  is_used?: boolean;
+  used_at?: string | null;
+}
+
+interface AuthLoginResponse {
+  token?: string;
+  user?: User;
+  id?: string | number;
+}
+
+interface AuthRegisterResponse {
+  id?: string | number;
+  username?: string;
+  email?: string;
+}
+
+interface CafeCheckInResponse {
+  cafeName?: string;
+  cafe?: {
+    name?: string;
+  };
+  table?: string;
+}
+
+interface ApiErrorResponse {
+  status: number;
+  headers?: {
+    get?: (name: string) => string | null;
+  };
+  json?: () => Promise<unknown>;
+  text?: () => Promise<string>;
+  clone?: () => ApiErrorResponse;
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+const parseApiError = async (response: ApiErrorResponse): Promise<string> => {
+  const readJson = async (): Promise<unknown | null> => {
     try {
-      if (typeof (response as any).clone === 'function') {
-        return await (response as any).clone().json();
-      }
-      if (typeof (response as any).json === 'function') {
-        return await (response as any).json();
+      const source = typeof response.clone === 'function' ? response.clone() : response;
+      if (typeof source.json === 'function') {
+        return await source.json();
       }
     } catch {
       // fall through
@@ -54,11 +123,9 @@ const parseApiError = async (response: Response): Promise<string> => {
 
   const readText = async (): Promise<string> => {
     try {
-      if (typeof (response as any).clone === 'function') {
-        return String(await (response as any).clone().text()).trim();
-      }
-      if (typeof (response as any).text === 'function') {
-        return String(await (response as any).text()).trim();
+      const source = typeof response.clone === 'function' ? response.clone() : response;
+      if (typeof source.text === 'function') {
+        return String(await source.text()).trim();
       }
     } catch {
       // fall through
@@ -80,9 +147,7 @@ const parseApiError = async (response: Response): Promise<string> => {
   if (jsonPayload) {
     const jsonMessage =
       (typeof jsonPayload === 'string' && jsonPayload) ||
-      jsonPayload?.error ||
-      jsonPayload?.message ||
-      jsonPayload?.detail;
+      (isRecord(jsonPayload) && (jsonPayload.error || jsonPayload.message || jsonPayload.detail));
     if (jsonMessage) {
       return withRetryHint(String(jsonMessage));
     }
@@ -103,7 +168,7 @@ const parseApiError = async (response: Response): Promise<string> => {
  * @returns Parsed JSON response
  * @throws Error with message from server or network error
  */
-async function fetchAPI(endpoint: string, options: RequestInit = {}): Promise<any> {
+async function fetchAPI<TResponse = unknown>(endpoint: string, options: RequestInit = {}): Promise<TResponse> {
   const token = localStorage.getItem('token');
 
   const headers: HeadersInit = {
@@ -138,25 +203,25 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}): Promise<an
     throw new Error(await parseApiError(response));
   }
 
-  return response.json();
+  return (await response.json()) as TResponse;
 }
 
 export const api = {
   // AUTH
   auth: {
     login: async (email: string, password: string): Promise<User> => {
-      const data = await fetchAPI('/auth/login', {
+      const data = await fetchAPI<AuthLoginResponse>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
       if (data.token) {
         localStorage.setItem('token', data.token);
       }
-      return data.user || data;
+      return (data.user || data) as User;
     },
 
     register: async (username: string, email: string, password: string): Promise<User> => {
-      const data = await fetchAPI('/auth/register', {
+      const data = await fetchAPI<AuthRegisterResponse>('/auth/register', {
         method: 'POST',
         body: JSON.stringify({ username, email, password }),
       });
@@ -165,7 +230,7 @@ export const api = {
         const loginData = await api.auth.login(email, password);
         return loginData;
       }
-      return data;
+      return data as User;
     },
 
     googleLogin: async (): Promise<User> => {
@@ -184,7 +249,7 @@ export const api = {
       if (!token) return null;
 
       try {
-        const user = await fetchAPI('/auth/me');
+        const user = await fetchAPI<User>('/auth/me');
         return user;
       } catch {
         localStorage.removeItem('token');
@@ -244,7 +309,7 @@ export const api = {
 
     checkIn: async (params: { cafeId: string | number; tableNumber: number; pin: string }) => {
       // NOTE: userId artık token'dan alınıyor, body'e gönderilmiyor
-      return await fetchAPI(`/cafes/${params.cafeId}/check-in`, {
+      return await fetchAPI<CafeCheckInResponse>(`/cafes/${params.cafeId}/check-in`, {
         method: 'POST',
         body: JSON.stringify({
           cafeId: params.cafeId,
@@ -286,7 +351,7 @@ export const api = {
       });
     },
 
-    move: async (gameId: number | string, data: { gameState: any }) => {
+    move: async (gameId: number | string, data: { gameState: unknown }) => {
       return await fetchAPI(`/games/${gameId}/move`, {
         method: 'POST',
         body: JSON.stringify(data),
@@ -319,7 +384,7 @@ export const api = {
     },
 
     // REALTIME LISTENERS (Polling-based fallback)
-    onGameChange: (gameId: string, callback: (game: any) => void) => {
+    onGameChange: (gameId: string, callback: (game: GameRequest) => void) => {
       let interval: NodeJS.Timeout;
 
       const poll = async () => {
@@ -337,7 +402,7 @@ export const api = {
       return () => clearInterval(interval); // Unsubscribe function
     },
 
-    onLobbyChange: (callback: (games: any[]) => void) => {
+    onLobbyChange: (callback: (games: GameRequest[]) => void) => {
       let interval: NodeJS.Timeout;
 
       const poll = async () => {
@@ -378,14 +443,14 @@ export const api = {
   },
 
   shop: {
-    buy: async (rewardId: string | number): Promise<{ success: boolean; newPoints: number; reward?: any; error?: string }> => {
+    buy: async (rewardId: string | number): Promise<ShopBuyResponse> => {
       return await fetchAPI('/shop/buy', {
         method: 'POST',
         body: JSON.stringify({ rewardId }),
       });
     },
 
-    inventory: async (userId: string | number): Promise<any[]> => {
+    inventory: async (userId: string | number): Promise<ShopInventoryRow[]> => {
       return await fetchAPI(`/shop/inventory/${userId}`);
     }
   },
@@ -481,7 +546,7 @@ export const api = {
 
   // COUPONS (for CafeDashboard)
   coupons: {
-    use: async (code: string): Promise<{ success: boolean; item?: any }> => {
+    use: async (code: string): Promise<{ success: boolean; item?: CouponUseItem }> => {
       return await fetchAPI('/coupons/use', {
         method: 'POST',
         body: JSON.stringify({ code }),

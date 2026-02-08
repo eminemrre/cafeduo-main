@@ -6,7 +6,7 @@ import { useToast } from '../contexts/ToastContext';
 interface CreateGameModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (gameType: string, points: number) => void;
+  onSubmit: (gameType: string, points: number) => Promise<void> | void;
   maxPoints: number;
 }
 
@@ -116,11 +116,12 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      onSubmit(gameType, points);
+      await Promise.resolve(onSubmit(gameType, points));
       toast.success(`${gameType} oyunu oluşturuldu!`);
       onClose();
-    } catch (err: any) {
-      toast.error(err.message || 'Oyun oluşturulamadı');
+    } catch (err: unknown) {
+      const message = err instanceof Error && err.message ? err.message : 'Oyun oluşturulamadı';
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }

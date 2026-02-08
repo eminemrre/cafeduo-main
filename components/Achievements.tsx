@@ -1,15 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Lock, Star, Footprints, Gamepad2, Crown, Coins } from 'lucide-react';
-
-interface Achievement {
-    id: number;
-    title: string;
-    description: string;
-    icon: string;
-    points_reward: number;
-    unlocked: boolean;
-    unlockedAt: string | null;
-}
+import { api } from '../lib/api';
+import type { Achievement } from '../types';
 
 interface AchievementsProps {
     userId: string | number;
@@ -18,15 +10,18 @@ interface AchievementsProps {
 export const Achievements: React.FC<AchievementsProps> = ({ userId }) => {
     const [achievements, setAchievements] = useState<Achievement[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchAchievements = async () => {
             try {
-                const res = await fetch(`/api/achievements/${userId}`);
-                const data = await res.json();
-                setAchievements(data);
-            } catch (err) {
+                const data = await api.achievements.list(userId);
+                setAchievements(Array.isArray(data) ? data : []);
+                setError(null);
+            } catch (err: unknown) {
                 console.error(err);
+                setAchievements([]);
+                setError('Başarımlar yüklenemedi.');
             } finally {
                 setLoading(false);
             }
@@ -45,10 +40,24 @@ export const Achievements: React.FC<AchievementsProps> = ({ userId }) => {
         }
     };
 
-    if (loading) return <div className="p-8 text-center text-gray-500">Yükleniyor...</div>;
+    if (loading) {
+        return (
+            <div className="p-8 text-center text-gray-500" aria-busy="true" aria-live="polite">
+                Yükleniyor...
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="p-8 text-center text-red-300 rf-panel border border-red-400/30 rounded-xl" role="alert" aria-live="polite">
+                {error}
+            </div>
+        );
+    }
 
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" aria-busy={loading} aria-live="polite">
             {achievements.map((ach) => (
                 <div
                     key={ach.id}

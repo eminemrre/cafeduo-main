@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { GameRequest, User } from '../../types';
+import { GameHistoryEntry, GameRequest, User } from '../../types';
 import { GameLobby } from '../GameLobby';
 import { CreateGameModal } from '../CreateGameModal';
 import { RetroButton } from '../RetroButton';
@@ -22,6 +22,8 @@ interface GameSectionProps {
   // Oyun listesi
   games: GameRequest[];
   gamesLoading: boolean;
+  gameHistory?: GameHistoryEntry[];
+  historyLoading?: boolean;
   
   // Aktif oyun
   activeGameId: string | number | null;
@@ -34,6 +36,7 @@ interface GameSectionProps {
   // Handler'lar
   onCreateGame: (gameType: string, points: number) => Promise<void>;
   onJoinGame: (gameId: number) => Promise<void>;
+  onCancelGame?: (gameId: number | string) => Promise<void>;
   onViewProfile: (username: string) => void;
   onRejoinGame: () => void;
 }
@@ -44,12 +47,15 @@ export const GameSection: React.FC<GameSectionProps> = ({
   isMatched,
   games,
   gamesLoading,
+  gameHistory = [],
+  historyLoading = false,
   activeGameId,
   serverActiveGame,
   isCreateModalOpen,
   setIsCreateModalOpen,
   onCreateGame,
   onJoinGame,
+  onCancelGame = async () => {},
   onViewProfile,
   onRejoinGame
 }) => {
@@ -133,11 +139,55 @@ export const GameSection: React.FC<GameSectionProps> = ({
             requests={games}
             currentUser={currentUser}
             onJoinGame={onJoinGame}
+            onCancelGame={onCancelGame}
             onCreateGameClick={() => setIsCreateModalOpen(true)}
             onViewProfile={onViewProfile}
           />
         </div>
       )}
+
+      {/* Oyun Geçmişi */}
+      <div className="rf-panel border-cyan-400/20 rounded-xl overflow-hidden">
+        <div className="px-4 py-3 border-b border-cyan-400/20 bg-[#0a1732]/75">
+          <h3 className="font-pixel text-white text-sm md:text-base tracking-wide">GEÇMİŞ OYUNLAR</h3>
+        </div>
+
+        <div className="p-4">
+          {historyLoading ? (
+            <p className="text-sm text-[var(--rf-muted)]">Geçmiş yükleniyor...</p>
+          ) : (gameHistory?.length ?? 0) === 0 ? (
+            <p className="text-sm text-[var(--rf-muted)]">
+              Henüz tamamlanan oyunun yok. İlk oyunu bitirince burada görünecek.
+            </p>
+          ) : (
+            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+              {gameHistory.slice(0, 10).map((item) => (
+                <article
+                  key={item.id}
+                  className="rounded-lg border border-cyan-400/15 bg-[#0a1631]/65 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                >
+                  <div className="min-w-0">
+                    <p className="text-white text-sm font-semibold truncate">{item.gameType}</p>
+                    <p className="text-xs text-[var(--rf-muted)]">
+                      Rakip: <span className="text-cyan-200">{item.opponentName}</span> · Masa {item.table}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className={`px-2 py-1 rounded border ${
+                      item.didWin
+                        ? 'border-emerald-400/35 bg-emerald-500/10 text-emerald-300'
+                        : 'border-rose-400/35 bg-rose-500/10 text-rose-300'
+                    }`}>
+                      {item.didWin ? 'Kazandın' : 'Kaybettin'}
+                    </span>
+                    <span className="text-[var(--rf-muted)]">{new Date(item.createdAt).toLocaleDateString('tr-TR')}</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Create Game Modal */}
       <CreateGameModal

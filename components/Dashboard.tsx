@@ -55,6 +55,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isOwnProfile, setIsOwnProfile] = useState(false);
 
   // ==========================================
   // CUSTOM HOOKS
@@ -63,6 +64,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   const {
     games,
     loading: gamesLoading,
+    gameHistory,
+    historyLoading,
     refetch,
     activeGameId,
     activeGameType,
@@ -71,6 +74,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
     serverActiveGame,
     createGame,
     joinGame,
+    cancelGame,
     leaveGame,
     setActiveGame
   } = useGames({ currentUser, tableCode });
@@ -90,6 +94,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
     setTableCode(normalizedTable);
     setIsMatched(Boolean(currentUser.cafe_id) && Boolean(normalizedTable));
   }, [currentUser.cafe_id, currentUser.table_number]);
+
+  useEffect(() => {
+    if (isProfileOpen && isOwnProfile) {
+      setProfileUser(currentUser);
+    }
+  }, [currentUser, isOwnProfile, isProfileOpen]);
 
   // ==========================================
   // HANDLER'LAR
@@ -168,8 +178,39 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
 
   // Profil görüntüleme
   const handleViewProfile = (username: string) => {
-    setProfileUser({ id: 0, username, email: '', points: 0, wins: 0, gamesPlayed: 0 } as User);
+    const isSelf = username.toLowerCase() === String(currentUser.username || '').toLowerCase();
+    setIsOwnProfile(isSelf);
+    setProfileUser(
+      isSelf
+        ? currentUser
+        : ({ id: 0, username, email: '', points: 0, wins: 0, gamesPlayed: 0 } as User)
+    );
     setIsProfileOpen(true);
+  };
+
+  const handleOpenOwnProfile = () => {
+    setIsOwnProfile(true);
+    setProfileUser(currentUser);
+    setIsProfileOpen(true);
+  };
+
+  const handleSaveProfile = async (department: string) => {
+    if (!isOwnProfile) return;
+    const updatedUser = {
+      ...currentUser,
+      department,
+    };
+    await onUpdateUser(updatedUser);
+    setProfileUser(updatedUser);
+  };
+
+  const handleCancelGame = async (gameId: number | string) => {
+    try {
+      await cancelGame(gameId);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Oyun iptal edilirken hata oluştu.';
+      alert(message);
+    }
   };
 
   const handleLeaveGame = () => {
@@ -262,6 +303,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
           user={currentUser}
           tableCode={tableCode}
           isMatched={isMatched}
+          onOpenProfile={handleOpenOwnProfile}
         />
 
         {/* Main Navigation Tabs */}
@@ -280,7 +322,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
                   key={tab.id}
                   onClick={() => setMainTab(tab.id as typeof mainTab)}
                   data-testid={`dashboard-tab-${tab.id}`}
-                  className={`rf-tab-button relative flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-2.5 md:px-6 py-2.5 md:py-3 rounded-lg font-medium text-[13px] md:text-base ${
+                  aria-label={tab.label}
+                  className={`rf-tab-button relative flex-1 min-w-0 flex items-center justify-center gap-1 md:gap-2 px-2 md:px-6 py-2.5 md:py-3 rounded-lg font-medium text-[12px] md:text-base ${
                     isActive ? 'rf-tab-active' : ''
                   }`}
                   whileTap={{ scale: 0.98 }}
@@ -298,10 +341,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
                       transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                     />
                   )}
-                  <span className="relative z-10 flex items-center gap-1.5 md:gap-2 min-w-0">
+                  <span className="relative z-10 flex items-center gap-1 md:gap-2 min-w-0">
                     <Icon size={16} className="md:w-5 md:h-5 shrink-0" />
-                    <span className="hidden sm:inline">{tab.label}</span>
-                    <span className="sm:hidden truncate">{tab.mobileLabel}</span>
+                    <span className="hidden sm:inline truncate">{tab.label}</span>
+                    <span className="sm:hidden max-[360px]:hidden truncate">{tab.mobileLabel}</span>
                   </span>
                 </motion.button>
               );
@@ -319,28 +362,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
             transition={{ duration: 0.2 }}
           >
             {mainTab === 'games' && (
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 md:gap-8">
+              <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.85fr)_minmax(420px,1fr)] 2xl:grid-cols-[minmax(0,2fr)_minmax(460px,1fr)] gap-6 md:gap-8">
                 {/* Sol: Oyun Lobisi */}
-                <div className="xl:col-span-2 order-1">
+                <div className="order-1 min-w-0">
                   <GameSection
                     currentUser={currentUser}
                     tableCode={tableCode}
                     isMatched={isMatched}
                     games={games}
                     gamesLoading={gamesLoading}
+                    gameHistory={gameHistory}
+                    historyLoading={historyLoading}
                     activeGameId={activeGameId}
                     serverActiveGame={serverActiveGame}
                     isCreateModalOpen={isCreateModalOpen}
                     setIsCreateModalOpen={setIsCreateModalOpen}
                     onCreateGame={handleCreateGame}
                     onJoinGame={handleJoinGame}
+                    onCancelGame={handleCancelGame}
                     onViewProfile={handleViewProfile}
                     onRejoinGame={handleRejoinGame}
                   />
                 </div>
 
                 {/* Sağ: Mağaza & Envanter */}
-                <div className="xl:col-span-1 order-2">
+                <div className="order-2 min-w-0">
                   <RewardSection
                     currentUser={currentUser}
                     rewards={rewards}
@@ -370,6 +416,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
           isOpen={isProfileOpen}
           onClose={() => setIsProfileOpen(false)}
           user={profileUser}
+          isEditable={isOwnProfile}
+          onSaveProfile={handleSaveProfile}
         />
       </div>
     </div>

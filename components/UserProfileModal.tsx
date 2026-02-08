@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Trophy, Gamepad2, Star, Clock, Edit2, Save, Briefcase } from 'lucide-react';
 import { User } from '../types';
 import { api } from '../lib/api';
@@ -8,12 +8,25 @@ interface UserProfileModalProps {
     isOpen: boolean;
     onClose: () => void;
     user: User | null;
+    isEditable?: boolean;
+    onSaveProfile?: (department: string) => Promise<void> | void;
 }
 
-export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose, user }) => {
+export const UserProfileModal: React.FC<UserProfileModalProps> = ({
+    isOpen,
+    onClose,
+    user,
+    isEditable = false,
+    onSaveProfile,
+}) => {
     const [isEditing, setIsEditing] = useState(false);
     const [department, setDepartment] = useState(user?.department || '');
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        setDepartment(user?.department || '');
+        setIsEditing(false);
+    }, [user?.id, user?.department, isOpen]);
 
     if (!isOpen || !user) return null;
 
@@ -31,10 +44,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
     const handleSave = async () => {
         setLoading(true);
         try {
-            await api.users.update({ ...user, department });
+            if (onSaveProfile) {
+                await onSaveProfile(department);
+            } else {
+                await api.users.update({ ...user, department });
+            }
             setIsEditing(false);
-            // Note: In a real app, we should update the parent state or refetch user
-            user.department = department;
         } catch (err) {
             alert('Güncelleme başarısız.');
         } finally {
@@ -64,7 +79,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
 
                                 {/* Department Section */}
                                 <div className="mt-2 flex items-center gap-2">
-                                    {isEditing ? (
+                                    {isEditable && isEditing ? (
                                         <div className="flex items-center gap-2">
                                             <select
                                                 value={department}
@@ -81,10 +96,19 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onCl
                                             </button>
                                         </div>
                                     ) : (
-                                        <div className="flex items-center gap-2 group cursor-pointer" onClick={() => { setDepartment(user.department || ''); setIsEditing(true); }}>
+                                        <div
+                                            className={`flex items-center gap-2 ${isEditable ? 'group cursor-pointer' : ''}`}
+                                            onClick={() => {
+                                                if (!isEditable) return;
+                                                setDepartment(user.department || '');
+                                                setIsEditing(true);
+                                            }}
+                                        >
                                             <Briefcase size={12} className="text-gray-500" />
                                             <span className="text-gray-400 text-xs font-mono">{user.department || 'Bölüm Girilmedi'}</span>
-                                            <Edit2 size={10} className="text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            {isEditable && (
+                                                <Edit2 size={10} className="text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            )}
                                         </div>
                                     )}
                                 </div>

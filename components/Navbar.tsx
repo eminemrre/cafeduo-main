@@ -59,7 +59,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
             <motion.div
               whileHover={{ y: -1 }}
               whileTap={{ scale: 0.98 }}
-              className="flex items-center gap-3 cursor-pointer"
+              className="flex items-center gap-2.5 md:gap-3 cursor-pointer min-w-0"
               onClick={() => {
                 if (isLoggedIn) {
                   navigate('/dashboard');
@@ -68,12 +68,12 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
                 }
               }}
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-300 via-sky-400 to-blue-500 text-[#021022] flex items-center justify-center shadow-[0_0_24px_rgba(0,217,255,0.45)]">
+              <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-cyan-300 via-sky-400 to-blue-500 text-[#021022] flex items-center justify-center shadow-[0_0_24px_rgba(0,217,255,0.45)] shrink-0">
                 <Coffee size={19} />
               </div>
-              <div className="leading-tight">
-                <span className="font-display text-2xl md:text-[1.65rem] text-cyan-100 block tracking-wide">CafeDuo</span>
-                <span className="font-pixel text-[10px] tracking-[0.28em] text-cyan-300/80 block -mt-1">
+              <div className="leading-tight min-w-0">
+                <span className="font-display text-[1.95rem] max-[430px]:text-[1.7rem] md:text-[1.65rem] text-cyan-100 block tracking-wide truncate">CafeDuo</span>
+                <span className="font-pixel text-[10px] tracking-[0.24em] text-cyan-300/80 block -mt-1 max-[430px]:hidden">
                   SOCIAL CAFE ENGINE
                 </span>
               </div>

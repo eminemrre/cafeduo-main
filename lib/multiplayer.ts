@@ -99,7 +99,15 @@ export const submitScoreAndWaitForWinner = async (params: {
     try {
       const game = await api.games.get(gameId);
       const participants = [normalizeName(game?.hostName), normalizeName(game?.guestName)].filter(Boolean);
-      const rawScoreboard = (game?.gameState?.results as Scoreboard) || {};
+      const gameState = game?.gameState;
+      const maybeResults =
+        gameState && typeof gameState === 'object'
+          ? (gameState as { results?: unknown }).results
+          : undefined;
+      const rawScoreboard =
+        maybeResults && typeof maybeResults === 'object' && !Array.isArray(maybeResults)
+          ? (maybeResults as Scoreboard)
+          : {};
       scoreboard = filterScoreboardToParticipants(rawScoreboard, participants);
       const winner = pickWinnerFromScoreboard(scoreboard);
       if (winner) {

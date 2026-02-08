@@ -59,7 +59,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
     <section
       ref={sectionRef}
       id="home"
-      className="relative min-h-[calc(100vh-64px)] md:min-h-screen pt-[calc(5.5rem+env(safe-area-inset-top))] md:pt-32 overflow-hidden"
+      className="relative min-h-[calc(100vh-64px)] md:min-h-screen pt-[calc(5rem+env(safe-area-inset-top))] md:pt-32 overflow-hidden"
       onMouseMove={handlePointerMove}
       onMouseLeave={() => {
         pointerX.set(0);
@@ -129,7 +129,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
           >
             <span className="rf-kicker mb-5">RETRO-FÜTÜRİSTİK SOSYAL KAFE AĞI</span>
 
-            <h1 className="font-display text-[2.25rem] sm:text-[2.8rem] md:text-[4.2rem] leading-[1.02] text-white tracking-tight">
+            <h1 className="font-display text-[2rem] max-[360px]:text-[1.75rem] sm:text-[2.8rem] md:text-[4.2rem] leading-[1.02] text-white tracking-tight">
               Kafenin ritmini
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-teal-300">
                 mini oyunlarla
@@ -137,7 +137,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
               gerçek zamanlı yaşat.
             </h1>
 
-            <p className="mt-5 text-lg sm:text-xl md:text-[1.6rem] text-slate-300 max-w-2xl leading-snug">
+            <p className="mt-5 text-base sm:text-xl md:text-[1.6rem] text-slate-300 max-w-2xl leading-snug">
               CafeDuo; hızlı maç, canlı skor ve ödül döngüsünü tek akışta birleştirir.
               Oyuncu, masa ve kafe paneli aynı omurgada buluşur.
             </p>
@@ -146,7 +146,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
               {isLoggedIn ? (
                 <RetroButton
                   onClick={handlePanelClick}
-                  className="w-full sm:w-auto min-w-[220px] py-3.5 text-base"
+                  className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base"
                   variant="primary"
                 >
                   PANELE GEÇ <ArrowRight className="ml-2" size={18} />
@@ -158,7 +158,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                     variantA={
                       <RetroButton
                         onClick={onRegister}
-                        className="w-full sm:w-auto min-w-[220px] py-3.5 text-base"
+                        className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base"
                         variant="primary"
                       >
                         HEMEN BAŞLA <ArrowRight className="ml-2" size={18} />
@@ -167,7 +167,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                     variantB={
                       <RetroButton
                         onClick={onRegister}
-                        className="w-full sm:w-auto min-w-[220px] py-3.5 text-base"
+                        className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base"
                         variant="primary"
                       >
                         ÜCRETSİZ KAYDOL <Sparkles className="ml-2" size={18} />
@@ -178,7 +178,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                   <RetroButton
                     onClick={onLogin}
                     data-testid="hero-login-button"
-                    className="w-full sm:w-auto min-w-[220px] py-3.5 text-base"
+                    className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base"
                     variant="secondary"
                   >
                     GİRİŞ YAP
@@ -187,7 +187,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
               )}
             </div>
 
-            <div className="mt-7 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl">
+            <div className="mt-7 grid grid-cols-1 min-[520px]:grid-cols-3 gap-3 max-w-2xl">
               <div className="rf-panel p-4 animate-neon-pulse rf-horizon">
                 <p className="font-pixel text-[10px] tracking-[0.18em] text-cyan-300 uppercase">Tur süresi</p>
                 <p className="text-3xl font-display text-white mt-1">45 sn</p>
@@ -205,7 +205,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
               </div>
             </div>
 
-            <div className="mt-6 max-w-full overflow-hidden rounded-full border border-cyan-400/25 bg-[#06142b]/78">
+            <div className="mt-6 max-w-full overflow-hidden rounded-full border border-cyan-400/25 bg-[#06142b]/78 hidden sm:block">
               <motion.div
                 className="flex items-center gap-8 sm:whitespace-nowrap px-5 py-2 text-[11px] uppercase tracking-[0.2em] font-pixel text-cyan-200/85"
                 animate={{ x: ['0%', '-50%'] }}
@@ -218,6 +218,18 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                 <span>PIN doğrulama hattı</span>
                 <span>Kupon kapanış kontrolü</span>
               </motion.div>
+            </div>
+
+            <div className="mt-6 sm:hidden grid grid-cols-1 gap-2 max-w-2xl">
+              <div className="rounded-full border border-cyan-400/25 bg-[#06142b]/78 px-4 py-2 text-[11px] uppercase tracking-[0.14em] font-pixel text-cyan-200/85">
+                Canlı skor senkronu
+              </div>
+              <div className="rounded-full border border-cyan-400/25 bg-[#06142b]/78 px-4 py-2 text-[11px] uppercase tracking-[0.14em] font-pixel text-cyan-200/85">
+                PIN doğrulama hattı
+              </div>
+              <div className="rounded-full border border-cyan-400/25 bg-[#06142b]/78 px-4 py-2 text-[11px] uppercase tracking-[0.14em] font-pixel text-cyan-200/85">
+                Kupon kapanış kontrolü
+              </div>
             </div>
           </motion.div>
 

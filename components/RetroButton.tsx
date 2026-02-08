@@ -1,10 +1,11 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { HTMLMotionProps, motion } from 'framer-motion';
 
-interface RetroButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface RetroButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   icon?: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export const RetroButton: React.FC<RetroButtonProps> = ({ 

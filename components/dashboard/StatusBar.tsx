@@ -12,18 +12,25 @@ interface StatusBarProps {
   user: User;
   tableCode: string;
   isMatched: boolean;
+  onOpenProfile?: () => void;
 }
 
 export const StatusBar: React.FC<StatusBarProps> = ({
   user,
   tableCode,
-  isMatched
+  isMatched,
+  onOpenProfile
 }) => {
   return (
     <div className="rf-panel border-cyan-400/20 rounded-xl p-4 md:p-5 mb-6">
       <div className="flex flex-col gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center gap-3 min-w-0">
+          <button
+            type="button"
+            className="flex items-center gap-3 min-w-0 text-left"
+            onClick={onOpenProfile}
+            aria-label="Profilini aç"
+          >
             <div className="w-11 h-11 rounded-full bg-[#0a2d52] border border-cyan-300/35 flex items-center justify-center text-cyan-100 font-semibold text-base shadow-[0_8px_20px_rgba(0,0,0,0.28)]">
               {user.username.charAt(0).toUpperCase()}
             </div>
@@ -31,7 +38,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
               <h3 className="text-white font-semibold truncate">{user.username}</h3>
               <p className="text-[var(--rf-muted)] text-sm truncate">{user.department || 'Öğrenci'}</p>
             </div>
-          </div>
+          </button>
 
           <div
             className={`inline-flex items-center gap-2 self-start sm:self-auto rounded-full px-3 py-1.5 border ${

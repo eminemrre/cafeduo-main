@@ -99,14 +99,14 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
           {rewardsLoading ? (
             <SkeletonGrid count={3} columns={1} />
           ) : (rewards?.length ?? 0) > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2 gap-4">
               {rewards.map((reward) => {
                 const affordable = canAfford(reward.cost);
                 
                 return (
                   <motion.div
                     key={reward.id}
-                    className={`relative group bg-[#0b1834]/82 border rounded-xl p-5 flex flex-col justify-between h-full cursor-pointer ${
+                    className={`relative group bg-[#0b1834]/82 border rounded-xl p-4 sm:p-5 flex flex-col justify-between min-h-[220px] cursor-pointer ${
                       affordable
                         ? 'border-cyan-300/30'
                         : 'border-slate-500/35 opacity-60'
@@ -132,10 +132,10 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                         </span>
                       </div>
                       
-                      <h4 className="text-lg font-bold text-white mb-1">
+                      <h4 className="text-base sm:text-lg font-bold text-white mb-1 break-words">
                         {reward.title}
                       </h4>
-                      <p className="text-xs text-[var(--rf-muted)] mb-4">
+                      <p className="text-xs text-[var(--rf-muted)] mb-4 break-words">
                         {reward.description}
                       </p>
                     </div>

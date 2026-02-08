@@ -14,6 +14,7 @@ interface GameLobbyProps {
   currentUser: User;
   requests: GameRequest[];
   onJoinGame: (id: number) => void;
+  onCancelGame?: (id: number | string) => void;
   onCreateGameClick: () => void;
   onViewProfile: (username: string) => void;
 }
@@ -22,6 +23,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
   currentUser,
   requests,
   onJoinGame,
+  onCancelGame = () => {},
   onCreateGameClick,
   onViewProfile
 }) => {
@@ -130,10 +132,10 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                     <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-gray-700 rounded-full"></div>
                   </motion.button>
                   <div className="min-w-0 flex-1">
-                    <div className="text-white font-bold flex items-center gap-2 font-mono text-sm md:text-base truncate">
+                    <div className="text-white font-bold flex items-center gap-2 font-mono text-sm md:text-base min-w-0">
                       <button 
                         onClick={() => onViewProfile(req.hostName || 'Unknown')} 
-                        className="hover:underline hover:text-blue-300 truncate"
+                        className="hover:underline hover:text-blue-300 truncate max-w-[11rem] sm:max-w-none"
                       >
                         {req.hostName || 'Unknown'}
                       </button>
@@ -141,7 +143,7 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                         {req.table}
                       </span>
                     </div>
-                    <div className="text-xs md:text-sm text-[var(--rf-muted)] flex items-center gap-2">
+                    <div className="text-xs md:text-sm text-[var(--rf-muted)] flex items-center gap-2 min-w-0">
                       <span>{gameIcon(req.gameType)}</span>
                       <span className="truncate">{req.gameType}</span>
                     </div>
@@ -158,9 +160,20 @@ export const GameLobby: React.FC<GameLobbyProps> = ({
                     KATIL
                   </motion.button>
                 ) : (
-                  <span className="text-[var(--rf-muted)] font-pixel text-xs px-4 py-2 border border-cyan-400/18 rounded flex-shrink-0">
-                    SENİN OYUNUN
-                  </span>
+                  <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto">
+                    <span className="text-[var(--rf-muted)] font-pixel text-xs px-3 py-2 border border-cyan-400/18 rounded flex-shrink-0">
+                      SENİN OYUNUN
+                    </span>
+                    {String(req.status || '').toLowerCase() === 'waiting' && (
+                      <button
+                        onClick={() => onCancelGame(req.id)}
+                        className="px-3 py-2 text-xs border border-rose-400/35 text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 rounded transition-colors"
+                        data-testid={`cancel-game-${req.id}`}
+                      >
+                        İPTAL ET
+                      </button>
+                    )}
+                  </div>
                 )}
               </motion.div>
             ))

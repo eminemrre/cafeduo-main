@@ -16,6 +16,11 @@ jest.mock('../constants', () => ({
 global.fetch = jest.fn();
 
 describe('Leaderboard', () => {
+  const okJson = (body: unknown) => ({
+    ok: true,
+    json: async () => body,
+  });
+
   const mockUsers = [
     {
       id: 1,
@@ -48,7 +53,7 @@ describe('Leaderboard', () => {
   });
 
   it('renders leaderboard title', () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({ json: async () => [] });
+    (fetch as jest.Mock).mockResolvedValueOnce(okJson([]));
     
     render(<Leaderboard />);
     
@@ -56,7 +61,7 @@ describe('Leaderboard', () => {
   });
 
   it('renders filter buttons', () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({ json: async () => [] });
+    (fetch as jest.Mock).mockResolvedValueOnce(okJson([]));
     
     render(<Leaderboard />);
     
@@ -73,9 +78,7 @@ describe('Leaderboard', () => {
   });
 
   it('renders user list with correct data', async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      json: async () => mockUsers,
-    });
+    (fetch as jest.Mock).mockResolvedValueOnce(okJson(mockUsers));
 
     render(<Leaderboard />);
 
@@ -87,9 +90,7 @@ describe('Leaderboard', () => {
   });
 
   it('displays points in correct format', async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      json: async () => [mockUsers[0]],
-    });
+    (fetch as jest.Mock).mockResolvedValueOnce(okJson([mockUsers[0]]));
 
     render(<Leaderboard />);
 
@@ -103,9 +104,7 @@ describe('Leaderboard', () => {
   });
 
   it('shows empty state when no users', async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      json: async () => [],
-    });
+    (fetch as jest.Mock).mockResolvedValueOnce(okJson([]));
 
     render(<Leaderboard />);
 
@@ -115,9 +114,7 @@ describe('Leaderboard', () => {
   });
 
   it('fetches general leaderboard by default', async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      json: async () => [],
-    });
+    (fetch as jest.Mock).mockResolvedValueOnce(okJson([]));
 
     render(<Leaderboard />);
 
@@ -130,8 +127,8 @@ describe('Leaderboard', () => {
 
   it('switches to department filter and shows dropdown', async () => {
     (fetch as jest.Mock)
-      .mockResolvedValueOnce({ json: async () => [] }) // initial load
-      .mockResolvedValueOnce({ json: async () => [] }); // after filter change
+      .mockResolvedValueOnce(okJson([])) // initial load
+      .mockResolvedValueOnce(okJson([])); // after filter change
 
     render(<Leaderboard />);
 
@@ -151,9 +148,9 @@ describe('Leaderboard', () => {
 
   it('changes department and re-fetches', async () => {
     (fetch as jest.Mock)
-      .mockResolvedValueOnce({ json: async () => [] })
-      .mockResolvedValueOnce({ json: async () => [] })
-      .mockResolvedValueOnce({ json: async () => [] });
+      .mockResolvedValueOnce(okJson([]))
+      .mockResolvedValueOnce(okJson([]))
+      .mockResolvedValueOnce(okJson([]));
 
     render(<Leaderboard />);
 
@@ -177,7 +174,7 @@ describe('Leaderboard', () => {
   });
 
   it('renders table headers correctly', () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({ json: async () => [] });
+    (fetch as jest.Mock).mockResolvedValueOnce(okJson([]));
     
     render(<Leaderboard />);
     
@@ -190,13 +187,14 @@ describe('Leaderboard', () => {
   });
 
   it('handles fetch errors gracefully', async () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     (fetch as jest.Mock).mockRejectedValueOnce(new Error('API Error'));
 
     render(<Leaderboard />);
 
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalled();
+      expect(screen.getByText('Liderlik tablosu yüklenemedi.')).toBeInTheDocument();
     });
 
     consoleSpy.mockRestore();

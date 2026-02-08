@@ -71,7 +71,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                 api.cafes.list()
             ]);
             setUsers(usersData as AdminUserRow[]);
-            setGames(gamesData as AdminGameRow[]);
+            setGames(gamesData);
             setCafes(cafesData as Cafe[]);
             setUserPointDrafts(
                 usersData.reduce((acc: Record<string, string>, user: User) => {

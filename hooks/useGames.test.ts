@@ -10,9 +10,11 @@ jest.mock('../lib/api', () => ({
       create: jest.fn(),
       join: jest.fn(),
       get: jest.fn(),
+      delete: jest.fn(),
     },
     users: {
       getActiveGame: jest.fn(),
+      getGameHistory: jest.fn(),
     }
   }
 }));
@@ -35,6 +37,8 @@ describe('useGames', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
+    (api.users.getGameHistory as jest.Mock).mockResolvedValue([]);
+    (api.games.delete as jest.Mock).mockResolvedValue({ success: true });
   });
 
   afterEach(() => {
@@ -79,7 +83,7 @@ describe('useGames', () => {
     });
   });
 
-  it('filters out unknown users', async () => {
+  it('keeps lobby list as returned by API', async () => {
     const mockGames = [
       { id: 1, hostName: 'user1', gameType: 'Refleks Avı', points: 50, table: 'MASA01', status: 'waiting' },
       { id: 2, hostName: 'Unknown', gameType: 'Ritim Kopyala', points: 100, table: 'MASA02', status: 'waiting' },
@@ -101,14 +105,14 @@ describe('useGames', () => {
     });
 
     await waitFor(() => {
-      // Only 1 game should remain (filters out 'Unknown' and 'unknown')
-      expect(result.current.games.length).toBe(1);
-      expect(result.current.games[0].hostName).toBe('user1');
+      expect(result.current.games).toEqual(mockGames);
     });
   });
 
-  it('handles API error', async () => {
-    (api.games.list as jest.Mock).mockRejectedValue(new Error('Network error'));
+  it('keeps stable state when API request fails', async () => {
+    (api.games.list as jest.Mock)
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValueOnce([]);
     (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);
 
     const { result } = renderHook(() => 
@@ -119,12 +123,17 @@ describe('useGames', () => {
       expect(api.games.list).toHaveBeenCalled();
     });
 
+    await waitFor(() => {
+      expect(result.current.error).toBe('Oyunlar yüklenemedi');
+      expect(Array.isArray(result.current.games)).toBe(true);
+    });
+
     act(() => {
-      jest.advanceTimersByTime(100);
+      jest.advanceTimersByTime(5000);
     });
 
     await waitFor(() => {
-      expect(result.current.error).toBe('Oyunlar yüklenemedi');
+      expect(result.current.error).toBeNull();
       expect(result.current.games).toEqual([]);
     });
   });
@@ -335,6 +344,32 @@ describe('useGames', () => {
     expect(result.current.activeGameId).toBeNull();
     expect(result.current.activeGameType).toBe('');
     expect(result.current.opponentName).toBeUndefined();
+  });
+
+  it('cancelGame calls delete endpoint and refreshes game list', async () => {
+    (api.games.list as jest.Mock)
+      .mockResolvedValueOnce([
+        { id: 91, hostName: 'testuser', gameType: 'Refleks Avı', points: 25, table: 'MASA01', status: 'waiting' },
+      ])
+      .mockResolvedValueOnce([]);
+    (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);
+
+    const { result } = renderHook(() =>
+      useGames({ currentUser: mockUser, tableCode: mockTableCode })
+    );
+
+    await waitFor(() => {
+      expect(result.current.games.length).toBe(1);
+    });
+
+    await act(async () => {
+      await result.current.cancelGame(91);
+    });
+
+    expect(api.games.delete).toHaveBeenCalledWith(91);
+    await waitFor(() => {
+      expect(result.current.games.length).toBe(0);
+    });
   });
 
   it('refetch calls fetchGames and checkActiveGame', async () => {

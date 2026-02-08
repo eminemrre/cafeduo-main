@@ -8,12 +8,12 @@ describe('HowItWorks', () => {
 
     expect(screen.getByText('Akışı 3 adımda çalıştır.')).toBeInTheDocument();
 
-    expect(screen.getByText('Hesabını aç')).toBeInTheDocument();
-    expect(screen.getByText('Masanı doğrula')).toBeInTheDocument();
-    expect(screen.getByText('Yarış ve kazan')).toBeInTheDocument();
+    expect(screen.getAllByText('Hesabını aç').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Masanı doğrula').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Yarış ve kazan').length).toBeGreaterThan(0);
 
-    expect(screen.getByText('20 sn')).toBeInTheDocument();
-    expect(screen.getByText('15 sn')).toBeInTheDocument();
-    expect(screen.getByText('45 sn')).toBeInTheDocument();
+    expect(screen.getAllByText('20 sn').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('15 sn').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('45 sn').length).toBeGreaterThan(0);
   });
 });

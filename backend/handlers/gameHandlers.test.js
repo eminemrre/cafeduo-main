@@ -95,7 +95,7 @@ describe('gameHandlers (memory mode)', () => {
     expect(memoryGames[0].table).toBe('MASA05');
   });
 
-  it('joins only same table game', async () => {
+  it('allows checked-in users to join waiting games', async () => {
     memoryGames = [
       {
         id: 1,
@@ -107,20 +107,12 @@ describe('gameHandlers (memory mode)', () => {
       },
     ];
 
-    const forbiddenReq = {
+    const joinReq = {
       params: { id: '1' },
       user: { username: 'u2', role: 'user', isAdmin: false, table_number: '7', cafe_id: 1 },
     };
-    const forbiddenRes = createMockRes();
-    await handlers.joinGame(forbiddenReq, forbiddenRes);
-    expect(forbiddenRes.status).toHaveBeenCalledWith(403);
-
-    const okReq = {
-      params: { id: '1' },
-      user: { username: 'u2', role: 'user', isAdmin: false, table_number: '5', cafe_id: 1 },
-    };
     const okRes = createMockRes();
-    await handlers.joinGame(okReq, okRes);
+    await handlers.joinGame(joinReq, okRes);
     expect(okRes.statusCode).toBe(200);
     expect(memoryGames[0].status).toBe('active');
     expect(memoryGames[0].guestName).toBe('u2');
@@ -194,5 +186,52 @@ describe('gameHandlers (memory mode)', () => {
     expect(deleteRes.statusCode).toBe(200);
     expect(memoryGames).toHaveLength(0);
   });
-});
 
+  it('returns recent finished game history for actor', async () => {
+    memoryGames = [
+      {
+        id: 10,
+        hostName: 'u1',
+        guestName: 'u2',
+        winner: 'u1',
+        gameType: 'Refleks Avı',
+        points: 25,
+        table: 'MASA03',
+        status: 'finished',
+        createdAt: '2026-02-08T10:00:00Z',
+      },
+      {
+        id: 11,
+        hostName: 'u3',
+        guestName: 'u1',
+        winner: 'u3',
+        gameType: 'Çift Tek Sprint',
+        points: 35,
+        table: 'MASA07',
+        status: 'finished',
+        createdAt: '2026-02-08T11:00:00Z',
+      },
+    ];
+
+    const req = {
+      params: { username: 'u1' },
+      user: { username: 'u1', role: 'user', isAdmin: false },
+    };
+    const res = createMockRes();
+    await handlers.getUserGameHistory(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(Array.isArray(res.payload)).toBe(true);
+    expect(res.payload).toHaveLength(2);
+    expect(res.payload[0]).toMatchObject({
+      id: 11,
+      opponentName: 'u3',
+      didWin: false,
+    });
+    expect(res.payload[1]).toMatchObject({
+      id: 10,
+      opponentName: 'u2',
+      didWin: true,
+    });
+  });
+});

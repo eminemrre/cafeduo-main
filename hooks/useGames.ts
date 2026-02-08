@@ -6,7 +6,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { GameRequest, User } from '../types';
+import { GameHistoryEntry, GameRequest, User } from '../types';
 import { api } from '../lib/api';
 
 interface UseGamesProps {
@@ -19,6 +19,8 @@ interface UseGamesReturn {
   games: GameRequest[];
   loading: boolean;
   error: string | null;
+  gameHistory: GameHistoryEntry[];
+  historyLoading: boolean;
   refetch: () => Promise<void>;
   
   // Aktif oyun
@@ -31,6 +33,7 @@ interface UseGamesReturn {
   // Oyun yönetimi
   createGame: (gameType: string, points: number) => Promise<void>;
   joinGame: (gameId: number) => Promise<void>;
+  cancelGame: (gameId: number | string) => Promise<void>;
   leaveGame: () => void;
   setActiveGame: (gameId: string | number | null, gameType?: string, opponent?: string, bot?: boolean) => void;
 }
@@ -43,6 +46,8 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
   const [games, setGames] = useState<GameRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [gameHistory, setGameHistory] = useState<GameHistoryEntry[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
   
   // Aktif oyun state'leri
   const [activeGameId, setActiveGameId] = useState<string | number | null>(null);
@@ -65,13 +70,8 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
         setLoading(true);
       }
       const data = await api.games.list();
-      
-      // Bilinmeyen kullanıcıları filtrele
-      const validGames = data.filter((g: GameRequest) =>
-        g.hostName && g.hostName.toLowerCase() !== 'unknown'
-      );
-      
-      setGames(validGames);
+      const list = Array.isArray(data) ? data : [];
+      setGames(list);
       setError(null);
     } catch (err) {
       console.error('Failed to load games:', err);
@@ -82,6 +82,27 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
       }
     }
   }, []);
+
+  /**
+   * Kullanıcının tamamlanmış oyun geçmişini çek
+   */
+  const fetchGameHistory = useCallback(async (options?: { silent?: boolean }) => {
+    const silent = Boolean(options?.silent);
+    try {
+      if (!silent) {
+        setHistoryLoading(true);
+      }
+      const history = await api.users.getGameHistory(currentUser.username);
+      setGameHistory(Array.isArray(history) ? history : []);
+    } catch (err) {
+      console.error('Failed to load game history:', err);
+      setGameHistory([]);
+    } finally {
+      if (!silent) {
+        setHistoryLoading(false);
+      }
+    }
+  }, [currentUser.username]);
 
   /**
    * Kullanıcının aktif oyununu kontrol et
@@ -118,8 +139,9 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
     await Promise.all([
       fetchGames(),
       checkActiveGame(),
+      fetchGameHistory(),
     ]);
-  }, [fetchGames, checkActiveGame]);
+  }, [fetchGames, checkActiveGame, fetchGameHistory]);
 
   /**
    * Yeni oyun kur
@@ -142,11 +164,15 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
       setActiveGameType('');
       setOpponentName(undefined);
       setIsBot(false);
+      await Promise.all([
+        fetchGames({ silent: true }),
+        fetchGameHistory({ silent: true }),
+      ]);
     } catch (err) {
       console.error('Failed to create game:', err);
       throw new Error(toMessage(err, 'Oyun kurulurken hata oluştu'));
     }
-  }, [currentUser.username, currentUser.table_number, tableCode]);
+  }, [currentUser.username, currentUser.table_number, tableCode, fetchGames, fetchGameHistory]);
 
   /**
    * Mevcut oyuna katıl
@@ -168,12 +194,39 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
       missingActivePollCountRef.current = 0;
 
       // Lobi listesini tazele (oyun waiting listesinden düşmeli)
-      await fetchGames({ silent: true });
+      await Promise.all([
+        fetchGames({ silent: true }),
+        fetchGameHistory({ silent: true }),
+      ]);
     } catch (err) {
       console.error('Failed to join game:', err);
       throw new Error(toMessage(err, 'Oyuna katılırken hata oluştu'));
     }
-  }, [currentUser.username, games, fetchGames]);
+  }, [currentUser.username, games, fetchGames, fetchGameHistory]);
+
+  /**
+   * Bekleyen oyunu iptal et
+   */
+  const cancelGame = useCallback(async (gameId: number | string) => {
+    try {
+      await api.games.delete(gameId);
+      if (String(activeGameId) === String(gameId)) {
+        setActiveGameId(null);
+        setActiveGameType('');
+        setOpponentName(undefined);
+        setIsBot(false);
+      }
+
+      await Promise.all([
+        fetchGames({ silent: true }),
+        checkActiveGame({ ignoreLocalActive: true }),
+        fetchGameHistory({ silent: true }),
+      ]);
+    } catch (err) {
+      console.error('Failed to cancel game:', err);
+      throw new Error(toMessage(err, 'Oyun iptal edilirken hata oluştu'));
+    }
+  }, [activeGameId, checkActiveGame, fetchGameHistory, fetchGames]);
 
   /**
    * Oyundan ayrıl
@@ -242,11 +295,13 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
     // İlk yükleme
     fetchGames();
     checkActiveGame();
+    fetchGameHistory();
 
     // Polling başlat (5 saniyede bir)
     intervalRef.current = setInterval(() => {
       fetchGames({ silent: true });
       checkActiveGame({ preserveUntilConfirmedEmpty: true });
+      fetchGameHistory({ silent: true });
     }, 5000);
 
     // Cleanup
@@ -255,13 +310,15 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
         clearInterval(intervalRef.current);
       }
     };
-  }, [fetchGames, checkActiveGame]);
+  }, [fetchGames, checkActiveGame, fetchGameHistory]);
 
   return {
     // Oyun listesi
     games,
     loading,
     error,
+    gameHistory,
+    historyLoading,
     refetch,
     
     // Aktif oyun
@@ -274,6 +331,7 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
     // Oyun yönetimi
     createGame,
     joinGame,
+    cancelGame,
     leaveGame,
     setActiveGame
   };

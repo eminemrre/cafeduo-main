@@ -53,9 +53,17 @@ describe('UserProfileModal', () => {
 
   it('edits department and saves successfully', async () => {
     const user = createUser();
-    (api.users.update as jest.Mock).mockResolvedValueOnce({ ok: true });
+    const onSaveProfile = jest.fn().mockResolvedValueOnce(undefined);
 
-    const { container } = render(<UserProfileModal isOpen={true} onClose={jest.fn()} user={user} />);
+    const { container } = render(
+      <UserProfileModal
+        isOpen={true}
+        onClose={jest.fn()}
+        user={user}
+        isEditable={true}
+        onSaveProfile={onSaveProfile}
+      />
+    );
     fireEvent.click(screen.getByText('Bölüm Girilmedi'));
 
     const select = screen.getByRole('combobox');
@@ -68,23 +76,25 @@ describe('UserProfileModal', () => {
     fireEvent.click(saveButton as HTMLButtonElement);
 
     await waitFor(() => {
-      expect(api.users.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          id: 7,
-          department: 'Bilgisayar Mühendisliği',
-        })
-      );
+      expect(onSaveProfile).toHaveBeenCalledWith('Bilgisayar Mühendisliği');
     });
-    expect(user.department).toBe('Bilgisayar Mühendisliği');
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
   });
 
   it('shows alert when save fails', async () => {
     const user = createUser();
-    (api.users.update as jest.Mock).mockRejectedValueOnce(new Error('db down'));
+    const onSaveProfile = jest.fn().mockRejectedValueOnce(new Error('db down'));
     const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
 
-    const { container } = render(<UserProfileModal isOpen={true} onClose={jest.fn()} user={user} />);
+    const { container } = render(
+      <UserProfileModal
+        isOpen={true}
+        onClose={jest.fn()}
+        user={user}
+        isEditable={true}
+        onSaveProfile={onSaveProfile}
+      />
+    );
     fireEvent.click(screen.getByText('Bölüm Girilmedi'));
     fireEvent.change(screen.getByRole('combobox'), {
       target: { value: 'İşletme' },

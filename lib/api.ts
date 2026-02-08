@@ -2,7 +2,7 @@
  * API Layer - REST API Client
  * Handles all HTTP communication with the backend
  */
-import type { User, GameRequest, Reward, Cafe, Achievement } from '../types';
+import type { User, GameRequest, Reward, Cafe, Achievement, GameHistoryEntry, AdminGameRow } from '../types';
 
 const withProtocol = (url: string): string => {
   if (url.startsWith('/') || /^https?:\/\//i.test(url)) return url;
@@ -215,6 +215,15 @@ export const api = {
         return await fetchAPI(`/users/${encodeURIComponent(username)}/active-game`);
       } catch {
         return null;
+      }
+    },
+
+    getGameHistory: async (username: string): Promise<GameHistoryEntry[]> => {
+      try {
+        const payload = await fetchAPI(`/users/${encodeURIComponent(username)}/game-history`);
+        return Array.isArray(payload) ? payload : [];
+      } catch {
+        return [];
       }
     }
   },
@@ -442,7 +451,7 @@ export const api = {
       });
     },
 
-    getGames: async (): Promise<GameRequest[]> => {
+    getGames: async (): Promise<AdminGameRow[]> => {
       return await fetchAPI('/admin/games');
     },
 

@@ -803,6 +803,9 @@ app.post('/api/games/:id/finish', authenticateToken, gameHandlers.finishGame);
 // 9. DELETE GAME
 app.delete('/api/games/:id', authenticateToken, gameHandlers.deleteGame);
 
+// 9.1 USER GAME HISTORY
+app.get('/api/users/:username/game-history', authenticateToken, gameHandlers.getUserGameHistory);
+
 
 
 // 7. SHOP: BUY ITEM - PROTECTED (Fixed IDOR & Race Condition)

@@ -17,6 +17,7 @@ export const Leaderboard: React.FC = () => {
     const [filterType, setFilterType] = useState<'general' | 'department'>('general');
     const [selectedDepartment, setSelectedDepartment] = useState<string>(PAU_DEPARTMENTS[0]);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         fetchLeaderboard();
@@ -27,9 +28,15 @@ export const Leaderboard: React.FC = () => {
         try {
             const res = await fetch(`/api/leaderboard?type=${filterType}&department=${encodeURIComponent(selectedDepartment)}`);
             const data = await res.json();
-            setUsers(data);
+            if (!res.ok) {
+                throw new Error(typeof data?.error === 'string' ? data.error : 'Liderlik tablosu yüklenemedi.');
+            }
+            setUsers(Array.isArray(data) ? data : []);
+            setError(null);
         } catch (err) {
             console.error(err);
+            setUsers([]);
+            setError('Liderlik tablosu yüklenemedi.');
         } finally {
             setLoading(false);
         }
@@ -96,6 +103,12 @@ export const Leaderboard: React.FC = () => {
                             <tr>
                                 <td colSpan={5} className="p-8 text-center text-gray-500 animate-pulse">
                                     Yükleniyor...
+                                </td>
+                            </tr>
+                        ) : error ? (
+                            <tr>
+                                <td colSpan={5} className="p-8 text-center text-red-300">
+                                    {error}
                                 </td>
                             </tr>
                         ) : users.length === 0 ? (

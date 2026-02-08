@@ -50,6 +50,29 @@ export interface GameRequest {
   gameState?: unknown;
 }
 
+export interface GameHistoryEntry {
+  id: string | number;
+  gameType: string;
+  points: number;
+  status: string;
+  table: string;
+  opponentName: string;
+  winner: string | null;
+  didWin: boolean;
+  createdAt: string;
+}
+
+export interface AdminGameRow {
+  id: number;
+  host_name: string;
+  guest_name: string | null;
+  game_type: string;
+  status: string;
+  created_at: string;
+  cafe_name?: string | null;
+  table_code?: string | null;
+}
+
 export interface Achievement {
   id: string | number;
   title: string;

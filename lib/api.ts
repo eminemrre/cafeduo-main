@@ -2,7 +2,7 @@
  * API Layer - REST API Client
  * Handles all HTTP communication with the backend
  */
-import type { User, GameRequest, Reward, Cafe } from '../types';
+import type { User, GameRequest, Reward, Cafe, Achievement } from '../types';
 
 const withProtocol = (url: string): string => {
   if (url.startsWith('/') || /^https?:\/\//i.test(url)) return url;
@@ -386,6 +386,26 @@ export const api = {
     get: async (): Promise<User[]> => {
       return await fetchAPI('/leaderboard');
     }
+  },
+
+  // ACHIEVEMENTS
+  achievements: {
+    list: async (userId: string | number): Promise<Achievement[]> => {
+      const payload = await fetchAPI(`/achievements/${userId}`);
+      if (!Array.isArray(payload)) {
+        return [];
+      }
+
+      return payload.map((row) => ({
+        id: row?.id,
+        title: String(row?.title || ''),
+        description: String(row?.description || ''),
+        icon: String(row?.icon || 'star'),
+        points_reward: Math.max(0, Number(row?.points_reward || 0)),
+        unlocked: Boolean(row?.unlocked),
+        unlockedAt: row?.unlockedAt ? String(row.unlockedAt) : null,
+      }));
+    },
   },
 
   // ADMIN (for AdminDashboard)

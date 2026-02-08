@@ -7,9 +7,15 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { Achievements } from './Achievements';
+import { api } from '../lib/api';
 
-// Mock fetch
-global.fetch = jest.fn();
+jest.mock('../lib/api', () => ({
+  api: {
+    achievements: {
+      list: jest.fn(),
+    },
+  },
+}));
 
 describe('Achievements', () => {
   const mockAchievements = [
@@ -47,7 +53,7 @@ describe('Achievements', () => {
   });
 
   it('renders loading state initially', () => {
-    (fetch as jest.Mock).mockImplementation(() => new Promise(() => {}));
+    (api.achievements.list as jest.Mock).mockImplementation(() => new Promise(() => {}));
     
     render(<Achievements userId={1} />);
     
@@ -55,9 +61,7 @@ describe('Achievements', () => {
   });
 
   it('renders achievements after loading', async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      json: async () => mockAchievements,
-    });
+    (api.achievements.list as jest.Mock).mockResolvedValueOnce(mockAchievements);
 
     render(<Achievements userId={1} />);
 
@@ -69,9 +73,7 @@ describe('Achievements', () => {
   });
 
   it('displays unlocked achievements with correct styling', async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      json: async () => [mockAchievements[0]],
-    });
+    (api.achievements.list as jest.Mock).mockResolvedValueOnce([mockAchievements[0]]);
 
     render(<Achievements userId={1} />);
 
@@ -83,9 +85,7 @@ describe('Achievements', () => {
   });
 
   it('displays locked achievements with lock icon', async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      json: async () => [mockAchievements[1]],
-    });
+    (api.achievements.list as jest.Mock).mockResolvedValueOnce([mockAchievements[1]]);
 
     render(<Achievements userId={1} />);
 
@@ -96,44 +96,49 @@ describe('Achievements', () => {
   });
 
   it('fetches achievements with correct userId', async () => {
-    (fetch as jest.Mock).mockResolvedValueOnce({
-      json: async () => [],
-    });
+    (api.achievements.list as jest.Mock).mockResolvedValueOnce([]);
 
     render(<Achievements userId={42} />);
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith('/api/achievements/42');
+      expect(api.achievements.list).toHaveBeenCalledWith(42);
     });
   });
 
   it('handles fetch error gracefully', async () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-    (fetch as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
+    (api.achievements.list as jest.Mock).mockRejectedValueOnce(new Error('Network error'));
 
     render(<Achievements userId={1} />);
 
     await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalled();
+      expect(screen.getByText('Başarımlar yüklenemedi.')).toBeInTheDocument();
     });
-
-    consoleSpy.mockRestore();
   });
 
   it('re-fetches when userId changes', async () => {
-    (fetch as jest.Mock)
-      .mockResolvedValueOnce({ json: async () => [] })
-      .mockResolvedValueOnce({ json: async () => mockAchievements });
+    (api.achievements.list as jest.Mock)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce(mockAchievements);
 
     const { rerender } = render(<Achievements userId={1} />);
 
-    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(api.achievements.list).toHaveBeenCalledTimes(1));
 
     rerender(<Achievements userId={2} />);
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledTimes(2);
-      expect(fetch).toHaveBeenLastCalledWith('/api/achievements/2');
+      expect(api.achievements.list).toHaveBeenCalledTimes(2);
+      expect(api.achievements.list).toHaveBeenLastCalledWith(2);
+    });
+  });
+
+  it('does not crash if api returns a non-array payload', async () => {
+    (api.achievements.list as jest.Mock).mockResolvedValueOnce({ error: 'bad-shape' });
+
+    render(<Achievements userId={1} />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Yükleniyor...')).not.toBeInTheDocument();
     });
   });
 });

@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useState } from 'react';
-import { User } from '../types';
+import { User, Reward } from '../types';
 import { UserProfileModal } from './UserProfileModal';
 import { ReflexRush } from './ReflexRush';
 import { ArenaBattle } from './ArenaBattle';
@@ -146,7 +146,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
   };
 
   // Ödül satın alma
-  const handleBuyReward = async (reward: typeof rewards[0]) => {
+  const handleBuyReward = async (reward: Reward) => {
     try {
       const result = await buyReward(reward);
       
@@ -157,8 +157,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
       });
       
       alert(`${reward.title} satın alındı! Kupon kodu: ${result.code}`);
-    } catch (err: any) {
-      alert(err.message || 'Satın alma başarısız.');
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : 'Satın alma başarısız.';
+      alert(message);
     }
   };
 

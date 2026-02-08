@@ -50,6 +50,16 @@ export interface GameRequest {
   gameState?: unknown;
 }
 
+export interface Achievement {
+  id: string | number;
+  title: string;
+  description: string;
+  icon: string;
+  points_reward: number;
+  unlocked: boolean;
+  unlockedAt: string | null;
+}
+
 export interface Reward {
   id: string | number;
   title: string;

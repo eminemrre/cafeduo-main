@@ -13,6 +13,7 @@ import { socketService } from './lib/socket';
 import { CafeSelection } from './components/CafeSelection';
 import { CookieConsent } from './components/CookieConsent';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
 
@@ -170,7 +171,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleCheckInSuccess = (cafeName: string, tableNumber: string, cafeId: number) => {
+  const handleCheckInSuccess = (cafeName: string, tableNumber: string, cafeId: string | number) => {
     if (currentUser) {
       const updatedUser = { ...currentUser, cafe_name: cafeName, table_number: tableNumber, cafe_id: cafeId }; // Optimistic update
       // Ideally we should fetch the full updated user from backend, but this is enough for UI
@@ -225,23 +226,29 @@ const App: React.FC = () => {
 
             <Route path="/dashboard" element={
               <ProtectedRoute user={currentUser}>
-                {requiresCheckIn(currentUser) ? (
-                  <CafeSelection currentUser={currentUser!} onCheckInSuccess={handleCheckInSuccess} />
-                ) : (
-                  <Dashboard currentUser={currentUser!} onUpdateUser={handleUpdateUser} />
-                )}
+                <ErrorBoundary>
+                  {requiresCheckIn(currentUser) ? (
+                    <CafeSelection currentUser={currentUser!} onCheckInSuccess={handleCheckInSuccess} />
+                  ) : (
+                    <Dashboard currentUser={currentUser!} onUpdateUser={handleUpdateUser} />
+                  )}
+                </ErrorBoundary>
               </ProtectedRoute>
             } />
 
             <Route path="/admin" element={
               <ProtectedRoute user={currentUser} isAdminRoute={true}>
-                <AdminDashboard currentUser={currentUser!} />
+                <ErrorBoundary>
+                  <AdminDashboard currentUser={currentUser!} />
+                </ErrorBoundary>
               </ProtectedRoute>
             } />
 
             <Route path="/cafe-admin" element={
               <ProtectedRoute user={currentUser} requiredRole="cafe_admin">
-                <CafeDashboard currentUser={currentUser!} />
+                <ErrorBoundary>
+                  <CafeDashboard currentUser={currentUser!} />
+                </ErrorBoundary>
               </ProtectedRoute>
             } />
 

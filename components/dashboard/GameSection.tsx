@@ -81,9 +81,11 @@ export const GameSection: React.FC<GameSectionProps> = ({
 
   const handleQuickJoin = async () => {
     if (!quickJoinCandidate || !isMatched || quickJoinBusy) return;
+    const quickJoinId = Number(quickJoinCandidate.id);
+    if (!Number.isFinite(quickJoinId)) return;
     setQuickJoinBusy(true);
     try {
-      await onJoinGame(Number(quickJoinCandidate.id));
+      await onJoinGame(quickJoinId);
     } finally {
       setQuickJoinBusy(false);
     }

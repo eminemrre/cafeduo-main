@@ -135,6 +135,41 @@ const isSameActiveGame = (a: GameRequest | null, b: GameRequest | null): boolean
   );
 };
 
+const normalizeGameId = (game: Partial<GameRequest>): string => String(game.id ?? '').trim();
+
+const normalizeLobbyList = (
+  data: unknown,
+  resolvedTableCode: string
+): GameRequest[] => {
+  if (!Array.isArray(data)) return [];
+
+  const seenIds = new Set<string>();
+  return data
+    .filter((item): item is GameRequest => typeof item === 'object' && item !== null)
+    .filter((game) => String(game.status || '').toLowerCase() === 'waiting')
+    .filter((game) => {
+      const id = normalizeGameId(game);
+      if (!id || id === 'undefined' || id === 'null') {
+        return false;
+      }
+      if (seenIds.has(id)) {
+        return false;
+      }
+      seenIds.add(id);
+      return true;
+    })
+    .sort((left, right) => {
+      const leftSameTable = normalizeTableCode(left.table) === resolvedTableCode ? 1 : 0;
+      const rightSameTable = normalizeTableCode(right.table) === resolvedTableCode ? 1 : 0;
+      if (leftSameTable !== rightSameTable) {
+        return rightSameTable - leftSameTable;
+      }
+      const leftCreatedAt = new Date(String((left as { createdAt?: unknown }).createdAt || 0)).getTime();
+      const rightCreatedAt = new Date(String((right as { createdAt?: unknown }).createdAt || 0)).getTime();
+      return rightCreatedAt - leftCreatedAt;
+    });
+};
+
 export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesReturn {
   const resolvedTableCode = normalizeTableCode(tableCode || currentUser.table_number);
   const isAdminActor = currentUser.role === 'admin' || currentUser.isAdmin === true;
@@ -181,18 +216,7 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
         tableCode: resolvedTableCode,
         includeAll: isAdminActor || Boolean(resolvedTableCode),
       });
-      const list = (Array.isArray(data) ? data : [])
-        .filter((game) => String(game.status || '').toLowerCase() === 'waiting')
-        .sort((left, right) => {
-          const leftSameTable = normalizeTableCode(left.table) === resolvedTableCode ? 1 : 0;
-          const rightSameTable = normalizeTableCode(right.table) === resolvedTableCode ? 1 : 0;
-          if (leftSameTable !== rightSameTable) {
-            return rightSameTable - leftSameTable;
-          }
-          const leftCreatedAt = new Date(String((left as { createdAt?: unknown }).createdAt || 0)).getTime();
-          const rightCreatedAt = new Date(String((right as { createdAt?: unknown }).createdAt || 0)).getTime();
-          return rightCreatedAt - leftCreatedAt;
-        });
+      const list = normalizeLobbyList(data, resolvedTableCode);
       setGames((prev) => (isSameGameList(prev, list) ? prev : list));
       setError((prev) => (prev ? null : prev));
     } catch (err) {

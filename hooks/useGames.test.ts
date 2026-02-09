@@ -125,6 +125,25 @@ describe('useGames', () => {
     });
   });
 
+  it('deduplicates malformed duplicate lobby entries by game id', async () => {
+    const duplicatedGames = [
+      { id: 7, hostName: 'user1', gameType: 'Refleks Avı', points: 50, table: 'MASA01', status: 'waiting' },
+      { id: 7, hostName: 'user1', gameType: 'Refleks Avı', points: 50, table: 'MASA01', status: 'waiting' },
+      { id: 8, hostName: 'user2', gameType: 'Ritim Kopyala', points: 80, table: 'MASA02', status: 'waiting' },
+    ];
+    (api.games.list as jest.Mock).mockResolvedValue(duplicatedGames);
+    (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);
+
+    const { result } = renderHook(() =>
+      useGames({ currentUser: mockUser, tableCode: mockTableCode })
+    );
+
+    await waitFor(() => {
+      expect(result.current.games).toHaveLength(2);
+    });
+    expect(result.current.games.map((game) => game.id)).toEqual([7, 8]);
+  });
+
   it('keeps stable state when API request fails', async () => {
     (api.games.list as jest.Mock)
       .mockRejectedValueOnce(new Error('Network error'))

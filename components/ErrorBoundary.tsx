@@ -1,5 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle } from 'lucide-react';
+import { isDynamicImportError } from '../lib/chunkLoad';
+import { safeGoHome, safeReload } from '../lib/navigation';
 
 interface Props {
     children: ReactNode;
@@ -29,6 +31,11 @@ export class ErrorBoundary extends Component<Props, State> {
 
     public render() {
         if (this.state.hasError) {
+            const isChunkError = isDynamicImportError(this.state.error);
+            const actionLabel = isChunkError
+                ? 'Sayfayı Yeniden Yükle'
+                : 'Önbelleği Temizle ve Ana Sayfaya Dön';
+
             return (
                 <div className="min-h-screen bg-[#0f141a] text-white flex flex-col items-center justify-center p-4">
                     <div className="bg-red-900/20 border border-red-500/50 p-8 rounded-xl max-w-2xl w-full">
@@ -51,12 +58,17 @@ export class ErrorBoundary extends Component<Props, State> {
 
                         <button
                             onClick={() => {
+                                if (isChunkError) {
+                                    safeReload();
+                                    return;
+                                }
+
                                 localStorage.clear();
-                                window.location.href = '/';
+                                safeGoHome();
                             }}
                             className="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-lg font-medium transition-colors w-full"
                         >
-                            Önbelleği Temizle ve Ana Sayfaya Dön
+                            {actionLabel}
                         </button>
                     </div>
                 </div>

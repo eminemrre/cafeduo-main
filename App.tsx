@@ -10,6 +10,7 @@ import { AuthModal } from './components/AuthModal';
 import { User } from './types';
 import { api } from './lib/api';
 import { socketService } from './lib/socket';
+import { lazyWithRetry } from './lib/lazyWithRetry';
 import { CafeSelection } from './components/CafeSelection';
 import { CookieConsent } from './components/CookieConsent';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
@@ -18,10 +19,22 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
 
 // Lazy Load Components
-const Games = React.lazy(() => import('./components/Games').then(module => ({ default: module.Games })));
-const Dashboard = React.lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
-const AdminDashboard = React.lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
-const CafeDashboard = React.lazy(() => import('./components/CafeDashboard').then(module => ({ default: module.CafeDashboard })));
+const Games = lazyWithRetry(
+  () => import('./components/Games').then((module) => ({ default: module.Games })),
+  'Games'
+);
+const Dashboard = lazyWithRetry(
+  () => import('./components/Dashboard').then((module) => ({ default: module.Dashboard })),
+  'Dashboard'
+);
+const AdminDashboard = lazyWithRetry(
+  () => import('./components/AdminDashboard').then((module) => ({ default: module.AdminDashboard })),
+  'AdminDashboard'
+);
+const CafeDashboard = lazyWithRetry(
+  () => import('./components/CafeDashboard').then((module) => ({ default: module.CafeDashboard })),
+  'CafeDashboard'
+);
 
 // Loading Component
 const PageLoader = () => (

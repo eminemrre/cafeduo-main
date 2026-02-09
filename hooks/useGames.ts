@@ -41,7 +41,104 @@ interface UseGamesReturn {
 const toMessage = (err: unknown, fallback: string) =>
   err instanceof Error && err.message ? err.message : fallback;
 
+const normalizeTableCode = (rawValue: unknown): string => {
+  const raw = String(rawValue || '').trim().toUpperCase();
+  if (!raw || raw === 'NULL' || raw === 'UNDEFINED') return '';
+  if (raw.startsWith('MASA')) return raw;
+  const numeric = Number(raw);
+  if (Number.isInteger(numeric) && numeric > 0) {
+    return `MASA${String(numeric).padStart(2, '0')}`;
+  }
+  return raw;
+};
+
+const gameSnapshot = (game: Partial<GameRequest>) => ({
+  id: String(game.id ?? ''),
+  hostName: String(game.hostName ?? ''),
+  guestName: String(game.guestName ?? ''),
+  gameType: String(game.gameType ?? ''),
+  points: Number(game.points ?? 0),
+  table: String(game.table ?? ''),
+  status: String(game.status ?? ''),
+  createdAt: String((game as { createdAt?: unknown }).createdAt ?? ''),
+});
+
+const isSameGameList = (prev: GameRequest[], next: GameRequest[]) => {
+  if (prev === next) return true;
+  if (prev.length !== next.length) return false;
+  for (let i = 0; i < prev.length; i += 1) {
+    const a = gameSnapshot(prev[i]);
+    const b = gameSnapshot(next[i]);
+    if (
+      a.id !== b.id ||
+      a.hostName !== b.hostName ||
+      a.guestName !== b.guestName ||
+      a.gameType !== b.gameType ||
+      a.points !== b.points ||
+      a.table !== b.table ||
+      a.status !== b.status ||
+      a.createdAt !== b.createdAt
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const historySnapshot = (entry: Partial<GameHistoryEntry>) => ({
+  id: String(entry.id ?? ''),
+  gameType: String(entry.gameType ?? ''),
+  points: Number(entry.points ?? 0),
+  status: String(entry.status ?? ''),
+  table: String(entry.table ?? ''),
+  opponentName: String(entry.opponentName ?? ''),
+  winner: String(entry.winner ?? ''),
+  didWin: Boolean(entry.didWin),
+  createdAt: String(entry.createdAt ?? ''),
+});
+
+const isSameHistory = (prev: GameHistoryEntry[], next: GameHistoryEntry[]) => {
+  if (prev === next) return true;
+  if (prev.length !== next.length) return false;
+  for (let i = 0; i < prev.length; i += 1) {
+    const a = historySnapshot(prev[i]);
+    const b = historySnapshot(next[i]);
+    if (
+      a.id !== b.id ||
+      a.gameType !== b.gameType ||
+      a.points !== b.points ||
+      a.status !== b.status ||
+      a.table !== b.table ||
+      a.opponentName !== b.opponentName ||
+      a.winner !== b.winner ||
+      a.didWin !== b.didWin ||
+      a.createdAt !== b.createdAt
+    ) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const isSameActiveGame = (a: GameRequest | null, b: GameRequest | null): boolean => {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  const left = gameSnapshot(a);
+  const right = gameSnapshot(b);
+  return (
+    left.id === right.id &&
+    left.status === right.status &&
+    left.hostName === right.hostName &&
+    left.guestName === right.guestName &&
+    left.gameType === right.gameType &&
+    left.table === right.table
+  );
+};
+
 export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesReturn {
+  const resolvedTableCode = normalizeTableCode(tableCode || currentUser.table_number);
+  const isAdminActor = currentUser.role === 'admin' || currentUser.isAdmin === true;
+
   // Oyun listesi state'leri
   const [games, setGames] = useState<GameRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,47 +154,81 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
   const [serverActiveGame, setServerActiveGame] = useState<GameRequest | null>(null);
   
   // Polling interval ref'i
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const missingActivePollCountRef = useRef(0);
+  const pollTickRef = useRef(0);
+  const activeGameIdRef = useRef<string | number | null>(null);
+  const gamesRequestInFlightRef = useRef(false);
+  const activeGameRequestInFlightRef = useRef(false);
+  const historyRequestInFlightRef = useRef(false);
+
+  useEffect(() => {
+    activeGameIdRef.current = activeGameId;
+  }, [activeGameId]);
 
   /**
    * Oyun listesini API'den çek
    */
   const fetchGames = useCallback(async (options?: { silent?: boolean }) => {
     const silent = Boolean(options?.silent);
+    if (gamesRequestInFlightRef.current) return;
+    gamesRequestInFlightRef.current = true;
     try {
       if (!silent) {
         setLoading(true);
       }
-      const data = await api.games.list();
-      const list = Array.isArray(data) ? data : [];
-      setGames(list);
-      setError(null);
+      const data = await api.games.list({
+        tableCode: resolvedTableCode,
+        includeAll: isAdminActor,
+      });
+      const list = (Array.isArray(data) ? data : [])
+        .filter((game) => String(game.status || '').toLowerCase() === 'waiting')
+        .sort((left, right) => {
+          const leftSameTable = normalizeTableCode(left.table) === resolvedTableCode ? 1 : 0;
+          const rightSameTable = normalizeTableCode(right.table) === resolvedTableCode ? 1 : 0;
+          if (leftSameTable !== rightSameTable) {
+            return rightSameTable - leftSameTable;
+          }
+          const leftCreatedAt = new Date(String((left as { createdAt?: unknown }).createdAt || 0)).getTime();
+          const rightCreatedAt = new Date(String((right as { createdAt?: unknown }).createdAt || 0)).getTime();
+          return rightCreatedAt - leftCreatedAt;
+        });
+      setGames((prev) => (isSameGameList(prev, list) ? prev : list));
+      setError((prev) => (prev ? null : prev));
     } catch (err) {
       console.error('Failed to load games:', err);
-      setError('Oyunlar yüklenemedi');
+      if (!silent) {
+        setError('Oyunlar yüklenemedi');
+      }
     } finally {
+      gamesRequestInFlightRef.current = false;
       if (!silent) {
         setLoading(false);
       }
     }
-  }, []);
+  }, [resolvedTableCode, isAdminActor]);
 
   /**
    * Kullanıcının tamamlanmış oyun geçmişini çek
    */
   const fetchGameHistory = useCallback(async (options?: { silent?: boolean }) => {
     const silent = Boolean(options?.silent);
+    if (historyRequestInFlightRef.current) return;
+    historyRequestInFlightRef.current = true;
     try {
       if (!silent) {
         setHistoryLoading(true);
       }
       const history = await api.users.getGameHistory(currentUser.username);
-      setGameHistory(Array.isArray(history) ? history : []);
+      const list = Array.isArray(history) ? history : [];
+      setGameHistory((prev) => (isSameHistory(prev, list) ? prev : list));
     } catch (err) {
       console.error('Failed to load game history:', err);
-      setGameHistory([]);
+      if (!silent) {
+        setGameHistory([]);
+      }
     } finally {
+      historyRequestInFlightRef.current = false;
       if (!silent) {
         setHistoryLoading(false);
       }
@@ -110,12 +241,14 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
   const checkActiveGame = useCallback(async (options?: { preserveUntilConfirmedEmpty?: boolean; ignoreLocalActive?: boolean }) => {
     // Eğer lokalde aktif oyun varsa, server'dan gelen null ile üzerine yazma
     if (activeGameId && !options?.ignoreLocalActive) return;
+    if (activeGameRequestInFlightRef.current) return;
+    activeGameRequestInFlightRef.current = true;
     
     try {
       const game = await api.users.getActiveGame(currentUser.username);
       if (game) {
         missingActivePollCountRef.current = 0;
-        setServerActiveGame(game);
+        setServerActiveGame((prev) => (isSameActiveGame(prev, game) ? prev : game));
         return;
       }
 
@@ -126,9 +259,11 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
       }
 
       missingActivePollCountRef.current = 0;
-      setServerActiveGame(null);
+      setServerActiveGame((prev) => (prev === null ? prev : null));
     } catch (err) {
       console.error('Failed to check active game:', err);
+    } finally {
+      activeGameRequestInFlightRef.current = false;
     }
   }, [currentUser.username, activeGameId]);
 
@@ -156,7 +291,7 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
       });
 
       // Oyun listesine ekle
-      setGames(prev => [newGame, ...prev]);
+      setGames((prev) => [newGame, ...prev]);
 
       // Host doğrudan oyuna alınmaz; lobby'de bekler.
       // Rakip katıldığında active-game endpoint'i üzerinden geri döner.
@@ -192,6 +327,7 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
       setIsBot(false);
       setServerActiveGame(null);
       missingActivePollCountRef.current = 0;
+      setGames((prev) => prev.filter((game) => String(game.id) !== String(gameId)));
 
       // Lobi listesini tazele (oyun waiting listesinden düşmeli)
       await Promise.all([
@@ -210,6 +346,7 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
   const cancelGame = useCallback(async (gameId: number | string) => {
     try {
       await api.games.delete(gameId);
+      setGames((prev) => prev.filter((game) => String(game.id) !== String(gameId)));
       if (String(activeGameId) === String(gameId)) {
         setActiveGameId(null);
         setActiveGameType('');
@@ -293,20 +430,49 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
    */
   useEffect(() => {
     // İlk yükleme
-    fetchGames();
-    checkActiveGame();
-    fetchGameHistory();
+    void fetchGames();
+    void checkActiveGame();
+    void fetchGameHistory();
 
-    // Polling başlat (5 saniyede bir)
-    intervalRef.current = setInterval(() => {
-      fetchGames({ silent: true });
-      checkActiveGame({ preserveUntilConfirmedEmpty: true });
-      fetchGameHistory({ silent: true });
-    }, 5000);
+    const handleVisibilityChange = () => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        void fetchGames({ silent: true });
+        void checkActiveGame({ ignoreLocalActive: true });
+        void fetchGameHistory({ silent: true });
+      }
+    };
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+    }
+
+    // Polling başlat (4 saniyede bir)
+    if (typeof setInterval === 'function') {
+      intervalRef.current = setInterval(() => {
+        if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+          return;
+        }
+        if (activeGameIdRef.current) {
+          return;
+        }
+
+        pollTickRef.current += 1;
+        void fetchGames({ silent: true });
+        void checkActiveGame({ preserveUntilConfirmedEmpty: true });
+
+        // Geçmiş listesi daha ağır bir sorgu; daha seyrek güncelle.
+        if (pollTickRef.current % 4 === 0) {
+          void fetchGameHistory({ silent: true });
+        }
+      }, 4000);
+    }
 
     // Cleanup
     return () => {
-      if (intervalRef.current) {
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      }
+      if (intervalRef.current !== null && typeof clearInterval === 'function') {
         clearInterval(intervalRef.current);
       }
     };

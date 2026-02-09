@@ -4,7 +4,7 @@
  * @description Oyun lobisi ve oyun kurma/katılma işlevselliği
  */
 
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { GameHistoryEntry, GameRequest, User } from '../../types';
 import { GameLobby } from '../GameLobby';
 import { CreateGameModal } from '../CreateGameModal';
@@ -59,6 +59,36 @@ export const GameSection: React.FC<GameSectionProps> = ({
   onViewProfile,
   onRejoinGame
 }) => {
+  const [quickJoinBusy, setQuickJoinBusy] = useState(false);
+  const normalizedTable = String(tableCode || '').trim().toUpperCase();
+  const currentUsername = String(currentUser?.username || '').trim().toLowerCase();
+
+  const quickJoinCandidate = useMemo(() => {
+    if (!Array.isArray(games) || games.length === 0) return null;
+    const waiting = games.filter((game) => {
+      return (
+        String(game.status || '').toLowerCase() === 'waiting' &&
+        String(game.hostName || '').toLowerCase() !== currentUsername
+      );
+    });
+    if (waiting.length === 0) return null;
+
+    const sameTable = waiting.find(
+      (game) => String(game.table || '').trim().toUpperCase() === normalizedTable
+    );
+    return sameTable || waiting[0];
+  }, [games, currentUsername, normalizedTable]);
+
+  const handleQuickJoin = async () => {
+    if (!quickJoinCandidate || !isMatched || quickJoinBusy) return;
+    setQuickJoinBusy(true);
+    try {
+      await onJoinGame(Number(quickJoinCandidate.id));
+    } finally {
+      setQuickJoinBusy(false);
+    }
+  };
+
   // Aktif oyun banner'ı göster
   if (serverActiveGame && !activeGameId) {
     const opponentLabel =
@@ -141,6 +171,9 @@ export const GameSection: React.FC<GameSectionProps> = ({
             onJoinGame={onJoinGame}
             onCancelGame={onCancelGame}
             onCreateGameClick={() => setIsCreateModalOpen(true)}
+            onQuickJoin={handleQuickJoin}
+            quickJoinDisabled={!isMatched || !quickJoinCandidate || quickJoinBusy}
+            quickJoinBusy={quickJoinBusy}
             onViewProfile={onViewProfile}
           />
         </div>

@@ -329,8 +329,17 @@ export const api = {
 
   // GAMES
   games: {
-    list: async (): Promise<GameRequest[]> => {
-      return await fetchAPI('/games');
+    list: async (options?: { tableCode?: string; includeAll?: boolean }): Promise<GameRequest[]> => {
+      const query = new URLSearchParams();
+      const normalizedTable = String(options?.tableCode || '').trim().toUpperCase();
+      if (normalizedTable) {
+        query.set('table', normalizedTable);
+      }
+      if (options?.includeAll) {
+        query.set('scope', 'all');
+      }
+      const suffix = query.toString();
+      return await fetchAPI(`/games${suffix ? `?${suffix}` : ''}`);
     },
 
     get: async (gameId: number | string): Promise<GameRequest> => {

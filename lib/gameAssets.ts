@@ -1,8 +1,10 @@
 export const GAME_ASSETS = {
   backgrounds: {
-    reflexRush: '/assets/games/kenney/backgrounds/blue_grass.png',
-    rhythmCopy: '/assets/games/kenney/backgrounds/blue_land.png',
-    oddEvenSprint: '/assets/games/kenney/backgrounds/blue_desert.png',
+    reflexRush: '/assets/games/retro-kit/reflex-puzzle.webp',
+    rhythmCopy: '/assets/games/retro-kit/war-tanks.webp',
+    oddEvenSprint: '/assets/games/retro-kit/strategy-hex.webp',
+    strategyChess: '/assets/games/retro-kit/strategy-hex.webp',
+    knowledgeQuiz: '/assets/games/retro-kit/knowledge-board.webp',
   },
   hud: {
     coin: '/assets/games/kenney/hud/hudCoin.png',
@@ -18,4 +20,3 @@ export const GAME_ASSETS = {
 } as const;
 
 export type GameSfxKey = keyof typeof GAME_ASSETS.sfx;
-

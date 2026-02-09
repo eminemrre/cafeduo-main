@@ -5,8 +5,11 @@ import { GameRequest, User } from '../types';
 
 const gameIcon = (gameType: string) => {
   if (gameType === 'Refleks Avı') return '⚡';
-  if (gameType === 'Ritim Kopyala') return '🎵';
+  if (gameType === 'Tank Düellosu') return '🛡️';
+  if (gameType === 'Ritim Kopyala') return '🛡️';
+  if (gameType === 'Retro Satranç') return '♟️';
   if (gameType === 'Çift Tek Sprint') return '🔢';
+  if (gameType === 'Bilgi Yarışı') return '🧠';
   return '🎮';
 };
 

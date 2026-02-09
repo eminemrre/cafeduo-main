@@ -11,6 +11,8 @@ import { UserProfileModal } from './UserProfileModal';
 import { ReflexRush } from './ReflexRush';
 import { ArenaBattle } from './ArenaBattle';
 import { OddEvenSprint } from './OddEvenSprint';
+import { KnowledgeQuiz } from './KnowledgeQuiz';
+import { RetroChess } from './RetroChess';
 import { Leaderboard } from './Leaderboard';
 import { Achievements } from './Achievements';
 import { RetroButton } from './RetroButton';
@@ -257,10 +259,37 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
           </div>
 
           {/* Oyun component'leri */}
-          {activeGameType === 'Refleks Avı' ? (
+          {activeGameType === 'Retro Satranç' ? (
+            <RetroChess
+              gameId={activeGameId}
+              currentUser={currentUser}
+              opponentName={opponentName || 'Rakip'}
+              isBot={isBot}
+              onGameEnd={handleGameFinish}
+              onLeave={handleLeaveGame}
+            />
+          ) : activeGameType === 'Refleks Avı' ? (
             <ReflexRush
               gameId={String(activeGameId)}
               currentUser={currentUser}
+              isBot={isBot}
+              onGameEnd={handleGameFinish}
+              onLeave={handleLeaveGame}
+            />
+          ) : activeGameType === 'Bilgi Yarışı' ? (
+            <KnowledgeQuiz
+              gameId={activeGameId}
+              currentUser={currentUser}
+              opponentName={opponentName || 'Rakip'}
+              isBot={isBot}
+              onGameEnd={handleGameFinish}
+              onLeave={handleLeaveGame}
+            />
+          ) : activeGameType === 'Tank Düellosu' ? (
+            <ArenaBattle
+              gameId={activeGameId}
+              currentUser={currentUser}
+              opponentName={opponentName || 'Rakip'}
               isBot={isBot}
               onGameEnd={handleGameFinish}
               onLeave={handleLeaveGame}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Timer, Zap, Shuffle, Swords, Shield, Sparkles, Gauge, ArrowUpRight } from 'lucide-react';
+import { Timer, Zap, Swords, Brain, Crown, Sparkles, Gauge, ArrowUpRight } from 'lucide-react';
 
 interface FeaturedGame {
   title: string;
@@ -8,6 +8,7 @@ interface FeaturedGame {
   duration: string;
   mode: string;
   accent: string;
+  cover: string;
   icon: React.ReactNode;
   badge: string;
   cta: string;
@@ -21,54 +22,62 @@ const featuredGames: FeaturedGame[] = [
     duration: '35-45 sn',
     mode: 'Yüksek tempo',
     accent: 'from-cyan-400/90 to-blue-500/90',
+    cover: '/assets/games/retro-kit/reflex-puzzle.webp',
     icon: <Zap size={26} />,
-    badge: 'Canlı',
+    badge: 'Refleks',
     cta: 'Anında başlat',
   },
   {
-    title: 'Ritim Kopyala',
-    subtitle: 'Işık ve ses dizisini takip et; hata yapmadan komboyu sürdür.',
+    title: 'Tank Düellosu',
+    subtitle: 'Retro savaş modunda hamle sırasını doğru sürdür, baskıyı kaybetme.',
     duration: '40-55 sn',
-    mode: 'Odak + hafıza',
+    mode: 'Savaş modu',
     accent: 'from-fuchsia-400/90 to-violet-500/90',
-    icon: <Shuffle size={26} />,
-    badge: 'Yeni',
-    cta: 'Sıralamaya gir',
-  },
-  {
-    title: 'Duo Hafıza',
-    subtitle: 'Kart eşleşmelerini rakibinden önce tamamla, hata puanını düşük tut.',
-    duration: '45 sn',
-    mode: 'Zihin oyunu',
-    accent: 'from-amber-400/90 to-orange-500/90',
-    icon: <Shield size={26} />,
-    badge: 'Canlı',
-    cta: 'Düelloya katıl',
-  },
-  {
-    title: 'Arena Düellosu',
-    subtitle: 'Tek hamlede karar verilen kısa 1v1 turu. Çok yakında.',
-    duration: '55 sn',
-    mode: '1v1 baskı',
-    accent: 'from-slate-500/90 to-slate-700/90',
+    cover: '/assets/games/retro-kit/war-tanks.webp',
     icon: <Swords size={26} />,
-    badge: 'Yakında',
-    cta: 'Açılış bekleniyor',
-    disabled: true,
+    badge: 'Savaş',
+    cta: 'Düelloya gir',
+  },
+  {
+    title: 'Retro Satranç',
+    subtitle: 'At hamlesi odaklı hızlı satranç turu. Doğru kareyi en kısa sürede bul.',
+    duration: '50 sn',
+    mode: 'Strateji',
+    accent: 'from-amber-400/90 to-orange-500/90',
+    cover: '/assets/games/retro-kit/strategy-hex.webp',
+    icon: <Crown size={26} />,
+    badge: 'Strateji',
+    cta: 'Tahtayı aç',
+  },
+  {
+    title: 'Bilgi Yarışı',
+    subtitle: 'Kısa tur bilgi sorularında hız ve doğrulukla rakibini geç.',
+    duration: '55 sn',
+    mode: 'Bilgi oyunu',
+    accent: 'from-emerald-400/90 to-teal-500/90',
+    cover: '/assets/games/retro-kit/knowledge-board.webp',
+    icon: <Brain size={26} />,
+    badge: 'Bilgi',
+    cta: 'Bilgi turunu aç',
   },
 ];
 
-const GameCard: React.FC<FeaturedGame> = ({ title, subtitle, duration, mode, accent, icon, badge, cta, disabled }) => (
+const GameCard: React.FC<FeaturedGame> = ({ title, subtitle, duration, mode, accent, cover, icon, badge, cta, disabled }) => (
   <motion.article
     initial={{ opacity: 0, y: 14 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true, margin: '-60px' }}
     transition={{ duration: 0.5 }}
     whileHover={disabled ? {} : { y: -8, rotateX: 2, rotateY: -2 }}
+    style={!disabled ? {
+      backgroundImage: `linear-gradient(170deg,rgba(8,14,30,0.92),rgba(10,24,52,0.88)), url('${cover}')`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    } : undefined}
     className={`relative rounded-[1.6rem] border p-6 md:p-7 transition-all ${
       disabled
         ? 'border-slate-700/75 bg-[#090f22]/72'
-        : 'group border-cyan-300/25 bg-[linear-gradient(170deg,rgba(8,14,30,0.94),rgba(10,24,52,0.88))] hover:shadow-[0_22px_56px_rgba(0,0,0,0.5)]'
+        : 'group border-cyan-300/25 hover:shadow-[0_22px_56px_rgba(0,0,0,0.5)]'
     }`}
   >
     {!disabled && (

@@ -82,8 +82,9 @@ const LOCAL_ALLOWED_ORIGINS = [
 
 const SUPPORTED_GAME_TYPES = new Set([
   'Refleks Avı',
-  'Ritim Kopyala',
-  'Çift Tek Sprint',
+  'Tank Düellosu',
+  'Retro Satranç',
+  'Bilgi Yarışı',
 ]);
 
 const normalizeGameType = (value) => {
@@ -95,12 +96,25 @@ const normalizeGameType = (value) => {
     refleks: 'Refleks Avı',
     reflex: 'Refleks Avı',
     rps: 'Refleks Avı',
-    arena: 'Ritim Kopyala',
-    rhythm: 'Ritim Kopyala',
-    dungeon: 'Çift Tek Sprint',
-    odd_even: 'Çift Tek Sprint',
-    odd_even_sprint: 'Çift Tek Sprint',
-    sprint: 'Çift Tek Sprint',
+    arena: 'Tank Düellosu',
+    rhythm: 'Tank Düellosu',
+    ritim_kopyala: 'Tank Düellosu',
+    tank: 'Tank Düellosu',
+    tank_duellosu: 'Tank Düellosu',
+    chess: 'Retro Satranç',
+    satranc: 'Retro Satranç',
+    retro_satranc: 'Retro Satranç',
+    strategy: 'Retro Satranç',
+    dungeon: 'Retro Satranç',
+    odd_even: 'Retro Satranç',
+    odd_even_sprint: 'Retro Satranç',
+    sprint: 'Retro Satranç',
+    cift_tek_sprint: 'Retro Satranç',
+    knowledge: 'Bilgi Yarışı',
+    quiz: 'Bilgi Yarışı',
+    trivia: 'Bilgi Yarışı',
+    bilgi: 'Bilgi Yarışı',
+    bilgi_yarisi: 'Bilgi Yarışı',
   };
 
   const normalizedKey = raw

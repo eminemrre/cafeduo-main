@@ -61,16 +61,18 @@ describe('CreateGameModal', () => {
       // Game types appear in selection list
       const gameTypes = screen.getAllByText('Refleks Avı');
       expect(gameTypes.length).toBeGreaterThan(0);
-      expect(screen.getAllByText('Ritim Kopyala').length).toBeGreaterThan(0);
-      expect(screen.getAllByText('Çift Tek Sprint').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Tank Düellosu').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Retro Satranç').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Bilgi Yarışı').length).toBeGreaterThan(0);
     });
 
     it('shows game descriptions', () => {
       render(<CreateGameModal {...defaultProps} />);
       
       expect(screen.getByText('Işık yandığında en hızlı tıkla')).toBeInTheDocument();
-      expect(screen.getByText('Diziyi doğru sırada tekrar et')).toBeInTheDocument();
-      expect(screen.getByText('5 turda çift-tek tahmin yarışı')).toBeInTheDocument();
+      expect(screen.getByText('Diziyi doğru sırada tekrar et ve rakibi baskıla')).toBeInTheDocument();
+      expect(screen.getByText('At hamlesi odaklı hızlı satranç turu')).toBeInTheDocument();
+      expect(screen.getByText('Kısa bilgi sorularında doğru cevabı en hızlı ver')).toBeInTheDocument();
     });
 
     it('renders preset point buttons', () => {
@@ -95,22 +97,22 @@ describe('CreateGameModal', () => {
     it('selects game type when clicked', () => {
       render(<CreateGameModal {...defaultProps} />);
       
-      // Click on Ritim Kopyala (first occurrence in game list)
-      const arenaButtons = screen.getAllByText('Ritim Kopyala');
+      // Click on Tank Düellosu (first occurrence in game list)
+      const arenaButtons = screen.getAllByText('Tank Düellosu');
       fireEvent.click(arenaButtons[0]);
       
       // Should show checkmark or be selected
-      expect(screen.getAllByText('Ritim Kopyala').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Tank Düellosu').length).toBeGreaterThan(0);
     });
 
     it('shows minimum points requirement for each game type', () => {
       render(<CreateGameModal {...defaultProps} />);
       
-      // Arena requires min 40
+      // Tank requires min 40
       expect(screen.getByText('Min 40 Puan')).toBeInTheDocument();
       
-      // Zindan requires min 80
-      expect(screen.getByText('Min 80 Puan')).toBeInTheDocument();
+      // Retro Satranç requires min 90
+      expect(screen.getByText('Min 90 Puan')).toBeInTheDocument();
     });
 
     it('auto-adjusts points when switching to higher minimum game', () => {
@@ -119,12 +121,12 @@ describe('CreateGameModal', () => {
       // Initially Refleks Avı (min 0)
       expect(screen.getByDisplayValue('0')).toBeInTheDocument();
       
-      // Switch to Çift Tek Sprint (min 80)
-      fireEvent.click(screen.getByText('Çift Tek Sprint'));
+      // Switch to Retro Satranç (min 90)
+      fireEvent.click(screen.getByText('Retro Satranç'));
       
       // Should show warning and auto-adjust
       expect(mockToast.warning).toHaveBeenCalledWith(
-        expect.stringContaining('minimum 80 puan')
+        expect.stringContaining('minimum 90 puan')
       );
     });
   });
@@ -165,8 +167,8 @@ describe('CreateGameModal', () => {
     it('shows validation error for points below minimum', async () => {
       render(<CreateGameModal {...defaultProps} />);
       
-      // Switch to Arena (min 40) - click first occurrence
-      const arenaButtons = screen.getAllByText('Ritim Kopyala');
+      // Switch to Tank Düellosu (min 40) - click first occurrence
+      const arenaButtons = screen.getAllByText('Tank Düellosu');
       fireEvent.click(arenaButtons[0]);
       
       // Wait for auto-adjust to 40
@@ -277,11 +279,11 @@ describe('CreateGameModal', () => {
       // Initially Refleks Avı (summary section)
       expect(screen.getAllByText('Refleks Avı')[0]).toBeInTheDocument();
       
-      // Switch to Arena
-      fireEvent.click(screen.getByText('Ritim Kopyala'));
+      // Switch to Tank Düellosu
+      fireEvent.click(screen.getByText('Tank Düellosu'));
       
       // Summary should update - check first occurrence
-      expect(screen.getAllByText('Ritim Kopyala')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('Tank Düellosu')[0]).toBeInTheDocument();
     });
 
     it('updates summary when points change', () => {

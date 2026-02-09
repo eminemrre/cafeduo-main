@@ -11,14 +11,14 @@ describe('Games', () => {
     ).toBeInTheDocument();
 
     expect(screen.getByText('Refleks Avı')).toBeInTheDocument();
-    expect(screen.getByText('Ritim Kopyala')).toBeInTheDocument();
-    expect(screen.getByText('Duo Hafıza')).toBeInTheDocument();
-    expect(screen.getByText('Arena Düellosu')).toBeInTheDocument();
+    expect(screen.getByText('Tank Düellosu')).toBeInTheDocument();
+    expect(screen.getByText('Retro Satranç')).toBeInTheDocument();
+    expect(screen.getByText('Bilgi Yarışı')).toBeInTheDocument();
 
     expect(screen.getByText('Anında başlat')).toBeInTheDocument();
-    expect(screen.getByText('Sıralamaya gir')).toBeInTheDocument();
-    expect(screen.getByText('Düelloya katıl')).toBeInTheDocument();
-    expect(screen.getByText('Açılış bekleniyor')).toBeInTheDocument();
+    expect(screen.getByText('Düelloya gir')).toBeInTheDocument();
+    expect(screen.getByText('Tahtayı aç')).toBeInTheDocument();
+    expect(screen.getByText('Bilgi turunu aç')).toBeInTheDocument();
 
     expect(screen.getByText('Kısa Seans')).toBeInTheDocument();
     expect(screen.getByText('Tekrar Motivasyonu')).toBeInTheDocument();

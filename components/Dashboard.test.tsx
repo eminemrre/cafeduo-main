@@ -165,7 +165,7 @@ jest.mock('./ReflexRush', () => ({
 jest.mock('./ArenaBattle', () => ({
   ArenaBattle: ({ gameId, currentUser, onGameEnd }: any) => (
     <div data-testid="arena-battle">
-      <span>Ritim Kopyala - {currentUser.username}</span>
+      <span>Tank Düellosu - {currentUser.username}</span>
       <button onClick={() => onGameEnd?.(currentUser.username, 10)}>Savaşı Bitir</button>
     </div>
   )
@@ -176,6 +176,24 @@ jest.mock('./OddEvenSprint', () => ({
     <div data-testid="odd-even-sprint">
       <span>Çift Tek Sprint - {currentUser.username}</span>
       <button onClick={() => onGameEnd?.(currentUser.username, 10)}>Savaşı Bitir</button>
+    </div>
+  )
+}));
+
+jest.mock('./KnowledgeQuiz', () => ({
+  KnowledgeQuiz: ({ currentUser, onGameEnd }: any) => (
+    <div data-testid="knowledge-quiz">
+      <span>Bilgi Yarışı - {currentUser.username}</span>
+      <button onClick={() => onGameEnd?.(currentUser.username, 10)}>Savaşı Bitir</button>
+    </div>
+  )
+}));
+
+jest.mock('./RetroChess', () => ({
+  RetroChess: ({ currentUser, onGameEnd }: any) => (
+    <div data-testid="retro-chess">
+      <span>Retro Satranç - {currentUser.username}</span>
+      <button onClick={() => onGameEnd?.(currentUser.username, 12)}>Savaşı Bitir</button>
     </div>
   )
 }));
@@ -342,7 +360,7 @@ describe('Dashboard Integration', () => {
         ...defaultGamesState,
         games: [
           { id: 1, gameType: 'Refleks Avı', points: 50, hostName: 'user1', table: 'A1', status: 'waiting' },
-          { id: 2, gameType: 'Çift Tek Sprint', points: 100, hostName: 'user2', table: 'B2', status: 'waiting' },
+          { id: 2, gameType: 'Retro Satranç', points: 100, hostName: 'user2', table: 'B2', status: 'waiting' },
         ],
       });
 
@@ -350,7 +368,7 @@ describe('Dashboard Integration', () => {
 
       expect(screen.getByTestId('games-count')).toHaveTextContent('2');
       expect(screen.getByTestId('join-game-1')).toHaveTextContent('Katıl: Refleks Avı');
-      expect(screen.getByTestId('join-game-2')).toHaveTextContent('Katıl: Çift Tek Sprint');
+      expect(screen.getByTestId('join-game-2')).toHaveTextContent('Katıl: Retro Satranç');
     });
 
     it('allows creating game when table is matched', async () => {
@@ -421,12 +439,40 @@ describe('Dashboard Integration', () => {
       expect(screen.getByText(/Çift Tek Sprint - testuser/)).toBeInTheDocument();
     });
 
-    it('falls back to arena component for unknown game type and processes finish', async () => {
+    it('renders Bilgi Yarışı component when active game type matches', () => {
+      mockUseGames.mockReturnValue({
+        ...defaultGamesState,
+        activeGameId: 'game457',
+        activeGameType: 'Bilgi Yarışı',
+        opponentName: 'rakip',
+      });
+
+      renderDashboard();
+
+      expect(screen.getByTestId('knowledge-quiz')).toBeInTheDocument();
+      expect(screen.getByText(/Bilgi Yarışı - testuser/)).toBeInTheDocument();
+    });
+
+    it('renders Retro Satranç component when active game type matches', () => {
+      mockUseGames.mockReturnValue({
+        ...defaultGamesState,
+        activeGameId: 'game458',
+        activeGameType: 'Retro Satranç',
+        opponentName: 'rakip',
+      });
+
+      renderDashboard();
+
+      expect(screen.getByTestId('retro-chess')).toBeInTheDocument();
+      expect(screen.getByText(/Retro Satranç - testuser/)).toBeInTheDocument();
+    });
+
+    it('renders Tank Düellosu component and processes finish', async () => {
       const mockLeaveGame = jest.fn();
       mockUseGames.mockReturnValue({
         ...defaultGamesState,
         activeGameId: 'game789',
-        activeGameType: 'Ritim Kopyala',
+        activeGameType: 'Tank Düellosu',
         leaveGame: mockLeaveGame,
       });
 

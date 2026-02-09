@@ -11,9 +11,10 @@ interface CreateGameModalProps {
 }
 
 const GAME_TYPES = [
-  { id: 'reflex', name: 'Refleks Avı', description: 'Işık yandığında en hızlı tıkla', minPoints: 0 },
-  { id: 'rhythm', name: 'Ritim Kopyala', description: 'Diziyi doğru sırada tekrar et', minPoints: 40 },
-  { id: 'odd-even', name: 'Çift Tek Sprint', description: '5 turda çift-tek tahmin yarışı', minPoints: 80 }
+  { id: 'reflex', name: 'Refleks Avı', category: 'Refleks', description: 'Işık yandığında en hızlı tıkla', minPoints: 0 },
+  { id: 'war', name: 'Tank Düellosu', category: 'Savaş', description: 'Diziyi doğru sırada tekrar et ve rakibi baskıla', minPoints: 40 },
+  { id: 'chess', name: 'Retro Satranç', category: 'Strateji', description: 'At hamlesi odaklı hızlı satranç turu', minPoints: 90 },
+  { id: 'knowledge', name: 'Bilgi Yarışı', category: 'Bilgi', description: 'Kısa bilgi sorularında doğru cevabı en hızlı ver', minPoints: 120 },
 ];
 
 interface ValidationError {
@@ -183,6 +184,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                   <div className="flex items-center justify-between">
                     <div>
                       <div className="text-white font-retro text-lg">{game.name}</div>
+                      <div className="text-cyan-300 text-[10px] font-pixel tracking-[0.12em] uppercase">{game.category}</div>
                       <div className="text-[var(--rf-muted)] text-xs">{game.description}</div>
                     </div>
                     {game.minPoints > 0 && (

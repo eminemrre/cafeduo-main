@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { motion, useMotionValue, useSpring, useTransform, useScroll } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform, useScroll, useReducedMotion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Sparkles, Coffee, ShieldCheck, Gamepad2, Zap } from 'lucide-react';
 import { RetroButton } from './RetroButton';
@@ -16,6 +16,7 @@ interface HeroProps {
 export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, userRole, isAdmin }) => {
   const navigate = useNavigate();
   const sectionRef = useRef<HTMLElement | null>(null);
+  const reduceMotion = useReducedMotion();
   const pointerX = useMotionValue(0);
   const pointerY = useMotionValue(0);
   const pointerPxX = useMotionValue(-120);
@@ -45,6 +46,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
   };
 
   const handlePointerMove = (event: React.MouseEvent<HTMLElement>) => {
+    if (reduceMotion) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width - 0.5;
     const y = (event.clientY - rect.top) / rect.height - 0.5;
@@ -71,13 +73,13 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
     >
       <motion.div
         className="absolute -top-20 -left-16 h-72 w-72 rounded-full bg-cyan-400/15 blur-3xl pointer-events-none"
-        animate={{ x: [0, 24, -12, 0], y: [0, -16, 10, 0] }}
-        transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
+        animate={reduceMotion ? undefined : { x: [0, 24, -12, 0], y: [0, -16, 10, 0] }}
+        transition={reduceMotion ? undefined : { duration: 16, repeat: Infinity, ease: 'easeInOut' }}
       />
       <motion.div
         className="absolute -right-20 top-24 h-80 w-80 rounded-full bg-amber-400/14 blur-3xl pointer-events-none"
-        animate={{ x: [0, -30, 12, 0], y: [0, 12, -18, 0] }}
-        transition={{ duration: 19, repeat: Infinity, ease: 'easeInOut' }}
+        animate={reduceMotion ? undefined : { x: [0, -30, 12, 0], y: [0, 12, -18, 0] }}
+        transition={reduceMotion ? undefined : { duration: 19, repeat: Infinity, ease: 'easeInOut' }}
       />
       <motion.div className="absolute inset-0 rf-grid opacity-20 pointer-events-none" style={{ y: starsY }} />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(8,197,255,0.18),transparent_35%),radial-gradient(circle_at_82%_14%,rgba(242,165,90,0.15),transparent_42%)] animate-aurora-pan pointer-events-none" />
@@ -99,22 +101,22 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
       </motion.div>
       <motion.div
         className="pointer-events-none absolute left-0 top-0 z-20 hidden lg:flex items-center justify-center h-16 w-16 rounded-full border border-cyan-300/45 bg-cyan-400/10 backdrop-blur-[2px] -translate-x-1/2 -translate-y-1/2"
-        style={{ x: pointerPxX, y: pointerPxY, opacity: reticleVisible ? 1 : 0 }}
+        style={{ x: pointerPxX, y: pointerPxY, opacity: !reduceMotion && reticleVisible ? 1 : 0 }}
       >
         <motion.div
           className="absolute inset-2 rounded-full border border-cyan-300/55"
-          animate={{ rotate: 360 }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+          animate={reduceMotion ? undefined : { rotate: 360 }}
+          transition={reduceMotion ? undefined : { duration: 8, repeat: Infinity, ease: 'linear' }}
         />
         <motion.div
           className="absolute w-8 h-[1px] bg-cyan-200/70"
-          animate={{ opacity: [0.4, 0.8, 0.4] }}
-          transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+          animate={reduceMotion ? undefined : { opacity: [0.4, 0.8, 0.4] }}
+          transition={reduceMotion ? undefined : { duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
         />
         <motion.div
           className="absolute h-8 w-[1px] bg-cyan-200/70"
-          animate={{ opacity: [0.4, 0.8, 0.4] }}
-          transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
+          animate={reduceMotion ? undefined : { opacity: [0.4, 0.8, 0.4] }}
+          transition={reduceMotion ? undefined : { duration: 1.4, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
         />
         <div className="w-1.5 h-1.5 rounded-full bg-cyan-200 shadow-[0_0_12px_rgba(10,215,255,0.9)]" />
       </motion.div>
@@ -208,8 +210,8 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
             <div className="mt-6 max-w-full overflow-hidden rounded-full border border-cyan-400/25 bg-[#06142b]/78 hidden sm:block">
               <motion.div
                 className="flex items-center gap-8 sm:whitespace-nowrap px-5 py-2 text-[11px] uppercase tracking-[0.2em] font-pixel text-cyan-200/85"
-                animate={{ x: ['0%', '-50%'] }}
-                transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
+                animate={reduceMotion ? undefined : { x: ['0%', '-50%'] }}
+                transition={reduceMotion ? undefined : { duration: 15, repeat: Infinity, ease: 'linear' }}
               >
                 <span>Canlı skor senkronu</span>
                 <span>PIN doğrulama hattı</span>

@@ -17,9 +17,6 @@ interface ArenaBattleProps {
   onMinimize?: () => void;
 }
 
-const PAD_COLORS = ['bg-red-500', 'bg-blue-500', 'bg-yellow-500', 'bg-green-500'];
-const MAX_ROUNDS = 4;
-
 interface LiveSubmissionState {
   score?: number;
   round?: number;
@@ -46,6 +43,30 @@ interface GameStateUpdatedPayload {
   gameId?: string | number;
 }
 
+const MAX_ROUNDS = 5;
+const GAUGE_STEP = 4;
+const GAUGE_TICK_MS = 46;
+
+const clampGauge = (value: number) => Math.max(0, Math.min(100, value));
+
+const pointsFromShot = (shot: number): number => {
+  const distance = Math.abs(50 - shot);
+  if (distance <= 4) return 3;
+  if (distance <= 10) return 2;
+  if (distance <= 18) return 1;
+  return 0;
+};
+
+const shotLabel = (shot: number): string => {
+  const points = pointsFromShot(shot);
+  if (points === 3) return 'Mükemmel atış';
+  if (points === 2) return 'İyi atış';
+  if (points === 1) return 'Sınırda isabet';
+  return 'Iskaladın';
+};
+
+const randomGaugeStart = () => 15 + Math.random() * 70;
+
 export const ArenaBattle: React.FC<ArenaBattleProps> = ({
   currentUser,
   gameId,
@@ -55,20 +76,23 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
   onLeave,
 }) => {
   const [round, setRound] = useState(1);
-  const [sequence, setSequence] = useState<number[]>([]);
-  const [cursor, setCursor] = useState(0);
-  const [showing, setShowing] = useState(true);
-  const [activePad, setActivePad] = useState<number | null>(null);
+  const [gauge, setGauge] = useState(50);
+  const [roundLocked, setRoundLocked] = useState(false);
+  const [playerShot, setPlayerShot] = useState<number | null>(null);
+  const [opponentShot, setOpponentShot] = useState<number | null>(null);
   const [playerScore, setPlayerScore] = useState(0);
   const [opponentScore, setOpponentScore] = useState(0);
-  const [message, setMessage] = useState('Diziyi izle, sonra birebir tekrar et.');
+  const [message, setMessage] = useState('Nişan çubuğu hareket ederken en doğru anda ateş et.');
   const [done, setDone] = useState(false);
   const [resolvingMatch, setResolvingMatch] = useState(false);
   const [hostName, setHostName] = useState('');
   const [guestName, setGuestName] = useState('');
-  const matchStartedAtRef = useRef<number>(Date.now());
+
+  const directionRef = useRef<1 | -1>(1);
+  const nextRoundTimeoutRef = useRef<number | null>(null);
   const pollRef = useRef<number | null>(null);
   const finishHandledRef = useRef(false);
+  const matchStartedAtRef = useRef<number>(Date.now());
 
   const target = useMemo(() => (isBot ? 'BOT' : (opponentName || 'Rakip')), [isBot, opponentName]);
 
@@ -109,6 +133,10 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
     if (typeof opponentLive?.score === 'number') {
       setOpponentScore((prev) => Math.max(prev, Number(opponentLive.score)));
     }
+    if (typeof actorLive?.round === 'number') {
+      const safeRound = Math.max(1, Math.floor(Number(actorLive.round)));
+      setRound((prev) => Math.max(prev, Math.min(MAX_ROUNDS, safeRound)));
+    }
 
     const winner =
       String(snapshot.gameState?.resolvedWinner || snapshot.gameState?.live?.resolvedWinner || snapshot.winner || '').trim() || null;
@@ -130,7 +158,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
     }
   }, [applySnapshot, gameId, isBot, target]);
 
-  const syncLiveProgress = useCallback(async (score: number, nextRound: number, isDone: boolean) => {
+  const syncLiveProgress = useCallback(async (score: number, currentRound: number, isDoneRound: boolean) => {
     if (isBot || !gameId) return;
     try {
       await api.games.move(gameId, {
@@ -138,8 +166,8 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
           mode: 'Tank Düellosu',
           score,
           roundsWon: score,
-          round: nextRound,
-          done: isDone,
+          round: currentRound,
+          done: isDoneRound,
         },
       });
     } catch (err) {
@@ -148,13 +176,49 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
   }, [gameId, isBot]);
 
   useEffect(() => {
-    if (round === 1) {
-      matchStartedAtRef.current = Date.now();
-    }
+    finishHandledRef.current = false;
+    matchStartedAtRef.current = Date.now();
+    setRound(1);
+    setPlayerScore(0);
+    setOpponentScore(0);
+    setRoundLocked(false);
+    setPlayerShot(null);
+    setOpponentShot(null);
+    setDone(false);
+    setResolvingMatch(false);
+    setMessage('Nişan çubuğu hareket ederken en doğru anda ateş et.');
+  }, [gameId]);
+
+  useEffect(() => {
+    setRoundLocked(false);
+    setPlayerShot(null);
+    setOpponentShot(null);
+    directionRef.current = Math.random() > 0.5 ? 1 : -1;
+    setGauge(randomGaugeStart());
   }, [round]);
 
   useEffect(() => {
-    finishHandledRef.current = false;
+    if (done || resolvingMatch) return;
+    const interval = window.setInterval(() => {
+      setGauge((prev) => {
+        let next = prev + directionRef.current * GAUGE_STEP;
+        if (next >= 100) {
+          next = 100;
+          directionRef.current = -1;
+        } else if (next <= 0) {
+          next = 0;
+          directionRef.current = 1;
+        }
+        return next;
+      });
+    }, GAUGE_TICK_MS);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [done, resolvingMatch, round]);
+
+  useEffect(() => {
     if (isBot || !gameId) return;
     void fetchSnapshot();
     const socket = socketService.getSocket();
@@ -180,32 +244,12 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
   }, [done, fetchSnapshot, gameId, isBot]);
 
   useEffect(() => {
-    const length = Math.min(3 + round, 6);
-    const newSequence = Array.from({ length }, () => Math.floor(Math.random() * 4));
-    setSequence(newSequence);
-    setCursor(0);
-    setShowing(true);
-    setMessage('Dizi oynatılıyor...');
-  }, [round]);
-
-  useEffect(() => {
-    if (!showing || sequence.length === 0) return;
-    let i = 0;
-    const interval = window.setInterval(() => {
-      setActivePad(sequence[i]);
-      playGameSfx('hit', 0.2);
-      window.setTimeout(() => setActivePad(null), 280);
-      i += 1;
-      if (i >= sequence.length) {
-        window.clearInterval(interval);
-        window.setTimeout(() => {
-          setShowing(false);
-          setMessage('Şimdi sırayı doğru tekrar et.');
-        }, 350);
+    return () => {
+      if (nextRoundTimeoutRef.current) {
+        window.clearTimeout(nextRoundTimeoutRef.current);
       }
-    }, 460);
-    return () => window.clearInterval(interval);
-  }, [showing, sequence]);
+    };
+  }, []);
 
   const finalizeMatch = async (localWinner: string, playerScoreValue: number) => {
     if (finishHandledRef.current) return;
@@ -233,7 +277,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
       try {
         await api.games.finish(gameId, resolvedWinner);
       } catch {
-        // Finishing failures should not block the UI flow
+        // UI akışını bloke etmesin
       }
 
       const points = resolvedWinner === currentUser.username ? 10 : 0;
@@ -250,51 +294,56 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
     }
   };
 
-  const endMatchIfNeeded = (nextPlayer: number, nextOpponent: number, nextRound: number) => {
-    if (nextRound <= MAX_ROUNDS) return;
-    setDone(true);
-    const localWinner = nextPlayer >= nextOpponent ? currentUser.username : target;
-    setMessage(localWinner === currentUser.username ? 'Maç sonucu hesaplanıyor...' : 'Maç sonucu hesaplanıyor...');
-    void finalizeMatch(localWinner, nextPlayer);
-  };
+  const fire = () => {
+    if (done || resolvingMatch || roundLocked) return;
+    setRoundLocked(true);
 
-  const nextRound = (playerWon: boolean) => {
-    const nextPlayer = playerScore + (playerWon ? 1 : 0);
-    const nextOpponent = opponentScore + (isBot ? (playerWon ? 0 : 1) : 0);
-    const nextRoundNumber = round + 1;
-    const isLast = nextRoundNumber > MAX_ROUNDS;
-    void syncLiveProgress(nextPlayer, Math.min(nextRoundNumber, MAX_ROUNDS), isLast);
-    setPlayerScore(nextPlayer);
-    setOpponentScore(nextOpponent);
-    setRound(prev => {
-      const r = prev + 1;
-      endMatchIfNeeded(nextPlayer, nextOpponent, r);
-      return r;
-    });
-  };
+    const shot = clampGauge(gauge);
+    const gainedPoints = pointsFromShot(shot);
+    const nextPlayerScore = playerScore + gainedPoints;
+    let nextOpponentScore = opponentScore;
 
-  const pressPad = (idx: number) => {
-    if (showing || done || resolvingMatch) return;
-    playGameSfx('select', 0.2);
-    if (sequence[cursor] === idx) {
-      const nextCursor = cursor + 1;
-      setCursor(nextCursor);
-      if (nextCursor >= sequence.length) {
-        setMessage('Doğru! Tur sende.');
-        playGameSfx('success', 0.3);
-        nextRound(true);
-      }
+    setPlayerShot(shot);
+    setPlayerScore(nextPlayerScore);
+    playGameSfx(gainedPoints > 0 ? 'success' : 'fail', gainedPoints > 0 ? 0.24 : 0.2);
+
+    if (isBot) {
+      const botShot = clampGauge(50 + (Math.random() * 2 - 1) * 42);
+      const botPoints = pointsFromShot(botShot);
+      nextOpponentScore += botPoints;
+      setOpponentShot(botShot);
+      setOpponentScore(nextOpponentScore);
+      setMessage(`Atışın: ${shotLabel(shot)} (${gainedPoints} puan). BOT: ${shotLabel(botShot)} (${botPoints} puan).`);
+    } else {
+      setMessage(`Atışın: ${shotLabel(shot)} (${gainedPoints} puan). Rakip güncellemesi bekleniyor...`);
+    }
+
+    const isLastRound = round >= MAX_ROUNDS;
+    void syncLiveProgress(nextPlayerScore, round, isLastRound);
+
+    if (isLastRound) {
+      setDone(true);
+      const localWinner = isBot
+        ? (nextPlayerScore >= nextOpponentScore ? currentUser.username : 'BOT')
+        : currentUser.username;
+      void finalizeMatch(localWinner, nextPlayerScore);
       return;
     }
-    setMessage(isBot ? 'Yanlış pad, tur rakibe gitti.' : 'Yanlış pad.');
-    playGameSfx('fail', 0.26);
-    nextRound(false);
+
+    nextRoundTimeoutRef.current = window.setTimeout(() => {
+      setRound((prev) => prev + 1);
+      setMessage('Yeni tur başladı. Merkezi vurmak için doğru anı yakala.');
+      playGameSfx('select', 0.18);
+    }, 750);
   };
+
+  const gaugeMarkerLeft = `${gauge}%`;
+  const canFire = !done && !resolvingMatch && !roundLocked;
 
   return (
     <div
       className="max-w-2xl mx-auto rf-panel border-cyan-400/22 rounded-xl p-6 text-white relative overflow-hidden"
-      data-testid="rhythm-copy"
+      data-testid="arena-battle"
       style={{
         backgroundImage: `linear-gradient(165deg, rgba(4, 17, 41, 0.92), rgba(2, 28, 52, 0.9)), url('${GAME_ASSETS.backgrounds.rhythmCopy}')`,
         backgroundSize: 'cover',
@@ -309,49 +358,60 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
 
       <div className="grid grid-cols-3 gap-3 mb-5 text-center">
         <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
-            <img src={GAME_ASSETS.hud.jewel} alt="" className="w-4 h-4" aria-hidden="true" />
-            Tur
-          </div>
+          <div className="text-xs text-[var(--rf-muted)]">Tur</div>
           <div className="font-bold">{Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}</div>
         </div>
         <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
-            <img src={GAME_ASSETS.hud.heart} alt="" className="w-4 h-4" aria-hidden="true" />
-            Sen
-          </div>
+          <div className="text-xs text-[var(--rf-muted)]">Sen</div>
           <div className="font-bold">{playerScore}</div>
         </div>
         <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
-            <img src={GAME_ASSETS.hud.coin} alt="" className="w-4 h-4" aria-hidden="true" />
-            Rakip
-          </div>
+          <div className="text-xs text-[var(--rf-muted)]">Rakip</div>
           <div className="font-bold">{opponentScore}</div>
         </div>
       </div>
 
       <p className="text-sm text-[var(--rf-muted)] mb-4">{message}</p>
 
-      <div className="grid grid-cols-2 gap-3">
-        {PAD_COLORS.map((color, idx) => (
-          <button
-            key={idx}
-            data-testid={`rhythm-pad-${idx}`}
-            onClick={() => pressPad(idx)}
-            disabled={resolvingMatch}
-            className={`h-24 rounded-xl border-2 border-white/10 transition ${
-              activePad === idx ? 'scale-95 opacity-100' : 'opacity-80'
-            } ${color}`}
+      <div className="rounded-xl border border-cyan-400/25 bg-[#08152f]/85 p-4 mb-4">
+        <div className="flex items-center justify-between text-xs text-[var(--rf-muted)] mb-2">
+          <span>Nişan Çubuğu</span>
+          <span>{Math.round(gauge)}%</span>
+        </div>
+        <div className="relative h-8 rounded-full border border-cyan-400/20 bg-[#061329] overflow-hidden">
+          <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-7 bg-emerald-400/25 border-x border-emerald-300/45" />
+          <div className="absolute inset-y-0 left-[calc(50%-18px)] w-9 border-x border-cyan-300/30" />
+          <div
+            className="absolute top-0 h-full w-2 rounded-full bg-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.7)]"
+            style={{ left: `calc(${gaugeMarkerLeft} - 4px)` }}
           />
-        ))}
+        </div>
+        <div className="mt-2 text-xs text-[var(--rf-muted)]">
+          Merkez (50) çevresine ne kadar yakın vurursan o kadar fazla puan alırsın.
+        </div>
       </div>
 
-      {done && (
-        <div className="mt-4">
-          <RetroButton onClick={onLeave}>Lobiye Dön</RetroButton>
+      <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
+        <div className="rounded-lg border border-cyan-400/20 bg-[#081733]/75 p-3">
+          <div className="text-[var(--rf-muted)] mb-1">Son Atışın</div>
+          <div className="font-semibold">{playerShot === null ? '-' : `${Math.round(playerShot)}%`}</div>
         </div>
-      )}
+        <div className="rounded-lg border border-cyan-400/20 bg-[#081733]/75 p-3">
+          <div className="text-[var(--rf-muted)] mb-1">Rakip Atışı</div>
+          <div className="font-semibold">{opponentShot === null ? '-' : `${Math.round(opponentShot)}%`}</div>
+        </div>
+      </div>
+
+      <div className="flex gap-3">
+        <RetroButton onClick={fire} disabled={!canFire} data-testid="tank-fire-button">
+          ATEŞ ET
+        </RetroButton>
+        {done && (
+          <RetroButton onClick={onLeave} variant="secondary">
+            Lobiye Dön
+          </RetroButton>
+        )}
+      </div>
     </div>
   );
 };

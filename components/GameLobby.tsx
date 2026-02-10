@@ -180,15 +180,13 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                     <span className="text-[var(--rf-muted)] font-pixel text-xs px-3 py-2 border border-cyan-400/18 rounded flex-shrink-0">
                       SENİN OYUNUN
                     </span>
-                    {String(req.status || '').toLowerCase() === 'waiting' && (
-                      <button
-                        onClick={() => onCancelGame(req.id)}
-                        className="px-3 py-2 text-xs border border-rose-400/35 text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 rounded transition-colors"
-                        data-testid={`cancel-game-${req.id}`}
-                      >
-                        İPTAL ET
-                      </button>
-                    )}
+                    <button
+                      onClick={() => onCancelGame(req.id)}
+                      className="px-3 py-2 text-xs border border-rose-400/35 text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 rounded transition-colors"
+                      data-testid={`cancel-game-${req.id}`}
+                    >
+                      İPTAL ET
+                    </button>
                   </div>
                 )}
               </motion.div>

@@ -8,6 +8,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { GameHistoryEntry, GameRequest, User } from '../types';
 import { api } from '../lib/api';
+import { socketService } from '../lib/socket';
 
 interface UseGamesProps {
   currentUser: User;
@@ -40,6 +41,16 @@ interface UseGamesReturn {
 
 const toMessage = (err: unknown, fallback: string) =>
   err instanceof Error && err.message ? err.message : fallback;
+
+const isNotFoundError = (err: unknown): boolean => {
+  if (!(err instanceof Error)) return false;
+  const message = String(err.message || '').toLowerCase();
+  return (
+    message.includes('404') ||
+    message.includes('bulunamadı') ||
+    message.includes('not found')
+  );
+};
 
 const normalizeTableCode = (rawValue: unknown): string => {
   const raw = String(rawValue || '').trim().toUpperCase();
@@ -384,6 +395,16 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
         fetchGameHistory({ silent: true }),
       ]);
     } catch (err) {
+      if (isNotFoundError(err)) {
+        // Yarış koşulu: oyun bu sırada başka bir istemci tarafından düşmüş olabilir.
+        setGames((prev) => prev.filter((game) => String(game.id) !== String(gameId)));
+        await Promise.all([
+          fetchGames({ silent: true }),
+          checkActiveGame({ ignoreLocalActive: true }),
+          fetchGameHistory({ silent: true }),
+        ]);
+        return;
+      }
       console.error('Failed to cancel game:', err);
       throw new Error(toMessage(err, 'Oyun iptal edilirken hata oluştu'));
     }
@@ -501,6 +522,26 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
       }
     };
   }, [fetchGames, checkActiveGame, fetchGameHistory]);
+
+  /**
+   * Socket tabanlı lobi senkronu (polling'e ek)
+   */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (process.env.NODE_ENV === 'test') return;
+
+    const socket = socketService.getSocket();
+    const handleLobbyUpdated = () => {
+      void fetchGames({ silent: true });
+      void checkActiveGame({ ignoreLocalActive: true, preserveUntilConfirmedEmpty: true });
+      void fetchGameHistory({ silent: true });
+    };
+
+    socket.on('lobby_updated', handleLobbyUpdated);
+    return () => {
+      socket.off('lobby_updated', handleLobbyUpdated);
+    };
+  }, [checkActiveGame, fetchGameHistory, fetchGames]);
 
   return {
     // Oyun listesi

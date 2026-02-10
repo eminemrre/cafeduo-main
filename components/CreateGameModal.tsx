@@ -12,7 +12,7 @@ interface CreateGameModalProps {
 
 const GAME_TYPES = [
   { id: 'reflex', name: 'Refleks Avı', category: 'Refleks', description: 'Işık yandığında en hızlı tıkla', minPoints: 0 },
-  { id: 'war', name: 'Tank Düellosu', category: 'Savaş', description: 'Diziyi doğru sırada tekrar et ve rakibi baskıla', minPoints: 40 },
+  { id: 'war', name: 'Tank Düellosu', category: 'Savaş', description: 'Nişan hattında merkezi vur, tur tur isabet topla', minPoints: 40 },
   { id: 'chess', name: 'Retro Satranç', category: 'Strateji', description: 'Klasik 2 oyunculu satranç. Gerçek zamanlı ve hamle doğrulamalı.', minPoints: 90 },
   { id: 'knowledge', name: 'Bilgi Yarışı', category: 'Bilgi', description: 'Kısa bilgi sorularında doğru cevabı en hızlı ver', minPoints: 120 },
 ];
@@ -138,12 +138,15 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center px-3 sm:px-4 py-3 sm:py-6 overflow-y-auto">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/90 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
 
       {/* Modal Content */}
-      <div className="relative bg-[linear-gradient(170deg,rgba(6,13,29,0.98),rgba(8,24,51,0.9))] border-2 border-cyan-400/35 rounded-2xl p-6 w-full max-w-md shadow-[0_0_50px_rgba(10,215,255,0.2)] transform transition-all scale-100 opacity-100" data-testid="create-game-modal">
+      <div
+        className="relative bg-[linear-gradient(170deg,rgba(6,13,29,0.98),rgba(8,24,51,0.9))] border-2 border-cyan-400/35 rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-[0_0_50px_rgba(10,215,255,0.2)] transform transition-all scale-100 opacity-100 max-h-[calc(100vh-1.5rem)] sm:max-h-[min(860px,calc(100vh-3rem))] overflow-y-auto"
+        data-testid="create-game-modal"
+      >
 
         {/* Header */}
         <div className="flex justify-between items-center mb-6 border-b border-cyan-400/20 pb-4">
@@ -181,20 +184,20 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                       : 'border-cyan-400/20 hover:border-cyan-400/35 bg-black/30'
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
                       <div className="text-white font-retro text-lg">{game.name}</div>
                       <div className="text-cyan-300 text-[10px] font-pixel tracking-[0.12em] uppercase">{game.category}</div>
                       <div className="text-[var(--rf-muted)] text-xs">{game.description}</div>
                     </div>
-                    {game.minPoints > 0 && (
-                      <div className="text-amber-300 text-xs font-pixel">
+                    {game.minPoints > 0 ? (
+                      <div className="text-amber-300 text-xs font-pixel shrink-0 text-right leading-tight">
                         Min {game.minPoints} Puan
                       </div>
-                    )}
-                    {gameType === game.name && (
+                    ) : null}
+                    {gameType === game.name ? (
                       <Check size={20} className="text-cyan-300" />
-                    )}
+                    ) : null}
                   </div>
                 </button>
               ))}
@@ -218,7 +221,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                 min={minPoints}
                 max={maxPoints}
                 data-testid="game-points-input"
-                className={`w-full bg-black border-2 ${errors.points && touched.points ? 'border-red-500' : 'border-cyan-400/25'} text-white p-3 font-retro text-2xl text-center focus:border-cyan-300 outline-none transition-colors`}
+                className={`w-full bg-black border-2 ${errors.points && touched.points ? 'border-red-500' : 'border-cyan-400/25'} text-white p-3 pr-16 font-retro text-2xl text-center focus:border-cyan-300 outline-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--rf-muted)] text-sm">Puan</span>
             </div>

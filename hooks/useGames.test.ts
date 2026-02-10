@@ -311,6 +311,46 @@ describe('useGames', () => {
     expect(result.current.activeGameType).toBe('Refleks Avı');
   });
 
+  it('keeps serverActiveGame on first empty poll and clears on second empty poll', async () => {
+    (api.games.list as jest.Mock).mockResolvedValue([]);
+    (api.users.getActiveGame as jest.Mock)
+      .mockResolvedValueOnce({
+        id: 88,
+        hostName: 'hostA',
+        guestName: 'testuser',
+        gameType: 'Refleks Avı',
+        table: 'MASA01',
+        status: 'active',
+      })
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(null);
+
+    const { result } = renderHook(() =>
+      useGames({ currentUser: mockUser, tableCode: mockTableCode })
+    );
+
+    await waitFor(() => {
+      expect(result.current.serverActiveGame?.id).toBe(88);
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(4000);
+      await Promise.resolve();
+    });
+
+    // First empty response should be ignored to prevent flicker.
+    expect(result.current.serverActiveGame?.id).toBe(88);
+
+    await act(async () => {
+      jest.advanceTimersByTime(4000);
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(result.current.serverActiveGame).toBeNull();
+    });
+  });
+
   it('keeps polling healthy and clears interval on unmount', async () => {
     (api.games.list as jest.Mock).mockResolvedValue([]);
     (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);
@@ -402,6 +442,33 @@ describe('useGames', () => {
     });
 
     expect(api.games.delete).toHaveBeenCalledWith(91);
+    await waitFor(() => {
+      expect(result.current.games.length).toBe(0);
+    });
+  });
+
+  it('cancelGame tolerates already-removed game responses', async () => {
+    (api.games.list as jest.Mock)
+      .mockResolvedValueOnce([
+        { id: 99, hostName: 'testuser', gameType: 'Refleks Avı', points: 25, table: 'MASA01', status: 'waiting' },
+      ])
+      .mockResolvedValueOnce([]);
+    (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);
+    (api.games.delete as jest.Mock).mockRejectedValueOnce(new Error('Oyun bulunamadı veya silme yetkiniz yok.'));
+
+    const { result } = renderHook(() =>
+      useGames({ currentUser: mockUser, tableCode: mockTableCode })
+    );
+
+    await waitFor(() => {
+      expect(result.current.games.length).toBe(1);
+    });
+
+    await act(async () => {
+      await result.current.cancelGame(99);
+    });
+
+    expect(api.games.delete).toHaveBeenCalledWith(99);
     await waitFor(() => {
       expect(result.current.games.length).toBe(0);
     });

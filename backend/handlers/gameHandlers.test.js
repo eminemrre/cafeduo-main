@@ -178,6 +178,84 @@ describe('gameHandlers (memory mode)', () => {
     expect(memoryGames[0].guestName).toBe('u2');
   });
 
+  it('allows same guest to rejoin an already active game', async () => {
+    memoryGames = [
+      {
+        id: 71,
+        hostName: 'u1',
+        guestName: 'u2',
+        gameType: 'Refleks Avı',
+        points: 20,
+        table: 'MASA05',
+        status: 'active',
+      },
+    ];
+
+    const joinReq = {
+      params: { id: '71' },
+      user: { username: 'u2', role: 'user', isAdmin: false, table_number: '7', cafe_id: 1 },
+    };
+    const res = createMockRes();
+
+    await handlers.joinGame(joinReq, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.payload).toMatchObject({ success: true });
+    expect(res.payload.game).toMatchObject({
+      id: 71,
+      status: 'active',
+      guestName: 'u2',
+    });
+  });
+
+  it('rejects third player join attempt when game is active', async () => {
+    memoryGames = [
+      {
+        id: 72,
+        hostName: 'u1',
+        guestName: 'u2',
+        gameType: 'Refleks Avı',
+        points: 20,
+        table: 'MASA05',
+        status: 'active',
+      },
+    ];
+
+    const joinReq = {
+      params: { id: '72' },
+      user: { username: 'u3', role: 'user', isAdmin: false, table_number: '9', cafe_id: 2 },
+    };
+    const res = createMockRes();
+
+    await handlers.joinGame(joinReq, res);
+
+    expect(res.statusCode).toBe(409);
+    expect(res.payload).toMatchObject({ error: 'Oyun dolu.' });
+  });
+
+  it('rejects join when status transition is invalid', async () => {
+    memoryGames = [
+      {
+        id: 77,
+        hostName: 'u1',
+        gameType: 'Refleks Avı',
+        points: 20,
+        table: 'MASA05',
+        status: 'finishing',
+      },
+    ];
+
+    const joinReq = {
+      params: { id: '77' },
+      user: { username: 'u2', role: 'user', isAdmin: false, table_number: '7', cafe_id: 1 },
+    };
+    const res = createMockRes();
+    await handlers.joinGame(joinReq, res);
+
+    expect(res.statusCode).toBe(409);
+    expect(res.payload?.code).toBe('invalid_status_transition');
+  });
+
   it('validates classic chess turn order and updates chess state', async () => {
     memoryGames = [
       {

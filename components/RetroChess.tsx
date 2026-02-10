@@ -132,6 +132,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
   const files = orientation === 'w' ? [...FILES] : [...FILES].reverse();
   const ranks = orientation === 'w' ? [...RANKS] : [...RANKS].reverse();
   const turn = chess.turn();
+  const effectiveSelectableColor = playerColor || turn;
   const isMyTurn = Boolean(playerColor) && turn === playerColor && serverStatus !== 'finished';
   const opponentLabel = useMemo(() => {
     if (isBot) return 'BOT';
@@ -358,8 +359,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
 
   const handleSquareClick = (square: Square) => {
     if (submitting || serverStatus === 'finished') return;
-    if (!isBot && !playerColor) return;
-    if (!isMyTurn && !isBot) {
+    if (!isBot && playerColor && !isMyTurn) {
       setMessage('Sıra rakipte.');
       return;
     }
@@ -374,8 +374,8 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       clearSelection();
       return;
     }
-    if (!isBot && piece.color !== playerColor) {
-      setMessage('Kendi taşını seçmelisin.');
+    if (!isBot && piece.color !== effectiveSelectableColor) {
+      setMessage(playerColor ? 'Kendi taşını seçmelisin.' : 'Sırası gelen renkten bir taş seç.');
       return;
     }
     if (isBot && piece.color !== 'w') {
@@ -494,4 +494,3 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     </div>
   );
 };
-

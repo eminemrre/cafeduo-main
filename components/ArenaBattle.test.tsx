@@ -15,7 +15,7 @@ describe('ArenaBattle', () => {
 
   beforeEach(() => {
     jest.useFakeTimers();
-    jest.spyOn(Math, 'random').mockReturnValue(0);
+    jest.spyOn(Math, 'random').mockReturnValue(0.5);
   });
 
   afterEach(() => {
@@ -24,7 +24,7 @@ describe('ArenaBattle', () => {
     jest.restoreAllMocks();
   });
 
-  it('ignores pad input while sequence is being shown', () => {
+  it('records a shot when user fires', () => {
     render(
       <ArenaBattle
         currentUser={mockUser}
@@ -35,11 +35,18 @@ describe('ArenaBattle', () => {
       />
     );
 
-    fireEvent.click(screen.getByTestId('rhythm-pad-0'));
-    expect(screen.getByText('Dizi oynatılıyor...')).toBeInTheDocument();
+    const fireButton = screen.getByTestId('tank-fire-button');
+    const shotCard = screen.getByText('Son Atışın').parentElement;
+    expect(shotCard).toBeTruthy();
+    expect(shotCard?.textContent).toContain('-');
+
+    fireEvent.click(fireButton);
+
+    expect(screen.getByText(/Atışın:/i)).toBeInTheDocument();
+    expect(shotCard?.textContent).not.toContain('-');
   });
 
-  it('ends match after 4 failed rounds and declares bot winner', () => {
+  it('completes match after 5 rounds in bot mode', () => {
     const onGameEnd = jest.fn();
 
     render(
@@ -52,17 +59,20 @@ describe('ArenaBattle', () => {
       />
     );
 
-    for (let i = 0; i < 4; i += 1) {
-      act(() => {
-        jest.advanceTimersByTime(3400);
-      });
-      fireEvent.click(screen.getByTestId('rhythm-pad-1'));
+    const fireButton = screen.getByTestId('tank-fire-button');
+    for (let i = 0; i < 5; i += 1) {
+      fireEvent.click(fireButton);
+      if (i < 4) {
+        act(() => {
+          jest.advanceTimersByTime(800);
+        });
+      }
     }
 
     act(() => {
       jest.advanceTimersByTime(1000);
     });
 
-    expect(onGameEnd).toHaveBeenCalledWith('BOT', 0);
+    expect(onGameEnd).toHaveBeenCalledWith('emin', 10);
   });
 });

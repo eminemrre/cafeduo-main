@@ -3,7 +3,11 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { RetroChess } from './RetroChess';
 import { User } from '../types';
 
-describe('RetroChess', () => {
+jest.mock('../lib/gameAudio', () => ({
+  playGameSfx: jest.fn(),
+}));
+
+describe('RetroChess (classic)', () => {
   const mockUser: User = {
     id: 1,
     username: 'emin',
@@ -15,7 +19,7 @@ describe('RetroChess', () => {
 
   beforeEach(() => {
     jest.useFakeTimers();
-    jest.spyOn(Math, 'random').mockReturnValue(0.2);
+    jest.spyOn(Math, 'random').mockReturnValue(0.15);
   });
 
   afterEach(() => {
@@ -24,11 +28,11 @@ describe('RetroChess', () => {
     jest.restoreAllMocks();
   });
 
-  it('renders board and allows selecting candidate squares', () => {
+  it('renders classic board and allows legal player move in bot mode', () => {
     render(
       <RetroChess
         currentUser={mockUser}
-        gameId={1}
+        gameId={null}
         isBot={true}
         onGameEnd={jest.fn()}
         onLeave={jest.fn()}
@@ -38,14 +42,16 @@ describe('RetroChess', () => {
     expect(screen.getByTestId('retro-chess')).toBeInTheDocument();
     expect(screen.getByTestId('retro-chess-board')).toBeInTheDocument();
 
-    const optionSquare = screen.getAllByRole('button', { name: /[a-h][1-8]/i })[0];
-    fireEvent.click(optionSquare);
+    fireEvent.click(screen.getByTestId('retro-chess-square-e2'));
+    fireEvent.click(screen.getByTestId('retro-chess-square-e4'));
+
+    expect(screen.getByText(/BOT düşünüyor/i)).toBeInTheDocument();
 
     act(() => {
-      jest.advanceTimersByTime(800);
+      jest.advanceTimersByTime(600);
     });
 
-    expect(screen.getByText(/Tur/i)).toBeInTheDocument();
+    expect(screen.getByText(/Sıra sende/i)).toBeInTheDocument();
   });
 
   it('calls onLeave when user exits', () => {
@@ -53,7 +59,7 @@ describe('RetroChess', () => {
     render(
       <RetroChess
         currentUser={mockUser}
-        gameId={1}
+        gameId={null}
         isBot={true}
         onGameEnd={jest.fn()}
         onLeave={onLeave}
@@ -64,3 +70,4 @@ describe('RetroChess', () => {
     expect(onLeave).toHaveBeenCalledTimes(1);
   });
 });
+

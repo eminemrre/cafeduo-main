@@ -43,10 +43,26 @@ describe('gameHandlers (memory mode)', () => {
       pool: { query: jest.fn(), connect: jest.fn() },
       isDbConnected: jest.fn().mockResolvedValue(false),
       logger: { error: jest.fn() },
-      supportedGameTypes: new Set(['Refleks Avı', 'Ritim Kopyala', 'Çift Tek Sprint']),
+      supportedGameTypes: new Set([
+        'Refleks Avı',
+        'Ritim Kopyala',
+        'Çift Tek Sprint',
+        'Tank Düellosu',
+        'Retro Satranç',
+        'Bilgi Yarışı',
+      ]),
       normalizeGameType: (value) => {
         const raw = String(value || '').trim();
-        return ['Refleks Avı', 'Ritim Kopyala', 'Çift Tek Sprint'].includes(raw) ? raw : null;
+        return [
+          'Refleks Avı',
+          'Ritim Kopyala',
+          'Çift Tek Sprint',
+          'Tank Düellosu',
+          'Retro Satranç',
+          'Bilgi Yarışı',
+        ].includes(raw)
+          ? raw
+          : null;
       },
       normalizeTableCode,
       getGameParticipants: (game) => [
@@ -160,6 +176,52 @@ describe('gameHandlers (memory mode)', () => {
     expect(okRes.statusCode).toBe(200);
     expect(memoryGames[0].status).toBe('active');
     expect(memoryGames[0].guestName).toBe('u2');
+  });
+
+  it('validates classic chess turn order and updates chess state', async () => {
+    memoryGames = [
+      {
+        id: 12,
+        hostName: 'u1',
+        guestName: 'u2',
+        gameType: 'Retro Satranç',
+        points: 90,
+        table: 'MASA05',
+        status: 'active',
+        gameState: {},
+      },
+    ];
+
+    const hostMoveReq = {
+      params: { id: '12' },
+      user: { username: 'u1', role: 'user', isAdmin: false },
+      body: { chessMove: { from: 'e2', to: 'e4' } },
+    };
+    const hostMoveRes = createMockRes();
+    await handlers.makeMove(hostMoveReq, hostMoveRes);
+    expect(hostMoveRes.statusCode).toBe(200);
+    expect(hostMoveRes.payload?.gameState?.chess?.fen).toContain(' b ');
+    expect(memoryGames[0].player1Move).toBe('e4');
+
+    const duplicateTurnReq = {
+      params: { id: '12' },
+      user: { username: 'u1', role: 'user', isAdmin: false },
+      body: { chessMove: { from: 'd2', to: 'd4' } },
+    };
+    const duplicateTurnRes = createMockRes();
+    await handlers.makeMove(duplicateTurnReq, duplicateTurnRes);
+    expect(duplicateTurnRes.statusCode).toBe(409);
+
+    const guestMoveReq = {
+      params: { id: '12' },
+      user: { username: 'u2', role: 'user', isAdmin: false },
+      body: { chessMove: { from: 'e7', to: 'e5' } },
+    };
+    const guestMoveRes = createMockRes();
+    await handlers.makeMove(guestMoveReq, guestMoveRes);
+    expect(guestMoveRes.statusCode).toBe(200);
+    expect(guestMoveRes.payload?.gameState?.chess?.fen).toContain(' w ');
+    expect(memoryGames[0].player2Move).toBe('e5');
   });
 
   it('accepts score submissions and resolves winner', async () => {

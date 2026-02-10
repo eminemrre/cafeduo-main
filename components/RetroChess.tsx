@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Chess, Move, Square } from 'chess.js';
 import { User } from '../types';
 import { RetroButton } from './RetroButton';
 import { api } from '../lib/api';
-import { submitScoreAndWaitForWinner } from '../lib/multiplayer';
 import { GAME_ASSETS } from '../lib/gameAssets';
 import { playGameSfx } from '../lib/gameAudio';
+import { socketService } from '../lib/socket';
 
 interface RetroChessProps {
   currentUser: User;
@@ -15,85 +16,85 @@ interface RetroChessProps {
   onLeave: () => void;
 }
 
-interface Coord {
-  x: number;
-  y: number;
+interface ChessRealtimeState {
+  fen?: string;
+  turn?: 'w' | 'b';
+  isGameOver?: boolean;
+  result?: string | null;
+  winner?: string | null;
+  moveHistory?: Array<{
+    from: string;
+    to: string;
+    san: string;
+    ts: string;
+  }>;
 }
 
-interface RoundState {
-  origin: Coord;
-  options: Coord[];
-  answerIndex: number;
+interface GameSnapshot {
+  id: string | number;
+  status?: string;
+  winner?: string | null;
+  hostName?: string;
+  guestName?: string | null;
+  gameState?: {
+    chess?: ChessRealtimeState;
+  };
 }
 
-const BOARD_SIZE = 8;
-const MAX_ROUNDS = 5;
-const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-const KNIGHT_OFFSETS = [
-  { x: 1, y: 2 },
-  { x: 2, y: 1 },
-  { x: 2, y: -1 },
-  { x: 1, y: -2 },
-  { x: -1, y: -2 },
-  { x: -2, y: -1 },
-  { x: -2, y: 1 },
-  { x: -1, y: 2 },
-];
-const PIECE_ORDER = ['king', 'queen', 'rook', 'bishop', 'knight', 'pawn'] as const;
+interface GameStateUpdatedPayload {
+  type?: string;
+  gameId?: string | number;
+  status?: string;
+  winner?: string | null;
+  chess?: ChessRealtimeState;
+}
 
-const toKey = ({ x, y }: Coord) => `${x},${y}`;
-const inBounds = ({ x, y }: Coord) => x >= 0 && x < BOARD_SIZE && y >= 0 && y < BOARD_SIZE;
-const isSameCoord = (a: Coord, b: Coord) => a.x === b.x && a.y === b.y;
+const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const;
+const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'] as const;
 
-const toNotation = ({ x, y }: Coord) => `${FILES[x]}${BOARD_SIZE - y}`;
-
-const knightMoves = (origin: Coord): Coord[] => {
-  return KNIGHT_OFFSETS
-    .map((offset) => ({ x: origin.x + offset.x, y: origin.y + offset.y }))
-    .filter(inBounds);
+const PIECE_ASSET: Record<'w' | 'b', Record<'p' | 'n' | 'b' | 'r' | 'q' | 'k', string>> = {
+  w: {
+    p: '/assets/games/retro-kit/chess/white-pawn.png',
+    n: '/assets/games/retro-kit/chess/white-knight.png',
+    b: '/assets/games/retro-kit/chess/white-bishop.png',
+    r: '/assets/games/retro-kit/chess/white-rook.png',
+    q: '/assets/games/retro-kit/chess/white-queen.png',
+    k: '/assets/games/retro-kit/chess/white-king.png',
+  },
+  b: {
+    p: '/assets/games/retro-kit/chess/black-pawn.png',
+    n: '/assets/games/retro-kit/chess/black-knight.png',
+    b: '/assets/games/retro-kit/chess/black-bishop.png',
+    r: '/assets/games/retro-kit/chess/black-rook.png',
+    q: '/assets/games/retro-kit/chess/black-queen.png',
+    k: '/assets/games/retro-kit/chess/black-king.png',
+  },
 };
 
-const shuffleCoords = (coords: Coord[]): Coord[] => {
-  const cloned = [...coords];
-  for (let i = cloned.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const tmp = cloned[i];
-    cloned[i] = cloned[j];
-    cloned[j] = tmp;
-  }
-  return cloned;
+const normalizeWinner = (value: unknown): string | null => {
+  const raw = String(value || '').trim();
+  return raw ? raw : null;
 };
 
-const randomCoord = (): Coord => ({
-  x: Math.floor(Math.random() * BOARD_SIZE),
-  y: Math.floor(Math.random() * BOARD_SIZE),
-});
-
-const createRoundState = (): RoundState => {
-  let origin = randomCoord();
-  let legalMoves = knightMoves(origin);
-  while (legalMoves.length < 3) {
-    origin = randomCoord();
-    legalMoves = knightMoves(origin);
+const loadChess = (fen: unknown) => {
+  try {
+    const resolvedFen = String(fen || '').trim();
+    if (!resolvedFen) return new Chess();
+    return new Chess(resolvedFen);
+  } catch {
+    return new Chess();
   }
+};
 
-  const answer = legalMoves[Math.floor(Math.random() * legalMoves.length)];
-  const legalSet = new Set(legalMoves.map(toKey));
-  const distractorPool = shuffleCoords(
-    Array.from({ length: BOARD_SIZE * BOARD_SIZE }).map((_, idx) => ({
-      x: idx % BOARD_SIZE,
-      y: Math.floor(idx / BOARD_SIZE),
-    }))
-  ).filter((candidate) => {
-    const candidateKey = toKey(candidate);
-    return candidateKey !== toKey(answer) && !legalSet.has(candidateKey);
-  });
-  const distractors = distractorPool.slice(0, 3);
+const toSquare = (file: string, rank: string) => `${file}${rank}` as Square;
 
-  const options = shuffleCoords([answer, ...distractors]);
-  const answerIndex = options.findIndex((item) => isSameCoord(item, answer));
-
-  return { origin, options, answerIndex };
+const inferResultLabel = (engine: Chess): string => {
+  if (engine.isCheckmate()) return 'Şah mat';
+  if (engine.isStalemate()) return 'Pat';
+  if (engine.isThreefoldRepetition()) return 'Üçlü tekrar';
+  if (engine.isInsufficientMaterial()) return 'Yetersiz materyal';
+  if (engine.isDraw()) return 'Berabere';
+  return 'Oyun bitti';
 };
 
 export const RetroChess: React.FC<RetroChessProps> = ({
@@ -104,111 +105,302 @@ export const RetroChess: React.FC<RetroChessProps> = ({
   onGameEnd,
   onLeave,
 }) => {
-  const [round, setRound] = useState(1);
-  const [playerScore, setPlayerScore] = useState(0);
-  const [opponentScore, setOpponentScore] = useState(0);
-  const [roundState, setRoundState] = useState<RoundState>(() => createRoundState());
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
-  const [done, setDone] = useState(false);
-  const [resolvingMatch, setResolvingMatch] = useState(false);
-  const [message, setMessage] = useState('Atın tek hamlede ulaşabileceği kareyi seç.');
-  const matchStartedAtRef = useRef<number>(Date.now());
-  const nextRoundTimerRef = useRef<number | null>(null);
+  const [chess, setChess] = useState<Chess>(() => new Chess());
+  const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
+  const [legalTargets, setLegalTargets] = useState<Square[]>([]);
+  const [hostName, setHostName] = useState('');
+  const [guestName, setGuestName] = useState('');
+  const [serverStatus, setServerStatus] = useState('active');
+  const [serverWinner, setServerWinner] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState('Klasik satranç modu: taş seç, hedef kareye tıkla.');
+  const [liveResultLabel, setLiveResultLabel] = useState<string | null>(null);
+  const concludeRef = useRef(false);
+  const pollingRef = useRef<number | null>(null);
+  const requestInFlightRef = useRef(false);
 
-  const targetName = useMemo(() => (isBot ? 'BOT' : (opponentName || 'Rakip')), [isBot, opponentName]);
-  const optionsByKey = useMemo(
-    () =>
-      new Map(
-        roundState.options.map((coord, idx) => [toKey(coord), idx])
-      ),
-    [roundState.options]
-  );
+  const playerColor = useMemo<'w' | 'b' | null>(() => {
+    if (isBot) return 'w';
+    const actor = String(currentUser.username || '').trim().toLowerCase();
+    if (hostName && actor === hostName.toLowerCase()) return 'w';
+    if (guestName && actor === guestName.toLowerCase()) return 'b';
+    return null;
+  }, [currentUser.username, guestName, hostName, isBot]);
+
+  const orientation = playerColor === 'b' ? 'b' : 'w';
+  const files = orientation === 'w' ? [...FILES] : [...FILES].reverse();
+  const ranks = orientation === 'w' ? [...RANKS] : [...RANKS].reverse();
+  const turn = chess.turn();
+  const isMyTurn = Boolean(playerColor) && turn === playerColor && serverStatus !== 'finished';
+  const opponentLabel = useMemo(() => {
+    if (isBot) return 'BOT';
+    if (playerColor === 'w') return guestName || opponentName || 'Rakip';
+    return hostName || opponentName || 'Rakip';
+  }, [guestName, hostName, isBot, opponentName, playerColor]);
+
+  const clearSelection = () => {
+    setSelectedSquare(null);
+    setLegalTargets([]);
+  };
+
+  const concludeGame = useCallback((winnerFromState: string | null, engine: Chess) => {
+    if (concludeRef.current) return;
+    concludeRef.current = true;
+    const winner = normalizeWinner(winnerFromState);
+    const didWin = winner ? winner.toLowerCase() === currentUser.username.toLowerCase() : false;
+    const points = didWin ? 12 : 0;
+    const label = winner ? `${winner} kazandı.` : `${inferResultLabel(engine)} ile bitti.`;
+    setMessage(label);
+    setLiveResultLabel(winner ? 'Kazanan belirlendi' : inferResultLabel(engine));
+    window.setTimeout(() => onGameEnd(winner || 'Berabere', points), 700);
+  }, [currentUser.username, onGameEnd]);
+
+  const applyGameSnapshot = useCallback((snapshot: GameSnapshot) => {
+    if (snapshot.hostName) setHostName(String(snapshot.hostName));
+    if (snapshot.guestName) setGuestName(String(snapshot.guestName));
+    if (snapshot.status) setServerStatus(String(snapshot.status));
+    const winner = normalizeWinner(snapshot.winner || snapshot.gameState?.chess?.winner);
+    if (winner) setServerWinner(winner);
+
+    const nextEngine = loadChess(snapshot.gameState?.chess?.fen);
+    setChess(nextEngine);
+    clearSelection();
+
+    const gameOverByServer = String(snapshot.status || '').toLowerCase() === 'finished';
+    const gameOverByBoard =
+      Boolean(snapshot.gameState?.chess?.isGameOver) || nextEngine.isGameOver();
+    if (gameOverByServer || gameOverByBoard) {
+      concludeGame(winner, nextEngine);
+      return;
+    }
+
+    const whoseTurn = nextEngine.turn() === 'w' ? 'Beyaz' : 'Siyah';
+    setMessage(`Sıra: ${whoseTurn}.`);
+  }, [concludeGame]);
+
+  const fetchGameSnapshot = useCallback(async (silent = false) => {
+    if (!gameId || isBot || requestInFlightRef.current) return;
+    requestInFlightRef.current = true;
+    if (!silent) setLoading(true);
+    try {
+      const snapshot = await api.games.get(gameId) as GameSnapshot;
+      applyGameSnapshot(snapshot);
+    } catch (err) {
+      console.error('RetroChess snapshot fetch failed', err);
+      if (!silent) {
+        setMessage('Oyun durumu alınamadı. Bağlantı yeniden deneniyor...');
+      }
+    } finally {
+      requestInFlightRef.current = false;
+      if (!silent) setLoading(false);
+    }
+  }, [applyGameSnapshot, gameId, isBot]);
 
   useEffect(() => {
-    return () => {
-      if (nextRoundTimerRef.current) {
-        window.clearTimeout(nextRoundTimerRef.current);
+    concludeRef.current = false;
+    setServerWinner(null);
+    setLiveResultLabel(null);
+    clearSelection();
+    if (isBot || !gameId) {
+      setHostName(currentUser.username);
+      setGuestName('BOT');
+      setServerStatus('active');
+      setLoading(false);
+      setChess(new Chess());
+      setMessage('BOT modu: beyaz taşlarla başlıyorsun.');
+      return;
+    }
+    void fetchGameSnapshot();
+  }, [currentUser.username, fetchGameSnapshot, gameId, isBot]);
+
+  useEffect(() => {
+    if (isBot || !gameId) return;
+    const socket = socketService.getSocket();
+    socketService.joinGame(String(gameId));
+
+    const handleRealtime = (payload: GameStateUpdatedPayload) => {
+      if (String(payload?.gameId || '') !== String(gameId)) return;
+
+      if (payload.type === 'game_joined') {
+        setMessage('Rakip oyuna bağlandı. Satranç başladı.');
+        void fetchGameSnapshot(true);
+        return;
+      }
+
+      if (payload.type === 'game_finished') {
+        setServerStatus('finished');
+        setServerWinner(normalizeWinner(payload.winner));
+        void fetchGameSnapshot(true);
+        return;
+      }
+
+      if (payload.chess?.fen) {
+        const engine = loadChess(payload.chess.fen);
+        setChess(engine);
+        clearSelection();
+        if (payload.status) setServerStatus(String(payload.status));
+        const winner = normalizeWinner(payload.winner || payload.chess.winner);
+        if (winner) setServerWinner(winner);
+        if (payload.chess.isGameOver || engine.isGameOver() || payload.status === 'finished') {
+          concludeGame(winner, engine);
+          return;
+        }
+        setMessage(`Sıra: ${engine.turn() === 'w' ? 'Beyaz' : 'Siyah'}.`);
       }
     };
-  }, []);
 
-  const finalizeMatch = async (localWinner: string, playerScoreValue: number) => {
-    if (isBot || !gameId) {
-      const points = localWinner === currentUser.username ? 12 : 0;
-      setTimeout(() => onGameEnd(localWinner, points), 900);
-      return;
-    }
+    socket.on('game_state_updated', handleRealtime);
+    return () => {
+      socket.off('game_state_updated', handleRealtime);
+    };
+  }, [concludeGame, fetchGameSnapshot, gameId, isBot]);
 
-    setResolvingMatch(true);
-    setMessage('Skor kaydedildi. Rakip sonucu bekleniyor...');
-
-    try {
-      const durationMs = Math.max(1, Date.now() - matchStartedAtRef.current);
-      const { winner } = await submitScoreAndWaitForWinner({
-        gameId,
-        username: currentUser.username,
-        score: playerScoreValue,
-        roundsWon: playerScoreValue,
-        durationMs,
-      });
-
-      const resolvedWinner = winner || localWinner;
-      try {
-        await api.games.finish(gameId, resolvedWinner);
-      } catch {
-        // Keep user flow stable if finalization request fails.
+  useEffect(() => {
+    if (isBot || !gameId) return;
+    pollingRef.current = window.setInterval(() => {
+      if (document.visibilityState === 'hidden') return;
+      if (serverStatus === 'finished') return;
+      void fetchGameSnapshot(true);
+    }, 1800);
+    return () => {
+      if (pollingRef.current) {
+        window.clearInterval(pollingRef.current);
       }
+    };
+  }, [fetchGameSnapshot, gameId, isBot, serverStatus]);
 
-      const points = resolvedWinner === currentUser.username ? 12 : 0;
-      setMessage(points > 0 ? 'Retro Satranç turunu kazandın.' : 'Rakip taşları daha hızlı okudu.');
-      setTimeout(() => onGameEnd(resolvedWinner, points), 900);
-    } catch {
-      const fallbackPoints = localWinner === currentUser.username ? 12 : 0;
-      setMessage('Bağlantı dalgalandı, yerel sonuç uygulandı.');
-      setTimeout(() => onGameEnd(localWinner, fallbackPoints), 900);
-    } finally {
-      setResolvingMatch(false);
+  const runBotMove = useCallback((engineAfterPlayerMove: Chess) => {
+    if (!isBot) return;
+    const legal = engineAfterPlayerMove.moves({ verbose: true }) as Move[];
+    if (legal.length === 0) {
+      concludeGame(null, engineAfterPlayerMove);
+      return;
     }
-  };
+    window.setTimeout(() => {
+      const picked = legal[Math.floor(Math.random() * legal.length)];
+      engineAfterPlayerMove.move({
+        from: picked.from,
+        to: picked.to,
+        promotion: picked.promotion || 'q',
+      });
+      const cloned = loadChess(engineAfterPlayerMove.fen());
+      setChess(cloned);
+      clearSelection();
+      if (cloned.isGameOver()) {
+        concludeGame(null, cloned);
+        return;
+      }
+      setMessage('BOT hamlesini yaptı. Sıra sende.');
+    }, 450);
+  }, [concludeGame, isBot]);
 
-  const moveToNextRound = (nextPlayer: number, nextOpponent: number) => {
-    const isLast = round >= MAX_ROUNDS;
-    if (isLast) {
-      setDone(true);
-      const localWinner = nextPlayer >= nextOpponent ? currentUser.username : targetName;
-      void finalizeMatch(localWinner, nextPlayer);
+  const submitMove = useCallback(async (from: Square, to: Square) => {
+    if (submitting || serverStatus === 'finished') return;
+    const movingPiece = chess.get(from);
+    if (!movingPiece) return;
+    const promotion = movingPiece.type === 'p' && (to.endsWith('8') || to.endsWith('1')) ? 'q' : undefined;
+
+    if (isBot || !gameId) {
+      const sandbox = loadChess(chess.fen());
+      const applied = sandbox.move({ from, to, ...(promotion ? { promotion } : {}) });
+      if (!applied) {
+        playGameSfx('fail', 0.25);
+        setMessage('Yasadışı hamle.');
+        return;
+      }
+      const cloned = loadChess(sandbox.fen());
+      setChess(cloned);
+      clearSelection();
+      playGameSfx('success', 0.25);
+      if (cloned.isGameOver()) {
+        concludeGame(null, cloned);
+        return;
+      }
+      setMessage('Hamlen kabul edildi. BOT düşünüyor...');
+      runBotMove(sandbox);
       return;
     }
 
-    nextRoundTimerRef.current = window.setTimeout(() => {
-      setRound((prev) => prev + 1);
-      setRoundState(createRoundState());
-      setSelectedIndex(null);
-      setMessage('Yeni konum yüklendi. Doğru kareyi seç.');
-      playGameSfx('select', 0.2);
-    }, 650);
+    setSubmitting(true);
+    try {
+      const result = await api.games.move(gameId, {
+        chessMove: { from, to, ...(promotion ? { promotion } : {}) },
+      }) as {
+        gameState?: { chess?: ChessRealtimeState };
+        status?: string;
+        winner?: string | null;
+      };
+
+      const nextFen = result?.gameState?.chess?.fen;
+      const engine = loadChess(nextFen || chess.fen());
+      setChess(engine);
+      clearSelection();
+      if (result?.status) setServerStatus(result.status);
+      const winner = normalizeWinner(result?.winner || result?.gameState?.chess?.winner);
+      if (winner) setServerWinner(winner);
+      playGameSfx('success', 0.22);
+      if (result?.gameState?.chess?.isGameOver || result?.status === 'finished' || engine.isGameOver()) {
+        concludeGame(winner, engine);
+        return;
+      }
+      setMessage(`Hamle gönderildi. Sıra: ${engine.turn() === 'w' ? 'Beyaz' : 'Siyah'}.`);
+    } catch (err) {
+      playGameSfx('fail', 0.24);
+      const messageText =
+        err instanceof Error && err.message ? err.message : 'Hamle gönderilemedi.';
+      setMessage(messageText);
+      void fetchGameSnapshot(true);
+    } finally {
+      setSubmitting(false);
+    }
+  }, [chess, concludeGame, fetchGameSnapshot, gameId, isBot, runBotMove, serverStatus, submitting]);
+
+  const handleSquareClick = (square: Square) => {
+    if (submitting || serverStatus === 'finished') return;
+    if (!isBot && !playerColor) return;
+    if (!isMyTurn && !isBot) {
+      setMessage('Sıra rakipte.');
+      return;
+    }
+
+    if (selectedSquare && legalTargets.includes(square)) {
+      void submitMove(selectedSquare, square);
+      return;
+    }
+
+    const piece = chess.get(square);
+    if (!piece) {
+      clearSelection();
+      return;
+    }
+    if (!isBot && piece.color !== playerColor) {
+      setMessage('Kendi taşını seçmelisin.');
+      return;
+    }
+    if (isBot && piece.color !== 'w') {
+      setMessage('BOT modunda beyaz taşlarla oynuyorsun.');
+      return;
+    }
+
+    const legal = chess
+      .moves({ square, verbose: true })
+      .map((mv) => mv.to as Square);
+    if (legal.length === 0) {
+      clearSelection();
+      return;
+    }
+    setSelectedSquare(square);
+    setLegalTargets(legal);
   };
 
-  const handleSquarePick = (optionIndex: number) => {
-    if (done || resolvingMatch || selectedIndex !== null) return;
-
-    const isCorrect = optionIndex === roundState.answerIndex;
-    const rivalCorrect = isBot ? Math.random() < 0.58 : Math.random() < 0.5;
-    const nextPlayer = playerScore + (isCorrect ? 1 : 0);
-    const nextOpponent = opponentScore + (rivalCorrect ? 1 : 0);
-
-    setSelectedIndex(optionIndex);
-    setPlayerScore(nextPlayer);
-    setOpponentScore(nextOpponent);
-    setMessage(isCorrect ? 'Doğru hamle: at hedef kareye ulaştı.' : 'Yanlış kare: rakip turu aldı.');
-    playGameSfx(isCorrect ? 'success' : 'fail', isCorrect ? 0.28 : 0.22);
-
-    moveToNextRound(nextPlayer, nextOpponent);
-  };
+  const turnLabel = turn === 'w' ? 'Beyaz' : 'Siyah';
+  const moveCount = chess.history().length;
+  const statusLabel = serverStatus === 'finished' ? 'Bitti' : 'Aktif';
 
   return (
     <div
-      className="max-w-3xl mx-auto rf-panel border-cyan-400/22 rounded-xl p-6 text-white relative overflow-hidden"
+      className="max-w-4xl mx-auto rf-panel border-cyan-400/22 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden"
       data-testid="retro-chess"
       style={{
         backgroundImage: `linear-gradient(165deg, rgba(3, 16, 40, 0.94), rgba(4, 28, 56, 0.9)), url('${GAME_ASSETS.backgrounds.strategyChess}')`,
@@ -216,113 +408,90 @@ export const RetroChess: React.FC<RetroChessProps> = ({
         backgroundPosition: 'center',
       }}
     >
-      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_96%,rgba(34,211,238,0.08)_100%)] [background-size:100%_4px] opacity-55" />
+      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_96%,rgba(34,211,238,0.08)_100%)] [background-size:100%_4px] opacity-50" />
+
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-pixel text-lg">Retro Satranç</h2>
-        <button onClick={onLeave} className="text-[var(--rf-muted)] hover:text-white text-sm">Oyundan Çık</button>
+        <h2 className="font-pixel text-lg">Retro Satranç (Klasik)</h2>
+        <button onClick={onLeave} className="text-[var(--rf-muted)] hover:text-white text-sm">
+          Oyundan Çık
+        </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-5 text-center">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 text-center">
         <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Tur</div>
-          <div className="font-bold">{Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}</div>
+          <div className="text-xs text-[var(--rf-muted)]">Durum</div>
+          <div className="font-bold">{statusLabel}</div>
         </div>
         <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Sen</div>
-          <div className="font-bold">{playerScore}</div>
+          <div className="text-xs text-[var(--rf-muted)]">Sıra</div>
+          <div className="font-bold">{turnLabel}</div>
+        </div>
+        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
+          <div className="text-xs text-[var(--rf-muted)]">Hamle</div>
+          <div className="font-bold">{moveCount}</div>
         </div>
         <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
           <div className="text-xs text-[var(--rf-muted)]">Rakip</div>
-          <div className="font-bold">{opponentScore}</div>
+          <div className="font-bold truncate">{opponentLabel}</div>
         </div>
       </div>
 
-      <p className="text-sm text-[var(--rf-muted)] mb-3">{message}</p>
-      <p className="text-sm mb-5">
-        Başlangıç karesi: <span className="text-cyan-300 font-semibold">{toNotation(roundState.origin)}</span>
-      </p>
-
-      <div className="mb-5 flex items-center justify-center gap-2 flex-wrap">
-        {PIECE_ORDER.map((piece) => (
-          <div key={piece} className="flex items-center gap-1 px-2 py-1 rounded border border-cyan-400/20 bg-[#091a36]/70">
-            <img
-              src={`/assets/games/retro-kit/chess/white-${piece}.png`}
-              alt=""
-              aria-hidden="true"
-              className="w-5 h-5 object-contain"
-            />
-            <img
-              src={`/assets/games/retro-kit/chess/black-${piece}.png`}
-              alt=""
-              aria-hidden="true"
-              className="w-5 h-5 object-contain"
-            />
-          </div>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-8 gap-1.5 sm:gap-2 max-w-[560px] mx-auto" data-testid="retro-chess-board">
-        {Array.from({ length: BOARD_SIZE * BOARD_SIZE }).map((_, idx) => {
-          const x = idx % BOARD_SIZE;
-          const y = Math.floor(idx / BOARD_SIZE);
-          const coord = { x, y };
-          const key = toKey(coord);
-          const optionIndex = optionsByKey.get(key);
-          const isOption = optionIndex !== undefined;
-          const isOrigin = isSameCoord(coord, roundState.origin);
-          const isPicked = selectedIndex !== null && selectedIndex === optionIndex;
-          const isAnswer = optionIndex === roundState.answerIndex;
-          const bgClass = (x + y) % 2 === 0 ? 'bg-[#0f2748]' : 'bg-[#1b3a66]';
-          const borderClass =
-            selectedIndex === null
-              ? 'border-cyan-400/25'
-              : isPicked && isAnswer
-                ? 'border-emerald-400'
-                : isPicked
-                  ? 'border-rose-400'
-                  : isAnswer
-                    ? 'border-emerald-400/40'
-                    : 'border-cyan-400/15';
-
-          return (
-            <button
-              key={key}
-              data-testid={`retro-chess-square-${x}-${y}`}
-              disabled={!isOption || done || resolvingMatch || selectedIndex !== null}
-              onClick={() => {
-                if (optionIndex !== undefined) {
-                  handleSquarePick(optionIndex);
-                }
-              }}
-              className={`relative aspect-square rounded border ${bgClass} ${borderClass} transition disabled:cursor-default`}
-            >
-              {isOrigin && (
-                <img
-                  src="/assets/games/retro-kit/chess/white-knight.png"
-                  alt=""
-                  aria-hidden="true"
-                  className="w-[68%] h-[68%] object-contain mx-auto opacity-95"
-                />
-              )}
-              {isOption && (
-                <span className="absolute inset-0 flex items-center justify-center text-[10px] sm:text-xs font-semibold text-cyan-100">
-                  {toNotation(coord)}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mt-4 text-xs text-[var(--rf-muted)] text-center">
-        Hedef: Atın tek hamlede ulaşabileceği doğru kareyi seç.
-      </div>
-
-      {done && (
-        <div className="mt-4">
-          <RetroButton onClick={onLeave}>Lobiye Dön</RetroButton>
-        </div>
+      <p className="text-sm text-[var(--rf-muted)] mb-1">{message}</p>
+      {liveResultLabel && (
+        <p className="text-xs text-cyan-200 mb-3">{liveResultLabel}</p>
       )}
+      {serverWinner && (
+        <p className="text-xs text-emerald-300 mb-3">Kazanan: {serverWinner}</p>
+      )}
+
+      <div className="w-full max-w-[620px] mx-auto">
+        <div className="grid grid-cols-8 gap-1.5 sm:gap-2" data-testid="retro-chess-board">
+          {ranks.map((rank, rankIndex) =>
+            files.map((file, fileIndex) => {
+              const square = toSquare(file, rank);
+              const piece = chess.get(square);
+              const isLight = (fileIndex + rankIndex) % 2 === 0;
+              const isSelected = selectedSquare === square;
+              const isLegal = legalTargets.includes(square);
+
+              const baseClass = isLight ? 'bg-[#13365f]' : 'bg-[#0a1f3f]';
+              const selectedClass = isSelected ? 'border-cyan-300 ring-1 ring-cyan-300/60' : 'border-cyan-500/18';
+              const legalClass = isLegal ? 'before:absolute before:inset-0 before:m-auto before:w-3 before:h-3 before:rounded-full before:bg-cyan-300/85' : '';
+
+              return (
+                <button
+                  key={square}
+                  type="button"
+                  data-testid={`retro-chess-square-${square}`}
+                  aria-label={`Kare ${square}`}
+                  onClick={() => handleSquareClick(square)}
+                  disabled={loading || submitting || serverStatus === 'finished'}
+                  className={`relative aspect-square rounded border transition ${baseClass} ${selectedClass} ${legalClass} disabled:cursor-not-allowed`}
+                >
+                  {piece && (
+                    <img
+                      src={PIECE_ASSET[piece.color][piece.type]}
+                      alt=""
+                      aria-hidden="true"
+                      className="w-[72%] h-[72%] object-contain mx-auto"
+                    />
+                  )}
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      <div className="mt-5 flex flex-col sm:flex-row gap-2">
+        <RetroButton onClick={() => void fetchGameSnapshot()} disabled={loading || submitting || isBot}>
+          Senkronu Yenile
+        </RetroButton>
+        <RetroButton onClick={onLeave} variant="secondary">
+          Lobiye Dön
+        </RetroButton>
+      </div>
     </div>
   );
 };
+

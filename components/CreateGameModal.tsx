@@ -13,7 +13,7 @@ interface CreateGameModalProps {
 const GAME_TYPES = [
   { id: 'reflex', name: 'Refleks Avı', category: 'Refleks', description: 'Işık yandığında en hızlı tıkla', minPoints: 0 },
   { id: 'war', name: 'Tank Düellosu', category: 'Savaş', description: 'Diziyi doğru sırada tekrar et ve rakibi baskıla', minPoints: 40 },
-  { id: 'chess', name: 'Retro Satranç', category: 'Strateji', description: 'At hamlesi odaklı hızlı satranç turu', minPoints: 90 },
+  { id: 'chess', name: 'Retro Satranç', category: 'Strateji', description: 'Klasik 2 oyunculu satranç. Gerçek zamanlı ve hamle doğrulamalı.', minPoints: 90 },
   { id: 'knowledge', name: 'Bilgi Yarışı', category: 'Bilgi', description: 'Kısa bilgi sorularında doğru cevabı en hızlı ver', minPoints: 120 },
 ];
 

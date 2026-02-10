@@ -122,20 +122,28 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
     if (done || resolvingMatch || selectedOption !== null) return;
 
     const isCorrect = optionIndex === currentQuestion.answerIndex;
-    const rivalCorrect = isBot ? Math.random() < 0.55 : Math.random() < 0.5;
+    const rivalCorrect = isBot ? Math.random() < 0.55 : false;
     const nextPlayerScore = playerScore + (isCorrect ? 1 : 0);
     const nextOpponentScore = opponentScore + (rivalCorrect ? 1 : 0);
 
     setSelectedOption(optionIndex);
     setPlayerScore(nextPlayerScore);
     setOpponentScore(nextOpponentScore);
-    setMessage(isCorrect ? 'Doğru cevap, puanı aldın.' : 'Yanlış cevap, tur rakibe kaydı.');
+    setMessage(
+      isCorrect
+        ? 'Doğru cevap, puanı aldın.'
+        : isBot
+          ? 'Yanlış cevap, tur rakibe kaydı.'
+          : 'Yanlış cevap. Rakip sonucu bekleniyor.'
+    );
     playGameSfx(isCorrect ? 'success' : 'fail', isCorrect ? 0.3 : 0.22);
 
     const isLastRound = roundIndex >= maxRounds - 1;
     if (isLastRound) {
       setDone(true);
-      const localWinner = nextPlayerScore >= nextOpponentScore ? currentUser.username : targetName;
+      const localWinner = isBot
+        ? (nextPlayerScore >= nextOpponentScore ? currentUser.username : targetName)
+        : currentUser.username;
       void finalizeMatch(localWinner, nextPlayerScore);
       return;
     }
@@ -219,4 +227,3 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
     </div>
   );
 };
-

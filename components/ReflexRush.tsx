@@ -148,7 +148,7 @@ export const ReflexRush: React.FC<ReflexRushProps> = ({
     if (phase !== 'go') return;
 
     const playerMs = Math.max(1, Math.floor(performance.now() - roundStartRef.current));
-    const opponentMs = isBot ? 220 + Math.floor(Math.random() * 320) : 260 + Math.floor(Math.random() * 260);
+    const opponentMs = isBot ? 220 + Math.floor(Math.random() * 320) : 9999;
     finishRound(playerMs, opponentMs);
   };
 

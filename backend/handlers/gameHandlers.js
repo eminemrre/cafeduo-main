@@ -1,3 +1,5 @@
+const { Chess } = require('chess.js');
+
 const createGameHandlers = ({
   pool,
   isDbConnected,
@@ -12,8 +14,99 @@ const createGameHandlers = ({
   getMemoryGames,
   setMemoryGames,
   getMemoryUsers,
+  io,
 }) => {
   const isAdminActor = (user) => user?.role === 'admin' || user?.isAdmin === true;
+  const CHESS_GAME_TYPE = 'Retro Satranç';
+  const CHESS_SQUARE_RE = /^[a-h][1-8]$/;
+
+  const isChessGameType = (gameType) => String(gameType || '').trim() === CHESS_GAME_TYPE;
+
+  const createInitialChessState = () => {
+    const chess = new Chess();
+    return {
+      version: 1,
+      fen: chess.fen(),
+      turn: chess.turn(),
+      inCheck: false,
+      isGameOver: false,
+      result: null,
+      moveHistory: [],
+      updatedAt: new Date().toISOString(),
+    };
+  };
+
+  const resolveParticipantColor = (participant, game) => {
+    const host = String(game?.host_name || game?.hostName || '').trim();
+    const guest = String(game?.guest_name || game?.guestName || '').trim();
+    if (!participant) return null;
+    if (participant.toLowerCase() === host.toLowerCase()) return 'w';
+    if (participant.toLowerCase() === guest.toLowerCase()) return 'b';
+    return null;
+  };
+
+  const sanitizeChessMovePayload = (payload) => {
+    const from = String(payload?.from || '').trim().toLowerCase();
+    const to = String(payload?.to || '').trim().toLowerCase();
+    const promotionRaw = String(payload?.promotion || '').trim().toLowerCase();
+    const promotion = ['q', 'r', 'b', 'n'].includes(promotionRaw) ? promotionRaw : undefined;
+    if (!CHESS_SQUARE_RE.test(from) || !CHESS_SQUARE_RE.test(to)) {
+      return null;
+    }
+    return { from, to, ...(promotion ? { promotion } : {}) };
+  };
+
+  const nextChessResult = (chess) => {
+    if (chess.isCheckmate()) return 'checkmate';
+    if (chess.isStalemate()) return 'stalemate';
+    if (chess.isInsufficientMaterial()) return 'insufficient-material';
+    if (chess.isThreefoldRepetition()) return 'threefold-repetition';
+    if (chess.isDraw()) return 'draw';
+    return null;
+  };
+
+  const buildChessStateFromEngine = (chess, previousState, lastMove) => {
+    const moveHistory = Array.isArray(previousState?.moveHistory)
+      ? previousState.moveHistory.slice(-300)
+      : [];
+    const entry = lastMove
+      ? {
+          from: lastMove.from,
+          to: lastMove.to,
+          san: lastMove.san,
+          lan: lastMove.lan,
+          color: lastMove.color,
+          piece: lastMove.piece,
+          captured: lastMove.captured || null,
+          promotion: lastMove.promotion || null,
+          ts: new Date().toISOString(),
+        }
+      : null;
+
+    const nextHistory = entry ? [...moveHistory, entry] : moveHistory;
+    return {
+      version: 1,
+      fen: chess.fen(),
+      turn: chess.turn(),
+      inCheck: chess.inCheck(),
+      isGameOver: chess.isGameOver(),
+      result: nextChessResult(chess),
+      moveHistory: nextHistory,
+      lastMove: entry,
+      updatedAt: new Date().toISOString(),
+    };
+  };
+
+  const emitRealtimeUpdate = (gameId, payload) => {
+    try {
+      if (!io || typeof io.to !== 'function') return;
+      const room = String(gameId || '').trim();
+      if (!room) return;
+      io.to(room).emit('game_state_updated', payload);
+    } catch (err) {
+      logger.warn('Realtime emit failed', err);
+    }
+  };
 
   const getGames = async (req, res) => {
     const adminActor = isAdminActor(req.user);
@@ -180,10 +273,14 @@ const createGameHandlers = ({
           });
         }
 
+        const initialGameState = isChessGameType(gameType)
+          ? { chess: createInitialChessState() }
+          : {};
+
         const result = await client.query(
           `
             INSERT INTO games (host_name, game_type, points, table_code, status, game_state)
-            VALUES ($1, $2, $3, $4, 'waiting', '{}'::jsonb)
+            VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb)
             RETURNING
               id,
               host_name as "hostName",
@@ -195,7 +292,7 @@ const createGameHandlers = ({
               game_state as "gameState",
               created_at as "createdAt"
           `,
-          [hostName, gameType, points, table]
+          [hostName, gameType, points, table, JSON.stringify(initialGameState)]
         );
 
         await client.query('COMMIT');
@@ -230,7 +327,7 @@ const createGameHandlers = ({
       table,
       status: 'waiting',
       guestName: null,
-      gameState: {},
+      gameState: isChessGameType(gameType) ? { chess: createInitialChessState() } : {},
       createdAt: new Date().toISOString(),
     };
     const nextGames = [newGame, ...memoryGames];
@@ -364,7 +461,15 @@ const createGameHandlers = ({
         }
 
         await client.query('COMMIT');
-        return res.json({ success: true, game: updatedResult.rows[0] });
+        const joinedGame = updatedResult.rows[0];
+        emitRealtimeUpdate(joinedGame.id, {
+          type: 'game_joined',
+          gameId: joinedGame.id,
+          status: joinedGame.status,
+          guestName: joinedGame.guestName,
+          gameState: joinedGame.gameState || {},
+        });
+        return res.json({ success: true, game: joinedGame });
       } catch (err) {
         await client.query('ROLLBACK');
         logger.error('Join game error', err);
@@ -394,6 +499,13 @@ const createGameHandlers = ({
 
     game.status = 'active';
     game.guestName = guestName;
+    emitRealtimeUpdate(game.id, {
+      type: 'game_joined',
+      gameId: game.id,
+      status: game.status,
+      guestName: game.guestName,
+      gameState: game.gameState || {},
+    });
     return res.json({ success: true, game });
   };
 
@@ -410,6 +522,7 @@ const createGameHandlers = ({
           table_code as "table",
           status,
           guest_name as "guestName",
+          winner,
           player1_move as "player1Move",
           player2_move as "player2Move",
           game_state as "gameState",
@@ -518,7 +631,7 @@ const createGameHandlers = ({
 
   const makeMove = async (req, res) => {
     const { id } = req.params;
-    const { player, move, gameState, scoreSubmission } = req.body || {};
+    const { player, move, gameState, scoreSubmission, chessMove } = req.body || {};
     const actorName = String(req.user?.username || '').trim();
 
     if (await isDbConnected()) {
@@ -554,6 +667,127 @@ const createGameHandlers = ({
         }
 
         const currentState = game.game_state && typeof game.game_state === 'object' ? game.game_state : {};
+
+        if (chessMove) {
+          if (!isChessGameType(game.game_type)) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Bu oyun türü satranç hamlesi kabul etmiyor.' });
+          }
+
+          if (game.status !== 'active') {
+            await client.query('ROLLBACK');
+            return res.status(409).json({ error: 'Satranç hamlesi için oyun aktif olmalı.' });
+          }
+
+          const resolvedColor = adminActor
+            ? (player === 'guest' ? 'b' : 'w')
+            : resolveParticipantColor(actorParticipant, game);
+          if (resolvedColor !== 'w' && resolvedColor !== 'b') {
+            await client.query('ROLLBACK');
+            return res.status(403).json({ error: 'Bu satranç oyunu için hamle yetkin yok.' });
+          }
+
+          const safeMove = sanitizeChessMovePayload(chessMove);
+          if (!safeMove) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Geçersiz satranç hamlesi formatı.' });
+          }
+
+          const currentChessState =
+            currentState.chess && typeof currentState.chess === 'object'
+              ? currentState.chess
+              : createInitialChessState();
+
+          let chess;
+          try {
+            chess = new Chess(String(currentChessState.fen || ''));
+          } catch {
+            chess = new Chess();
+          }
+
+          if (chess.turn() !== resolvedColor) {
+            await client.query('ROLLBACK');
+            return res.status(409).json({ error: 'Sıra sende değil.' });
+          }
+
+          const appliedMove = chess.move(safeMove);
+          if (!appliedMove) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Yasadışı hamle.' });
+          }
+
+          const nextChessState = buildChessStateFromEngine(chess, currentChessState, appliedMove);
+          const gameOver = nextChessState.isGameOver === true;
+          const hostName = String(game.host_name || '').trim();
+          const guestName = String(game.guest_name || '').trim();
+          const winner =
+            gameOver && nextChessState.result === 'checkmate'
+              ? (resolvedColor === 'w' ? hostName : guestName)
+              : null;
+
+          const nextState = {
+            ...currentState,
+            chess: {
+              ...nextChessState,
+              winner: winner || null,
+            },
+          };
+
+          if (winner) {
+            nextState.resolvedWinner = winner;
+          } else if (gameOver && nextState.resolvedWinner) {
+            delete nextState.resolvedWinner;
+          }
+
+          const nextStatus = gameOver ? 'finished' : 'active';
+          const moveSan = String(appliedMove.san || '').slice(0, 64);
+          const updateQuery =
+            resolvedColor === 'w'
+              ? `
+                  UPDATE games
+                  SET game_state = $1::jsonb,
+                      status = $2,
+                      winner = $3,
+                      player1_move = $4
+                  WHERE id = $5
+                `
+              : `
+                  UPDATE games
+                  SET game_state = $1::jsonb,
+                      status = $2,
+                      winner = $3,
+                      player2_move = $4
+                  WHERE id = $5
+                `;
+
+          await client.query(updateQuery, [
+            JSON.stringify(nextState),
+            nextStatus,
+            winner || null,
+            moveSan,
+            id,
+          ]);
+
+          await client.query('COMMIT');
+          emitRealtimeUpdate(id, {
+            type: 'chess_state',
+            gameId: id,
+            status: nextStatus,
+            winner: winner || null,
+            chess: nextState.chess,
+          });
+          return res.json({
+            success: true,
+            gameState: nextState,
+            status: nextStatus,
+            winner: winner || null,
+            move: {
+              from: appliedMove.from,
+              to: appliedMove.to,
+              san: appliedMove.san,
+            },
+          });
+        }
 
         if (scoreSubmission) {
           if (game.status !== 'active') {
@@ -595,6 +829,12 @@ const createGameHandlers = ({
           );
 
           await client.query('COMMIT');
+          emitRealtimeUpdate(id, {
+            type: 'score_submission',
+            gameId: id,
+            gameState: nextState,
+            resolvedWinner: resolvedWinner || null,
+          });
           return res.json({
             success: true,
             gameState: nextState,
@@ -622,6 +862,11 @@ const createGameHandlers = ({
             [JSON.stringify(mergedState), id]
           );
           await client.query('COMMIT');
+          emitRealtimeUpdate(id, {
+            type: 'game_state',
+            gameId: id,
+            gameState: mergedState,
+          });
           return res.json({ success: true, gameState: mergedState });
         }
 
@@ -647,6 +892,12 @@ const createGameHandlers = ({
             : 'UPDATE games SET player2_move = $1 WHERE id = $2';
         await client.query(query, [String(move || '').slice(0, 64), id]);
         await client.query('COMMIT');
+        emitRealtimeUpdate(id, {
+          type: 'legacy_move',
+          gameId: id,
+          player: resolvedPlayer,
+          move: String(move || '').slice(0, 64),
+        });
         return res.json({ success: true });
       } catch (err) {
         await client.query('ROLLBACK');
@@ -672,6 +923,101 @@ const createGameHandlers = ({
     const adminActor = isAdminActor(req.user);
     if (!actorParticipant && !adminActor) {
       return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
+    }
+
+    if (chessMove) {
+      if (!isChessGameType(game.gameType)) {
+        return res.status(400).json({ error: 'Bu oyun türü satranç hamlesi kabul etmiyor.' });
+      }
+      if (game.status !== 'active') {
+        return res.status(409).json({ error: 'Satranç hamlesi için oyun aktif olmalı.' });
+      }
+
+      const resolvedColor = adminActor
+        ? (player === 'guest' ? 'b' : 'w')
+        : resolveParticipantColor(actorParticipant, {
+            host_name: game.hostName,
+            guest_name: game.guestName,
+          });
+      if (resolvedColor !== 'w' && resolvedColor !== 'b') {
+        return res.status(403).json({ error: 'Bu satranç oyunu için hamle yetkin yok.' });
+      }
+
+      const safeMove = sanitizeChessMovePayload(chessMove);
+      if (!safeMove) {
+        return res.status(400).json({ error: 'Geçersiz satranç hamlesi formatı.' });
+      }
+
+      const currentChessState =
+        game.gameState?.chess && typeof game.gameState.chess === 'object'
+          ? game.gameState.chess
+          : createInitialChessState();
+
+      let chess;
+      try {
+        chess = new Chess(String(currentChessState.fen || ''));
+      } catch {
+        chess = new Chess();
+      }
+
+      if (chess.turn() !== resolvedColor) {
+        return res.status(409).json({ error: 'Sıra sende değil.' });
+      }
+
+      const appliedMove = chess.move(safeMove);
+      if (!appliedMove) {
+        return res.status(400).json({ error: 'Yasadışı hamle.' });
+      }
+
+      const nextChessState = buildChessStateFromEngine(chess, currentChessState, appliedMove);
+      const gameOver = nextChessState.isGameOver === true;
+      const winner =
+        gameOver && nextChessState.result === 'checkmate'
+          ? (resolvedColor === 'w' ? String(game.hostName || '').trim() : String(game.guestName || '').trim())
+          : null;
+
+      game.gameState = {
+        ...(game.gameState || {}),
+        chess: {
+          ...nextChessState,
+          winner: winner || null,
+        },
+      };
+      if (winner) {
+        game.gameState.resolvedWinner = winner;
+      } else if (gameOver && game.gameState.resolvedWinner) {
+        delete game.gameState.resolvedWinner;
+      }
+
+      if (resolvedColor === 'w') {
+        game.player1Move = String(appliedMove.san || '').slice(0, 64);
+      } else {
+        game.player2Move = String(appliedMove.san || '').slice(0, 64);
+      }
+
+      game.status = gameOver ? 'finished' : 'active';
+      if (winner || gameOver) {
+        game.winner = winner || null;
+      }
+
+      emitRealtimeUpdate(id, {
+        type: 'chess_state',
+        gameId: id,
+        status: game.status,
+        winner: winner || null,
+        chess: game.gameState.chess,
+      });
+      return res.json({
+        success: true,
+        gameState: game.gameState,
+        status: game.status,
+        winner: winner || null,
+        move: {
+          from: appliedMove.from,
+          to: appliedMove.to,
+          san: appliedMove.san,
+        },
+      });
     }
 
     if (scoreSubmission) {
@@ -701,6 +1047,12 @@ const createGameHandlers = ({
         game.gameState.resolvedWinner = resolvedWinner;
       }
 
+      emitRealtimeUpdate(id, {
+        type: 'score_submission',
+        gameId: id,
+        gameState: game.gameState,
+        resolvedWinner: resolvedWinner || null,
+      });
       return res.json({
         success: true,
         gameState: game.gameState,
@@ -711,6 +1063,11 @@ const createGameHandlers = ({
 
     if (gameState && typeof gameState === 'object') {
       game.gameState = { ...(game.gameState || {}), ...gameState };
+      emitRealtimeUpdate(id, {
+        type: 'game_state',
+        gameId: id,
+        gameState: game.gameState,
+      });
       return res.json({ success: true, gameState: game.gameState });
     }
 
@@ -732,6 +1089,12 @@ const createGameHandlers = ({
       return res.status(403).json({ error: 'Bu hamleyi yapmaya yetkin yok.' });
     }
 
+    emitRealtimeUpdate(id, {
+      type: 'legacy_move',
+      gameId: id,
+      player: resolvedPlayer,
+      move: String(move || '').slice(0, 64),
+    });
     return res.json({ success: true });
   };
 
@@ -775,18 +1138,39 @@ const createGameHandlers = ({
         const winnerFromResults = pickWinnerFromResults(stateResults, participants);
         const winnerFromRequest = normalizeParticipantName(requestedWinner, game);
         const finalWinner = winnerFromState || winnerFromResults || winnerFromRequest;
+        const chessState =
+          game.game_state && typeof game.game_state.chess === 'object' ? game.game_state.chess : null;
+        const isChessDraw =
+          isChessGameType(game.game_type) &&
+          Boolean(chessState?.isGameOver) &&
+          !finalWinner;
 
-        if (!finalWinner) {
+        if (!finalWinner && !isChessDraw) {
           await client.query('ROLLBACK');
           return res.status(409).json({ error: 'Kazanan belirlenemedi. Her iki oyuncu da skoru göndermeli.' });
         }
 
         if (game.status === 'finished') {
           await client.query('ROLLBACK');
-          if (String(game.winner || '').toLowerCase() === finalWinner.toLowerCase()) {
-            return res.json({ success: true, winner: game.winner, alreadyFinished: true });
+          const storedWinner = String(game.winner || '').trim();
+          const targetWinner = String(finalWinner || '').trim();
+          if (!storedWinner && !targetWinner && isChessDraw) {
+            return res.json({ success: true, winner: null, alreadyFinished: true, draw: true });
+          }
+          if (storedWinner.toLowerCase() === targetWinner.toLowerCase()) {
+            return res.json({ success: true, winner: game.winner || null, alreadyFinished: true });
           }
           return res.status(409).json({ error: 'Oyun zaten farklı bir sonuçla tamamlandı.' });
+        }
+
+        const nextGameState =
+          game.game_state && typeof game.game_state === 'object'
+            ? { ...game.game_state }
+            : {};
+        if (finalWinner) {
+          nextGameState.resolvedWinner = finalWinner;
+        } else if (nextGameState.resolvedWinner) {
+          delete nextGameState.resolvedWinner;
         }
 
         await client.query(
@@ -794,19 +1178,22 @@ const createGameHandlers = ({
             UPDATE games
             SET status = 'finished',
                 winner = $1::text,
-                game_state = jsonb_set(
-                  COALESCE(game_state, '{}'::jsonb),
-                  ARRAY['resolvedWinner'],
-                  to_jsonb($1::text),
-                  true
-                )
-            WHERE id = $2
+                game_state = $2::jsonb
+            WHERE id = $3
           `,
-          [finalWinner, id]
+          [finalWinner || null, JSON.stringify(nextGameState), id]
         );
 
         await client.query('COMMIT');
-        return res.json({ success: true, winner: finalWinner });
+        emitRealtimeUpdate(id, {
+          type: 'game_finished',
+          gameId: id,
+          status: 'finished',
+          winner: finalWinner || null,
+          draw: Boolean(isChessDraw),
+          gameState: nextGameState,
+        });
+        return res.json({ success: true, winner: finalWinner || null, draw: Boolean(isChessDraw) });
       } catch (err) {
         await client.query('ROLLBACK');
         logger.error('Finish game error', err);
@@ -844,18 +1231,33 @@ const createGameHandlers = ({
       guest_name: game.guestName,
     });
     const finalWinner = winnerFromState || winnerFromResults || winnerFromRequest;
+    const isChessDraw =
+      isChessGameType(game.gameType) &&
+      Boolean(game.gameState?.chess?.isGameOver) &&
+      !finalWinner;
 
-    if (!finalWinner) {
+    if (!finalWinner && !isChessDraw) {
       return res.status(409).json({ error: 'Kazanan belirlenemedi. Her iki oyuncu da skoru göndermeli.' });
     }
 
     game.status = 'finished';
-    game.winner = finalWinner;
+    game.winner = finalWinner || null;
     game.gameState = {
       ...(game.gameState || {}),
-      resolvedWinner: finalWinner,
+      ...(finalWinner ? { resolvedWinner: finalWinner } : {}),
     };
-    return res.json({ success: true, winner: finalWinner });
+    if (!finalWinner && game.gameState.resolvedWinner) {
+      delete game.gameState.resolvedWinner;
+    }
+    emitRealtimeUpdate(id, {
+      type: 'game_finished',
+      gameId: id,
+      status: 'finished',
+      winner: finalWinner || null,
+      draw: Boolean(isChessDraw),
+      gameState: game.gameState,
+    });
+    return res.json({ success: true, winner: finalWinner || null, draw: Boolean(isChessDraw) });
   };
 
   const deleteGame = async (req, res) => {

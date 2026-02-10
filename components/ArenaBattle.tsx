@@ -124,7 +124,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
 
   const nextRound = (playerWon: boolean) => {
     const nextPlayer = playerScore + (playerWon ? 1 : 0);
-    const nextOpponent = opponentScore + (playerWon ? 0 : 1);
+    const nextOpponent = opponentScore + (isBot ? (playerWon ? 0 : 1) : 0);
     setPlayerScore(nextPlayer);
     setOpponentScore(nextOpponent);
     setRound(prev => {
@@ -147,7 +147,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
       }
       return;
     }
-    setMessage('Yanlış pad, tur rakibe gitti.');
+    setMessage(isBot ? 'Yanlış pad, tur rakibe gitti.' : 'Yanlış pad.');
     playGameSfx('fail', 0.26);
     nextRound(false);
   };

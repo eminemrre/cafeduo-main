@@ -360,7 +360,16 @@ export const api = {
       });
     },
 
-    move: async (gameId: number | string, data: { gameState: unknown }) => {
+    move: async (
+      gameId: number | string,
+      data: {
+        gameState?: unknown;
+        player?: 'host' | 'guest';
+        move?: string;
+        scoreSubmission?: { username: string; score: number; roundsWon?: number; durationMs?: number };
+        chessMove?: { from: string; to: string; promotion?: 'q' | 'r' | 'b' | 'n' };
+      }
+    ) => {
       return await fetchAPI(`/games/${gameId}/move`, {
         method: 'POST',
         body: JSON.stringify(data),

@@ -533,6 +533,7 @@ const gameHandlers = createGameHandlers({
   pool,
   isDbConnected,
   logger,
+  io,
   supportedGameTypes: SUPPORTED_GAME_TYPES,
   normalizeGameType,
   normalizeTableCode,

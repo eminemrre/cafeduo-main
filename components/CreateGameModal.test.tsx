@@ -71,7 +71,7 @@ describe('CreateGameModal', () => {
       
       expect(screen.getByText('Işık yandığında en hızlı tıkla')).toBeInTheDocument();
       expect(screen.getByText('Diziyi doğru sırada tekrar et ve rakibi baskıla')).toBeInTheDocument();
-      expect(screen.getByText('At hamlesi odaklı hızlı satranç turu')).toBeInTheDocument();
+      expect(screen.getByText('Klasik 2 oyunculu satranç. Gerçek zamanlı ve hamle doğrulamalı.')).toBeInTheDocument();
       expect(screen.getByText('Kısa bilgi sorularında doğru cevabı en hızlı ver')).toBeInTheDocument();
     });
 

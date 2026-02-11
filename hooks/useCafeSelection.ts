@@ -32,6 +32,25 @@ interface LocationCoords {
   accuracy: number;
 }
 
+interface GeoErrorLike {
+  code?: number;
+}
+
+const getGeoErrorMessage = (geoError: GeoErrorLike): string => {
+  const map: Record<number, string> = {
+    1: 'Konum izni reddedildi. Lütfen tarayıcıdan konum erişimine izin verin.',
+    2: 'Konum bilgisi alınamadı. Lütfen GPS veya ağ konumunu kontrol edin.',
+    3: 'Konum isteği zaman aşımına uğradı. Cihaz konum servisinizin açık olduğundan emin olup tekrar deneyin.',
+  };
+  return map[geoError.code ?? 0] || 'Konum alınamadı.';
+};
+
+const toLocationCoords = (position: GeolocationPosition): LocationCoords => ({
+  latitude: Number(position.coords.latitude),
+  longitude: Number(position.coords.longitude),
+  accuracy: Number.isFinite(position.coords.accuracy) ? Number(position.coords.accuracy) : 0,
+});
+
 /**
  * useCafeSelection Hook
  *
@@ -121,29 +140,44 @@ export function useCafeSelection({
     }
 
     setLocationStatus('requesting');
-    const coords = await new Promise<LocationCoords>((resolve, reject) => {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            latitude: Number(position.coords.latitude),
-            longitude: Number(position.coords.longitude),
-            accuracy: Number.isFinite(position.coords.accuracy) ? Number(position.coords.accuracy) : 0,
-          });
-        },
-        (geoError) => {
-          const map: Record<number, string> = {
-            1: 'Konum izni reddedildi. Lütfen tarayıcıdan konum erişimine izin verin.',
-            2: 'Konum bilgisi alınamadı. Lütfen GPS veya ağ konumunu kontrol edin.',
-            3: 'Konum isteği zaman aşımına uğradı. Tekrar deneyin.',
-          };
-          reject(new Error(map[geoError.code] || 'Konum alınamadı.'));
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 12000,
-          maximumAge: 15000,
-        }
-      );
+
+    const getPosition = (options: PositionOptions) =>
+      new Promise<LocationCoords>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          (position) => resolve(toLocationCoords(position)),
+          (geoError) => reject(geoError),
+          options
+        );
+      });
+
+    // Desktop tarayıcılarda high-accuracy sık timeout verdiği için önce hızlı/coarse deniyoruz.
+    try {
+      const coarseCoords = await getPosition({
+        enableHighAccuracy: false,
+        timeout: 7000,
+        maximumAge: 120000,
+      });
+      setLocationCoords(coarseCoords);
+      setLocationStatus('ready');
+      return coarseCoords;
+    } catch (coarseError: unknown) {
+      const geoError = (typeof coarseError === 'object' && coarseError !== null
+        ? coarseError
+        : {}) as GeoErrorLike;
+      if (geoError.code === 1) {
+        throw new Error(getGeoErrorMessage(geoError));
+      }
+    }
+
+    const coords = await getPosition({
+      enableHighAccuracy: true,
+      timeout: 16000,
+      maximumAge: 15000,
+    }).catch((preciseError: unknown) => {
+      const geoError = (typeof preciseError === 'object' && preciseError !== null
+        ? preciseError
+        : {}) as GeoErrorLike;
+      throw new Error(getGeoErrorMessage(geoError));
     });
 
     setLocationCoords(coords);

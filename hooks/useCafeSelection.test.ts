@@ -68,6 +68,43 @@ describe('useCafeSelection', () => {
     });
   };
 
+  const mockGeoCoarseTimeoutThenPreciseSuccess = (latitude = 37.7415, longitude = 29.1017) => {
+    const geolocation = {
+      getCurrentPosition: jest.fn(
+        (
+          onSuccess: (p: GeolocationPosition) => void,
+          onError: (e: GeolocationPositionError) => void,
+          options?: PositionOptions
+        ) => {
+          if (options?.enableHighAccuracy === false) {
+            onError({ code: 3 } as GeolocationPositionError);
+            return;
+          }
+
+          onSuccess({
+            coords: {
+              latitude,
+              longitude,
+              accuracy: 18,
+              altitude: null,
+              altitudeAccuracy: null,
+              heading: null,
+              speed: null,
+              toJSON: () => ({}),
+            },
+            timestamp: Date.now(),
+            toJSON: () => ({}),
+          } as GeolocationPosition);
+        }
+      ),
+    } as unknown as Geolocation;
+
+    Object.defineProperty(window.navigator, 'geolocation', {
+      value: geolocation,
+      configurable: true,
+    });
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     onCheckInSuccess.mockReset();
@@ -211,6 +248,41 @@ describe('useCafeSelection', () => {
 
     expect(result.current.locationStatus).toBe('denied');
     expect(result.current.error).toContain('Konum izni reddedildi');
+  });
+
+  it('falls back to high accuracy when coarse location times out', async () => {
+    mockGeoCoarseTimeoutThenPreciseSuccess();
+    (api.cafes.list as jest.Mock).mockResolvedValue([
+      { id: 8, name: 'Kafe Z', table_count: 20 },
+    ]);
+    (api.cafes.checkIn as jest.Mock).mockResolvedValueOnce({
+      cafeName: 'Kafe Z',
+      table: 'MASA08',
+    });
+
+    const { result } = renderHook(() =>
+      useCafeSelection({ currentUser: mockUser, onCheckInSuccess })
+    );
+
+    await waitFor(() => expect(result.current.selectedCafeId).toBe('8'));
+
+    act(() => {
+      result.current.setTableNumber('8');
+    });
+
+    await act(async () => {
+      await result.current.checkIn();
+    });
+
+    expect(api.cafes.checkIn).toHaveBeenCalledWith({
+      cafeId: '8',
+      tableNumber: 8,
+      latitude: 37.7415,
+      longitude: 29.1017,
+      accuracy: 18,
+    });
+    expect(result.current.error).toBeNull();
+    expect(result.current.locationStatus).toBe('ready');
   });
 
   it('maps network errors on failed check-in', async () => {

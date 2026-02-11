@@ -384,7 +384,7 @@ describe('Dashboard Integration', () => {
       fireEvent.click(screen.getByTestId('create-game-btn'));
 
       await waitFor(() => {
-        expect(mockCreateGame).toHaveBeenCalledWith('Refleks Avı', 50);
+        expect(mockCreateGame).toHaveBeenCalledWith('Refleks Avı', 50, undefined);
       });
     });
 

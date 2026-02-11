@@ -8,7 +8,7 @@ jest.mock('../lib/api', () => ({
   api: {
     cafes: {
       list: jest.fn(),
-      updatePin: jest.fn(),
+      updateLocation: jest.fn(),
     },
     rewards: {
       list: jest.fn(),
@@ -39,7 +39,7 @@ describe('CafeDashboard', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (api.cafes.list as jest.Mock).mockResolvedValue([{ id: 7, daily_pin: '1234' }]);
+    (api.cafes.list as jest.Mock).mockResolvedValue([{ id: 7, latitude: 37.741, longitude: 29.101, radius: 150 }]);
     (api.rewards.list as jest.Mock).mockResolvedValue([
       { id: 1, title: 'Americano', description: 'Hot', cost: 120, icon: 'coffee' },
     ]);
@@ -125,39 +125,49 @@ describe('CafeDashboard', () => {
     });
   });
 
-  it('validates pin length before update', async () => {
+  it('validates coordinates before location update', async () => {
     render(<CafeDashboard currentUser={currentUser} />);
-    fireEvent.click(screen.getByText('PIN Ayarları'));
+    fireEvent.click(screen.getByText('Konum Ayarları'));
 
     await waitFor(() => {
       expect(api.cafes.list).toHaveBeenCalled();
     });
 
-    fireEvent.change(screen.getByPlaceholderText('Yeni PIN girin'), {
-      target: { value: '12' },
+    fireEvent.change(screen.getByLabelText('Enlem (Latitude)'), {
+      target: { value: '200' },
     });
-    fireEvent.click(screen.getByText("PIN'İ GÜNCELLE"));
+    fireEvent.click(screen.getByText('KONUMU KAYDET'));
 
-    expect(api.cafes.updatePin).not.toHaveBeenCalled();
-    expect(screen.getByText('PIN 4-6 haneli olmalıdır.')).toBeInTheDocument();
+    expect(api.cafes.updateLocation).not.toHaveBeenCalled();
+    expect(screen.getByText('Enlem -90 ile 90 arasında olmalıdır.')).toBeInTheDocument();
   });
 
-  it('updates pin when valid value is submitted', async () => {
+  it('updates location when valid values are submitted', async () => {
     render(<CafeDashboard currentUser={currentUser} />);
-    fireEvent.click(screen.getByText('PIN Ayarları'));
+    fireEvent.click(screen.getByText('Konum Ayarları'));
 
     await waitFor(() => {
       expect(api.cafes.list).toHaveBeenCalled();
     });
 
-    fireEvent.change(screen.getByPlaceholderText('Yeni PIN girin'), {
-      target: { value: '6789' },
+    fireEvent.change(screen.getByLabelText('Enlem (Latitude)'), {
+      target: { value: '37.742001' },
     });
-    fireEvent.click(screen.getByText("PIN'İ GÜNCELLE"));
+    fireEvent.change(screen.getByLabelText('Boylam (Longitude)'), {
+      target: { value: '29.102001' },
+    });
+    fireEvent.change(screen.getByLabelText('Doğrulama Yarıçapı (metre)'), {
+      target: { value: '220' },
+    });
+    fireEvent.click(screen.getByText('KONUMU KAYDET'));
 
     await waitFor(() => {
-      expect(api.cafes.updatePin).toHaveBeenCalledWith(7, '6789', 99);
+      expect(api.cafes.updateLocation).toHaveBeenCalledWith(7, {
+        latitude: 37.742001,
+        longitude: 29.102001,
+        radius: 220,
+      });
     });
-    expect(screen.getByText('PIN başarıyla güncellendi!')).toBeInTheDocument();
+    expect(screen.getByText('Kafe konumu güncellendi.')).toBeInTheDocument();
   });
 });

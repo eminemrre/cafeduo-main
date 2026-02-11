@@ -84,6 +84,26 @@ describe('cafeController.checkIn', () => {
     });
   });
 
+  it('returns 400 when cafe location is not configured', async () => {
+    pool.query.mockResolvedValueOnce({
+      rows: [{ id: 1, name: 'Merkez', table_count: 20, latitude: null, longitude: null, radius: 120 }],
+    });
+
+    const req = {
+      params: { id: '1' },
+      body: { latitude: 37.739, longitude: 29.11, tableNumber: 4 },
+      user: { id: 77 },
+    };
+    const res = buildRes();
+
+    await cafeController.checkIn(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Bu kafe için konum doğrulaması henüz ayarlanmadı. Lütfen kafe yetkilisine bildirin.',
+    });
+  });
+
   it('returns normalized success payload', async () => {
     pool.query
       .mockResolvedValueOnce({
@@ -110,6 +130,52 @@ describe('cafeController.checkIn', () => {
         success: true,
         cafeName: 'Merkez',
         table: 'MASA04',
+      })
+    );
+  });
+});
+
+describe('cafeController.updateLocation', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('returns 403 when cafe_admin tries to update another cafe', async () => {
+    const req = {
+      params: { id: '9' },
+      body: { latitude: 37.74, longitude: 29.1, radius: 150 },
+      user: { id: 11, role: 'cafe_admin', cafe_id: 3 },
+    };
+    const res = buildRes();
+
+    await cafeController.updateLocation(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json).toHaveBeenCalledWith({ error: 'Bu kafe için işlem yetkiniz yok.' });
+  });
+
+  it('updates location for authorized cafe admin', async () => {
+    pool.query.mockResolvedValueOnce({
+      rows: [{ id: 3, name: 'Kafe 3', latitude: 37.75, longitude: 29.11, radius: 160 }],
+    });
+
+    const req = {
+      params: { id: '3' },
+      body: { latitude: 37.75, longitude: 29.11, radius: 160 },
+      user: { id: 11, role: 'cafe_admin', cafe_id: 3 },
+    };
+    const res = buildRes();
+
+    await cafeController.updateLocation(req, res);
+
+    expect(pool.query).toHaveBeenCalledWith(
+      'UPDATE cafes SET latitude = $1, longitude = $2, radius = $3 WHERE id = $4 RETURNING id, name, latitude, longitude, radius',
+      [37.75, 29.11, 160, '3']
+    );
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        message: 'Kafe konumu güncellendi.',
       })
     );
   });

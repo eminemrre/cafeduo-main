@@ -7,7 +7,7 @@ jest.mock('../lib/api', () => ({
   api: {
     cafes: {
       list: jest.fn(),
-      updatePin: jest.fn(),
+      updateLocation: jest.fn(),
     },
     rewards: {
       list: jest.fn(),
@@ -36,14 +36,14 @@ describe('useCafeAdmin', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (api.rewards.list as jest.Mock).mockResolvedValue([]);
-    (api.cafes.list as jest.Mock).mockResolvedValue([{ id: 1, name: 'Cafe', daily_pin: '1234' }]);
+    (api.cafes.list as jest.Mock).mockResolvedValue([{ id: 1, name: 'Cafe', latitude: 37.741, longitude: 29.101, radius: 150 }]);
     (api.coupons.use as jest.Mock).mockResolvedValue({ item: { code: 'ABCD' } });
-    (api.cafes.updatePin as jest.Mock).mockResolvedValue({});
+    (api.cafes.updateLocation as jest.Mock).mockResolvedValue({});
     (api.rewards.create as jest.Mock).mockResolvedValue({});
     (api.rewards.delete as jest.Mock).mockResolvedValue({});
   });
 
-  it('sets default pin when no cafe assignment exists', async () => {
+  it('sets default location state when no cafe assignment exists', async () => {
     const { result } = renderHook(() =>
       useCafeAdmin({ currentUser: { ...baseUser, cafe_id: null } })
     );
@@ -53,7 +53,9 @@ describe('useCafeAdmin', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.currentPin).toBe('0000');
+      expect(result.current.locationLatitude).toBe('');
+      expect(result.current.locationLongitude).toBe('');
+      expect(result.current.locationRadius).toBe('150');
     });
   });
 
@@ -124,64 +126,68 @@ describe('useCafeAdmin', () => {
     ).rejects.toThrow('Ödül eklemek için önce bir kafeye atanmalısın.');
   });
 
-  it('updates and validates pin rules', async () => {
+  it('updates and validates location rules', async () => {
     const { result } = renderHook(() => useCafeAdmin({ currentUser: baseUser }));
 
     act(() => {
-      result.current.setNewPin('12');
+      result.current.setLocationLatitude('190');
     });
     await act(async () => {
-      await result.current.updatePin();
+      await result.current.updateLocation();
     });
-    expect(result.current.pinStatus).toBe('error');
-    expect(result.current.pinMessage).toBe('PIN 4-6 haneli olmalıdır.');
+    expect(result.current.locationStatus).toBe('error');
+    expect(result.current.locationMessage).toBe('Enlem -90 ile 90 arasında olmalıdır.');
 
     act(() => {
-      result.current.setNewPin('4321');
+      result.current.setLocationLatitude('37.742');
+      result.current.setLocationLongitude('29.102');
+      result.current.setLocationRadius('180');
     });
     await act(async () => {
-      await result.current.updatePin();
+      await result.current.updateLocation();
     });
-    expect(api.cafes.updatePin).toHaveBeenCalledWith(1, '4321', 10);
-    expect(result.current.pinStatus).toBe('success');
-    expect(result.current.currentPin).toBe('4321');
+    expect(api.cafes.updateLocation).toHaveBeenCalledWith(1, {
+      latitude: 37.742,
+      longitude: 29.102,
+      radius: 180,
+    });
+    expect(result.current.locationStatus).toBe('success');
   });
 
-  it('handles pin update errors and generates random pin', async () => {
-    (api.cafes.updatePin as jest.Mock).mockRejectedValueOnce(new Error('db fail'));
+  it('handles location update errors', async () => {
+    (api.cafes.updateLocation as jest.Mock).mockRejectedValueOnce(new Error('db fail'));
     const { result } = renderHook(() => useCafeAdmin({ currentUser: baseUser }));
 
     act(() => {
-      result.current.setNewPin('5555');
+      result.current.setLocationLatitude('37.741');
+      result.current.setLocationLongitude('29.101');
+      result.current.setLocationRadius('150');
     });
     await act(async () => {
-      await result.current.updatePin();
+      await result.current.updateLocation();
     });
 
-    expect(result.current.pinStatus).toBe('error');
-    expect(result.current.pinMessage).toBe('db fail');
-
-    act(() => {
-      result.current.generateRandomPin();
-    });
-    expect(result.current.newPin).toMatch(/^\d{4}$/);
+    expect(result.current.locationStatus).toBe('error');
+    expect(result.current.locationMessage).toBe('db fail');
   });
 
-  it('sets pin error when cafe assignment is missing on update', async () => {
+  it('sets location error when cafe assignment is missing on update', async () => {
     const { result } = renderHook(() =>
       useCafeAdmin({ currentUser: { ...baseUser, cafe_id: null } })
     );
 
     act(() => {
-      result.current.setNewPin('1234');
+      result.current.setLocationLatitude('37.741');
+      result.current.setLocationLongitude('29.101');
+      result.current.setLocationRadius('150');
     });
 
     await act(async () => {
-      await result.current.updatePin();
+      await result.current.updateLocation();
     });
 
-    expect(result.current.pinStatus).toBe('error');
-    expect(result.current.pinMessage).toBe('Kafe bilgisi bulunamadı.');
+    expect(result.current.locationStatus).toBe('error');
+    expect(result.current.locationMessage).toBe('Kafe bilgisi bulunamadı.');
   });
 
   it('falls back safely for malformed coupon payloads and unknown coupon errors', async () => {
@@ -209,7 +215,7 @@ describe('useCafeAdmin', () => {
     expect(result.current.couponMessage).toBe('Kupon kullanılamadı.');
   });
 
-  it('keeps default pin when cafe info loading fails and sets rewards error on list failure', async () => {
+  it('keeps default location when cafe info loading fails and sets rewards error on list failure', async () => {
     (api.cafes.list as jest.Mock).mockRejectedValueOnce(new Error('list fail'));
     (api.rewards.list as jest.Mock).mockRejectedValueOnce(new Error('reward fail'));
 
@@ -220,7 +226,9 @@ describe('useCafeAdmin', () => {
     });
 
     await waitFor(() => {
-      expect(result.current.currentPin).toBe('0000');
+      expect(result.current.locationLatitude).toBe('');
+      expect(result.current.locationLongitude).toBe('');
+      expect(result.current.locationRadius).toBe('150');
     });
 
     act(() => {

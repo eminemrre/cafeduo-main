@@ -13,5 +13,6 @@ router.post('/:id/check-in', authenticateToken, cafeController.checkIn);
 
 // Admin Routes
 router.put('/:id/pin', authenticateToken, requireCafeAdmin, cafeController.updatePin);
+router.put('/:id/location', authenticateToken, requireCafeAdmin, cafeController.updateLocation);
 
 module.exports = router;

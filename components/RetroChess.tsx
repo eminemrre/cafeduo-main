@@ -22,11 +22,22 @@ interface ChessRealtimeState {
   isGameOver?: boolean;
   result?: string | null;
   winner?: string | null;
+  timedOutColor?: 'w' | 'b' | null;
+  clock?: {
+    baseMs?: number;
+    incrementMs?: number;
+    whiteMs?: number;
+    blackMs?: number;
+    label?: string;
+    lastTickAt?: string | null;
+  };
   moveHistory?: Array<{
     from: string;
     to: string;
     san: string;
     ts: string;
+    spentMs?: number;
+    remainingMs?: number;
   }>;
 }
 
@@ -97,6 +108,21 @@ const inferResultLabel = (engine: Chess): string => {
   return 'Oyun bitti';
 };
 
+const formatClock = (rawMs: number): string => {
+  const ms = Math.max(0, Math.floor(Number(rawMs) || 0));
+  const totalSeconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+};
+
+const parseRetryAfterMs = (message: string): number => {
+  const found = message.match(/(\d+)\s*sn/i);
+  const seconds = found ? Number(found[1]) : Number.NaN;
+  if (!Number.isFinite(seconds) || seconds <= 0) return 0;
+  return seconds * 1000;
+};
+
 export const RetroChess: React.FC<RetroChessProps> = ({
   currentUser,
   gameId,
@@ -116,9 +142,36 @@ export const RetroChess: React.FC<RetroChessProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('Klasik satranç modu: taş seç, hedef kareye tıkla.');
   const [liveResultLabel, setLiveResultLabel] = useState<string | null>(null);
+  const [moveLog, setMoveLog] = useState<Array<{
+    from: string;
+    to: string;
+    san: string;
+    ts: string;
+    spentMs?: number;
+    remainingMs?: number;
+  }>>([]);
+  const [clockState, setClockState] = useState<{
+    whiteMs: number;
+    blackMs: number;
+    incrementMs: number;
+    label: string;
+    lastTickAt: string | null;
+  }>({
+    whiteMs: 3 * 60 * 1000,
+    blackMs: 3 * 60 * 1000,
+    incrementMs: 2 * 1000,
+    label: '3+2',
+    lastTickAt: null,
+  });
+  const [displayClock, setDisplayClock] = useState<{ white: number; black: number }>({
+    white: 3 * 60 * 1000,
+    black: 3 * 60 * 1000,
+  });
   const concludeRef = useRef(false);
   const pollingRef = useRef<number | null>(null);
   const requestInFlightRef = useRef(false);
+  const pollPauseUntilRef = useRef(0);
+  const lastRealtimeAtRef = useRef(0);
   const chessFenRef = useRef<string>(chess.fen());
 
   useEffect(() => {
@@ -175,6 +228,21 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     if (snapshot.status) setServerStatus(String(snapshot.status));
     const winner = normalizeWinner(snapshot.winner || snapshot.gameState?.chess?.winner);
     if (winner) setServerWinner(winner);
+    const incomingMoves = Array.isArray(snapshot.gameState?.chess?.moveHistory)
+      ? snapshot.gameState?.chess?.moveHistory
+      : [];
+    setMoveLog(incomingMoves.slice(-200));
+
+    const incomingClock = snapshot.gameState?.chess?.clock;
+    if (incomingClock && typeof incomingClock === 'object') {
+      setClockState({
+        whiteMs: Math.max(0, Number(incomingClock.whiteMs || 0)),
+        blackMs: Math.max(0, Number(incomingClock.blackMs || 0)),
+        incrementMs: Math.max(0, Number(incomingClock.incrementMs || 0)),
+        label: String(incomingClock.label || '3+2'),
+        lastTickAt: incomingClock.lastTickAt ? String(incomingClock.lastTickAt) : null,
+      });
+    }
 
     const nextEngine = loadChess(snapshot.gameState?.chess?.fen);
     const nextFen = nextEngine.fen();
@@ -206,8 +274,15 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       applyGameSnapshot(snapshot);
     } catch (err) {
       console.error('RetroChess snapshot fetch failed', err);
+      const errMessage = err instanceof Error ? err.message : '';
+      if (errMessage) {
+        const retryAfterMs = parseRetryAfterMs(errMessage);
+        if (retryAfterMs > 0) {
+          pollPauseUntilRef.current = Date.now() + retryAfterMs;
+        }
+      }
       if (!silent) {
-        setMessage('Oyun durumu alınamadı. Bağlantı yeniden deneniyor...');
+        setMessage(err instanceof Error && err.message ? err.message : 'Oyun durumu alınamadı. Bağlantı yeniden deneniyor...');
       }
     } finally {
       requestInFlightRef.current = false;
@@ -219,6 +294,17 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     concludeRef.current = false;
     setServerWinner(null);
     setLiveResultLabel(null);
+    setMoveLog([]);
+    setClockState({
+      whiteMs: 3 * 60 * 1000,
+      blackMs: 3 * 60 * 1000,
+      incrementMs: 2 * 1000,
+      label: '3+2',
+      lastTickAt: null,
+    });
+    setDisplayClock({ white: 3 * 60 * 1000, black: 3 * 60 * 1000 });
+    pollPauseUntilRef.current = 0;
+    lastRealtimeAtRef.current = 0;
     clearSelection();
     if (isBot || !gameId) {
       setHostName(currentUser.username);
@@ -239,6 +325,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
 
     const handleRealtime = (payload: GameStateUpdatedPayload) => {
       if (String(payload?.gameId || '') !== String(gameId)) return;
+      lastRealtimeAtRef.current = Date.now();
 
       if (payload.type === 'game_joined') {
         setMessage('Rakip oyuna bağlandı. Satranç başladı.');
@@ -254,6 +341,18 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       }
 
       if (payload.chess?.fen) {
+        if (Array.isArray(payload.chess.moveHistory)) {
+          setMoveLog(payload.chess.moveHistory.slice(-200));
+        }
+        if (payload.chess.clock && typeof payload.chess.clock === 'object') {
+          setClockState({
+            whiteMs: Math.max(0, Number(payload.chess.clock.whiteMs || 0)),
+            blackMs: Math.max(0, Number(payload.chess.clock.blackMs || 0)),
+            incrementMs: Math.max(0, Number(payload.chess.clock.incrementMs || 0)),
+            label: String(payload.chess.clock.label || '3+2'),
+            lastTickAt: payload.chess.clock.lastTickAt ? String(payload.chess.clock.lastTickAt) : null,
+          });
+        }
         const engine = loadChess(payload.chess.fen);
         const nextFen = engine.fen();
         const hasBoardChanged = chessFenRef.current !== nextFen;
@@ -284,14 +383,40 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     pollingRef.current = window.setInterval(() => {
       if (document.visibilityState === 'hidden') return;
       if (serverStatus === 'finished') return;
+      if (Date.now() < pollPauseUntilRef.current) return;
+      if (Date.now() - lastRealtimeAtRef.current < 8000) return;
       void fetchGameSnapshot(true);
-    }, 1800);
+    }, 5000);
     return () => {
       if (pollingRef.current) {
         window.clearInterval(pollingRef.current);
       }
     };
   }, [fetchGameSnapshot, gameId, isBot, serverStatus]);
+
+  useEffect(() => {
+    const tick = () => {
+      const whiteBase = Math.max(0, Number(clockState.whiteMs || 0));
+      const blackBase = Math.max(0, Number(clockState.blackMs || 0));
+      const startedAt = clockState.lastTickAt ? Date.parse(clockState.lastTickAt) : NaN;
+      const elapsed = Number.isFinite(startedAt) ? Math.max(0, Date.now() - startedAt) : 0;
+
+      if (serverStatus === 'finished') {
+        setDisplayClock({ white: whiteBase, black: blackBase });
+        return;
+      }
+
+      if (turn === 'w') {
+        setDisplayClock({ white: Math.max(0, whiteBase - elapsed), black: blackBase });
+      } else {
+        setDisplayClock({ white: whiteBase, black: Math.max(0, blackBase - elapsed) });
+      }
+    };
+
+    tick();
+    const id = window.setInterval(tick, 300);
+    return () => window.clearInterval(id);
+  }, [clockState, serverStatus, turn]);
 
   const runBotMove = useCallback((engineAfterPlayerMove: Chess) => {
     if (!isBot) return;
@@ -358,6 +483,18 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       const nextFen = result?.gameState?.chess?.fen;
       const engine = loadChess(nextFen || chess.fen());
       setChess(engine);
+      if (Array.isArray(result?.gameState?.chess?.moveHistory)) {
+        setMoveLog(result.gameState.chess.moveHistory.slice(-200));
+      }
+      if (result?.gameState?.chess?.clock && typeof result.gameState.chess.clock === 'object') {
+        setClockState({
+          whiteMs: Math.max(0, Number(result.gameState.chess.clock.whiteMs || 0)),
+          blackMs: Math.max(0, Number(result.gameState.chess.clock.blackMs || 0)),
+          incrementMs: Math.max(0, Number(result.gameState.chess.clock.incrementMs || 0)),
+          label: String(result.gameState.chess.clock.label || '3+2'),
+          lastTickAt: result.gameState.chess.clock.lastTickAt ? String(result.gameState.chess.clock.lastTickAt) : null,
+        });
+      }
       clearSelection();
       if (result?.status) setServerStatus(result.status);
       const winner = normalizeWinner(result?.winner || result?.gameState?.chess?.winner);
@@ -373,6 +510,10 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       const messageText =
         err instanceof Error && err.message ? err.message : 'Hamle gönderilemedi.';
       setMessage(messageText);
+      const retryAfterMs = parseRetryAfterMs(messageText);
+      if (retryAfterMs > 0) {
+        pollPauseUntilRef.current = Date.now() + retryAfterMs;
+      }
       void fetchGameSnapshot(true);
     } finally {
       setSubmitting(false);
@@ -449,12 +590,27 @@ export const RetroChess: React.FC<RetroChessProps> = ({
           <div className="font-bold">{turnLabel}</div>
         </div>
         <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Hamle</div>
-          <div className="font-bold">{moveCount}</div>
+          <div className="text-xs text-[var(--rf-muted)]">Tempo</div>
+          <div className="font-bold">{clockState.label}</div>
         </div>
         <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
           <div className="text-xs text-[var(--rf-muted)]">Rakip</div>
           <div className="font-bold truncate">{opponentLabel}</div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 text-center">
+        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
+          <div className="text-xs text-[var(--rf-muted)]">Beyaz Süre</div>
+          <div className="font-bold text-cyan-100">{formatClock(displayClock.white)}</div>
+        </div>
+        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
+          <div className="text-xs text-[var(--rf-muted)]">Hamle</div>
+          <div className="font-bold">{moveCount}</div>
+        </div>
+        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
+          <div className="text-xs text-[var(--rf-muted)]">Siyah Süre</div>
+          <div className="font-bold text-cyan-100">{formatClock(displayClock.black)}</div>
         </div>
       </div>
 
@@ -520,6 +676,26 @@ export const RetroChess: React.FC<RetroChessProps> = ({
         <RetroButton onClick={onLeave} variant="secondary">
           Lobiye Dön
         </RetroButton>
+      </div>
+
+      <div className="mt-5 rf-panel border border-cyan-400/20 rounded-lg p-3 max-h-56 overflow-y-auto">
+        <h3 className="font-pixel text-sm text-white mb-2 tracking-wide">HAMLE GEÇMİŞİ</h3>
+        {moveLog.length === 0 ? (
+          <p className="text-xs text-[var(--rf-muted)]">Henüz hamle yapılmadı.</p>
+        ) : (
+          <ol className="space-y-1 text-xs">
+            {moveLog.map((entry, index) => (
+              <li key={`${entry.ts}-${index}`} className="flex items-center justify-between gap-2 border-b border-cyan-400/10 pb-1">
+                <span className="text-cyan-200">
+                  {index + 1}. {entry.san} ({entry.from}→{entry.to})
+                </span>
+                <span className="text-[var(--rf-muted)]">
+                  {Number.isFinite(Number(entry.spentMs)) ? `${Math.round(Number(entry.spentMs) / 1000)} sn` : ''}
+                </span>
+              </li>
+            ))}
+          </ol>
+        )}
       </div>
     </div>
   );

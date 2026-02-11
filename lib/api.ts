@@ -325,7 +325,17 @@ export const api = {
         method: 'PUT',
         body: JSON.stringify({ pin, userId }),
       });
-    }
+    },
+
+    updateLocation: async (
+      cafeId: string | number,
+      params: { latitude: number; longitude: number; radius: number }
+    ) => {
+      return await fetchAPI(`/cafes/${cafeId}/location`, {
+        method: 'PUT',
+        body: JSON.stringify(params),
+      });
+    },
   },
 
   // GAMES

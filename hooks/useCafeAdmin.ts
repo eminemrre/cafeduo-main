@@ -4,7 +4,7 @@ import type { Reward, User } from '../types';
 import type {
   CafeAdminTab,
   CafeCouponStatus,
-  CafePinStatus,
+  CafeLocationStatus,
   CouponItem,
   RewardFormData,
 } from '../components/cafe-admin/types';
@@ -27,17 +27,20 @@ interface UseCafeAdminReturn {
   rewardsError: string | null;
   rewardForm: RewardFormData;
   setRewardForm: (form: RewardFormData) => void;
-  currentPin: string;
-  newPin: string;
-  setNewPin: (pin: string) => void;
-  pinStatus: CafePinStatus;
-  pinMessage: string;
-  pinLoading: boolean;
+  locationLatitude: string;
+  locationLongitude: string;
+  locationRadius: string;
+  setLocationLatitude: (value: string) => void;
+  setLocationLongitude: (value: string) => void;
+  setLocationRadius: (value: string) => void;
+  locationStatus: CafeLocationStatus;
+  locationMessage: string;
+  locationLoading: boolean;
   submitCoupon: () => Promise<void>;
   createReward: () => Promise<void>;
   deleteReward: (id: number | string) => Promise<void>;
-  updatePin: () => Promise<void>;
-  generateRandomPin: () => void;
+  updateLocation: () => Promise<void>;
+  pickCurrentLocation: () => Promise<void>;
   refetchRewards: () => Promise<void>;
 }
 
@@ -86,11 +89,41 @@ const normalizeCouponItem = (item: unknown): CouponItem | null => {
   };
 };
 
+const toLocationError = (errorCode: number): string => {
+  const map: Record<number, string> = {
+    1: 'Konum izni reddedildi. Tarayıcı ayarlarından konum izni verin.',
+    2: 'Konum bilgisi alınamadı. GPS veya ağ konumunu kontrol edin.',
+    3: 'Konum isteği zaman aşımına uğradı. Tekrar deneyin.',
+  };
+  return map[errorCode] || 'Konum alınamadı.';
+};
+
+const ensureGeo = async (): Promise<{ latitude: number; longitude: number }> => {
+  if (typeof navigator === 'undefined' || !navigator.geolocation) {
+    throw new Error('Tarayıcı konum bilgisini desteklemiyor.');
+  }
+
+  return await new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          latitude: Number(position.coords.latitude),
+          longitude: Number(position.coords.longitude),
+        });
+      },
+      (error) => {
+        reject(new Error(toLocationError(error.code)));
+      },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 15000 }
+    );
+  });
+};
+
 /**
  * useCafeAdmin Hook
  *
- * @description Kafe admin panelindeki kupon doğrulama, ödül yönetimi ve PIN güncelleme
- * işlemlerini tek yerde yönetir. UI bileşenleri sadece sunuma odaklanır.
+ * @description Kafe admin panelindeki kupon doğrulama, ödül yönetimi ve konum doğrulama
+ * ayarlarını tek yerde yönetir.
  */
 export function useCafeAdmin({ currentUser }: UseCafeAdminProps): UseCafeAdminReturn {
   const [activeTab, setActiveTab] = useState<CafeAdminTab>('verification');
@@ -106,27 +139,34 @@ export function useCafeAdmin({ currentUser }: UseCafeAdminProps): UseCafeAdminRe
   const [rewardsError, setRewardsError] = useState<string | null>(null);
   const [rewardForm, setRewardForm] = useState<RewardFormData>(DEFAULT_REWARD_FORM);
 
-  const [currentPin, setCurrentPin] = useState('');
-  const [newPin, setNewPin] = useState('');
-  const [pinStatus, setPinStatus] = useState<CafePinStatus>('idle');
-  const [pinMessage, setPinMessage] = useState('');
-  const [pinLoading, setPinLoading] = useState(false);
+  const [locationLatitude, setLocationLatitude] = useState('');
+  const [locationLongitude, setLocationLongitude] = useState('');
+  const [locationRadius, setLocationRadius] = useState('150');
+  const [locationStatus, setLocationStatus] = useState<CafeLocationStatus>('idle');
+  const [locationMessage, setLocationMessage] = useState('');
+  const [locationLoading, setLocationLoading] = useState(false);
 
   const cafeId = useMemo(() => currentUser.cafe_id, [currentUser.cafe_id]);
 
   const fetchCafeInfo = useCallback(async () => {
     if (!cafeId) {
-      setCurrentPin('0000');
+      setLocationLatitude('');
+      setLocationLongitude('');
+      setLocationRadius('150');
       return;
     }
 
     try {
       const cafes = await api.cafes.list();
       const cafe = cafes.find((row) => String(row.id) === String(cafeId));
-      setCurrentPin(String(cafe?.daily_pin || cafe?.pin || '0000'));
+      setLocationLatitude(cafe?.latitude != null ? String(cafe.latitude) : '');
+      setLocationLongitude(cafe?.longitude != null ? String(cafe.longitude) : '');
+      setLocationRadius(String(Number(cafe?.radius || 150)));
     } catch (err) {
       console.error('Failed to fetch cafe info', err);
-      setCurrentPin('0000');
+      setLocationLatitude('');
+      setLocationLongitude('');
+      setLocationRadius('150');
     }
   }, [cafeId]);
 
@@ -201,40 +241,62 @@ export function useCafeAdmin({ currentUser }: UseCafeAdminProps): UseCafeAdminRe
     await fetchRewards();
   }, [fetchRewards]);
 
-  const updatePin = useCallback(async () => {
+  const updateLocation = useCallback(async () => {
     if (!cafeId) {
-      setPinStatus('error');
-      setPinMessage('Kafe bilgisi bulunamadı.');
+      setLocationStatus('error');
+      setLocationMessage('Kafe bilgisi bulunamadı.');
       return;
     }
 
-    if (!/^\d{4,6}$/.test(newPin)) {
-      setPinStatus('error');
-      setPinMessage('PIN 4-6 haneli olmalıdır.');
+    const latitude = Number(locationLatitude);
+    const longitude = Number(locationLongitude);
+    const radius = Number(locationRadius);
+    if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
+      setLocationStatus('error');
+      setLocationMessage('Enlem -90 ile 90 arasında olmalıdır.');
+      return;
+    }
+    if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+      setLocationStatus('error');
+      setLocationMessage('Boylam -180 ile 180 arasında olmalıdır.');
+      return;
+    }
+    if (!Number.isFinite(radius) || radius < 10 || radius > 5000) {
+      setLocationStatus('error');
+      setLocationMessage('Yarıçap 10-5000 metre arasında olmalıdır.');
       return;
     }
 
-    setPinLoading(true);
-    setPinStatus('idle');
-    setPinMessage('');
+    setLocationLoading(true);
+    setLocationStatus('idle');
+    setLocationMessage('');
 
     try {
-      await api.cafes.updatePin(cafeId, newPin, currentUser.id);
-      setCurrentPin(newPin);
-      setNewPin('');
-      setPinStatus('success');
-      setPinMessage('PIN başarıyla güncellendi!');
+      await api.cafes.updateLocation(cafeId, { latitude, longitude, radius });
+      setLocationRadius(String(Math.round(radius)));
+      setLocationStatus('success');
+      setLocationMessage('Kafe konumu güncellendi.');
     } catch (err) {
-      setPinStatus('error');
-      setPinMessage(toErrorMessage(err, 'PIN güncellenemedi.'));
+      setLocationStatus('error');
+      setLocationMessage(toErrorMessage(err, 'Kafe konumu güncellenemedi.'));
     } finally {
-      setPinLoading(false);
+      setLocationLoading(false);
     }
-  }, [cafeId, currentUser.id, newPin]);
+  }, [cafeId, locationLatitude, locationLongitude, locationRadius]);
 
-  const generateRandomPin = useCallback(() => {
-    const pin = String(Math.floor(1000 + Math.random() * 9000));
-    setNewPin(pin);
+  const pickCurrentLocation = useCallback(async () => {
+    setLocationStatus('idle');
+    setLocationMessage('');
+    try {
+      const coords = await ensureGeo();
+      setLocationLatitude(coords.latitude.toFixed(6));
+      setLocationLongitude(coords.longitude.toFixed(6));
+      setLocationStatus('success');
+      setLocationMessage('Konum alındı. Kaydetmek için "Konumu Kaydet"e basın.');
+    } catch (err) {
+      setLocationStatus('error');
+      setLocationMessage(toErrorMessage(err, 'Konum alınamadı.'));
+    }
   }, []);
 
   return {
@@ -251,17 +313,20 @@ export function useCafeAdmin({ currentUser }: UseCafeAdminProps): UseCafeAdminRe
     rewardsError,
     rewardForm,
     setRewardForm,
-    currentPin,
-    newPin,
-    setNewPin,
-    pinStatus,
-    pinMessage,
-    pinLoading,
+    locationLatitude,
+    locationLongitude,
+    locationRadius,
+    setLocationLatitude,
+    setLocationLongitude,
+    setLocationRadius,
+    locationStatus,
+    locationMessage,
+    locationLoading,
     submitCoupon,
     createReward,
     deleteReward,
-    updatePin,
-    generateRandomPin,
+    updateLocation,
+    pickCurrentLocation,
     refetchRewards: fetchRewards,
   };
 }

@@ -155,6 +155,26 @@ describe('gameHandlers (memory mode)', () => {
     expect(memoryGames[0].table).toBe('MASA05');
   });
 
+  it('applies chess tempo config while creating retro chess game', async () => {
+    const req = {
+      user: { username: 'u1', role: 'user', isAdmin: false, table_number: '5', cafe_id: 1, points: 500 },
+      body: {
+        gameType: 'Retro Satranç',
+        points: 90,
+        chessClock: { baseSeconds: 300, incrementSeconds: 3, label: '5+3 Rapid' },
+      },
+    };
+    const res = createMockRes();
+
+    await handlers.createGame(req, res);
+
+    expect(res.statusCode).toBe(201);
+    expect(memoryGames).toHaveLength(1);
+    expect(memoryGames[0].gameType).toBe('Retro Satranç');
+    expect(memoryGames[0].gameState?.chess?.clock?.baseMs).toBe(300000);
+    expect(memoryGames[0].gameState?.chess?.clock?.incrementMs).toBe(3000);
+  });
+
   it('allows checked-in users to join waiting games', async () => {
     memoryGames = [
       {
@@ -359,6 +379,44 @@ describe('gameHandlers (memory mode)', () => {
     await handlers.makeMove(moveReq2, moveRes2);
     expect(moveRes2.statusCode).toBe(200);
     expect(moveRes2.payload.resolvedWinner).toBe('u1');
+  });
+
+  it('includes chess move count and tempo in user history response', async () => {
+    memoryGames = [
+      {
+        id: 14,
+        hostName: 'u1',
+        guestName: 'u2',
+        gameType: 'Retro Satranç',
+        points: 90,
+        table: 'MASA05',
+        status: 'finished',
+        winner: 'u1',
+        createdAt: '2026-02-10T10:00:00.000Z',
+        gameState: {
+          chess: {
+            moveHistory: [{ from: 'e2', to: 'e4', san: 'e4', ts: '2026-02-10T10:01:00.000Z' }],
+            clock: { baseMs: 180000, incrementMs: 2000 },
+          },
+        },
+      },
+    ];
+
+    const req = {
+      params: { username: 'u1' },
+      user: { username: 'u1', role: 'user', isAdmin: false },
+    };
+    const res = createMockRes();
+
+    await handlers.getUserGameHistory(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.payload).toHaveLength(1);
+    expect(res.payload[0]).toMatchObject({
+      id: 14,
+      moveCount: 1,
+      chessTempo: '3+2',
+    });
   });
 
   it('finishes and deletes game with proper auth', async () => {

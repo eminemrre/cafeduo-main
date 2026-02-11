@@ -6,7 +6,11 @@ import { useToast } from '../contexts/ToastContext';
 interface CreateGameModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (gameType: string, points: number) => Promise<void> | void;
+  onSubmit: (
+    gameType: string,
+    points: number,
+    options?: { chessClock?: { baseSeconds: number; incrementSeconds: number; label: string } }
+  ) => Promise<void> | void;
   maxPoints: number;
 }
 
@@ -16,6 +20,13 @@ const GAME_TYPES = [
   { id: 'chess', name: 'Retro Satranç', category: 'Strateji', description: 'Klasik 2 oyunculu satranç. Gerçek zamanlı ve hamle doğrulamalı.', minPoints: 90 },
   { id: 'knowledge', name: 'Bilgi Yarışı', category: 'Bilgi', description: 'Kısa bilgi sorularında doğru cevabı en hızlı ver', minPoints: 120 },
 ];
+
+const CHESS_TEMPO_OPTIONS = [
+  { id: 'bullet_1_1', label: '1+1 Bullet', baseSeconds: 60, incrementSeconds: 1 },
+  { id: 'blitz_3_2', label: '3+2 Blitz', baseSeconds: 180, incrementSeconds: 2 },
+  { id: 'rapid_5_3', label: '5+3 Rapid', baseSeconds: 300, incrementSeconds: 3 },
+  { id: 'rapid_10_5', label: '10+5 Rapid', baseSeconds: 600, incrementSeconds: 5 },
+] as const;
 
 interface ValidationError {
   gameType?: string;
@@ -30,6 +41,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
 }) => {
   const [gameType, setGameType] = useState('Refleks Avı');
   const [points, setPoints] = useState(0);
+  const [chessTempoId, setChessTempoId] = useState<(typeof CHESS_TEMPO_OPTIONS)[number]['id']>('blitz_3_2');
   const [errors, setErrors] = useState<ValidationError>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,6 +53,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
     if (isOpen) {
       setGameType('Refleks Avı');
       setPoints(0);
+      setChessTempoId('blitz_3_2');
       setErrors({});
       setTouched({});
       setIsSubmitting(false);
@@ -117,7 +130,18 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
     setIsSubmitting(true);
 
     try {
-      await Promise.resolve(onSubmit(gameType, points));
+      const selectedTempo = CHESS_TEMPO_OPTIONS.find((tempo) => tempo.id === chessTempoId) || CHESS_TEMPO_OPTIONS[1];
+      const options =
+        gameType === 'Retro Satranç'
+          ? {
+              chessClock: {
+                baseSeconds: selectedTempo.baseSeconds,
+                incrementSeconds: selectedTempo.incrementSeconds,
+                label: selectedTempo.label,
+              },
+            }
+          : undefined;
+      await Promise.resolve(onSubmit(gameType, points, options));
       toast.success(`${gameType} oyunu oluşturuldu!`);
       onClose();
     } catch (err: unknown) {
@@ -251,6 +275,28 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
             )}
           </div>
 
+          {gameType === 'Retro Satranç' && (
+            <div>
+              <label className="block text-cyan-300 font-pixel text-xs mb-3 tracking-widest">SATRANÇ TEMPOSU</label>
+              <div className="grid grid-cols-2 gap-2">
+                {CHESS_TEMPO_OPTIONS.map((tempo) => (
+                  <button
+                    key={tempo.id}
+                    type="button"
+                    onClick={() => setChessTempoId(tempo.id)}
+                    className={`px-3 py-2 rounded border text-xs font-pixel transition-colors ${
+                      chessTempoId === tempo.id
+                        ? 'border-cyan-400 bg-cyan-500/15 text-cyan-200'
+                        : 'border-cyan-400/20 bg-black/30 text-[var(--rf-muted)] hover:border-cyan-400/40'
+                    }`}
+                  >
+                    {tempo.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Summary */}
           <div className="bg-[#0a1732]/80 rounded p-3 border border-cyan-400/20">
             <div className="flex justify-between text-sm">
@@ -261,6 +307,14 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
               <span className="text-[var(--rf-muted)]">Katılım Puanı:</span>
               <span className="text-amber-300">{points} Puan</span>
             </div>
+            {gameType === 'Retro Satranç' && (
+              <div className="flex justify-between text-sm mt-1">
+                <span className="text-[var(--rf-muted)]">Tempo:</span>
+                <span className="text-cyan-200">
+                  {(CHESS_TEMPO_OPTIONS.find((tempo) => tempo.id === chessTempoId) || CHESS_TEMPO_OPTIONS[1]).label}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between text-sm mt-1 pt-1 border-t border-cyan-400/20">
               <span className="text-[var(--rf-muted)]">Kalan:</span>
               <span className={`${maxPoints - points < 0 ? 'text-red-400' : 'text-green-400'}`}>

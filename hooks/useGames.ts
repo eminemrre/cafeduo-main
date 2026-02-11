@@ -32,7 +32,11 @@ interface UseGamesReturn {
   serverActiveGame: GameRequest | null;
   
   // Oyun yönetimi
-  createGame: (gameType: string, points: number) => Promise<void>;
+  createGame: (
+    gameType: string,
+    points: number,
+    options?: { chessClock?: { baseSeconds: number; incrementSeconds: number; label: string } }
+  ) => Promise<void>;
   joinGame: (gameId: number) => Promise<void>;
   cancelGame: (gameId: number | string) => Promise<void>;
   leaveGame: () => void;
@@ -106,6 +110,8 @@ const historySnapshot = (entry: Partial<GameHistoryEntry>) => ({
   winner: String(entry.winner ?? ''),
   didWin: Boolean(entry.didWin),
   createdAt: String(entry.createdAt ?? ''),
+  moveCount: Number(entry.moveCount ?? 0),
+  chessTempo: String(entry.chessTempo ?? ''),
 });
 
 const isSameHistory = (prev: GameHistoryEntry[], next: GameHistoryEntry[]) => {
@@ -123,7 +129,9 @@ const isSameHistory = (prev: GameHistoryEntry[], next: GameHistoryEntry[]) => {
       a.opponentName !== b.opponentName ||
       a.winner !== b.winner ||
       a.didWin !== b.didWin ||
-      a.createdAt !== b.createdAt
+      a.createdAt !== b.createdAt ||
+      a.moveCount !== b.moveCount ||
+      a.chessTempo !== b.chessTempo
     ) {
       return false;
     }
@@ -316,13 +324,18 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
   /**
    * Yeni oyun kur
    */
-  const createGame = useCallback(async (gameType: string, points: number) => {
+  const createGame = useCallback(async (
+    gameType: string,
+    points: number,
+    options?: { chessClock?: { baseSeconds: number; incrementSeconds: number; label: string } }
+  ) => {
     try {
       const newGame = await api.games.create({
         hostName: currentUser.username,
         gameType,
         points,
-        table: tableCode || currentUser.table_number || 'MASA00'
+        table: tableCode || currentUser.table_number || 'MASA00',
+        ...(options?.chessClock ? { chessClock: options.chessClock } : {}),
       });
 
       // Oyun listesine ekle

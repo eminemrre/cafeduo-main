@@ -17,13 +17,17 @@ export interface AdminCafeFormData {
   name: string;
   address: string;
   total_tables: number;
-  pin: string;
+  latitude: string;
+  longitude: string;
+  radius: number;
 }
 
 export interface AdminCafeEditData {
   address: string;
   total_tables: number;
-  pin: string;
+  latitude: string;
+  longitude: string;
+  radius: number;
 }
 
 export type AdminUserRow = User;

@@ -1,11 +1,11 @@
 import React, { useCallback, useMemo } from 'react';
-import { Coffee, Gift, QrCode, Settings } from 'lucide-react';
+import { Coffee, Gift, MapPin, QrCode } from 'lucide-react';
 import type { User } from '../../types';
 import { useCafeAdmin } from '../../hooks/useCafeAdmin';
 import { CafeStats } from './CafeStats';
 import { CouponScanner } from './CouponScanner';
 import { RewardManager } from './RewardManager';
-import { PinManager } from './PinManager';
+import { LocationManager } from './LocationManager';
 import type { CafeAdminTab } from './types';
 
 interface CafeDashboardProps {
@@ -30,26 +30,32 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
     rewardsError,
     rewardForm,
     setRewardForm,
-    currentPin,
-    newPin,
-    setNewPin,
-    pinStatus,
-    pinMessage,
-    pinLoading,
+    locationLatitude,
+    locationLongitude,
+    locationRadius,
+    setLocationLatitude,
+    setLocationLongitude,
+    setLocationRadius,
+    locationStatus,
+    locationMessage,
+    locationLoading,
     submitCoupon,
     createReward,
     deleteReward,
-    updatePin,
-    generateRandomPin,
+    updateLocation,
+    pickCurrentLocation,
   } = useCafeAdmin({ currentUser });
 
   const stats = useMemo(
     () => ({
       rewardCount: rewards.length,
-      currentPin,
+      locationSummary:
+        locationLatitude && locationLongitude
+          ? `${locationLatitude}, ${locationLongitude} (${locationRadius}m)`
+          : 'Konum tanımlı değil',
       lastCouponCode: lastItem?.code || null,
     }),
-    [currentPin, lastItem?.code, rewards.length]
+    [lastItem?.code, locationLatitude, locationLongitude, locationRadius, rewards.length]
   );
 
   const handleCreateReward = useCallback(async () => {
@@ -77,7 +83,7 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
   }> = [
     { id: 'verification', label: 'Kupon İşlemleri', icon: QrCode, activeClassName: 'bg-blue-600 text-white shadow-lg shadow-blue-900/50' },
     { id: 'rewards', label: 'Ödül Yönetimi', icon: Gift, activeClassName: 'bg-orange-600 text-white shadow-lg shadow-orange-900/50' },
-    { id: 'settings', label: 'PIN Ayarları', icon: Settings, activeClassName: 'bg-green-600 text-white shadow-lg shadow-green-900/50' },
+    { id: 'settings', label: 'Konum Ayarları', icon: MapPin, activeClassName: 'bg-green-600 text-white shadow-lg shadow-green-900/50' },
   ];
 
   return (
@@ -90,7 +96,7 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
           </div>
           <div>
             <h1 className="text-3xl font-bold text-white mb-1">Kafe Yönetim Paneli</h1>
-            <p className="text-[var(--rf-muted)]">Kupon doğrulama, ödül ve PIN yönetimi</p>
+            <p className="text-[var(--rf-muted)]">Kupon doğrulama, ödül ve konum doğrulama yönetimi</p>
           </div>
         </div>
 
@@ -152,15 +158,18 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
 
         {activeTab === 'settings' && (
           <section id="cafe-admin-panel-settings" role="tabpanel" aria-labelledby="cafe-admin-tab-settings">
-            <PinManager
-              currentPin={currentPin}
-              newPin={newPin}
-              onNewPinChange={setNewPin}
-              onGeneratePin={generateRandomPin}
-              onSubmit={updatePin}
-              status={pinStatus}
-              message={pinMessage}
-              loading={pinLoading}
+            <LocationManager
+              latitude={locationLatitude}
+              longitude={locationLongitude}
+              radius={locationRadius}
+              onLatitudeChange={setLocationLatitude}
+              onLongitudeChange={setLocationLongitude}
+              onRadiusChange={setLocationRadius}
+              onPickCurrentLocation={pickCurrentLocation}
+              onSubmit={updateLocation}
+              status={locationStatus}
+              message={locationMessage}
+              loading={locationLoading}
             />
           </section>
         )}

@@ -36,7 +36,9 @@ const EMPTY_CAFE_FORM: AdminCafeFormData = {
     name: '',
     address: '',
     total_tables: 20,
-    pin: '1234'
+    latitude: '',
+    longitude: '',
+    radius: 150,
 };
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) => {
@@ -55,7 +57,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     const [editCafeData, setEditCafeData] = useState<AdminCafeEditData>({
         address: '',
         total_tables: 20,
-        pin: '1234'
+        latitude: '',
+        longitude: '',
+        radius: 150,
     });
 
     useEffect(() => {
@@ -85,7 +89,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                 setEditCafeData({
                     address: cafesData[0].address || '',
                     total_tables: cafesData[0].total_tables || cafesData[0].table_count || 20,
-                    pin: cafesData[0].pin || cafesData[0].daily_pin || '1234'
+                    latitude: cafesData[0].latitude != null ? String(cafesData[0].latitude) : '',
+                    longitude: cafesData[0].longitude != null ? String(cafesData[0].longitude) : '',
+                    radius: Number(cafesData[0].radius || 150),
                 });
             }
         } catch (error) {
@@ -97,8 +103,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
 
     const handleCafeUpdate = async () => {
         if (!selectedCafe) return;
+
+        const latitude = Number(editCafeData.latitude);
+        const longitude = Number(editCafeData.longitude);
+        const radius = Number(editCafeData.radius);
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+            alert('Kafe konumu için geçerli enlem ve boylam girin.');
+            return;
+        }
+        if (!Number.isFinite(radius) || radius < 10 || radius > 5000) {
+            alert('Yarıçap 10-5000 metre arasında olmalıdır.');
+            return;
+        }
+
         try {
-            await api.admin.updateCafe(selectedCafe.id, editCafeData);
+            await api.admin.updateCafe(selectedCafe.id, {
+                address: editCafeData.address,
+                total_tables: editCafeData.total_tables,
+                latitude,
+                longitude,
+                radius,
+            });
             alert('Kafe bilgileri güncellendi!');
             loadData();
         } catch (error) {
@@ -113,7 +138,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
             setEditCafeData({
                 address: cafe.address || '',
                 total_tables: cafe.total_tables || cafe.table_count || 20,
-                pin: cafe.pin || cafe.daily_pin || '1234'
+                latitude: cafe.latitude != null ? String(cafe.latitude) : '',
+                longitude: cafe.longitude != null ? String(cafe.longitude) : '',
+                radius: Number(cafe.radius || 150),
             });
         }
     };
@@ -263,8 +290,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
             alert('Lütfen kafe adı girin.');
             return;
         }
+        const latitude = Number(newCafeData.latitude);
+        const longitude = Number(newCafeData.longitude);
+        const radius = Number(newCafeData.radius);
+        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+            alert('Yeni kafe için geçerli enlem ve boylam zorunludur.');
+            return;
+        }
+        if (!Number.isFinite(radius) || radius < 10 || radius > 5000) {
+            alert('Yarıçap 10-5000 metre arasında olmalıdır.');
+            return;
+        }
         try {
-            await api.admin.createCafe(newCafeData);
+            await api.admin.createCafe({
+                ...newCafeData,
+                latitude,
+                longitude,
+                radius,
+            });
             alert('Yeni kafe eklendi!');
             setShowAddCafeModal(false);
             setNewCafeData(EMPTY_CAFE_FORM);
@@ -537,16 +580,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                         </div>
 
                                         <div>
-                                            <label className="block text-gray-400 text-sm mb-2">PIN Kodu (4 Haneli)</label>
+                                            <label className="block text-gray-400 text-sm mb-2">Enlem (Latitude)</label>
                                             <input
-                                                type="text"
-                                                value={editCafeData.pin}
-                                                onChange={e => setEditCafeData({ ...editCafeData, pin: e.target.value.slice(0, 4) })}
-                                                className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500 font-mono text-lg"
-                                                placeholder="1234"
-                                                maxLength={4}
+                                                type="number"
+                                                step="0.000001"
+                                                value={editCafeData.latitude}
+                                                onChange={e => setEditCafeData({ ...editCafeData, latitude: e.target.value })}
+                                                className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500 font-mono"
+                                                placeholder="37.741000"
                                             />
-                                            <p className="text-xs text-gray-500 mt-1">Kullanıcılar bu PIN ile kafeye giriş yapacak</p>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-gray-400 text-sm mb-2">Boylam (Longitude)</label>
+                                            <input
+                                                type="number"
+                                                step="0.000001"
+                                                value={editCafeData.longitude}
+                                                onChange={e => setEditCafeData({ ...editCafeData, longitude: e.target.value })}
+                                                className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500 font-mono"
+                                                placeholder="29.101000"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-gray-400 text-sm mb-2">Doğrulama Yarıçapı (metre)</label>
+                                            <input
+                                                type="number"
+                                                min="10"
+                                                max="5000"
+                                                value={editCafeData.radius}
+                                                onChange={e => setEditCafeData({ ...editCafeData, radius: parseInt(e.target.value || '0', 10) })}
+                                                className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500"
+                                                placeholder="150"
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">Kullanıcılar yalnızca bu konum yarıçapı içindeyken check-in yapabilir.</p>
                                         </div>
 
                                         <button

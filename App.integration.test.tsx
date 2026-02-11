@@ -191,7 +191,7 @@ describe('App critical session and routing integration', () => {
     });
   });
 
-  it('skips check-in when user has cafe and table information', async () => {
+  it('forces check-in even when user has old cafe/table information', async () => {
     renderAt('/');
     await loginFromHero({
       ...baseUser,
@@ -199,11 +199,11 @@ describe('App critical session and routing integration', () => {
       table_number: 'MASA12',
     });
 
-    expect(await screen.findByTestId('dashboard-view')).toBeInTheDocument();
-    expect(screen.queryByTestId('cafe-selection-view')).not.toBeInTheDocument();
+    expect(await screen.findByTestId('cafe-selection-view')).toBeInTheDocument();
+    expect(screen.queryByTestId('dashboard-view')).not.toBeInTheDocument();
   });
 
-  it('ignores stale session marker and still trusts cafe/table state', async () => {
+  it('ignores stale session marker and still requires fresh check-in', async () => {
     sessionStorage.setItem('cafeduo_checked_in_token', 'stale-token');
     renderAt('/');
 
@@ -213,8 +213,8 @@ describe('App critical session and routing integration', () => {
       table_number: 'MASA03',
     });
 
-    expect(await screen.findByTestId('dashboard-view')).toBeInTheDocument();
-    expect(screen.queryByTestId('cafe-selection-view')).not.toBeInTheDocument();
+    expect(await screen.findByTestId('cafe-selection-view')).toBeInTheDocument();
+    expect(screen.queryByTestId('dashboard-view')).not.toBeInTheDocument();
   });
 
   it('transitions to dashboard after successful check-in callback', async () => {

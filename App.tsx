@@ -1,5 +1,5 @@
-import React, { useState, useEffect, Suspense } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, Suspense, useRef } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
 import { HowItWorks } from './components/HowItWorks';
@@ -84,11 +84,14 @@ const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authHydrating, setAuthHydrating] = useState(true);
+  const [hasSessionCheckIn, setHasSessionCheckIn] = useState(false);
   
   // Toast hook
   const toast = useToast();
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const previousPathRef = useRef(location.pathname);
 
   // Socket IO Connection
   useEffect(() => {
@@ -109,6 +112,7 @@ const App: React.FC = () => {
         if (!isMounted) return;
         setCurrentUser(user);
         setIsLoggedIn(Boolean(user));
+        setHasSessionCheckIn(false);
       };
 
       if (!token) {
@@ -182,6 +186,7 @@ const App: React.FC = () => {
 
     setCurrentUser(user);
     setIsLoggedIn(true);
+    setHasSessionCheckIn(user.isAdmin || user.role === 'cafe_admin');
     setIsAuthOpen(false);
     localStorage.setItem('cafe_user', JSON.stringify(user));
 
@@ -211,6 +216,7 @@ const App: React.FC = () => {
     }
     setIsLoggedIn(false);
     setCurrentUser(null);
+    setHasSessionCheckIn(false);
     localStorage.removeItem('cafe_user');
     navigate('/');
   };
@@ -243,14 +249,33 @@ const App: React.FC = () => {
       const updatedUser = { ...currentUser, cafe_name: cafeName, table_number: tableNumber, cafe_id: cafeId }; // Optimistic update
       // Ideally we should fetch the full updated user from backend, but this is enough for UI
       setCurrentUser(updatedUser);
+      setHasSessionCheckIn(true);
       localStorage.setItem('cafe_user', JSON.stringify(updatedUser));
       navigate('/dashboard');
     }
   };
 
+  useEffect(() => {
+    const previousPath = previousPathRef.current;
+    const currentPath = location.pathname;
+
+    if (
+      previousPath === '/dashboard' &&
+      currentPath !== '/dashboard' &&
+      currentUser &&
+      !currentUser.isAdmin &&
+      currentUser.role !== 'cafe_admin'
+    ) {
+      setHasSessionCheckIn(false);
+    }
+
+    previousPathRef.current = currentPath;
+  }, [location.pathname, currentUser]);
+
   const requiresCheckIn = (user: User | null): boolean => {
     if (!user) return false;
     if (user.isAdmin || user.role === 'cafe_admin') return false;
+    if (!hasSessionCheckIn) return true;
 
     const hasCafe = Boolean(user.cafe_id);
     const table = String(user.table_number || '').trim().toUpperCase();

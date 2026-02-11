@@ -94,6 +94,14 @@ describe('gameMoveService (db mode)', () => {
 
     expect(res.statusCode).toBe(200);
     expect(res.payload?.status).toBe('active');
+    expect(res.payload?.gameState?.chess?.clock).toEqual(
+      expect.objectContaining({
+        baseMs: expect.any(Number),
+        incrementMs: expect.any(Number),
+        whiteMs: expect.any(Number),
+        blackMs: expect.any(Number),
+      })
+    );
     expect(emitRealtimeUpdate).toHaveBeenCalledWith(
       '1',
       expect.objectContaining({

@@ -306,6 +306,14 @@ const apiLimiter = rateLimit(
     scope: 'api',
     windowMs: API_RATE_LIMIT_WINDOW_MS,
     limit: API_RATE_LIMIT_MAX_REQUESTS,
+    skip: (req) => {
+      const path = String(req.path || req.originalUrl || '');
+      if (req.method !== 'GET') return false;
+      // High-frequency realtime polling routes should not hit generic API limiter.
+      if (/^\/games\/[^/]+$/.test(path)) return true;
+      if (/^\/users\/[^/]+\/active-game$/.test(path)) return true;
+      return false;
+    },
     message: { error: 'Çok fazla API isteği gönderdiniz, lütfen daha sonra tekrar deneyin.' },
   })
 );

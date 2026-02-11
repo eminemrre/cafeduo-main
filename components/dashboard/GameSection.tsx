@@ -12,6 +12,7 @@ import { RetroButton } from '../RetroButton';
 import { Gamepad2, Users, Gamepad2 as GamepadIcon } from 'lucide-react';
 import { SkeletonGrid } from '../Skeleton';
 import { EmptyState } from '../EmptyState';
+import { api } from '../../lib/api';
 
 interface GameSectionProps {
   // Kullanıcı
@@ -34,7 +35,11 @@ interface GameSectionProps {
   setIsCreateModalOpen: (open: boolean) => void;
   
   // Handler'lar
-  onCreateGame: (gameType: string, points: number) => Promise<void>;
+  onCreateGame: (
+    gameType: string,
+    points: number,
+    options?: { chessClock?: { baseSeconds: number; incrementSeconds: number; label: string } }
+  ) => Promise<void>;
   onJoinGame: (gameId: number) => Promise<void>;
   onCancelGame?: (gameId: number | string) => Promise<void>;
   onViewProfile: (username: string) => void;
@@ -60,6 +65,25 @@ export const GameSection: React.FC<GameSectionProps> = ({
   onRejoinGame
 }) => {
   const [quickJoinBusy, setQuickJoinBusy] = useState(false);
+  const [historyDetailLoading, setHistoryDetailLoading] = useState(false);
+  const [historyDetailError, setHistoryDetailError] = useState<string | null>(null);
+  const [selectedHistory, setSelectedHistory] = useState<{
+    id: string | number;
+    gameType: string;
+    opponentName: string;
+    createdAt: string;
+    winner: string | null;
+    points: number;
+    chessTempo: string | null;
+    moves: Array<{
+      from: string;
+      to: string;
+      san: string;
+      ts?: string;
+      spentMs?: number;
+      remainingMs?: number;
+    }>;
+  } | null>(null);
   const normalizedTable = String(tableCode || '').trim().toUpperCase();
   const currentUsername = String(currentUser?.username || '').trim().toLowerCase();
 
@@ -88,6 +112,47 @@ export const GameSection: React.FC<GameSectionProps> = ({
       await onJoinGame(quickJoinId);
     } finally {
       setQuickJoinBusy(false);
+    }
+  };
+
+  const openHistoryDetail = async (entry: GameHistoryEntry) => {
+    if (entry.gameType !== 'Retro Satranç') return;
+    setHistoryDetailError(null);
+    setHistoryDetailLoading(true);
+    try {
+      const game = await api.games.get(entry.id);
+      const gameState = game?.gameState && typeof game.gameState === 'object' ? game.gameState as Record<string, unknown> : {};
+      const chessState = gameState.chess && typeof gameState.chess === 'object' ? gameState.chess as Record<string, unknown> : {};
+      const moveHistory = Array.isArray(chessState.moveHistory) ? chessState.moveHistory : [];
+      const clockState = chessState.clock && typeof chessState.clock === 'object' ? chessState.clock as Record<string, unknown> : {};
+      const baseMs = Number(clockState.baseMs);
+      const incrementMs = Number(clockState.incrementMs);
+      const tempo =
+        Number.isFinite(baseMs) && Number.isFinite(incrementMs)
+          ? `${Math.round(baseMs / 60000)}+${Math.round(incrementMs / 1000)}`
+          : (entry.chessTempo || null);
+
+      setSelectedHistory({
+        id: entry.id,
+        gameType: entry.gameType,
+        opponentName: entry.opponentName,
+        createdAt: entry.createdAt,
+        winner: entry.winner,
+        points: entry.points,
+        chessTempo: tempo,
+        moves: moveHistory as Array<{
+          from: string;
+          to: string;
+          san: string;
+          ts?: string;
+          spentMs?: number;
+          remainingMs?: number;
+        }>,
+      });
+    } catch (err) {
+      setHistoryDetailError(err instanceof Error ? err.message : 'Maç detayları alınamadı.');
+    } finally {
+      setHistoryDetailLoading(false);
     }
   };
 
@@ -206,6 +271,11 @@ export const GameSection: React.FC<GameSectionProps> = ({
                     <p className="text-xs text-[var(--rf-muted)]">
                       Rakip: <span className="text-cyan-200">{item.opponentName}</span> · Masa {item.table}
                     </p>
+                    {item.gameType === 'Retro Satranç' && (
+                      <p className="text-xs text-cyan-300/85">
+                        Tempo: {item.chessTempo || '-'} · Hamle: {item.moveCount ?? 0}
+                      </p>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 text-xs">
                     <span className={`px-2 py-1 rounded border ${
@@ -215,6 +285,15 @@ export const GameSection: React.FC<GameSectionProps> = ({
                     }`}>
                       {item.didWin ? 'Kazandın' : 'Kaybettin'}
                     </span>
+                    {item.gameType === 'Retro Satranç' && (
+                      <button
+                        type="button"
+                        onClick={() => void openHistoryDetail(item)}
+                        className="px-2 py-1 rounded border border-cyan-400/30 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20"
+                      >
+                        Hamleleri Gör
+                      </button>
+                    )}
                     <span className="text-[var(--rf-muted)]">{new Date(item.createdAt).toLocaleDateString('tr-TR')}</span>
                   </div>
                 </article>
@@ -231,6 +310,56 @@ export const GameSection: React.FC<GameSectionProps> = ({
         onSubmit={onCreateGame}
         maxPoints={currentUser?.points ?? 0}
       />
+
+      {selectedHistory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-2xl max-h-[85vh] overflow-hidden rounded-xl border border-cyan-400/30 bg-[linear-gradient(165deg,rgba(3,16,40,0.96),rgba(4,28,56,0.92))]">
+            <div className="px-4 py-3 border-b border-cyan-400/20 flex items-center justify-between">
+              <div>
+                <h4 className="font-pixel text-white text-sm">SATRANÇ MAÇ KAYDI</h4>
+                <p className="text-xs text-[var(--rf-muted)]">
+                  {selectedHistory.opponentName} · {new Date(selectedHistory.createdAt).toLocaleString('tr-TR')} · Tempo {selectedHistory.chessTempo || '-'}
+                </p>
+              </div>
+              <button
+                type="button"
+                className="text-[var(--rf-muted)] hover:text-white"
+                onClick={() => setSelectedHistory(null)}
+              >
+                Kapat
+              </button>
+            </div>
+
+            <div className="p-4 max-h-[70vh] overflow-y-auto">
+              {historyDetailLoading ? (
+                <p className="text-sm text-[var(--rf-muted)]">Hamle kaydı yükleniyor...</p>
+              ) : historyDetailError ? (
+                <p className="text-sm text-rose-300">{historyDetailError}</p>
+              ) : selectedHistory.moves.length === 0 ? (
+                <p className="text-sm text-[var(--rf-muted)]">Bu maç için hamle kaydı bulunamadı.</p>
+              ) : (
+                <ol className="space-y-2">
+                  {selectedHistory.moves.map((move, index) => (
+                    <li
+                      key={`${move.ts || ''}-${index}`}
+                      className="rounded border border-cyan-400/15 bg-[#0b1d3c]/70 px-3 py-2 text-sm flex items-center justify-between gap-3"
+                    >
+                      <span className="text-cyan-100">
+                        {index + 1}. {move.san} ({move.from}→{move.to})
+                      </span>
+                      <span className="text-xs text-[var(--rf-muted)] whitespace-nowrap">
+                        {Number.isFinite(Number(move.spentMs))
+                          ? `${Math.round(Number(move.spentMs) / 1000)} sn`
+                          : ''}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

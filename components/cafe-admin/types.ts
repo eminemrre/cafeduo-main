@@ -3,7 +3,7 @@ import type { Reward, Cafe } from '../../types';
 export type CafeAdminTab = 'verification' | 'rewards' | 'settings';
 
 export type CafeCouponStatus = 'idle' | 'success' | 'error';
-export type CafePinStatus = 'idle' | 'success' | 'error';
+export type CafeLocationStatus = 'idle' | 'success' | 'error';
 
 export interface CouponItem {
   id?: number;
@@ -25,11 +25,13 @@ export interface RewardFormData {
 
 export interface CafeDashboardStats {
   rewardCount: number;
-  currentPin: string;
+  locationSummary: string;
   lastCouponCode: string | null;
 }
 
 export interface CafeInfoState {
   cafe: Cafe | null;
-  currentPin: string;
+  latitude: number | null;
+  longitude: number | null;
+  radius: number;
 }

@@ -29,7 +29,7 @@ const toErrorMessage = (err: unknown, fallback: string): string =>
 /**
  * useCafeSelection Hook
  *
- * @description Kafe listesi, masa/PIN doğrulama ve check-in akışını yönetir.
+ * @description Kafe listesi, masa/konum doğrulama ve check-in akışını yönetir.
  * UI bileşeni yalnızca sunum katmanını taşır.
  */
 export function useCafeSelection({

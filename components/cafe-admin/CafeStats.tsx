@@ -1,5 +1,5 @@
 import React from 'react';
-import { Gift, KeyRound, QrCode } from 'lucide-react';
+import { Gift, MapPin, QrCode } from 'lucide-react';
 import type { CafeDashboardStats } from './types';
 
 interface CafeStatsProps {
@@ -17,10 +17,10 @@ export const CafeStats: React.FC<CafeStatsProps> = ({ stats }) => {
         </div>
       </article>
       <article className="rf-panel rounded-xl p-4 border border-green-400/25">
-        <div className="text-[11px] tracking-[0.3em] uppercase text-green-300/80 mb-2">Güncel PIN</div>
+        <div className="text-[11px] tracking-[0.3em] uppercase text-green-300/80 mb-2">Konum Doğrulama</div>
         <div className="flex items-center justify-between">
-          <div className="text-2xl font-semibold font-mono">{stats.currentPin || '----'}</div>
-          <KeyRound size={18} className="text-green-300" />
+          <div className="text-sm font-semibold">{stats.locationSummary}</div>
+          <MapPin size={18} className="text-green-300" />
         </div>
       </article>
       <article className="rf-panel rounded-xl p-4 border border-amber-400/25">

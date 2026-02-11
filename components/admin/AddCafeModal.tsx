@@ -55,14 +55,44 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-gray-400 text-sm mb-2">PIN Kodu (4 Haneli) *</label>
+            <label className="block text-gray-400 text-sm mb-2">Enlem (Latitude) *</label>
             <input
-              type="text"
-              value={formData.pin}
-              onChange={(e) => onFormChange({ ...formData, pin: e.target.value.slice(0, 4) })}
+              type="number"
+              step="0.000001"
+              value={formData.latitude}
+              onChange={(e) => onFormChange({ ...formData, latitude: e.target.value })}
               className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500 font-mono text-lg"
-              placeholder="1234"
-              maxLength={4}
+              placeholder="37.741000"
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-400 text-sm mb-2">Boylam (Longitude) *</label>
+            <input
+              type="number"
+              step="0.000001"
+              value={formData.longitude}
+              onChange={(e) => onFormChange({ ...formData, longitude: e.target.value })}
+              className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500 font-mono text-lg"
+              placeholder="29.101000"
+            />
+          </div>
+
+          <div>
+            <label className="block text-gray-400 text-sm mb-2">Doğrulama Yarıçapı (metre) *</label>
+            <input
+              type="number"
+              min="10"
+              max="5000"
+              value={formData.radius}
+              onChange={(e) =>
+                onFormChange({
+                  ...formData,
+                  radius: Number.parseInt(e.target.value || '0', 10),
+                })
+              }
+              className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-blue-500"
+              placeholder="150"
             />
           </div>
 
@@ -85,4 +115,3 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
     </div>
   );
 };
-

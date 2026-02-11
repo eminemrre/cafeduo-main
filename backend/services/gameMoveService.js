@@ -21,6 +21,52 @@ const createGameMoveService = ({
   getMemoryGames,
   emitRealtimeUpdate,
 }) => {
+  const DEFAULT_CLOCK = Object.freeze({
+    baseMs: 3 * 60 * 1000,
+    incrementMs: 2 * 1000,
+  });
+
+  const toIsoTime = (input) => {
+    const parsed = Date.parse(String(input || ''));
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const normalizeClockState = (rawClock) => {
+    const source = rawClock && typeof rawClock === 'object' ? rawClock : {};
+    const baseMs = Math.max(60_000, Math.min(1_800_000, Math.floor(Number(source.baseMs || DEFAULT_CLOCK.baseMs))));
+    const incrementMs = Math.max(0, Math.min(30_000, Math.floor(Number(source.incrementMs || DEFAULT_CLOCK.incrementMs))));
+
+    const whiteMsRaw = Number(source.whiteMs);
+    const blackMsRaw = Number(source.blackMs);
+    const whiteMs = Number.isFinite(whiteMsRaw) ? Math.max(0, Math.floor(whiteMsRaw)) : baseMs;
+    const blackMs = Number.isFinite(blackMsRaw) ? Math.max(0, Math.floor(blackMsRaw)) : baseMs;
+    const lastTickAt = toIsoTime(source.lastTickAt) ? new Date(toIsoTime(source.lastTickAt)).toISOString() : null;
+    const label = source.label ? String(source.label).slice(0, 32) : `${Math.round(baseMs / 60000)}+${Math.round(incrementMs / 1000)}`;
+
+    return {
+      baseMs,
+      incrementMs,
+      whiteMs,
+      blackMs,
+      lastTickAt,
+      label,
+    };
+  };
+
+  const applyElapsedToClock = (clockState, activeColor, nowMs) => {
+    const key = activeColor === 'w' ? 'whiteMs' : 'blackMs';
+    const activeBefore = Number(clockState[key] || 0);
+    const startedAtMs = toIsoTime(clockState.lastTickAt);
+    const elapsedMs =
+      startedAtMs && nowMs > startedAtMs ? Math.max(0, Math.floor(nowMs - startedAtMs)) : 0;
+    const remainingMs = Math.max(0, activeBefore - elapsedMs);
+    return {
+      key,
+      elapsedMs,
+      remainingMs,
+    };
+  };
+
   const makeMove = async (req, res) => {
     const { id } = req.params;
     const { player, move, gameState, scoreSubmission, chessMove, liveSubmission } = req.body || {};
@@ -89,12 +135,67 @@ const createGameMoveService = ({
             currentState.chess && typeof currentState.chess === 'object'
               ? currentState.chess
               : createInitialChessState();
+          const normalizedClock = normalizeClockState(currentChessState.clock);
+          const nowMs = Date.now();
+          const nowIso = new Date(nowMs).toISOString();
+          const elapsed = applyElapsedToClock(normalizedClock, resolvedColor, nowMs);
 
           let chess;
           try {
             chess = new Chess(String(currentChessState.fen || ''));
           } catch {
             chess = new Chess();
+          }
+
+          if (elapsed.remainingMs <= 0) {
+            const hostName = String(game.host_name || '').trim();
+            const guestName = String(game.guest_name || '').trim();
+            const timeoutWinner = resolvedColor === 'w' ? guestName : hostName;
+
+            const timeoutState = {
+              ...currentState,
+              chess: {
+                ...buildChessStateFromEngine(chess, currentChessState, null),
+                winner: timeoutWinner || null,
+                result: 'timeout',
+                isGameOver: true,
+                timedOutColor: resolvedColor,
+                clock: {
+                  ...normalizedClock,
+                  [elapsed.key]: 0,
+                  lastTickAt: null,
+                },
+                updatedAt: nowIso,
+              },
+              ...(timeoutWinner ? { resolvedWinner: timeoutWinner } : {}),
+            };
+
+            await client.query(
+              `
+                UPDATE games
+                SET game_state = $1::jsonb,
+                    status = 'finished',
+                    winner = $2
+                WHERE id = $3
+              `,
+              [JSON.stringify(timeoutState), timeoutWinner || null, id]
+            );
+
+            await client.query('COMMIT');
+            emitRealtimeUpdate(id, {
+              type: 'chess_state',
+              gameId: id,
+              status: 'finished',
+              winner: timeoutWinner || null,
+              chess: timeoutState.chess,
+            });
+            return res.json({
+              success: true,
+              status: 'finished',
+              winner: timeoutWinner || null,
+              gameState: timeoutState,
+              timeout: true,
+            });
           }
 
           if (chess.turn() !== resolvedColor) {
@@ -116,6 +217,27 @@ const createGameMoveService = ({
             gameOver && nextChessState.result === 'checkmate'
               ? (resolvedColor === 'w' ? hostName : guestName)
               : null;
+
+          const incrementedRemaining = Math.min(
+            3_600_000,
+            elapsed.remainingMs + normalizedClock.incrementMs
+          );
+          const nextClock = {
+            ...normalizedClock,
+            [elapsed.key]: incrementedRemaining,
+            lastTickAt: gameOver ? null : nowIso,
+          };
+
+          if (Array.isArray(nextChessState.moveHistory) && nextChessState.moveHistory.length > 0) {
+            const latestMove = nextChessState.moveHistory[nextChessState.moveHistory.length - 1];
+            nextChessState.moveHistory[nextChessState.moveHistory.length - 1] = {
+              ...latestMove,
+              spentMs: elapsed.elapsedMs,
+              remainingMs: incrementedRemaining,
+            };
+          }
+          nextChessState.clock = nextClock;
+          nextChessState.updatedAt = nowIso;
 
           const nextState = {
             ...currentState,
@@ -432,12 +554,55 @@ const createGameMoveService = ({
         game.gameState?.chess && typeof game.gameState.chess === 'object'
           ? game.gameState.chess
           : createInitialChessState();
+      const normalizedClock = normalizeClockState(currentChessState.clock);
+      const nowMs = Date.now();
+      const nowIso = new Date(nowMs).toISOString();
+      const elapsed = applyElapsedToClock(normalizedClock, resolvedColor, nowMs);
 
       let chess;
       try {
         chess = new Chess(String(currentChessState.fen || ''));
       } catch {
         chess = new Chess();
+      }
+
+      if (elapsed.remainingMs <= 0) {
+        const timeoutWinner =
+          resolvedColor === 'w' ? String(game.guestName || '').trim() : String(game.hostName || '').trim();
+        game.status = GAME_STATUS.FINISHED;
+        game.winner = timeoutWinner || null;
+        game.gameState = {
+          ...(game.gameState || {}),
+          chess: {
+            ...buildChessStateFromEngine(chess, currentChessState, null),
+            winner: timeoutWinner || null,
+            result: 'timeout',
+            isGameOver: true,
+            timedOutColor: resolvedColor,
+            clock: {
+              ...normalizedClock,
+              [elapsed.key]: 0,
+              lastTickAt: null,
+            },
+            updatedAt: nowIso,
+          },
+          ...(timeoutWinner ? { resolvedWinner: timeoutWinner } : {}),
+        };
+
+        emitRealtimeUpdate(id, {
+          type: 'chess_state',
+          gameId: id,
+          status: game.status,
+          winner: timeoutWinner || null,
+          chess: game.gameState.chess,
+        });
+        return res.json({
+          success: true,
+          gameState: game.gameState,
+          status: game.status,
+          winner: timeoutWinner || null,
+          timeout: true,
+        });
       }
 
       if (chess.turn() !== resolvedColor) {
@@ -455,6 +620,27 @@ const createGameMoveService = ({
         gameOver && nextChessState.result === 'checkmate'
           ? (resolvedColor === 'w' ? String(game.hostName || '').trim() : String(game.guestName || '').trim())
           : null;
+
+      const incrementedRemaining = Math.min(
+        3_600_000,
+        elapsed.remainingMs + normalizedClock.incrementMs
+      );
+      const nextClock = {
+        ...normalizedClock,
+        [elapsed.key]: incrementedRemaining,
+        lastTickAt: gameOver ? null : nowIso,
+      };
+
+      if (Array.isArray(nextChessState.moveHistory) && nextChessState.moveHistory.length > 0) {
+        const latestMove = nextChessState.moveHistory[nextChessState.moveHistory.length - 1];
+        nextChessState.moveHistory[nextChessState.moveHistory.length - 1] = {
+          ...latestMove,
+          spentMs: elapsed.elapsedMs,
+          remainingMs: incrementedRemaining,
+        };
+      }
+      nextChessState.clock = nextClock;
+      nextChessState.updatedAt = nowIso;
 
       game.gameState = {
         ...(game.gameState || {}),

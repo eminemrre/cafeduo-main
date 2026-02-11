@@ -24,6 +24,29 @@ const FALLBACK_CAFES = [
     },
 ];
 
+const hasCafeManagementAccess = (user, cafeId) => {
+    if (!user) return false;
+    if (user.role === 'admin' || user.isAdmin) return true;
+    if (user.role !== 'cafe_admin') return false;
+    return Number(user.cafe_id) === Number(cafeId);
+};
+
+const parseRadius = (value, fallback = 150) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+        return fallback;
+    }
+    return parsed;
+};
+
+const parseCoordinate = (value) => {
+    if (value === null || value === undefined || value === '') {
+        return null;
+    }
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+};
+
 const cafeController = {
     // GET ALL CAFES
     async getAllCafes(req, res) {
@@ -56,6 +79,10 @@ const cafeController = {
         const { id } = req.params;
         const { pin } = req.body;
 
+        if (!hasCafeManagementAccess(req.user, id)) {
+            return res.status(403).json({ error: 'Bu kafe için işlem yetkiniz yok.' });
+        }
+
         if (!pin || !/^\d{4,6}$/.test(String(pin))) {
             return res.status(400).json({ error: '4-6 haneli PIN giriniz.' });
         }
@@ -76,6 +103,54 @@ const cafeController = {
         }
     },
 
+    // UPDATE CAFE LOCATION (Protected: Cafe Admin)
+    async updateLocation(req, res) {
+        const { id } = req.params;
+        const { latitude, longitude, radius } = req.body || {};
+
+        if (!hasCafeManagementAccess(req.user, id)) {
+            return res.status(403).json({ error: 'Bu kafe için işlem yetkiniz yok.' });
+        }
+
+        const parsedLatitude = Number(latitude);
+        const parsedLongitude = Number(longitude);
+        const parsedRadius = Number(radius);
+
+        if (!Number.isFinite(parsedLatitude) || parsedLatitude < -90 || parsedLatitude > 90) {
+            return res.status(400).json({ error: 'Enlem değeri -90 ile 90 arasında olmalıdır.' });
+        }
+
+        if (!Number.isFinite(parsedLongitude) || parsedLongitude < -180 || parsedLongitude > 180) {
+            return res.status(400).json({ error: 'Boylam değeri -180 ile 180 arasında olmalıdır.' });
+        }
+
+        if (!Number.isFinite(parsedRadius) || parsedRadius < 10 || parsedRadius > 5000) {
+            return res.status(400).json({ error: 'Yarıçap 10-5000 metre aralığında olmalıdır.' });
+        }
+
+        try {
+            const result = await pool.query(
+                'UPDATE cafes SET latitude = $1, longitude = $2, radius = $3 WHERE id = $4 RETURNING id, name, latitude, longitude, radius',
+                [parsedLatitude, parsedLongitude, Math.round(parsedRadius), id]
+            );
+
+            if (result.rows.length === 0) {
+                return res.status(404).json({ error: 'Kafe bulunamadı.' });
+            }
+
+            await clearCache(`cache:/api/cafes*`);
+
+            return res.json({
+                success: true,
+                message: 'Kafe konumu güncellendi.',
+                cafe: result.rows[0],
+            });
+        } catch (err) {
+            console.error('updateLocation error:', err);
+            return res.status(500).json({ error: 'Kafe konumu güncellenemedi.' });
+        }
+    },
+
     // CHECK-IN (Location based)
     async checkIn(req, res) {
         const { id } = req.params;
@@ -92,7 +167,7 @@ const cafeController = {
             const cafe = FALLBACK_CAFES.find((item) => Number(item.id) === Number(id));
             if (!cafe) return res.status(404).json({ error: 'Kafe bulunamadı.' });
 
-            const fallbackRadius = Number(cafe.radius || 150);
+            const fallbackRadius = parseRadius(cafe.radius, 150);
             const distance = getDistanceFromLatLonInMeters(
                 parsedLatitude,
                 parsedLongitude,
@@ -142,18 +217,26 @@ const cafeController = {
             const cafe = cafeResult.rows[0];
 
             // 2. Location Check (Geofencing)
-            if (cafe.latitude && cafe.longitude) {
-                const radius = Number(cafe.radius || 150);
-                const distance = getDistanceFromLatLonInMeters(
-                    parsedLatitude, parsedLongitude,
-                    parseFloat(cafe.latitude), parseFloat(cafe.longitude)
-                );
+            const cafeLatitude = parseCoordinate(cafe.latitude);
+            const cafeLongitude = parseCoordinate(cafe.longitude);
+            if (cafeLatitude === null || cafeLongitude === null) {
+                return res.status(400).json({
+                    error: 'Bu kafe için konum doğrulaması henüz ayarlanmadı. Lütfen kafe yetkilisine bildirin.',
+                });
+            }
 
-                if (distance > radius) {
-                    return res.status(400).json({
-                        error: `Kafeden çok uzaktasınız. Lütfen ${radius} metre içine yaklaşın.`,
-                    });
-                }
+            const radius = parseRadius(cafe.radius, 150);
+            const distance = getDistanceFromLatLonInMeters(
+                parsedLatitude,
+                parsedLongitude,
+                cafeLatitude,
+                cafeLongitude
+            );
+
+            if (!Number.isFinite(distance) || distance > radius) {
+                return res.status(400).json({
+                    error: `Kafeden çok uzaktasınız. Lütfen ${radius} metre içine yaklaşın.`,
+                });
             }
 
             const maxTableCount = Number(cafe.table_count || cafe.total_tables || 20);

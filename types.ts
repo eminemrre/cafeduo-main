@@ -48,6 +48,11 @@ export interface GameRequest {
   player1Move?: string;
   player2Move?: string;
   gameState?: unknown;
+  chessClock?: {
+    baseSeconds: number;
+    incrementSeconds: number;
+    label?: string;
+  };
 }
 
 export interface GameHistoryEntry {
@@ -60,6 +65,8 @@ export interface GameHistoryEntry {
   winner: string | null;
   didWin: boolean;
   createdAt: string;
+  moveCount?: number;
+  chessTempo?: string | null;
 }
 
 export interface AdminGameRow {

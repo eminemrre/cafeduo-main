@@ -121,7 +121,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
   // ==========================================
 
   // Oyun kurma
-  const handleCreateGame = async (gameType: string, points: number) => {
+  const handleCreateGame = async (
+    gameType: string,
+    points: number,
+    options?: { chessClock?: { baseSeconds: number; incrementSeconds: number; label: string } }
+  ) => {
     if (!isMatched) {
       alert('Oyun kurmak için önce bir masaya bağlanmalısın!');
       setIsCreateModalOpen(false);
@@ -129,7 +133,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
     }
 
     try {
-      await createGame(gameType, points);
+      await createGame(gameType, points, options);
       setIsCreateModalOpen(false);
     } catch (err) {
       alert('Oyun kurulurken hata oluştu.');

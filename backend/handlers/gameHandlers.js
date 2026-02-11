@@ -25,11 +25,81 @@ const createGameHandlers = ({
   const isAdminActor = (user) => user?.role === 'admin' || user?.isAdmin === true;
   const CHESS_GAME_TYPE = 'Retro Satranç';
   const CHESS_SQUARE_RE = /^[a-h][1-8]$/;
+  const DEFAULT_CHESS_CLOCK = Object.freeze({
+    baseMs: 3 * 60 * 1000,
+    incrementMs: 2 * 1000,
+    label: '3+2 Blitz',
+  });
+  const CHESS_CLOCK_LIMITS = Object.freeze({
+    minBaseSeconds: 60,
+    maxBaseSeconds: 1800,
+    minIncrementSeconds: 0,
+    maxIncrementSeconds: 30,
+  });
 
   const isChessGameType = (gameType) => String(gameType || '').trim() === CHESS_GAME_TYPE;
 
-  const createInitialChessState = () => {
+  const normalizeChessClockConfig = (rawClock) => {
+    if (!rawClock || typeof rawClock !== 'object') {
+      return { ...DEFAULT_CHESS_CLOCK };
+    }
+
+    const rawBaseSeconds = Number(
+      rawClock.baseSeconds !== undefined
+        ? rawClock.baseSeconds
+        : rawClock.baseMs !== undefined
+          ? Number(rawClock.baseMs) / 1000
+          : DEFAULT_CHESS_CLOCK.baseMs / 1000
+    );
+    const rawIncrementSeconds = Number(
+      rawClock.incrementSeconds !== undefined
+        ? rawClock.incrementSeconds
+        : rawClock.incrementMs !== undefined
+          ? Number(rawClock.incrementMs) / 1000
+          : DEFAULT_CHESS_CLOCK.incrementMs / 1000
+    );
+
+    const safeBaseSeconds = Number.isFinite(rawBaseSeconds)
+      ? Math.min(CHESS_CLOCK_LIMITS.maxBaseSeconds, Math.max(CHESS_CLOCK_LIMITS.minBaseSeconds, Math.floor(rawBaseSeconds)))
+      : DEFAULT_CHESS_CLOCK.baseMs / 1000;
+    const safeIncrementSeconds = Number.isFinite(rawIncrementSeconds)
+      ? Math.min(
+          CHESS_CLOCK_LIMITS.maxIncrementSeconds,
+          Math.max(CHESS_CLOCK_LIMITS.minIncrementSeconds, Math.floor(rawIncrementSeconds))
+        )
+      : DEFAULT_CHESS_CLOCK.incrementMs / 1000;
+
+    return {
+      baseMs: safeBaseSeconds * 1000,
+      incrementMs: safeIncrementSeconds * 1000,
+      label: `${safeBaseSeconds / 60}+${safeIncrementSeconds}`,
+    };
+  };
+
+  const activateChessClockState = (state) => {
+    const source = state && typeof state === 'object' ? state : createInitialChessState();
+    const sourceClock = source.clock && typeof source.clock === 'object' ? source.clock : DEFAULT_CHESS_CLOCK;
+    const config = normalizeChessClockConfig(sourceClock);
+    const nowIso = new Date().toISOString();
+
+    return {
+      ...source,
+      clock: {
+        baseMs: config.baseMs,
+        incrementMs: config.incrementMs,
+        label: sourceClock.label || config.label,
+        whiteMs: Number.isFinite(Number(sourceClock.whiteMs)) ? Number(sourceClock.whiteMs) : config.baseMs,
+        blackMs: Number.isFinite(Number(sourceClock.blackMs)) ? Number(sourceClock.blackMs) : config.baseMs,
+        lastTickAt: nowIso,
+      },
+      startedAt: source.startedAt || nowIso,
+      updatedAt: nowIso,
+    };
+  };
+
+  const createInitialChessState = (rawClockConfig) => {
     const chess = new Chess();
+    const clockConfig = normalizeChessClockConfig(rawClockConfig);
     return {
       version: 1,
       fen: chess.fen(),
@@ -38,6 +108,15 @@ const createGameHandlers = ({
       isGameOver: false,
       result: null,
       moveHistory: [],
+      clock: {
+        baseMs: clockConfig.baseMs,
+        incrementMs: clockConfig.incrementMs,
+        label: clockConfig.label,
+        whiteMs: clockConfig.baseMs,
+        blackMs: clockConfig.baseMs,
+        lastTickAt: null,
+      },
+      startedAt: null,
       updatedAt: new Date().toISOString(),
     };
   };
@@ -468,7 +547,7 @@ const createGameHandlers = ({
         }
 
         const initialGameState = isChessGameType(gameType)
-          ? { chess: createInitialChessState() }
+          ? { chess: createInitialChessState(req.body?.chessClock) }
           : {};
 
         const result = await client.query(
@@ -528,7 +607,7 @@ const createGameHandlers = ({
       table,
       status: 'waiting',
       guestName: null,
-      gameState: isChessGameType(gameType) ? { chess: createInitialChessState() } : {},
+      gameState: isChessGameType(gameType) ? { chess: createInitialChessState(req.body?.chessClock) } : {},
       createdAt: new Date().toISOString(),
     };
     const nextGames = [newGame, ...memoryGames];
@@ -660,11 +739,22 @@ const createGameHandlers = ({
           return res.status(409).json({ error: 'Bu kullanıcı zaten aktif bir oyunda.' });
         }
 
+        const nextGameState = (() => {
+          const current =
+            game.game_state && typeof game.game_state === 'object' ? { ...game.game_state } : {};
+          if (!isChessGameType(game.game_type)) return current;
+          return {
+            ...current,
+            chess: activateChessClockState(current.chess),
+          };
+        })();
+
         const updatedResult = await client.query(
           `
             UPDATE games
             SET status = 'active',
-                guest_name = $1
+                guest_name = $1,
+                game_state = $3::jsonb
             WHERE id = $2
               AND status = 'waiting'
             RETURNING
@@ -678,7 +768,7 @@ const createGameHandlers = ({
               game_state as "gameState",
               created_at as "createdAt"
           `,
-          [guestName, id]
+          [guestName, id, JSON.stringify(nextGameState)]
         );
 
         if (updatedResult.rows.length === 0) {
@@ -749,6 +839,13 @@ const createGameHandlers = ({
 
     game.status = 'active';
     game.guestName = guestName;
+    if (isChessGameType(game.gameType)) {
+      const current = game.gameState && typeof game.gameState === 'object' ? { ...game.gameState } : {};
+      game.gameState = {
+        ...current,
+        chess: activateChessClockState(current.chess),
+      };
+    }
     emitRealtimeUpdate(game.id, {
       type: 'game_joined',
       gameId: game.id,
@@ -767,6 +864,8 @@ const createGameHandlers = ({
 
   const getGameState = async (req, res) => {
     const { id } = req.params;
+    const actor = String(req.user?.username || '').trim().toLowerCase();
+    const adminActor = isAdminActor(req.user);
     if (await isDbConnected()) {
       const result = await pool.query(
         `
@@ -789,7 +888,13 @@ const createGameHandlers = ({
         [id]
       );
       if (result.rows.length > 0) {
-        return res.json(result.rows[0]);
+        const row = result.rows[0];
+        const host = String(row.hostName || '').trim().toLowerCase();
+        const guest = String(row.guestName || '').trim().toLowerCase();
+        if (!adminActor && actor && actor !== host && actor !== guest) {
+          return res.status(403).json({ error: 'Bu oyunun detaylarını görme yetkin yok.' });
+        }
+        return res.json(row);
       }
       return res.status(404).json({ error: 'Game not found' });
     }
@@ -797,6 +902,11 @@ const createGameHandlers = ({
     const game = getMemoryGames().find((item) => String(item.id) === String(id));
     if (!game) {
       return res.status(404).json({ error: 'Game not found' });
+    }
+    const host = String(game.hostName || '').trim().toLowerCase();
+    const guest = String(game.guestName || '').trim().toLowerCase();
+    if (!adminActor && actor && actor !== host && actor !== guest) {
+      return res.status(403).json({ error: 'Bu oyunun detaylarını görme yetkin yok.' });
     }
     return res.json(game);
   };
@@ -821,6 +931,16 @@ const createGameHandlers = ({
       const isHost = hostName.toLowerCase() === actorLower;
       const opponentName = isHost ? guestName || 'Rakip' : hostName || 'Rakip';
       const winner = game.winner ? String(game.winner) : null;
+      const gameState = game.gameState && typeof game.gameState === 'object' ? game.gameState : {};
+      const chessState = gameState.chess && typeof gameState.chess === 'object' ? gameState.chess : {};
+      const moveHistory = Array.isArray(chessState.moveHistory) ? chessState.moveHistory : [];
+      const clockState = chessState.clock && typeof chessState.clock === 'object' ? chessState.clock : {};
+      const baseMs = Number(clockState.baseMs);
+      const incrementMs = Number(clockState.incrementMs);
+      const tempoLabel =
+        Number.isFinite(baseMs) && Number.isFinite(incrementMs)
+          ? `${Math.round(baseMs / 60000)}+${Math.round(incrementMs / 1000)}`
+          : null;
 
       return {
         id: game.id,
@@ -832,6 +952,8 @@ const createGameHandlers = ({
         didWin: Boolean(winner) && winner.toLowerCase() === targetUsername.toLowerCase(),
         opponentName,
         createdAt: game.createdAt || game.created_at || new Date().toISOString(),
+        moveCount: moveHistory.length,
+        chessTempo: tempoLabel,
       };
     };
 
@@ -848,6 +970,7 @@ const createGameHandlers = ({
               table_code as "table",
               status,
               winner,
+              game_state as "gameState",
               created_at as "createdAt"
             FROM games
             WHERE status = 'finished'

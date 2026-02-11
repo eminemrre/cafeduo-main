@@ -33,9 +33,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface DashboardProps {
   currentUser: User;
   onUpdateUser: (user: User) => void;
+  onRefreshUser?: () => Promise<void> | void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser, onRefreshUser }) => {
   const normalizeTableCode = (raw: unknown): string => {
     const value = String(raw || '').trim().toUpperCase();
     if (!value || value === 'NULL' || value === 'UNDEFINED') return '';
@@ -228,18 +229,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser 
 
   // Oyun sonu (istatistik + puan güncelleme)
   const handleGameFinish = (winner: string, earnedPoints: number) => {
-    const didWin = winner === currentUser.username;
-    const safeEarnedPoints = Number.isFinite(earnedPoints) ? Math.max(0, earnedPoints) : 0;
+    leaveGame();
+    void refetch();
+    if (onRefreshUser) {
+      void onRefreshUser();
+      return;
+    }
 
-    const updatedUser = {
+    // Legacy fallback (test/mock environments)
+    const didWin = winner === currentUser.username;
+    const safeEarnedPoints = Number.isFinite(earnedPoints) ? earnedPoints : 0;
+    onUpdateUser({
       ...currentUser,
-      points: (currentUser.points || 0) + safeEarnedPoints,
+      points: Math.max(0, (currentUser.points || 0) + safeEarnedPoints),
       wins: (currentUser.wins || 0) + (didWin ? 1 : 0),
       gamesPlayed: (currentUser.gamesPlayed || 0) + 1,
-    };
-
-    onUpdateUser(updatedUser);
-    leaveGame();
+    });
   };
 
   // ==========================================

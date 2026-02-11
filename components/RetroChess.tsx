@@ -54,20 +54,20 @@ const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'] as const;
 
 const PIECE_ASSET: Record<'w' | 'b', Record<'p' | 'n' | 'b' | 'r' | 'q' | 'k', string>> = {
   w: {
-    p: '/assets/games/retro-kit/chess/white-pawn.png',
-    n: '/assets/games/retro-kit/chess/white-knight.png',
-    b: '/assets/games/retro-kit/chess/white-bishop.png',
-    r: '/assets/games/retro-kit/chess/white-rook.png',
-    q: '/assets/games/retro-kit/chess/white-queen.png',
-    k: '/assets/games/retro-kit/chess/white-king.png',
+    p: '♙',
+    n: '♘',
+    b: '♗',
+    r: '♖',
+    q: '♕',
+    k: '♔',
   },
   b: {
-    p: '/assets/games/retro-kit/chess/black-pawn.png',
-    n: '/assets/games/retro-kit/chess/black-knight.png',
-    b: '/assets/games/retro-kit/chess/black-bishop.png',
-    r: '/assets/games/retro-kit/chess/black-rook.png',
-    q: '/assets/games/retro-kit/chess/black-queen.png',
-    k: '/assets/games/retro-kit/chess/black-king.png',
+    p: '♟',
+    n: '♞',
+    b: '♝',
+    r: '♜',
+    q: '♛',
+    k: '♚',
   },
 };
 
@@ -119,6 +119,11 @@ export const RetroChess: React.FC<RetroChessProps> = ({
   const concludeRef = useRef(false);
   const pollingRef = useRef<number | null>(null);
   const requestInFlightRef = useRef(false);
+  const chessFenRef = useRef<string>(chess.fen());
+
+  useEffect(() => {
+    chessFenRef.current = chess.fen();
+  }, [chess]);
 
   const playerColor = useMemo<'w' | 'b' | null>(() => {
     if (isBot) return 'w';
@@ -154,8 +159,15 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     const label = winner ? `${winner} kazandı.` : `${inferResultLabel(engine)} ile bitti.`;
     setMessage(label);
     setLiveResultLabel(winner ? 'Kazanan belirlendi' : inferResultLabel(engine));
+    if (!isBot && gameId) {
+      void api.games
+        .finish(gameId, winner || '')
+        .catch((err) => {
+          console.error('RetroChess finish sync failed', err);
+        });
+    }
     window.setTimeout(() => onGameEnd(winner || 'Berabere', points), 700);
-  }, [currentUser.username, onGameEnd]);
+  }, [currentUser.username, gameId, isBot, onGameEnd]);
 
   const applyGameSnapshot = useCallback((snapshot: GameSnapshot) => {
     if (snapshot.hostName) setHostName(String(snapshot.hostName));
@@ -165,8 +177,13 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     if (winner) setServerWinner(winner);
 
     const nextEngine = loadChess(snapshot.gameState?.chess?.fen);
-    setChess(nextEngine);
-    clearSelection();
+    const nextFen = nextEngine.fen();
+    const hasBoardChanged = chessFenRef.current !== nextFen;
+    if (hasBoardChanged) {
+      setChess(nextEngine);
+      chessFenRef.current = nextFen;
+      clearSelection();
+    }
 
     const gameOverByServer = String(snapshot.status || '').toLowerCase() === 'finished';
     const gameOverByBoard =
@@ -238,8 +255,13 @@ export const RetroChess: React.FC<RetroChessProps> = ({
 
       if (payload.chess?.fen) {
         const engine = loadChess(payload.chess.fen);
-        setChess(engine);
-        clearSelection();
+        const nextFen = engine.fen();
+        const hasBoardChanged = chessFenRef.current !== nextFen;
+        if (hasBoardChanged) {
+          setChess(engine);
+          chessFenRef.current = nextFen;
+          clearSelection();
+        }
         if (payload.status) setServerStatus(String(payload.status));
         const winner = normalizeWinner(payload.winner || payload.chess.winner);
         if (winner) setServerWinner(winner);
@@ -469,12 +491,20 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                   className={`relative aspect-square rounded border transition ${baseClass} ${selectedClass} ${legalClass} disabled:cursor-not-allowed`}
                 >
                   {piece && (
-                    <img
-                      src={PIECE_ASSET[piece.color][piece.type]}
-                      alt=""
+                    <span
                       aria-hidden="true"
-                      className="w-[72%] h-[72%] object-contain mx-auto"
-                    />
+                      className={`block w-full text-center leading-none select-none ${
+                        piece.color === 'w'
+                          ? 'text-[#f8fafc] [text-shadow:0_1px_0_rgba(15,23,42,0.75),0_0_10px_rgba(186,230,253,0.35)]'
+                          : 'text-[#0b1220] [text-shadow:0_1px_0_rgba(226,232,240,0.28),0_0_10px_rgba(15,23,42,0.5)]'
+                      }`}
+                      style={{
+                        fontSize: 'clamp(1.45rem, 4.2vw, 2.2rem)',
+                        fontFamily: '"Noto Sans Symbols 2","Segoe UI Symbol","Arial Unicode MS",serif',
+                      }}
+                    >
+                      {PIECE_ASSET[piece.color][piece.type]}
+                    </span>
                   )}
                 </button>
               );

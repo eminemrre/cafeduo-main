@@ -227,6 +227,17 @@ const App: React.FC = () => {
     }
   };
 
+  const handleRefreshUser = async () => {
+    try {
+      const verifiedUser = await api.auth.verifyToken();
+      if (!verifiedUser) return;
+      setCurrentUser(verifiedUser);
+      localStorage.setItem('cafe_user', JSON.stringify(verifiedUser));
+    } catch (error) {
+      console.error('Failed to refresh user', error);
+    }
+  };
+
   const handleCheckInSuccess = (cafeName: string, tableNumber: string, cafeId: string | number) => {
     if (currentUser) {
       const updatedUser = { ...currentUser, cafe_name: cafeName, table_number: tableNumber, cafe_id: cafeId }; // Optimistic update
@@ -275,7 +286,11 @@ const App: React.FC = () => {
                   {requiresCheckIn(currentUser) ? (
                     <CafeSelection currentUser={currentUser!} onCheckInSuccess={handleCheckInSuccess} />
                   ) : (
-                    <Dashboard currentUser={currentUser!} onUpdateUser={handleUpdateUser} />
+                    <Dashboard
+                      currentUser={currentUser!}
+                      onUpdateUser={handleUpdateUser}
+                      onRefreshUser={handleRefreshUser}
+                    />
                   )}
                 </ErrorBoundary>
               </ProtectedRoute>

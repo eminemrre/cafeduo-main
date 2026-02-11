@@ -34,9 +34,9 @@ describe('gameHandlers (memory mode)', () => {
   beforeEach(() => {
     memoryGames = [];
     memoryUsers = [
-      { id: 1, username: 'u1', cafe_id: 1, table_number: 5 },
-      { id: 2, username: 'u2', cafe_id: 1, table_number: 7 },
-      { id: 3, username: 'u3', cafe_id: 2, table_number: 9 },
+      { id: 1, username: 'u1', cafe_id: 1, table_number: 5, points: 200, wins: 0, gamesPlayed: 0 },
+      { id: 2, username: 'u2', cafe_id: 1, table_number: 7, points: 200, wins: 0, gamesPlayed: 0 },
+      { id: 3, username: 'u3', cafe_id: 2, table_number: 9, points: 50, wins: 0, gamesPlayed: 0 },
     ];
 
     handlers = createGameHandlers({
@@ -233,6 +233,30 @@ describe('gameHandlers (memory mode)', () => {
     expect(res.payload).toMatchObject({ error: 'Oyun dolu.' });
   });
 
+  it('rejects join when player has insufficient points for stake', async () => {
+    memoryGames = [
+      {
+        id: 75,
+        hostName: 'u1',
+        gameType: 'Refleks Avı',
+        points: 120,
+        table: 'MASA05',
+        status: 'waiting',
+      },
+    ];
+
+    const joinReq = {
+      params: { id: '75' },
+      user: { username: 'u3', role: 'user', isAdmin: false, table_number: '9', cafe_id: 2, points: 50 },
+    };
+    const res = createMockRes();
+
+    await handlers.joinGame(joinReq, res);
+
+    expect(res.statusCode).toBe(400);
+    expect(res.payload?.error).toContain('120');
+  });
+
   it('rejects join when status transition is invalid', async () => {
     memoryGames = [
       {
@@ -369,6 +393,38 @@ describe('gameHandlers (memory mode)', () => {
     await handlers.deleteGame(deleteReq, deleteRes);
     expect(deleteRes.statusCode).toBe(200);
     expect(memoryGames).toHaveLength(0);
+  });
+
+  it('applies point transfer on finish (winner +stake, loser -stake)', async () => {
+    memoryGames = [
+      {
+        id: 32,
+        hostName: 'u1',
+        guestName: 'u2',
+        gameType: 'Tank Düellosu',
+        points: 40,
+        table: 'MASA01',
+        status: 'active',
+        gameState: { resolvedWinner: 'u1' },
+      },
+    ];
+
+    const finishReq = {
+      params: { id: '32' },
+      user: { username: 'u1', role: 'user', isAdmin: false },
+      body: {},
+    };
+    const finishRes = createMockRes();
+    await handlers.finishGame(finishReq, finishRes);
+
+    expect(finishRes.statusCode).toBe(200);
+    const winner = memoryUsers.find((u) => u.username === 'u1');
+    const loser = memoryUsers.find((u) => u.username === 'u2');
+    expect(winner.points).toBe(240);
+    expect(loser.points).toBe(160);
+    expect(winner.wins).toBe(1);
+    expect(winner.gamesPlayed).toBe(1);
+    expect(loser.gamesPlayed).toBe(1);
   });
 
   it('returns recent finished game history for actor', async () => {

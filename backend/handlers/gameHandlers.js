@@ -143,6 +143,158 @@ const createGameHandlers = ({
     }
   };
 
+  const normalizeParticipantKey = (value) => String(value || '').trim().toLowerCase();
+
+  const applyDbSettlement = async ({
+    client,
+    game,
+    winnerName,
+    isDraw,
+  }) => {
+    const hostName = String(game.host_name || '').trim();
+    const guestName = String(game.guest_name || '').trim();
+    const participants = [hostName, guestName].filter(Boolean);
+    if (participants.length === 0) {
+      return { transferredPoints: 0 };
+    }
+
+    const uniqueLowerParticipants = Array.from(
+      new Set(participants.map((name) => normalizeParticipantKey(name)).filter(Boolean))
+    );
+
+    const usersResult = await client.query(
+      `
+        SELECT id, username, points
+        FROM users
+        WHERE LOWER(username) = ANY($1::text[])
+        FOR UPDATE
+      `,
+      [uniqueLowerParticipants]
+    );
+
+    const byUsername = new Map(
+      usersResult.rows.map((row) => [normalizeParticipantKey(row.username), row])
+    );
+
+    const canonicalWinner = String(winnerName || '').trim();
+    const winnerKey = normalizeParticipantKey(canonicalWinner);
+    const stake = Math.max(0, Math.floor(Number(game.points || 0)));
+
+    if (!isDraw && canonicalWinner && participants.length === 2) {
+      const loserName = participants.find(
+        (name) => normalizeParticipantKey(name) !== winnerKey
+      );
+      const winnerUser = byUsername.get(winnerKey);
+      const loserUser = loserName ? byUsername.get(normalizeParticipantKey(loserName)) : null;
+
+      if (winnerUser) {
+        const transferable = loserUser
+          ? Math.min(stake, Math.max(0, Math.floor(Number(loserUser.points || 0))))
+          : 0;
+        await client.query(
+          `
+            UPDATE users
+            SET points = points + $1,
+                wins = wins + 1,
+                games_played = games_played + 1
+            WHERE id = $2
+          `,
+          [transferable, winnerUser.id]
+        );
+
+        if (loserUser) {
+          await client.query(
+            `
+              UPDATE users
+              SET points = GREATEST(points - $1, 0),
+                  games_played = games_played + 1
+              WHERE id = $2
+            `,
+            [transferable, loserUser.id]
+          );
+        }
+
+        return { transferredPoints: transferable };
+      }
+    }
+
+    for (const participantName of participants) {
+      const user = byUsername.get(normalizeParticipantKey(participantName));
+      if (!user) continue;
+      const isWinner =
+        !isDraw &&
+        canonicalWinner &&
+        normalizeParticipantKey(participantName) === winnerKey;
+      await client.query(
+        `
+          UPDATE users
+          SET games_played = games_played + 1,
+              wins = wins + $1
+          WHERE id = $2
+        `,
+        [isWinner ? 1 : 0, user.id]
+      );
+    }
+
+    return { transferredPoints: 0 };
+  };
+
+  const applyMemorySettlement = ({
+    game,
+    winnerName,
+    isDraw,
+  }) => {
+    const users = Array.isArray(getMemoryUsers?.()) ? getMemoryUsers() : [];
+    const hostName = String(game.hostName || '').trim();
+    const guestName = String(game.guestName || '').trim();
+    const participants = [hostName, guestName].filter(Boolean);
+    if (participants.length === 0) {
+      return { transferredPoints: 0 };
+    }
+
+    const findUser = (username) =>
+      users.find((user) => normalizeParticipantKey(user?.username) === normalizeParticipantKey(username));
+
+    const canonicalWinner = String(winnerName || '').trim();
+    const winnerKey = normalizeParticipantKey(canonicalWinner);
+    const stake = Math.max(0, Math.floor(Number(game.points || 0)));
+
+    if (!isDraw && canonicalWinner && participants.length === 2) {
+      const loserName = participants.find((name) => normalizeParticipantKey(name) !== winnerKey);
+      const winnerUser = findUser(canonicalWinner);
+      const loserUser = loserName ? findUser(loserName) : null;
+
+      if (winnerUser) {
+        const transferable = loserUser
+          ? Math.min(stake, Math.max(0, Math.floor(Number(loserUser.points || 0))))
+          : 0;
+        winnerUser.points = Math.max(0, Math.floor(Number(winnerUser.points || 0))) + transferable;
+        winnerUser.wins = Math.max(0, Math.floor(Number(winnerUser.wins || 0))) + 1;
+        winnerUser.gamesPlayed = Math.max(0, Math.floor(Number(winnerUser.gamesPlayed || 0))) + 1;
+        if (loserUser) {
+          loserUser.points = Math.max(0, Math.floor(Number(loserUser.points || 0)) - transferable);
+          loserUser.gamesPlayed = Math.max(0, Math.floor(Number(loserUser.gamesPlayed || 0))) + 1;
+        }
+        return { transferredPoints: transferable };
+      }
+    }
+
+    for (const participantName of participants) {
+      const user = findUser(participantName);
+      if (!user) continue;
+      user.gamesPlayed = Math.max(0, Math.floor(Number(user.gamesPlayed || 0))) + 1;
+      if (
+        !isDraw &&
+        canonicalWinner &&
+        normalizeParticipantKey(participantName) === winnerKey
+      ) {
+        user.wins = Math.max(0, Math.floor(Number(user.wins || 0))) + 1;
+      }
+    }
+
+    return { transferredPoints: 0 };
+  };
+
   const mapTransitionError = (transitionResult) => ({
     error: transitionResult.message,
     code: transitionResult.code,
@@ -444,6 +596,15 @@ const createGameHandlers = ({
           return res.status(409).json({ error: 'Bu oyun zaten tamamlandı.' });
         }
 
+        const requiredStake = Math.max(0, Math.floor(Number(game.points || 0)));
+        const actorPoints = Number(req.user?.points);
+        if (!adminActor && Number.isFinite(actorPoints) && actorPoints < requiredStake) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({
+            error: `Bu oyuna katılmak için en az ${requiredStake} puan gerekli.`,
+          });
+        }
+
         if (game.status === 'active') {
           const canonicalGuest = normalizeParticipantName(guestName, game);
           if (
@@ -560,6 +721,15 @@ const createGameHandlers = ({
     }
     if (game.status === 'finished') {
       return res.status(409).json({ error: 'Bu oyun zaten tamamlandı.' });
+    }
+    {
+      const requiredStake = Math.max(0, Math.floor(Number(game.points || 0)));
+      const actorPoints = Number(req.user?.points);
+      if (!adminActor && Number.isFinite(actorPoints) && actorPoints < requiredStake) {
+        return res.status(400).json({
+          error: `Bu oyuna katılmak için en az ${requiredStake} puan gerekli.`,
+        });
+      }
     }
     if (game.status === 'active') {
       if (String(game.guestName || '').toLowerCase() === guestName.toLowerCase()) {
@@ -748,7 +918,7 @@ const createGameHandlers = ({
 
         const gameResult = await client.query(
           `
-            SELECT id, host_name, guest_name, status, winner, game_state
+            SELECT id, host_name, guest_name, game_type, points, status, winner, game_state
             FROM games
             WHERE id = $1
             FOR UPDATE
@@ -776,12 +946,17 @@ const createGameHandlers = ({
         const winnerFromResults = pickWinnerFromResults(stateResults, participants);
         const winnerFromRequest = normalizeParticipantName(requestedWinner, game);
         const finalWinner = winnerFromState || winnerFromResults || winnerFromRequest;
+        const currentGameState =
+          game.game_state && typeof game.game_state === 'object'
+            ? { ...game.game_state }
+            : {};
         const chessState =
           game.game_state && typeof game.game_state.chess === 'object' ? game.game_state.chess : null;
         const isChessDraw =
           isChessGameType(game.game_type) &&
           Boolean(chessState?.isGameOver) &&
           !finalWinner;
+        const settlementAlreadyApplied = Boolean(currentGameState?.settlementApplied);
 
         if (!finalWinner && !isChessDraw) {
           await client.query('ROLLBACK');
@@ -789,15 +964,76 @@ const createGameHandlers = ({
         }
 
         if (game.status === 'finished') {
-          await client.query('ROLLBACK');
           const storedWinner = String(game.winner || '').trim();
           const targetWinner = String(finalWinner || '').trim();
           if (!storedWinner && !targetWinner && isChessDraw) {
+            if (!settlementAlreadyApplied) {
+              const settlement = await applyDbSettlement({
+                client,
+                game,
+                winnerName: null,
+                isDraw: true,
+              });
+              const patchedState = {
+                ...currentGameState,
+                settlementApplied: true,
+                stakeTransferred: settlement.transferredPoints,
+                settledAt: new Date().toISOString(),
+              };
+              await client.query(
+                `
+                  UPDATE games
+                  SET game_state = $1::jsonb
+                  WHERE id = $2
+                `,
+                [JSON.stringify(patchedState), id]
+              );
+              await client.query('COMMIT');
+              return res.json({
+                success: true,
+                winner: null,
+                alreadyFinished: true,
+                draw: true,
+                settlementApplied: true,
+              });
+            }
+            await client.query('ROLLBACK');
             return res.json({ success: true, winner: null, alreadyFinished: true, draw: true });
           }
           if (storedWinner.toLowerCase() === targetWinner.toLowerCase()) {
+            if (!settlementAlreadyApplied) {
+              const settlement = await applyDbSettlement({
+                client,
+                game,
+                winnerName: game.winner || finalWinner,
+                isDraw: false,
+              });
+              const patchedState = {
+                ...currentGameState,
+                settlementApplied: true,
+                stakeTransferred: settlement.transferredPoints,
+                settledAt: new Date().toISOString(),
+              };
+              await client.query(
+                `
+                  UPDATE games
+                  SET game_state = $1::jsonb
+                  WHERE id = $2
+                `,
+                [JSON.stringify(patchedState), id]
+              );
+              await client.query('COMMIT');
+              return res.json({
+                success: true,
+                winner: game.winner || null,
+                alreadyFinished: true,
+                settlementApplied: true,
+              });
+            }
+            await client.query('ROLLBACK');
             return res.json({ success: true, winner: game.winner || null, alreadyFinished: true });
           }
+          await client.query('ROLLBACK');
           return res.status(409).json({ error: 'Oyun zaten farklı bir sonuçla tamamlandı.' });
         }
 
@@ -811,15 +1047,22 @@ const createGameHandlers = ({
           return res.status(409).json(mapTransitionError(finishTransition));
         }
 
-        const nextGameState =
-          game.game_state && typeof game.game_state === 'object'
-            ? { ...game.game_state }
-            : {};
+        const nextGameState = { ...currentGameState };
         if (finalWinner) {
           nextGameState.resolvedWinner = finalWinner;
         } else if (nextGameState.resolvedWinner) {
           delete nextGameState.resolvedWinner;
         }
+
+        const settlement = await applyDbSettlement({
+          client,
+          game,
+          winnerName: finalWinner,
+          isDraw: Boolean(isChessDraw),
+        });
+        nextGameState.settlementApplied = true;
+        nextGameState.stakeTransferred = settlement.transferredPoints;
+        nextGameState.settledAt = new Date().toISOString();
 
         await client.query(
           `
@@ -888,6 +1131,34 @@ const createGameHandlers = ({
       return res.status(409).json({ error: 'Kazanan belirlenemedi. Her iki oyuncu da skoru göndermeli.' });
     }
 
+    const settlementAlreadyApplied = Boolean(game.gameState?.settlementApplied);
+    if (normalizeGameStatus(game.status) === GAME_STATUS.FINISHED) {
+      const storedWinner = String(game.winner || '').trim();
+      const targetWinner = String(finalWinner || '').trim();
+      if (storedWinner.toLowerCase() !== targetWinner.toLowerCase() && !(isChessDraw && !storedWinner && !targetWinner)) {
+        return res.status(409).json({ error: 'Oyun zaten farklı bir sonuçla tamamlandı.' });
+      }
+      if (!settlementAlreadyApplied) {
+        const settlement = applyMemorySettlement({
+          game,
+          winnerName: finalWinner,
+          isDraw: Boolean(isChessDraw),
+        });
+        game.gameState = {
+          ...(game.gameState || {}),
+          settlementApplied: true,
+          stakeTransferred: settlement.transferredPoints,
+          settledAt: new Date().toISOString(),
+        };
+      }
+      return res.json({
+        success: true,
+        winner: game.winner || finalWinner || null,
+        alreadyFinished: true,
+        draw: Boolean(isChessDraw),
+      });
+    }
+
     const memoryFinishTransition = assertGameStatusTransition({
       fromStatus: normalizeGameStatus(game.status),
       toStatus: GAME_STATUS.FINISHED,
@@ -905,6 +1176,16 @@ const createGameHandlers = ({
     };
     if (!finalWinner && game.gameState.resolvedWinner) {
       delete game.gameState.resolvedWinner;
+    }
+    {
+      const settlement = applyMemorySettlement({
+        game,
+        winnerName: finalWinner,
+        isDraw: Boolean(isChessDraw),
+      });
+      game.gameState.settlementApplied = true;
+      game.gameState.stakeTransferred = settlement.transferredPoints;
+      game.gameState.settledAt = new Date().toISOString();
     }
     emitRealtimeUpdate(id, {
       type: 'game_finished',

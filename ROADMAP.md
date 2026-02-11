@@ -3,6 +3,8 @@
 > **Son Güncelleme:** 2026-02-07  
 > **Mevcut Faz:** Faz 6 + Faz 8 hazırlıkları 🔄  
 > **Sonraki Faz:** Production Cutover (VPS + Domain) 🚀
+>
+> **Yeni:** Senior seviye uygulanabilir iyileştirme planı için `ROADMAP_SENIOR.md` dosyasına bak.
 
 ---
 

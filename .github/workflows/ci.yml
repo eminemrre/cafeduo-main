@@ -330,7 +330,6 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
       name: staging
-      url: ${{ steps.deploy.outputs.url }}
     
     steps:
       - name: Checkout repository

@@ -330,6 +330,12 @@ jobs:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment:
       name: staging
+    env:
+      RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
     
     steps:
       - name: Checkout repository
@@ -343,30 +349,30 @@ jobs:
 
       # Render.com Deployment
       - name: Deploy to Render (Staging)
-        if: secrets.RENDER_SERVICE_ID != ''
+        if: env.RENDER_SERVICE_ID != ''
         id: deploy-render
         run: |
           echo "🚀 Deploying to Render..."
           curl -X POST \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Authorization: Bearer ${RENDER_API_KEY}" \
             -H "Content-Type: application/json" \
-            https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys
+            "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys"
           echo "url=https://cafeduo-staging.onrender.com" >> $GITHUB_OUTPUT
 
       # Railway Deployment
       - name: Deploy to Railway (Staging)
-        if: secrets.RAILWAY_TOKEN != ''
+        if: env.RAILWAY_TOKEN != ''
         id: deploy-railway
         run: |
           echo "🚀 Deploying to Railway..."
           npm install -g @railway/cli
-          railway login --token ${{ secrets.RAILWAY_TOKEN }}
+          railway login --token "${RAILWAY_TOKEN}"
           railway up --service cafeduo-staging
           echo "url=https://cafeduo-staging.up.railway.app" >> $GITHUB_OUTPUT
 
       # Netlify Deployment (Frontend)
       - name: Deploy to Netlify (Frontend)
-        if: secrets.NETLIFY_AUTH_TOKEN != '' && secrets.NETLIFY_SITE_ID != ''
+        if: env.NETLIFY_AUTH_TOKEN != '' && env.NETLIFY_SITE_ID != ''
         id: deploy-netlify
         uses: nwtgck/actions-netlify@v3.0
         with:
@@ -378,8 +384,8 @@ jobs:
           enable-commit-comment: true
           overwrites-pull-request-comment: true
         env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          NETLIFY_AUTH_TOKEN: ${{ env.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ env.NETLIFY_SITE_ID }}
 
       - name: Set Deployment URL
         id: deploy

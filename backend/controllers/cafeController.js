@@ -32,19 +32,50 @@ const hasCafeManagementAccess = (user, cafeId) => {
 };
 
 const parseRadius = (value, fallback = 150) => {
-    const parsed = Number(value);
+    const parsed = parseDecimal(value);
     if (!Number.isFinite(parsed) || parsed <= 0) {
         return fallback;
     }
     return parsed;
 };
 
+const parseDecimal = (value) => {
+    if (typeof value === 'number') {
+        return Number.isFinite(value) ? value : Number.NaN;
+    }
+    if (value === null || value === undefined) {
+        return Number.NaN;
+    }
+    const normalized = String(value).trim().replace(',', '.');
+    if (!normalized) {
+        return Number.NaN;
+    }
+    return Number(normalized);
+};
+
 const parseCoordinate = (value) => {
     if (value === null || value === undefined || value === '') {
         return null;
     }
-    const parsed = Number(value);
+    const parsed = parseDecimal(value);
     return Number.isFinite(parsed) ? parsed : null;
+};
+
+const parseAccuracy = (value) => {
+    const parsed = parseDecimal(value);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+        return null;
+    }
+    // Cap unrealistic accuracy values to avoid over-permissive geo checks
+    return Math.min(parsed, 300);
+};
+
+const getEffectiveRadius = (baseRadius, clientAccuracy) => {
+    const defaultDriftBuffer = 60; // meters
+    const accuracyBuffer = clientAccuracy === null
+        ? defaultDriftBuffer
+        : Math.max(20, clientAccuracy);
+    return Math.round(baseRadius + accuracyBuffer);
 };
 
 const cafeController = {
@@ -112,9 +143,9 @@ const cafeController = {
             return res.status(403).json({ error: 'Bu kafe için işlem yetkiniz yok.' });
         }
 
-        const parsedLatitude = Number(latitude);
-        const parsedLongitude = Number(longitude);
-        const parsedRadius = Number(radius);
+        const parsedLatitude = parseDecimal(latitude);
+        const parsedLongitude = parseDecimal(longitude);
+        const parsedRadius = parseDecimal(radius);
 
         if (!Number.isFinite(parsedLatitude) || parsedLatitude < -90 || parsedLatitude > 90) {
             return res.status(400).json({ error: 'Enlem değeri -90 ile 90 arasında olmalıdır.' });
@@ -154,11 +185,12 @@ const cafeController = {
     // CHECK-IN (Location based)
     async checkIn(req, res) {
         const { id } = req.params;
-        const { latitude, longitude, tableNumber } = req.body;
+        const { latitude, longitude, tableNumber, accuracy } = req.body;
         const userId = req.user.id;
 
-        const parsedLatitude = Number(latitude);
-        const parsedLongitude = Number(longitude);
+        const parsedLatitude = parseDecimal(latitude);
+        const parsedLongitude = parseDecimal(longitude);
+        const parsedAccuracy = parseAccuracy(accuracy);
         if (!Number.isFinite(parsedLatitude) || !Number.isFinite(parsedLongitude)) {
             return res.status(400).json({ error: 'Kafe doğrulaması için konum izni gerekli.' });
         }
@@ -168,13 +200,14 @@ const cafeController = {
             if (!cafe) return res.status(404).json({ error: 'Kafe bulunamadı.' });
 
             const fallbackRadius = parseRadius(cafe.radius, 150);
+            const effectiveRadius = getEffectiveRadius(fallbackRadius, parsedAccuracy);
             const distance = getDistanceFromLatLonInMeters(
                 parsedLatitude,
                 parsedLongitude,
                 Number(cafe.latitude),
                 Number(cafe.longitude)
             );
-            if (Number.isFinite(distance) && distance > fallbackRadius) {
+            if (Number.isFinite(distance) && distance > effectiveRadius) {
                 return res.status(400).json({
                     error: `Kafeden çok uzaktasınız. Lütfen ${fallbackRadius} metre içine yaklaşın.`,
                 });
@@ -226,6 +259,7 @@ const cafeController = {
             }
 
             const radius = parseRadius(cafe.radius, 150);
+            const effectiveRadius = getEffectiveRadius(radius, parsedAccuracy);
             const distance = getDistanceFromLatLonInMeters(
                 parsedLatitude,
                 parsedLongitude,
@@ -233,7 +267,7 @@ const cafeController = {
                 cafeLongitude
             );
 
-            if (!Number.isFinite(distance) || distance > radius) {
+            if (!Number.isFinite(distance) || distance > effectiveRadius) {
                 return res.status(400).json({
                     error: `Kafeden çok uzaktasınız. Lütfen ${radius} metre içine yaklaşın.`,
                 });

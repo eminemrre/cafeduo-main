@@ -945,7 +945,9 @@ const createGameHandlers = ({
         const winnerFromState = normalizeParticipantName(game.game_state?.resolvedWinner, game);
         const winnerFromResults = pickWinnerFromResults(stateResults, participants);
         const winnerFromRequest = normalizeParticipantName(requestedWinner, game);
-        const finalWinner = winnerFromState || winnerFromResults || winnerFromRequest;
+        const requestedWinnerRaw = String(requestedWinner || '').trim();
+        const derivedWinner = winnerFromState || winnerFromResults;
+        const finalWinner = derivedWinner || winnerFromRequest;
         const currentGameState =
           game.game_state && typeof game.game_state === 'object'
             ? { ...game.game_state }
@@ -957,6 +959,26 @@ const createGameHandlers = ({
           Boolean(chessState?.isGameOver) &&
           !finalWinner;
         const settlementAlreadyApplied = Boolean(currentGameState?.settlementApplied);
+
+        if (requestedWinnerRaw && !winnerFromRequest && !derivedWinner) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: 'Geçersiz kazanan bilgisi.' });
+        }
+
+        // Manual winner override is only allowed for admin or forfeiting to opponent.
+        if (!derivedWinner && winnerFromRequest && !adminActor) {
+          const canonicalActor = normalizeParticipantName(actorName, game);
+          if (!canonicalActor) {
+            await client.query('ROLLBACK');
+            return res.status(403).json({ error: 'Bu oyunu kapatma yetkin yok.' });
+          }
+          if (winnerFromRequest.toLowerCase() === canonicalActor.toLowerCase()) {
+            await client.query('ROLLBACK');
+            return res.status(403).json({
+              error: 'Oyunu manuel kapatırken sadece rakibini kazanan olarak seçebilirsin.',
+            });
+          }
+        }
 
         if (!finalWinner && !isChessDraw) {
           await client.query('ROLLBACK');
@@ -1121,11 +1143,32 @@ const createGameHandlers = ({
       host_name: game.hostName,
       guest_name: game.guestName,
     });
-    const finalWinner = winnerFromState || winnerFromResults || winnerFromRequest;
+    const requestedWinnerRaw = String(requestedWinner || '').trim();
+    const derivedWinner = winnerFromState || winnerFromResults;
+    const finalWinner = derivedWinner || winnerFromRequest;
     const isChessDraw =
       isChessGameType(game.gameType) &&
       Boolean(game.gameState?.chess?.isGameOver) &&
       !finalWinner;
+
+    if (requestedWinnerRaw && !winnerFromRequest && !derivedWinner) {
+      return res.status(400).json({ error: 'Geçersiz kazanan bilgisi.' });
+    }
+
+    if (!derivedWinner && winnerFromRequest && !adminActor) {
+      const canonicalActor = normalizeParticipantName(actorName, {
+        host_name: game.hostName,
+        guest_name: game.guestName,
+      });
+      if (!canonicalActor) {
+        return res.status(403).json({ error: 'Bu oyunu kapatma yetkin yok.' });
+      }
+      if (winnerFromRequest.toLowerCase() === canonicalActor.toLowerCase()) {
+        return res.status(403).json({
+          error: 'Oyunu manuel kapatırken sadece rakibini kazanan olarak seçebilirsin.',
+        });
+      }
+    }
 
     if (!finalWinner && !isChessDraw) {
       return res.status(409).json({ error: 'Kazanan belirlenemedi. Her iki oyuncu da skoru göndermeli.' });

@@ -307,14 +307,15 @@ export const api = {
       }
     },
 
-    checkIn: async (params: { cafeId: string | number; tableNumber: number; pin: string }) => {
+    checkIn: async (params: { cafeId: string | number; tableNumber: number; latitude: number; longitude: number }) => {
       // NOTE: userId artık token'dan alınıyor, body'e gönderilmiyor
       return await fetchAPI<CafeCheckInResponse>(`/cafes/${params.cafeId}/check-in`, {
         method: 'POST',
         body: JSON.stringify({
           cafeId: params.cafeId,
           tableNumber: params.tableNumber,
-          pin: params.pin,
+          latitude: params.latitude,
+          longitude: params.longitude,
         }),
       });
     },

@@ -76,25 +76,33 @@ const cafeController = {
         }
     },
 
-    // CHECK-IN (Location & PIN based)
+    // CHECK-IN (Location based)
     async checkIn(req, res) {
         const { id } = req.params;
-        const { latitude, longitude, pin, tableNumber } = req.body;
+        const { latitude, longitude, tableNumber } = req.body;
         const userId = req.user.id;
-        const normalizedPin = String(pin || '').trim();
-        if (!/^\d{4,6}$/.test(normalizedPin)) {
-            return res.status(400).json({ error: 'PIN kodu 4-6 haneli sayısal olmalıdır.' });
+
+        const parsedLatitude = Number(latitude);
+        const parsedLongitude = Number(longitude);
+        if (!Number.isFinite(parsedLatitude) || !Number.isFinite(parsedLongitude)) {
+            return res.status(400).json({ error: 'Kafe doğrulaması için konum izni gerekli.' });
         }
 
         if (!(await isDbConnected())) {
             const cafe = FALLBACK_CAFES.find((item) => Number(item.id) === Number(id));
             if (!cafe) return res.status(404).json({ error: 'Kafe bulunamadı.' });
 
-            const dailyPin = String(cafe.daily_pin || '').trim();
-            const basePin = String(cafe.pin || '').trim();
-            const activePin = dailyPin && dailyPin !== '0000' ? dailyPin : basePin;
-            if (activePin && activePin !== normalizedPin) {
-                return res.status(400).json({ error: 'Hatalı PIN kodu.' });
+            const fallbackRadius = Number(cafe.radius || 150);
+            const distance = getDistanceFromLatLonInMeters(
+                parsedLatitude,
+                parsedLongitude,
+                Number(cafe.latitude),
+                Number(cafe.longitude)
+            );
+            if (Number.isFinite(distance) && distance > fallbackRadius) {
+                return res.status(400).json({
+                    error: `Kafeden çok uzaktasınız. Lütfen ${fallbackRadius} metre içine yaklaşın.`,
+                });
             }
 
             const maxTableCount = Number(cafe.table_count || 20);
@@ -134,25 +142,18 @@ const cafeController = {
             const cafe = cafeResult.rows[0];
 
             // 2. Location Check (Geofencing)
-            if (cafe.latitude && cafe.longitude && latitude && longitude) {
+            if (cafe.latitude && cafe.longitude) {
+                const radius = Number(cafe.radius || 150);
                 const distance = getDistanceFromLatLonInMeters(
-                    parseFloat(latitude), parseFloat(longitude),
+                    parsedLatitude, parsedLongitude,
                     parseFloat(cafe.latitude), parseFloat(cafe.longitude)
                 );
 
-                // 100 meters tolerance
-                if (distance > 100) {
-                    return res.status(400).json({ error: 'Kafeden çok uzaktasınız. Lütfen konuma yaklaşın.' });
+                if (distance > radius) {
+                    return res.status(400).json({
+                        error: `Kafeden çok uzaktasınız. Lütfen ${radius} metre içine yaklaşın.`,
+                    });
                 }
-            }
-
-            // 3. PIN Check
-            // '0000' is treated as unset daily pin fallback value.
-            const dailyPin = String(cafe.daily_pin || '').trim();
-            const basePin = String(cafe.pin || '').trim();
-            const activePin = dailyPin && dailyPin !== '0000' ? dailyPin : basePin;
-            if (activePin && activePin !== normalizedPin) {
-                return res.status(400).json({ error: 'Hatalı PIN kodu.' });
             }
 
             const maxTableCount = Number(cafe.table_count || cafe.total_tables || 20);
@@ -161,7 +162,7 @@ const cafeController = {
                 return res.status(400).json({ error: `Masa numarası 1-${maxTableCount} aralığında olmalıdır.` });
             }
 
-            // 4. Update User
+            // 3. Update User
             await pool.query(
                 'UPDATE users SET cafe_id = $1, table_number = $2 WHERE id = $3',
                 [id, parsedTableNumber, userId]

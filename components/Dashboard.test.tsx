@@ -286,6 +286,7 @@ describe('Dashboard Integration', () => {
     Storage.prototype.getItem = jest.fn(() => null);
     Storage.prototype.setItem = jest.fn();
     Storage.prototype.removeItem = jest.fn();
+    window.confirm = jest.fn(() => true);
   });
 
   describe('Initial Render', () => {
@@ -473,6 +474,7 @@ describe('Dashboard Integration', () => {
         ...defaultGamesState,
         activeGameId: 'game789',
         activeGameType: 'Tank Düellosu',
+        opponentName: 'rakip',
         leaveGame: mockLeaveGame,
       });
 
@@ -489,7 +491,13 @@ describe('Dashboard Integration', () => {
             gamesPlayed: 11,
           })
         );
-        expect(mockLeaveGame).toHaveBeenCalled();
+        expect(screen.getByText('Maç Sonucu')).toBeInTheDocument();
+      });
+
+      fireEvent.click(screen.getByText('Sonucu gördüm, lobiye dön'));
+
+      await waitFor(() => {
+        expect(mockLeaveGame).toHaveBeenCalledTimes(1);
       });
     });
 
@@ -499,13 +507,17 @@ describe('Dashboard Integration', () => {
         ...defaultGamesState,
         activeGameId: 'active1',
         activeGameType: 'Refleks Avı',
+        opponentName: 'rakip',
         leaveGame: mockLeaveGame,
       });
 
       renderDashboard();
 
       fireEvent.click(screen.getByText('← Lobiye Dön'));
-      expect(mockLeaveGame).toHaveBeenCalledTimes(1);
+      expect(window.confirm).toHaveBeenCalled();
+      return waitFor(() => {
+        expect(mockLeaveGame).toHaveBeenCalledTimes(1);
+      });
     });
   });
 

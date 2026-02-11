@@ -214,10 +214,10 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                 transition={reduceMotion ? undefined : { duration: 15, repeat: Infinity, ease: 'linear' }}
               >
                 <span>Canlı skor senkronu</span>
-                <span>PIN doğrulama hattı</span>
+                <span>Konum doğrulama hattı</span>
                 <span>Kupon kapanış kontrolü</span>
                 <span>Canlı skor senkronu</span>
-                <span>PIN doğrulama hattı</span>
+                <span>Konum doğrulama hattı</span>
                 <span>Kupon kapanış kontrolü</span>
               </motion.div>
             </div>
@@ -227,7 +227,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                 Canlı skor senkronu
               </div>
               <div className="rounded-full border border-cyan-400/25 bg-[#06142b]/78 px-4 py-2 text-[11px] uppercase tracking-[0.14em] font-pixel text-cyan-200/85">
-                PIN doğrulama hattı
+                Konum doğrulama hattı
               </div>
               <div className="rounded-full border border-cyan-400/25 bg-[#06142b]/78 px-4 py-2 text-[11px] uppercase tracking-[0.14em] font-pixel text-cyan-200/85">
                 Kupon kapanış kontrolü
@@ -256,7 +256,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                     </div>
                     <div>
                       <p className="font-semibold text-white">Kafe girişi doğrulandı</p>
-                      <p className="text-sm text-slate-300">Masa ve PIN doğrulaması 12 saniyede tamamlandı.</p>
+                      <p className="text-sm text-slate-300">Masa ve konum doğrulaması 12 saniyede tamamlandı.</p>
                     </div>
                   </div>
                 </div>

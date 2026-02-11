@@ -1,5 +1,5 @@
 import React from 'react';
-import { KeyRound, Navigation, Coffee, AlertTriangle, CheckCircle, Info } from 'lucide-react';
+import { MapPin, Navigation, Coffee, AlertTriangle, CheckCircle, LocateFixed } from 'lucide-react';
 import type { User } from '../types';
 import { useCafeSelection } from '../hooks/useCafeSelection';
 
@@ -8,57 +8,20 @@ interface CafeSelectionProps {
   onCheckInSuccess: (cafeName: string, tableNumber: string, cafeId: string | number) => void;
 }
 
-interface PinDigitBoxProps {
-  index: number;
-  pin: string;
-}
-
-const PinDigitBox: React.FC<PinDigitBoxProps> = ({ index, pin }) => {
-  const digit = pin[index];
-  const isFilled = digit !== undefined;
-  const isActive = index === pin.length;
-
-  const handleClick = () => {
-    const input = document.getElementById('pin-input');
-    if (input) {
-      input.focus();
-    }
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className={`w-12 h-14 border-2 rounded-lg flex items-center justify-center text-2xl font-bold transition-all
-        ${
-          isFilled
-            ? 'bg-green-900/30 border-green-500 text-green-400'
-            : isActive
-              ? 'border-green-400 bg-black/40 animate-pulse'
-              : 'border-gray-600 bg-black/30 text-gray-600'
-        }`}
-      aria-label={`PIN hanesi ${index + 1}`}
-    >
-      {isFilled ? '●' : ''}
-    </button>
-  );
-};
-
 export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onCheckInSuccess }) => {
   const {
     cafes,
     selectedCafeId,
     tableNumber,
-    pin,
     loading,
     error,
     selectedCafe,
     maxTableCount,
-    isPinValid,
+    locationStatus,
     setSelectedCafeId,
     setTableNumber,
-    setPin,
     clearError,
+    requestLocationAccess,
     checkIn,
   } = useCafeSelection({ currentUser, onCheckInSuccess });
 
@@ -70,10 +33,10 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
 
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-cyan-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-cyan-400/35 shadow-[0_10px_25px_rgba(0,217,255,0.2)]">
-            <KeyRound size={32} className="text-cyan-300" />
+            <MapPin size={32} className="text-cyan-300" />
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">Kafe Giriş</h1>
-          <p className="text-[var(--rf-muted)] text-sm">Oyunlara katılmak için kafe PIN kodunu girin.</p>
+          <p className="text-[var(--rf-muted)] text-sm">Oyunlara katılmak için konum izniyle kafe doğrulaması yapın.</p>
         </div>
 
         {error && (
@@ -132,56 +95,45 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
             </div>
           </div>
 
-          <div>
-            <label htmlFor="pin-input" className="block text-[var(--rf-muted)] text-sm mb-2 font-bold flex items-center gap-2">
-              <KeyRound size={14} />
-              Kafe PIN Kodu (4 Haneli)
-            </label>
-
-            <div className="flex gap-3 justify-center mb-3">
-              {[0, 1, 2, 3].map((index) => (
-                <PinDigitBox key={index} index={index} pin={pin} />
-              ))}
-            </div>
-
-            <input
-              type="tel"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={pin}
-              onChange={(event) => setPin(event.target.value)}
-              className="sr-only"
-              autoComplete="one-time-code"
-              id="pin-input"
-              data-testid="checkin-pin-input"
-              aria-label="PIN kodu girişi"
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => void requestLocationAccess()}
+              className="w-full py-3 rounded-xl font-semibold border border-cyan-400/35 bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-100 flex items-center justify-center gap-2"
               onFocus={clearError}
-            />
+            >
+              <LocateFixed size={18} />
+              Konumu Doğrula
+            </button>
 
             <div className="mt-2 flex items-center justify-center gap-2 text-sm">
-              {isPinValid ? (
+              {locationStatus === 'ready' ? (
                 <span className="text-green-400 flex items-center gap-1">
-                  <CheckCircle size={14} /> PIN girildi
+                  <CheckCircle size={14} /> Konum doğrulandı
                 </span>
+              ) : locationStatus === 'requesting' ? (
+                <span className="text-cyan-300">Konum alınıyor...</span>
+              ) : locationStatus === 'denied' ? (
+                <span className="text-red-300">Konum izni gerekli</span>
               ) : (
-                <span className="text-gray-500 flex items-center gap-1">
-                  <Info size={14} /> {4 - pin.length} hane kaldı
-                </span>
+                <span className="text-gray-500">Devam etmek için konum izni verin</span>
               )}
             </div>
 
-            <div className="mt-3 p-3 bg-cyan-900/20 border border-cyan-700/30 rounded-lg text-center">
-              <p className="text-xs text-cyan-200">PIN kodunu kafe personelinden veya masadaki etiketten öğrenin.</p>
+            <div className="p-3 bg-cyan-900/20 border border-cyan-700/30 rounded-lg text-center">
+              <p className="text-xs text-cyan-200">
+                Konum izni yalnızca kafe doğrulaması için kullanılır ve giriş sırasında kontrol edilir.
+              </p>
             </div>
           </div>
 
           <button
             type="button"
             onClick={() => void checkIn()}
-            disabled={loading || !isPinValid || !tableNumber}
+            disabled={loading || !tableNumber}
             data-testid="checkin-submit-button"
             className={`w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all ${
-              loading || !isPinValid || !tableNumber
+              loading || !tableNumber
                 ? 'bg-gray-700 cursor-not-allowed opacity-50'
                 : 'bg-cyan-500 hover:bg-cyan-400 text-[#041226] shadow-lg shadow-cyan-500/30 hover:scale-[1.02] active:scale-95'
             }`}
@@ -193,8 +145,8 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
               </>
             ) : (
               <>
-                <KeyRound size={20} />
-                GİRİŞ YAP & OYNA
+                <MapPin size={20} />
+                KONUMU DOĞRULA & OYNA
               </>
             )}
           </button>

@@ -27,10 +27,52 @@ describe('useCafeSelection', () => {
   const onCheckInSuccess = jest.fn();
   const memoryStorage = new Map<string, string>();
 
+  const mockGeoSuccess = (latitude = 37.741, longitude = 29.101) => {
+    const geolocation = {
+      getCurrentPosition: jest.fn((onSuccess: (p: GeolocationPosition) => void) => {
+        onSuccess({
+          coords: {
+            latitude,
+            longitude,
+            accuracy: 5,
+            altitude: null,
+            altitudeAccuracy: null,
+            heading: null,
+            speed: null,
+            toJSON: () => ({}),
+          },
+          timestamp: Date.now(),
+          toJSON: () => ({}),
+        } as GeolocationPosition);
+      }),
+    } as unknown as Geolocation;
+
+    Object.defineProperty(window.navigator, 'geolocation', {
+      value: geolocation,
+      configurable: true,
+    });
+  };
+
+  const mockGeoError = (code = 1) => {
+    const geolocation = {
+      getCurrentPosition: jest.fn(
+        (_onSuccess: (p: GeolocationPosition) => void, onError: (e: GeolocationPositionError) => void) => {
+          onError({ code } as GeolocationPositionError);
+        }
+      ),
+    } as unknown as Geolocation;
+
+    Object.defineProperty(window.navigator, 'geolocation', {
+      value: geolocation,
+      configurable: true,
+    });
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     onCheckInSuccess.mockReset();
     memoryStorage.clear();
+    mockGeoSuccess();
 
     Object.defineProperty(window, 'localStorage', {
       value: {
@@ -109,37 +151,7 @@ describe('useCafeSelection', () => {
     });
   });
 
-  it('clears pin/error when selected cafe changes and clearError is called', async () => {
-    (api.cafes.list as jest.Mock).mockResolvedValue([
-      { id: 1, name: 'Kafe A', table_count: 20 },
-      { id: 2, name: 'Kafe B', table_count: 20 },
-    ]);
-
-    const { result } = renderHook(() =>
-      useCafeSelection({ currentUser: mockUser, onCheckInSuccess })
-    );
-
-    await waitFor(() => expect(result.current.selectedCafeId).toBe('1'));
-
-    await act(async () => {
-      await result.current.checkIn();
-    });
-    expect(result.current.error).toBe('Lütfen kafe ve masa numarası seçin.');
-
-    act(() => {
-      result.current.setPin('1234');
-      result.current.setSelectedCafeId('2');
-    });
-    expect(result.current.pin).toBe('');
-    expect(result.current.error).toBeNull();
-
-    act(() => {
-      result.current.clearError();
-    });
-    expect(result.current.error).toBeNull();
-  });
-
-  it('validates missing data, pin length and table range', async () => {
+  it('validates missing data and table range', async () => {
     (api.cafes.list as jest.Mock).mockResolvedValue([
       { id: 1, name: 'Kafe A', table_count: 5 },
     ]);
@@ -156,16 +168,6 @@ describe('useCafeSelection', () => {
     expect(result.current.error).toBe('Lütfen kafe ve masa numarası seçin.');
 
     act(() => {
-      result.current.setTableNumber('3');
-      result.current.setPin('12');
-    });
-    await act(async () => {
-      await result.current.checkIn();
-    });
-    expect(result.current.error).toBe('PIN kodu 4 haneli olmalıdır.');
-
-    act(() => {
-      result.current.setPin('1234');
       result.current.setTableNumber('99');
     });
     await act(async () => {
@@ -174,7 +176,44 @@ describe('useCafeSelection', () => {
     expect(result.current.error).toContain('Masa numarası 1 ile 5 arasında olmalıdır.');
   });
 
-  it('maps network errors and resets pin on failed check-in', async () => {
+  it('updates location status when permission is granted', async () => {
+    (api.cafes.list as jest.Mock).mockResolvedValue([
+      { id: 3, name: 'Kafe C', table_count: 15 },
+    ]);
+
+    const { result } = renderHook(() =>
+      useCafeSelection({ currentUser: mockUser, onCheckInSuccess })
+    );
+    await waitFor(() => expect(result.current.selectedCafeId).toBe('3'));
+
+    await act(async () => {
+      await result.current.requestLocationAccess();
+    });
+
+    expect(result.current.locationStatus).toBe('ready');
+    expect(result.current.error).toBeNull();
+  });
+
+  it('shows permission error when geolocation is denied', async () => {
+    mockGeoError(1);
+    (api.cafes.list as jest.Mock).mockResolvedValue([
+      { id: 4, name: 'Kafe D', table_count: 10 },
+    ]);
+
+    const { result } = renderHook(() =>
+      useCafeSelection({ currentUser: mockUser, onCheckInSuccess })
+    );
+    await waitFor(() => expect(result.current.selectedCafeId).toBe('4'));
+
+    await act(async () => {
+      await result.current.requestLocationAccess();
+    });
+
+    expect(result.current.locationStatus).toBe('denied');
+    expect(result.current.error).toContain('Konum izni reddedildi');
+  });
+
+  it('maps network errors on failed check-in', async () => {
     (api.cafes.list as jest.Mock).mockResolvedValue([
       { id: 1, name: 'Kafe A', table_count: 10 },
     ]);
@@ -187,14 +226,12 @@ describe('useCafeSelection', () => {
 
     act(() => {
       result.current.setTableNumber('2');
-      result.current.setPin('1234');
     });
     await act(async () => {
       await result.current.checkIn();
     });
 
     expect(result.current.error).toBe('Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edin.');
-    expect(result.current.pin).toBe('');
   });
 
   it('completes successful check-in and persists last selection', async () => {
@@ -213,7 +250,6 @@ describe('useCafeSelection', () => {
 
     act(() => {
       result.current.setTableNumber('3');
-      result.current.setPin('1234');
     });
 
     await act(async () => {
@@ -223,7 +259,8 @@ describe('useCafeSelection', () => {
     expect(api.cafes.checkIn).toHaveBeenCalledWith({
       cafeId: '5',
       tableNumber: 3,
-      pin: '1234',
+      latitude: 37.741,
+      longitude: 29.101,
     });
     expect(onCheckInSuccess).toHaveBeenCalledWith('Kafe X', 'MASA03', '5');
     expect(window.localStorage.setItem).toHaveBeenCalledWith('last_cafe_id', '5');

@@ -11,16 +11,15 @@ interface UseCafeSelectionReturn {
   cafes: Cafe[];
   selectedCafeId: string | null;
   tableNumber: string;
-  pin: string;
   loading: boolean;
   error: string | null;
   selectedCafe: Cafe | null;
   maxTableCount: number;
-  isPinValid: boolean;
+  locationStatus: 'idle' | 'requesting' | 'ready' | 'denied';
   setSelectedCafeId: (cafeId: string) => void;
   setTableNumber: (tableNumber: string) => void;
-  setPin: (pin: string) => void;
   clearError: () => void;
+  requestLocationAccess: () => Promise<void>;
   checkIn: () => Promise<void>;
 }
 
@@ -40,7 +39,8 @@ export function useCafeSelection({
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [selectedCafeIdState, setSelectedCafeIdState] = useState<string | null>(null);
   const [tableNumberState, setTableNumberState] = useState<string>('');
-  const [pinState, setPinState] = useState<string>('');
+  const [locationStatus, setLocationStatus] = useState<'idle' | 'requesting' | 'ready' | 'denied'>('idle');
+  const [locationCoords, setLocationCoords] = useState<{ latitude: number; longitude: number } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -95,11 +95,8 @@ export function useCafeSelection({
     [selectedCafe]
   );
 
-  const isPinValid = useMemo(() => pinState.length >= 4, [pinState]);
-
   const setSelectedCafeId = useCallback((cafeId: string) => {
     setSelectedCafeIdState(cafeId);
-    setPinState('');
     setError(null);
   }, []);
 
@@ -108,23 +105,58 @@ export function useCafeSelection({
     if (error) setError(null);
   }, [error]);
 
-  const setPin = useCallback((pin: string) => {
-    setPinState(pin.replace(/\D/g, '').slice(0, 4));
-    if (error) setError(null);
-  }, [error]);
-
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
+  const requestLocation = useCallback(async () => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      throw new Error('Tarayıcınız konum doğrulamasını desteklemiyor.');
+    }
+
+    setLocationStatus('requesting');
+    const coords = await new Promise<{ latitude: number; longitude: number }>((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            latitude: Number(position.coords.latitude),
+            longitude: Number(position.coords.longitude),
+          });
+        },
+        (geoError) => {
+          const map: Record<number, string> = {
+            1: 'Konum izni reddedildi. Lütfen tarayıcıdan konum erişimine izin verin.',
+            2: 'Konum bilgisi alınamadı. Lütfen GPS veya ağ konumunu kontrol edin.',
+            3: 'Konum isteği zaman aşımına uğradı. Tekrar deneyin.',
+          };
+          reject(new Error(map[geoError.code] || 'Konum alınamadı.'));
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 12000,
+          maximumAge: 15000,
+        }
+      );
+    });
+
+    setLocationCoords(coords);
+    setLocationStatus('ready');
+    return coords;
+  }, []);
+
+  const requestLocationAccess = useCallback(async () => {
+    setError(null);
+    try {
+      await requestLocation();
+    } catch (err) {
+      setLocationStatus('denied');
+      setError(toErrorMessage(err, 'Konum doğrulaması başarısız.'));
+    }
+  }, [requestLocation]);
+
   const checkIn = useCallback(async () => {
     if (!selectedCafeIdState || !tableNumberState) {
       setError('Lütfen kafe ve masa numarası seçin.');
-      return;
-    }
-
-    if (!isPinValid) {
-      setError('PIN kodu 4 haneli olmalıdır.');
       return;
     }
 
@@ -138,10 +170,12 @@ export function useCafeSelection({
     setError(null);
 
     try {
+      const coords = locationCoords || (await requestLocation());
       const result = await api.cafes.checkIn({
         cafeId: selectedCafeIdState,
         tableNumber: parsedTableNumber,
-        pin: pinState,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
       });
 
       const resolvedCafeName = result?.cafeName || result?.cafe?.name || selectedCafe?.name || 'Kafe';
@@ -157,15 +191,17 @@ export function useCafeSelection({
           ? 'Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edin.'
           : rawMessage;
       setError(mappedMessage);
-      setPinState('');
+      if (mappedMessage.toLowerCase().includes('konum')) {
+        setLocationStatus('denied');
+      }
     } finally {
       setLoading(false);
     }
   }, [
-    isPinValid,
+    locationCoords,
     maxTableCount,
     onCheckInSuccess,
-    pinState,
+    requestLocation,
     selectedCafe,
     selectedCafeIdState,
     tableNumberState,
@@ -175,16 +211,15 @@ export function useCafeSelection({
     cafes,
     selectedCafeId: selectedCafeIdState,
     tableNumber: tableNumberState,
-    pin: pinState,
     loading,
     error,
     selectedCafe,
     maxTableCount,
-    isPinValid,
+    locationStatus,
     setSelectedCafeId,
     setTableNumber,
-    setPin,
     clearError,
+    requestLocationAccess,
     checkIn,
   };
 }

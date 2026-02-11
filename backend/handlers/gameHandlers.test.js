@@ -395,6 +395,60 @@ describe('gameHandlers (memory mode)', () => {
     expect(memoryGames).toHaveLength(0);
   });
 
+  it('allows forfeit finish only when actor picks opponent as winner', async () => {
+    memoryGames = [
+      {
+        id: 33,
+        hostName: 'u1',
+        guestName: 'u2',
+        gameType: 'Refleks Avı',
+        points: 30,
+        table: 'MASA01',
+        status: 'active',
+        gameState: {},
+      },
+    ];
+
+    const finishReq = {
+      params: { id: '33' },
+      user: { username: 'u1', role: 'user', isAdmin: false },
+      body: { winner: 'u2' },
+    };
+    const finishRes = createMockRes();
+    await handlers.finishGame(finishReq, finishRes);
+
+    expect(finishRes.statusCode).toBe(200);
+    expect(memoryGames[0].status).toBe('finished');
+    expect(memoryGames[0].winner).toBe('u2');
+  });
+
+  it('rejects manual finish when actor tries to set self as winner', async () => {
+    memoryGames = [
+      {
+        id: 34,
+        hostName: 'u1',
+        guestName: 'u2',
+        gameType: 'Refleks Avı',
+        points: 30,
+        table: 'MASA01',
+        status: 'active',
+        gameState: {},
+      },
+    ];
+
+    const finishReq = {
+      params: { id: '34' },
+      user: { username: 'u1', role: 'user', isAdmin: false },
+      body: { winner: 'u1' },
+    };
+    const finishRes = createMockRes();
+    await handlers.finishGame(finishReq, finishRes);
+
+    expect(finishRes.statusCode).toBe(403);
+    expect(finishRes.payload?.error).toContain('sadece rakibini');
+    expect(memoryGames[0].status).toBe('active');
+  });
+
   it('applies point transfer on finish (winner +stake, loser -stake)', async () => {
     memoryGames = [
       {

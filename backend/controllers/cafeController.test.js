@@ -15,6 +15,7 @@ jest.mock('../utils/geo', () => ({
 }));
 
 const { pool, isDbConnected } = require('../db');
+const { getDistanceFromLatLonInMeters } = require('../utils/geo');
 const cafeController = require('./cafeController');
 
 const buildRes = () => {
@@ -30,14 +31,10 @@ describe('cafeController.checkIn', () => {
     isDbConnected.mockResolvedValue(true);
   });
 
-  it('returns 400 for wrong pin', async () => {
-    pool.query.mockResolvedValueOnce({
-      rows: [{ id: 1, name: 'Merkez', daily_pin: '1234', table_count: 10 }],
-    });
-
+  it('returns 400 when location is missing', async () => {
     const req = {
       params: { id: '1' },
-      body: { pin: '9999', tableNumber: 2 },
+      body: { tableNumber: 2 },
       user: { id: 77 },
     };
     const res = buildRes();
@@ -45,17 +42,17 @@ describe('cafeController.checkIn', () => {
     await cafeController.checkIn(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Hatalı PIN kodu.' });
+    expect(res.json).toHaveBeenCalledWith({ error: 'Kafe doğrulaması için konum izni gerekli.' });
   });
 
   it('returns 400 for out-of-range table number', async () => {
     pool.query.mockResolvedValueOnce({
-      rows: [{ id: 1, name: 'Merkez', daily_pin: '1234', table_count: 5 }],
+      rows: [{ id: 1, name: 'Merkez', table_count: 5, latitude: 37.741, longitude: 29.101, radius: 150 }],
     });
 
     const req = {
       params: { id: '1' },
-      body: { pin: '1234', tableNumber: 8 },
+      body: { latitude: 37.741, longitude: 29.101, tableNumber: 8 },
       user: { id: 77 },
     };
     const res = buildRes();
@@ -66,16 +63,37 @@ describe('cafeController.checkIn', () => {
     expect(res.json).toHaveBeenCalledWith({ error: 'Masa numarası 1-5 aralığında olmalıdır.' });
   });
 
+  it('returns 400 when user is outside allowed radius', async () => {
+    pool.query.mockResolvedValueOnce({
+      rows: [{ id: 1, name: 'Merkez', table_count: 20, latitude: 37.741, longitude: 29.101, radius: 120 }],
+    });
+    getDistanceFromLatLonInMeters.mockReturnValueOnce(280);
+
+    const req = {
+      params: { id: '1' },
+      body: { latitude: 37.739, longitude: 29.11, tableNumber: 4 },
+      user: { id: 77 },
+    };
+    const res = buildRes();
+
+    await cafeController.checkIn(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Kafeden çok uzaktasınız. Lütfen 120 metre içine yaklaşın.',
+    });
+  });
+
   it('returns normalized success payload', async () => {
     pool.query
       .mockResolvedValueOnce({
-        rows: [{ id: 1, name: 'Merkez', daily_pin: '1234', table_count: 20 }],
+        rows: [{ id: 1, name: 'Merkez', table_count: 20, latitude: 37.741, longitude: 29.101, radius: 150 }],
       })
       .mockResolvedValueOnce({ rowCount: 1 });
 
     const req = {
       params: { id: '1' },
-      body: { pin: '1234', tableNumber: 4 },
+      body: { latitude: 37.741, longitude: 29.101, tableNumber: 4 },
       user: { id: 77 },
     };
     const res = buildRes();
@@ -92,31 +110,6 @@ describe('cafeController.checkIn', () => {
         success: true,
         cafeName: 'Merkez',
         table: 'MASA04',
-      })
-    );
-  });
-
-  it('falls back to base pin when daily pin is default 0000', async () => {
-    pool.query
-      .mockResolvedValueOnce({
-        rows: [{ id: 1, name: 'Merkez', daily_pin: '0000', pin: '5555', table_count: 20 }],
-      })
-      .mockResolvedValueOnce({ rowCount: 1 });
-
-    const req = {
-      params: { id: '1' },
-      body: { pin: '5555', tableNumber: 6 },
-      user: { id: 77 },
-    };
-    const res = buildRes();
-
-    await cafeController.checkIn(req, res);
-
-    expect(res.status).not.toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith(
-      expect.objectContaining({
-        success: true,
-        table: 'MASA06',
       })
     );
   });

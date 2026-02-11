@@ -5,7 +5,7 @@
  * @version 2.0 - Custom hooks ile refactor edilmiş
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { User, Reward } from '../types';
 import { UserProfileModal } from './UserProfileModal';
 import { ReflexRush } from './ReflexRush';
@@ -29,6 +29,7 @@ import { RewardSection } from './dashboard/RewardSection';
 // Icons
 import { Trophy, Gift, Gamepad2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { api } from '../lib/api';
 
 interface DashboardProps {
   currentUser: User;
@@ -59,6 +60,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
   const [profileUser, setProfileUser] = useState<User | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isOwnProfile, setIsOwnProfile] = useState(false);
+  const [gameResult, setGameResult] = useState<{ winner: string; earnedPoints: number } | null>(null);
+  const [leavingGame, setLeavingGame] = useState(false);
+  const gameEndHandledRef = useRef(false);
 
   // ==========================================
   // CUSTOM HOOKS
@@ -103,6 +107,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
       setProfileUser(currentUser);
     }
   }, [currentUser, isOwnProfile, isProfileOpen]);
+
+  useEffect(() => {
+    if (!activeGameId) {
+      setGameResult(null);
+      setLeavingGame(false);
+      gameEndHandledRef.current = false;
+    }
+  }, [activeGameId]);
 
   // ==========================================
   // HANDLER'LAR
@@ -216,20 +228,69 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
     }
   };
 
+  const resolveOpponentForForfeit = async (): Promise<string | null> => {
+    if (opponentName && opponentName.trim()) {
+      return opponentName.trim();
+    }
+    if (!activeGameId) return null;
+    try {
+      const liveGame = await api.games.get(activeGameId);
+      const host = String(liveGame?.hostName || '').trim();
+      const guest = String(liveGame?.guestName || '').trim();
+      const actor = String(currentUser.username || '').trim().toLowerCase();
+      if (host && host.toLowerCase() !== actor) return host;
+      if (guest && guest.toLowerCase() !== actor) return guest;
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const performLeaveGame = async () => {
+    if (leavingGame) return;
+    setLeavingGame(true);
+    try {
+      const shouldApplyForfeit = Boolean(activeGameId) && !isBot && !gameResult;
+      if (shouldApplyForfeit && activeGameId) {
+        const winnerByForfeit = await resolveOpponentForForfeit();
+        if (winnerByForfeit) {
+          try {
+            await api.games.finish(activeGameId, winnerByForfeit);
+          } catch (err) {
+            console.error('Forfeit finish request failed:', err);
+          }
+        }
+      }
+      leaveGame();
+      setGameResult(null);
+      await refetch();
+      if (onRefreshUser) {
+        await Promise.resolve(onRefreshUser());
+      }
+    } finally {
+      setLeavingGame(false);
+    }
+  };
+
   const handleLeaveGame = () => {
-    leaveGame();
-    void refetch();
+    if (!gameResult) {
+      const accepted = window.confirm('Oyundan çıkarsan mağlup sayılacaksın. Oyundan çıkmak istiyor musun?');
+      if (!accepted) return;
+    }
+    void performLeaveGame();
   };
 
   // Manuel dönüş (istatistik işlemeden)
   const handleBackToLobby = () => {
-    leaveGame();
-    void refetch();
+    handleLeaveGame();
   };
 
   // Oyun sonu (istatistik + puan güncelleme)
   const handleGameFinish = (winner: string, earnedPoints: number) => {
-    leaveGame();
+    if (gameEndHandledRef.current) return;
+    gameEndHandledRef.current = true;
+    const safeEarnedPoints = Number.isFinite(earnedPoints) ? earnedPoints : 0;
+    setGameResult((prev) => prev ?? { winner, earnedPoints: safeEarnedPoints });
     void refetch();
     if (onRefreshUser) {
       void onRefreshUser();
@@ -238,7 +299,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
 
     // Legacy fallback (test/mock environments)
     const didWin = winner === currentUser.username;
-    const safeEarnedPoints = Number.isFinite(earnedPoints) ? earnedPoints : 0;
     onUpdateUser({
       ...currentUser,
       points: Math.max(0, (currentUser.points || 0) + safeEarnedPoints),
@@ -262,6 +322,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
               ← Lobiye Dön
             </RetroButton>
           </div>
+
+          {gameResult && (
+            <div className="mb-6 rf-panel border-emerald-400/30 rounded-xl p-4">
+              <p className="text-sm text-emerald-200">Maç Sonucu</p>
+              <p className="text-lg font-bold text-white mt-1">
+                {gameResult.winner ? `${gameResult.winner} kazandı` : 'Maç berabere bitti'}
+              </p>
+              <p className="text-sm text-[var(--rf-muted)] mt-1">
+                Puan etkisi: {gameResult.earnedPoints > 0 ? `+${gameResult.earnedPoints}` : gameResult.earnedPoints}
+              </p>
+              <div className="mt-3">
+                <RetroButton onClick={handleBackToLobby} variant="primary" disabled={leavingGame}>
+                  {leavingGame ? 'Lobiye dönülüyor...' : 'Sonucu gördüm, lobiye dön'}
+                </RetroButton>
+              </div>
+            </div>
+          )}
 
           {/* Oyun component'leri */}
           {activeGameType === 'Retro Satranç' ? (

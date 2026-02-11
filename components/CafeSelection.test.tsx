@@ -33,6 +33,28 @@ describe('CafeSelection', () => {
       if (key === 'last_table_number') return null;
       return null;
     });
+
+    Object.defineProperty(window.navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition: jest.fn((onSuccess: (pos: GeolocationPosition) => void) => {
+          onSuccess({
+            coords: {
+              latitude: 37.741,
+              longitude: 29.101,
+              accuracy: 10,
+              altitude: null,
+              altitudeAccuracy: null,
+              heading: null,
+              speed: null,
+              toJSON: () => ({}),
+            },
+            timestamp: Date.now(),
+            toJSON: () => ({}),
+          } as GeolocationPosition);
+        }),
+      },
+    });
   });
 
   it('loads cafes and renders default selection', async () => {
@@ -52,24 +74,10 @@ describe('CafeSelection', () => {
       expect(api.cafes.list).toHaveBeenCalled();
     });
 
-    fireEvent.change(screen.getByLabelText('PIN kodu girişi'), { target: { value: '1234' } });
-    expect(screen.getByText('GİRİŞ YAP & OYNA')).toBeDisabled();
+    expect(screen.getByText('KONUMU DOĞRULA & OYNA')).toBeDisabled();
   });
 
-  it('keeps submit disabled when pin is short', async () => {
-    render(<CafeSelection currentUser={currentUser} onCheckInSuccess={jest.fn()} />);
-
-    await waitFor(() => {
-      expect(api.cafes.list).toHaveBeenCalled();
-    });
-
-    fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '3' } });
-    fireEvent.change(screen.getByLabelText('PIN kodu girişi'), { target: { value: '12' } });
-    expect(screen.getByText('GİRİŞ YAP & OYNA')).toBeDisabled();
-    expect(screen.getByText(/2 hane kaldı/i)).toBeInTheDocument();
-  });
-
-  it('submits check-in and stores last cafe/table on success', async () => {
+  it('submits check-in with geolocation and stores last cafe/table on success', async () => {
     const onCheckInSuccess = jest.fn();
     (api.cafes.checkIn as jest.Mock).mockResolvedValueOnce({
       cafeName: 'Merkez Kafe',
@@ -83,14 +91,14 @@ describe('CafeSelection', () => {
     });
 
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '5' } });
-    fireEvent.change(screen.getByLabelText('PIN kodu girişi'), { target: { value: '1234' } });
-    fireEvent.click(screen.getByText('GİRİŞ YAP & OYNA'));
+    fireEvent.click(screen.getByText('KONUMU DOĞRULA & OYNA'));
 
     await waitFor(() => {
       expect(api.cafes.checkIn).toHaveBeenCalledWith({
         cafeId: '10',
         tableNumber: 5,
-        pin: '1234',
+        latitude: 37.741,
+        longitude: 29.101,
       });
     });
     expect(onCheckInSuccess).toHaveBeenCalledWith('Merkez Kafe', 'Masa 5', '10');
@@ -112,8 +120,7 @@ describe('CafeSelection', () => {
     });
 
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '4' } });
-    fireEvent.change(screen.getByLabelText('PIN kodu girişi'), { target: { value: '1234' } });
-    fireEvent.click(screen.getByText('GİRİŞ YAP & OYNA'));
+    fireEvent.click(screen.getByText('KONUMU DOĞRULA & OYNA'));
 
     await waitFor(() => {
       expect(onCheckInSuccess).toHaveBeenCalledWith('Merkez Kafe', 'MASA04', '10');
@@ -141,14 +148,14 @@ describe('CafeSelection', () => {
       expect(api.cafes.list).toHaveBeenCalled();
     });
 
-    fireEvent.change(screen.getByLabelText('PIN kodu girişi'), { target: { value: '1234' } });
-    fireEvent.click(screen.getByText('GİRİŞ YAP & OYNA'));
+    fireEvent.click(screen.getByText('KONUMU DOĞRULA & OYNA'));
 
     await waitFor(() => {
       expect(api.cafes.checkIn).toHaveBeenCalledWith({
         cafeId: '1',
         tableNumber: 2,
-        pin: '1234',
+        latitude: 37.741,
+        longitude: 29.101,
       });
     });
     expect(window.localStorage.removeItem).toHaveBeenCalledWith('last_cafe_id');
@@ -163,11 +170,33 @@ describe('CafeSelection', () => {
     });
 
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '2' } });
-    fireEvent.change(screen.getByLabelText('PIN kodu girişi'), { target: { value: '1234' } });
-    fireEvent.click(screen.getByText('GİRİŞ YAP & OYNA'));
+    fireEvent.click(screen.getByText('KONUMU DOĞRULA & OYNA'));
 
     await waitFor(() => {
       expect(screen.getByText(/Sunucuya bağlanılamadı/)).toBeInTheDocument();
+    });
+  });
+
+  it('shows location permission error when denied', async () => {
+    Object.defineProperty(window.navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition: jest.fn(
+          (_onSuccess: (pos: GeolocationPosition) => void, onError: (err: GeolocationPositionError) => void) => {
+            onError({ code: 1 } as GeolocationPositionError);
+          }
+        ),
+      },
+    });
+
+    render(<CafeSelection currentUser={currentUser} onCheckInSuccess={jest.fn()} />);
+    await waitFor(() => expect(api.cafes.list).toHaveBeenCalled());
+
+    fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '2' } });
+    fireEvent.click(screen.getByText('KONUMU DOĞRULA & OYNA'));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Konum izni reddedildi/)).toBeInTheDocument();
     });
   });
 });

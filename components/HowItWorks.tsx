@@ -13,7 +13,7 @@ const steps = [
     id: '02',
     icon: <Coffee size={24} className="text-fuchsia-300" />,
     title: 'Masanı doğrula',
-    description: 'Kafeyi seç, masa bilgisini gir, günlük PIN ile oturumu güvenli şekilde doğrula.',
+    description: 'Kafeyi seç, masa bilgisini gir ve konum izniyle oturumu güvenli şekilde doğrula.',
     hint: '15 sn',
   },
   {

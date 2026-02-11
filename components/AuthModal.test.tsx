@@ -2,6 +2,14 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AuthModal } from './AuthModal';
 
+jest.mock('@react-oauth/google', () => ({
+  GoogleLogin: ({ onSuccess }: { onSuccess: (payload: { credential: string }) => void }) => (
+    <button type="button" onClick={() => onSuccess({ credential: 'mock-google-token' })}>
+      Google Login
+    </button>
+  ),
+}));
+
 const mockToastSuccess = jest.fn();
 const mockToastError = jest.fn();
 const mockToastWarning = jest.fn();
@@ -20,7 +28,9 @@ jest.mock('../lib/api', () => ({
   api: {
     auth: {
       login: jest.fn(),
-      register: jest.fn()
+      register: jest.fn(),
+      forgotPassword: jest.fn(),
+      googleLogin: jest.fn(),
     }
   }
 }));
@@ -244,6 +254,34 @@ describe('AuthModal', () => {
       expect(mockToastError).toHaveBeenCalledWith('Lütfen form hatalarını düzeltin');
       expect(screen.getByText('E-posta adresi gereklidir')).toBeInTheDocument();
       expect(screen.getByText('Şifre gereklidir')).toBeInTheDocument();
+    });
+  });
+
+  it('submits forgot-password flow with email', async () => {
+    const { api } = await import('../lib/api');
+    (api.auth.forgotPassword as jest.Mock).mockResolvedValue({
+      success: true,
+      message: 'Sıfırlama bağlantısı gönderildi.',
+    });
+
+    const { container } = render(
+      <AuthModal
+        isOpen={true}
+        onClose={mockOnClose}
+        initialMode="login"
+        onLoginSuccess={mockOnLoginSuccess}
+      />
+    );
+
+    fireEvent.click(screen.getByText('Şifremi unuttum'));
+    fireEvent.change(screen.getByTestId('auth-email-input'), {
+      target: { value: 'emin3619@gmail.com' },
+    });
+    fireEvent.submit(container.querySelector('form') as HTMLFormElement);
+
+    await waitFor(() => {
+      expect(api.auth.forgotPassword).toHaveBeenCalledWith('emin3619@gmail.com');
+      expect(screen.getByText('Sıfırlama bağlantısı gönderildi.')).toBeInTheDocument();
     });
   });
 });

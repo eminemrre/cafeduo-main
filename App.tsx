@@ -35,6 +35,10 @@ const CafeDashboard = lazyWithRetry(
   () => import('./components/CafeDashboard').then((module) => ({ default: module.CafeDashboard })),
   'CafeDashboard'
 );
+const ResetPasswordPage = lazyWithRetry(
+  () => import('./components/ResetPasswordPage').then((module) => ({ default: module.ResetPasswordPage })),
+  'ResetPasswordPage'
+);
 
 // Loading Component
 const PageLoader = () => (
@@ -339,6 +343,7 @@ const App: React.FC = () => {
 
             {/* KVKK Gizlilik Politikası */}
             <Route path="/gizlilik" element={<PrivacyPolicy />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

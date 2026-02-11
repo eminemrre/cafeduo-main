@@ -233,15 +233,35 @@ export const api = {
       return data as User;
     },
 
-    googleLogin: async (): Promise<User> => {
-      // Google OAuth flow - redirect to backend
-      window.location.href = `${API_URL}/auth/google`;
-      throw new Error('Redirecting to Google');
+    googleLogin: async (token: string): Promise<User> => {
+      const data = await fetchAPI<AuthLoginResponse>('/auth/google', {
+        method: 'POST',
+        body: JSON.stringify({ token }),
+      });
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
+      return (data.user || data) as User;
+    },
+
+    forgotPassword: async (email: string): Promise<{ success: boolean; message: string }> => {
+      return await fetchAPI('/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+    },
+
+    resetPassword: async (token: string, password: string): Promise<{ success: boolean; message: string }> => {
+      return await fetchAPI('/auth/reset-password', {
+        method: 'POST',
+        body: JSON.stringify({ token, password }),
+      });
     },
 
     logout: async (): Promise<void> => {
       localStorage.removeItem('token');
       localStorage.removeItem('currentUser');
+      localStorage.removeItem('cafe_user');
     },
 
     verifyToken: async (): Promise<User | null> => {

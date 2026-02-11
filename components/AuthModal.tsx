@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Mail, Lock, ArrowRight, AlertTriangle, Briefcase, Check, Eye, EyeOff } from 'lucide-react';
+import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { RetroButton } from './RetroButton';
 import { User as UserType } from '../types';
 import { api } from '../lib/api';
@@ -44,6 +45,17 @@ interface AuthLikeError {
   message?: string;
 }
 
+const resolveGoogleClientId = (): string => {
+  try {
+    const value = new Function('return import.meta.env?.VITE_GOOGLE_CLIENT_ID || ""')();
+    return String(value || '').trim();
+  } catch {
+    return '';
+  }
+};
+
+const GOOGLE_CLIENT_ID = resolveGoogleClientId();
+
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
@@ -51,8 +63,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onLoginSuccess
 }) => {
   const [mode, setMode] = useState(initialMode);
+  const [isForgotPasswordMode, setIsForgotPasswordMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [forgotMessage, setForgotMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -73,6 +87,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const resetForm = () => {
     setError('');
+    setForgotMessage('');
+    setIsForgotPasswordMode(false);
     setFieldErrors({});
     setTouched({});
     setUsername('');
@@ -133,12 +149,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const validateForm = (): boolean => {
     const errors: FieldErrors = {};
-    
-    if (mode === 'register') {
-      errors.username = validateField('username', username);
+
+    if (isForgotPasswordMode) {
+      errors.email = validateField('email', email);
+    } else {
+      if (mode === 'register') {
+        errors.username = validateField('username', username);
+      }
+      errors.email = validateField('email', email);
+      errors.password = validateField('password', password);
     }
-    errors.email = validateField('email', email);
-    errors.password = validateField('password', password);
 
     // Remove undefined errors
     const cleanErrors: FieldErrors = {};
@@ -147,7 +167,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     });
 
     setFieldErrors(cleanErrors);
-    setTouched({ username: true, email: true, password: true });
+    setTouched(
+      isForgotPasswordMode
+        ? { email: true }
+        : { username: true, email: true, password: true }
+    );
     
     return Object.keys(cleanErrors).length === 0;
   };
@@ -165,7 +189,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setIsLoading(true);
 
     try {
-      if (mode === 'register') {
+      if (isForgotPasswordMode) {
+        const response = await api.auth.forgotPassword(email);
+        setForgotMessage(response.message);
+        toast.success(response.message);
+      } else if (mode === 'register') {
         const user = await api.auth.register(username, email, password);
         onLoginSuccess(user);
       } else {
@@ -200,9 +228,35 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const switchMode = (newMode: 'login' | 'register') => {
     setMode(newMode);
+    setIsForgotPasswordMode(false);
+    setForgotMessage('');
     setError('');
     setFieldErrors({});
     setTouched({});
+  };
+
+  const handleGoogleLogin = async (credentialResponse: CredentialResponse) => {
+    const credential = String(credentialResponse.credential || '');
+    if (!credential) {
+      const message = 'Google kimlik doğrulaması alınamadı.';
+      setError(message);
+      toast.error(message);
+      return;
+    }
+
+    setError('');
+    setForgotMessage('');
+    setIsLoading(true);
+    try {
+      const user = await api.auth.googleLogin(credential);
+      onLoginSuccess(user);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Google ile giriş başarısız.';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const inputBaseClass =
@@ -299,10 +353,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {error}
               </div>
             )}
+            {forgotMessage && (
+              <div className="bg-emerald-500/12 border border-emerald-400/35 text-emerald-100 px-3 py-2.5 rounded-lg text-sm">
+                {forgotMessage}
+              </div>
+            )}
 
             <form className="space-y-3.5" onSubmit={handleSubmit}>
 
-              {mode === 'register' && (
+              {mode === 'register' && !isForgotPasswordMode && (
                 <>
                   <div className="relative group">
                     <User className={iconBaseClass} size={18} />
@@ -374,32 +433,50 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </p>
               )}
 
-              <div className="relative group">
-                <Lock className={iconBaseClass} size={18} />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => handleChange('password', e.target.value)}
-                  onBlur={() => handleBlur('password')}
-                  placeholder="Şifre"
-                  data-testid="auth-password-input"
-                  className={`${inputBaseClass} ${
-                    fieldErrors.password && touched.password ? inputErrorClass : inputBorderClass
-                  } pl-10 pr-12`}
-                />
+              {!isForgotPasswordMode && (
+                <>
+                  <div className="relative group">
+                    <Lock className={iconBaseClass} size={18} />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => handleChange('password', e.target.value)}
+                      onBlur={() => handleBlur('password')}
+                      placeholder="Şifre"
+                      data-testid="auth-password-input"
+                      className={`${inputBaseClass} ${
+                        fieldErrors.password && touched.password ? inputErrorClass : inputBorderClass
+                      } pl-10 pr-12`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
+                      aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                  {fieldErrors.password && touched.password && (
+                    <p className="text-red-300 text-xs flex items-center gap-1">
+                      <AlertTriangle size={12} /> {fieldErrors.password}
+                    </p>
+                  )}
+                </>
+              )}
+
+              {mode === 'login' && !isForgotPasswordMode && (
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
-                  aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+                  onClick={() => {
+                    setIsForgotPasswordMode(true);
+                    setError('');
+                    setForgotMessage('');
+                  }}
+                  className="text-sm text-cyan-300 hover:text-cyan-200 transition-colors"
                 >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  Şifremi unuttum
                 </button>
-              </div>
-              {fieldErrors.password && touched.password && (
-                <p className="text-red-300 text-xs flex items-center gap-1">
-                  <AlertTriangle size={12} /> {fieldErrors.password}
-                </p>
               )}
 
               <RetroButton
@@ -411,19 +488,50 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    {mode === 'login' ? 'Giriş yapılıyor...' : 'Kayıt yapılıyor...'}
+                    {isForgotPasswordMode
+                      ? 'Bağlantı gönderiliyor...'
+                      : mode === 'login'
+                        ? 'Giriş yapılıyor...'
+                        : 'Kayıt yapılıyor...'}
                   </span>
                 ) : (
                   <span className="flex items-center justify-center gap-2">
-                    {mode === 'login' ? 'Giriş Yap' : 'Kayıt Ol'}
+                    {isForgotPasswordMode
+                      ? 'Sıfırlama Bağlantısı Gönder'
+                      : mode === 'login'
+                        ? 'Giriş Yap'
+                        : 'Kayıt Ol'}
                     <ArrowRight size={17} />
                   </span>
                 )}
               </RetroButton>
             </form>
 
+            {mode === 'login' && !isForgotPasswordMode && GOOGLE_CLIENT_ID && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 text-slate-500 text-xs uppercase tracking-[0.12em]">
+                  <span className="h-px flex-1 bg-slate-700/80" />
+                  veya
+                  <span className="h-px flex-1 bg-slate-700/80" />
+                </div>
+                <div className="flex justify-center">
+                  <GoogleLogin
+                    onSuccess={handleGoogleLogin}
+                    onError={() => {
+                      setError('Google ile giriş işlemi başlatılamadı.');
+                      toast.error('Google ile giriş işlemi başlatılamadı.');
+                    }}
+                    theme="filled_black"
+                    shape="pill"
+                    text="continue_with"
+                    width="320"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
-              {mode === 'login' && (
+              {mode === 'login' && !isForgotPasswordMode && (
                 <p className="text-center text-slate-400 text-sm">
                   Hesabınız yok mu?{' '}
                   <button
@@ -432,6 +540,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     className="text-cyan-300 hover:text-cyan-200 transition-colors font-semibold"
                   >
                     Kayıt olun
+                  </button>
+                </p>
+              )}
+              {mode === 'login' && isForgotPasswordMode && (
+                <p className="text-center text-slate-400 text-sm">
+                  Şifrenizi hatırladınız mı?{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsForgotPasswordMode(false);
+                      setError('');
+                    }}
+                    className="text-cyan-300 hover:text-cyan-200 transition-colors font-semibold"
+                  >
+                    Giriş ekranına dön
                   </button>
                 </p>
               )}

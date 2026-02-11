@@ -24,6 +24,23 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Password reset tokens table
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    used_at TIMESTAMP WITH TIME ZONE,
+    request_ip VARCHAR(64),
+    user_agent VARCHAR(255),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_password_reset_lookup
+    ON password_reset_tokens(token_hash, expires_at, used_at);
+CREATE INDEX IF NOT EXISTS idx_password_reset_user
+    ON password_reset_tokens(user_id, used_at);
+
 -- Add columns if they don't exist (Migration for existing DB)
 DO $$
 BEGIN

@@ -7,9 +7,17 @@ jest.mock('jsonwebtoken', () => ({
   sign: jest.fn(() => 'signed-jwt-token'),
 }));
 
+const mockVerifyIdToken = jest.fn();
+jest.mock('google-auth-library', () => ({
+  OAuth2Client: jest.fn().mockImplementation(() => ({
+    verifyIdToken: mockVerifyIdToken,
+  })),
+}));
+
 jest.mock('../db', () => ({
   pool: {
     query: jest.fn(),
+    connect: jest.fn(),
   },
   isDbConnected: jest.fn(),
 }));
@@ -22,12 +30,18 @@ jest.mock('../utils/logger', () => ({
   },
 }));
 
+const mockSendPasswordResetEmail = jest.fn();
+jest.mock('../services/emailService', () => ({
+  sendPasswordResetEmail: (...args) => mockSendPasswordResetEmail(...args),
+}));
+
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { pool, isDbConnected } = require('../db');
 const { logger } = require('../utils/logger');
 process.env.JWT_SECRET = 'test-secret';
 process.env.BOOTSTRAP_ADMIN_EMAILS = 'emin3619@gmail.com';
+process.env.GOOGLE_CLIENT_ID = 'google-client-id-test';
 const authController = require('./authController');
 
 const buildRes = () => {
@@ -43,6 +57,11 @@ describe('authController security-critical auth flows', () => {
     process.env.RECAPTCHA_SECRET_KEY = '';
     global.fetch = jest.fn();
     isDbConnected.mockResolvedValue(true);
+    mockSendPasswordResetEmail.mockResolvedValue({ delivered: true });
+    pool.connect.mockResolvedValue({
+      query: jest.fn(),
+      release: jest.fn(),
+    });
   });
 
   afterEach(() => {
@@ -263,5 +282,102 @@ describe('authController security-critical auth flows', () => {
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith({ error: 'Geçersiz e-posta veya şifre.' });
     expect(jwt.sign).not.toHaveBeenCalled();
+  });
+
+  it('sends generic forgot-password response for unknown email without revealing existence', async () => {
+    pool.query.mockResolvedValueOnce({ rows: [] });
+
+    const req = {
+      body: { email: 'missing@example.com' },
+      headers: {},
+      ip: '127.0.0.1',
+    };
+    const res = buildRes();
+
+    await authController.forgotPassword(req, res);
+
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      message:
+        'Eğer e-posta adresi sistemde kayıtlıysa, şifre sıfırlama bağlantısı gönderildi.',
+    });
+    expect(mockSendPasswordResetEmail).not.toHaveBeenCalled();
+  });
+
+  it('stores reset token and sends password reset email for known account', async () => {
+    pool.query
+      .mockResolvedValueOnce({
+        rows: [{ id: 11, email: 'player@example.com', username: 'player' }],
+      })
+      .mockResolvedValueOnce({ rowCount: 1 });
+
+    const req = {
+      body: { email: 'player@example.com' },
+      headers: { 'user-agent': 'jest-test' },
+      ip: '127.0.0.1',
+    };
+    const res = buildRes();
+
+    await authController.forgotPassword(req, res);
+
+    expect(pool.query).toHaveBeenNthCalledWith(
+      1,
+      'SELECT id, email, username FROM users WHERE LOWER(email) = $1 LIMIT 1',
+      ['player@example.com']
+    );
+    expect(pool.query.mock.calls[1][0]).toContain('INSERT INTO password_reset_tokens');
+    expect(mockSendPasswordResetEmail).toHaveBeenCalledWith(
+      expect.objectContaining({
+        to: 'player@example.com',
+        username: 'player',
+        resetUrl: expect.stringContaining('/reset-password?token='),
+      })
+    );
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      message:
+        'Eğer e-posta adresi sistemde kayıtlıysa, şifre sıfırlama bağlantısı gönderildi.',
+    });
+  });
+
+  it('resets password using valid token and marks token as used', async () => {
+    const transactionQuery = jest.fn();
+    pool.connect.mockResolvedValueOnce({
+      query: transactionQuery,
+      release: jest.fn(),
+    });
+    pool.query.mockResolvedValueOnce({ rows: [{ id: 8, user_id: 55 }] });
+    bcrypt.hash.mockResolvedValue('new-password-hash');
+
+    const req = {
+      body: {
+        token: '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
+        password: 'StrongPass123',
+      },
+    };
+    const res = buildRes();
+
+    await authController.resetPassword(req, res);
+
+    expect(pool.query).toHaveBeenCalledWith(
+      expect.stringContaining('FROM password_reset_tokens'),
+      expect.any(Array)
+    );
+    expect(transactionQuery).toHaveBeenNthCalledWith(1, 'BEGIN');
+    expect(transactionQuery).toHaveBeenNthCalledWith(
+      2,
+      'UPDATE users SET password_hash = $1 WHERE id = $2',
+      ['new-password-hash', 55]
+    );
+    expect(transactionQuery).toHaveBeenNthCalledWith(
+      3,
+      'UPDATE password_reset_tokens SET used_at = NOW() WHERE user_id = $1 AND used_at IS NULL',
+      [55]
+    );
+    expect(transactionQuery).toHaveBeenNthCalledWith(4, 'COMMIT');
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      message: 'Şifreniz güncellendi. Yeni şifrenizle giriş yapabilirsiniz.',
+    });
   });
 });

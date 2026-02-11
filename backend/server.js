@@ -35,7 +35,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const { Server } = require("socket.io");
 
 // Local modules
@@ -281,7 +280,10 @@ if (!JWT_SECRET) {
 }
 
 console.log("🚀 Starting Server...");
-console.log("🔑 Google Client ID:", process.env.VITE_GOOGLE_CLIENT_ID ? "Loaded ✅" : "MISSING ❌");
+console.log(
+  "🔑 Google Client ID:",
+  process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID ? "Loaded ✅" : "MISSING ❌"
+);
 console.log("🗄️  Database URL:", process.env.DATABASE_URL ? "Loaded ✅" : "MISSING ❌");
 
 // ==========================================
@@ -355,6 +357,26 @@ const initDb = async () => {
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
       `);
+
+      // Password reset tokens table
+      await pool.query(`
+        CREATE TABLE IF NOT EXISTS password_reset_tokens (
+          id SERIAL PRIMARY KEY,
+          user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          token_hash VARCHAR(255) NOT NULL,
+          expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+          used_at TIMESTAMP WITH TIME ZONE,
+          request_ip VARCHAR(64),
+          user_agent VARCHAR(255),
+          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+      await pool.query(
+        'CREATE INDEX IF NOT EXISTS idx_password_reset_lookup ON password_reset_tokens(token_hash, expires_at, used_at)'
+      );
+      await pool.query(
+        'CREATE INDEX IF NOT EXISTS idx_password_reset_user ON password_reset_tokens(user_id, used_at)'
+      );
 
       // 2. Cafes Table
       await pool.query(`
@@ -619,151 +641,11 @@ setInterval(async () => {
 
 // --- API ROUTES ---
 
-// Email Configuration
-const nodemailer = require('nodemailer');
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS
-  }
-});
-
-
-// Temporary storage for verification codes
-const verificationCodes = new Map();
-const pendingUsers = new Map();
-
-// Helper: Verify reCAPTCHA
-const verifyRecaptcha = async (token) => {
-  // If no token provided, skip verification (for backwards compatibility)
-  if (!token) return true;
-
-  try {
-    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-    // If no secret key configured, skip verification
-    if (!secretKey) {
-      console.warn('RECAPTCHA_SECRET_KEY not configured, skipping verification');
-      return true;
-    }
-
-    const response = await fetch(`https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${token}`, {
-      method: 'POST'
-    });
-    const data = await response.json();
-    return data.success;
-  } catch (error) {
-    console.error('reCAPTCHA Error (allowing login):', error);
-    // Fail open - allow login if reCAPTCHA service is down
-    return true;
-  }
-};
-
-// 1. REGISTER (Doğrudan Kayıt - E-posta Doğrulaması Kaldırıldı)
-// --- API ROUTES ---
-
 // Auth Routes (Modularized)
 app.use('/api/auth', authRoutes);
 
 // Cafe Routes (Modularized)
 app.use('/api/cafes', cafeRoutes);
-
-
-// 1. REGISTER (Moved to authController)
-
-
-// 1.5 VERIFY (Step 2: Create User)
-// 1.5 VERIFY (Moved to authController)
-
-// 2. LOGIN
-// 2. LOGIN (Moved to authController)
-
-// 2.1 VERIFY TOKEN (Get current user from JWT)
-// 2.1 VERIFY TOKEN (Moved to authController)
-
-// 2.5 GOOGLE LOGIN
-const { OAuth2Client } = require('google-auth-library');
-const googleClient = new OAuth2Client(process.env.VITE_GOOGLE_CLIENT_ID);
-
-app.post('/api/auth/google', async (req, res) => {
-  const { token } = req.body;
-
-  try {
-    const ticket = await googleClient.verifyIdToken({
-      idToken: token,
-      audience: process.env.VITE_GOOGLE_CLIENT_ID,
-    });
-    const payload = ticket.getPayload();
-    const { email, name, sub, picture } = payload;
-
-    if (await isDbConnected()) {
-      // Check if user exists
-      const check = await pool.query('SELECT id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number, avatar_url FROM users WHERE email = $1', [email]);
-
-      if (check.rows.length > 0) {
-        // User exists -> Login
-        // Update avatar if changed AND clear cafe_id
-        if (picture && check.rows[0].avatar_url !== picture) {
-          await pool.query('UPDATE users SET avatar_url = $1, cafe_id = NULL WHERE id = $2', [picture, check.rows[0].id]);
-          check.rows[0].avatar_url = picture;
-        } else {
-          // Just clear cafe_id
-          await pool.query('UPDATE users SET cafe_id = NULL WHERE id = $1', [check.rows[0].id]);
-        }
-        check.rows[0].cafe_id = null;
-
-        const user = check.rows[0];
-        const authToken = jwt.sign(
-          { id: user.id, email: user.email, username: user.username, role: user.role },
-          JWT_SECRET,
-          { expiresIn: '7d' }
-        );
-        res.json({ user, token: authToken });
-      } else {
-        // User new -> Register
-        const randomPassword = Math.random().toString(36).slice(-8);
-        const hashedPassword = await bcrypt.hash(randomPassword, 10);
-
-        const result = await pool.query(
-          'INSERT INTO users (username, email, password_hash, points, department, avatar_url) VALUES ($1, $2, $3, 100, $4, $5) RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, avatar_url',
-          [name, email, hashedPassword, 'Google User', picture]
-        );
-        const user = result.rows[0];
-        const authToken = jwt.sign(
-          { id: user.id, email: user.email, username: user.username, role: user.role },
-          JWT_SECRET,
-          { expiresIn: '7d' }
-        );
-        res.json({ user, token: authToken });
-      }
-    } else {
-      // Memory Fallback
-      let user = MEMORY_USERS.find(u => u.email === email);
-      if (!user) {
-        user = {
-          id: Date.now(),
-          username: name,
-          email: email,
-          password: 'google-login',
-          points: 100,
-          wins: 0,
-          gamesPlayed: 0,
-          department: 'Google User'
-        };
-        MEMORY_USERS.push(user);
-      }
-      const authToken = jwt.sign(
-        { id: user.id, email: user.email, username: user.username, role: user.role || 'user' },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
-      res.json({ user, token: authToken });
-    }
-  } catch (error) {
-    console.error('Google Auth Error:', error);
-    res.status(401).json({ error: 'Google doğrulaması başarısız.' });
-  }
-});
 
 // 3. CAFE ENDPOINTS (Moved to cafeController)
 

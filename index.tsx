@@ -13,14 +13,21 @@ if (!rootElement) {
 }
 
 const root = ReactDOM.createRoot(rootElement);
+const googleClientId = String(import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim();
+const appTree = (
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
+);
+
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
-        <BrowserRouter>
-          <App />
-        </BrowserRouter>
-      </GoogleOAuthProvider>
+      {googleClientId ? (
+        <GoogleOAuthProvider clientId={googleClientId}>{appTree}</GoogleOAuthProvider>
+      ) : (
+        appTree
+      )}
     </ErrorBoundary>
   </React.StrictMode>
 );

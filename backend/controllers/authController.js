@@ -1,10 +1,69 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const { OAuth2Client } = require('google-auth-library');
 const { pool, isDbConnected } = require('../db');
 const { logger } = require('../utils/logger'); // Assuming logger structure
 const memoryState = require('../store/memoryState');
+const { sendPasswordResetEmail } = require('../services/emailService');
 
 const JWT_SECRET = process.env.JWT_SECRET;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
+const PASSWORD_RESET_TOKEN_TTL_MINUTES = Number(process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES || 30);
+const PASSWORD_RESET_TOKEN_TTL_MS = Math.max(5, PASSWORD_RESET_TOKEN_TTL_MINUTES) * 60 * 1000;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const USERNAME_PATTERN = /^[a-zA-Z0-9_]{3,20}$/;
+const USER_SELECT_FIELDS = `
+    id,
+    username,
+    email,
+    points,
+    wins,
+    games_played as "gamesPlayed",
+    department,
+    is_admin as "isAdmin",
+    role,
+    cafe_id,
+    table_number,
+    avatar_url
+`;
+const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
+const memoryPasswordResetTokens = [];
+
+const hashResetToken = (token) =>
+    crypto.createHash('sha256').update(String(token)).digest('hex');
+
+const buildPasswordResetUrl = (rawToken) => {
+    const corsOrigin = String(process.env.CORS_ORIGIN || '')
+        .split(',')
+        .map((origin) => origin.trim())
+        .find((origin) => Boolean(origin) && origin !== '*');
+    const baseUrl =
+        String(
+            process.env.APP_BASE_URL ||
+                process.env.PUBLIC_APP_URL ||
+                process.env.FRONTEND_URL ||
+                corsOrigin ||
+                'http://localhost:5173'
+        )
+            .trim()
+            .replace(/\/+$/, '') || 'http://localhost:5173';
+    return `${baseUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
+};
+
+const normalizeEmail = (email) => String(email || '').trim().toLowerCase();
+const toSafeUsername = (name, fallbackEmail) => {
+    const fromName = String(name || '')
+        .normalize('NFKD')
+        .replace(/[^\w]/g, '');
+    const fromEmail = String(fallbackEmail || '')
+        .split('@')[0]
+        .replace(/[^\w]/g, '');
+    const value = (fromName || fromEmail || 'GoogleUser').slice(0, 20);
+    if (value.length >= 3) return value;
+    return `${value || 'usr'}${Math.floor(Math.random() * 900 + 100)}`.slice(0, 20);
+};
+
 const parseAdminEmails = (emailsValue, fallback = []) => {
     const source = emailsValue || fallback.join(',');
     return source
@@ -77,6 +136,12 @@ const verifyRecaptcha = async (token) => {
     }
 };
 
+const responseForgotPassword = {
+    success: true,
+    message:
+        'Eğer e-posta adresi sistemde kayıtlıysa, şifre sıfırlama bağlantısı gönderildi.',
+};
+
 const authController = {
     // REGISTER
     async register(req, res) {
@@ -87,15 +152,13 @@ const authController = {
         }
 
         const normalizedUsername = String(username).trim();
-        const normalizedEmail = String(email).trim().toLowerCase();
+        const normalizedEmail = normalizeEmail(email);
         const safeDepartment = String(department || '').trim().slice(0, 120);
-        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const usernamePattern = /^[a-zA-Z0-9_]{3,20}$/;
 
-        if (!usernamePattern.test(normalizedUsername)) {
+        if (!USERNAME_PATTERN.test(normalizedUsername)) {
             return res.status(400).json({ error: 'Kullanıcı adı 3-20 karakter ve sadece harf/rakam/_ içermelidir.' });
         }
-        if (!emailPattern.test(normalizedEmail)) {
+        if (!EMAIL_PATTERN.test(normalizedEmail)) {
             return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
         }
         if (String(password).length < 6 || String(password).length > 72) {
@@ -163,7 +226,7 @@ const authController = {
     // LOGIN
     async login(req, res) {
         const { email, password, captchaToken } = req.body;
-        const normalizedEmail = String(email || '').trim().toLowerCase();
+        const normalizedEmail = normalizeEmail(email);
         const normalizedPassword = String(password || '');
 
         if (!normalizedEmail || !normalizedPassword) {
@@ -241,6 +304,284 @@ const authController = {
         } catch (err) {
             console.error('Login error:', err);
             res.status(500).json({ error: 'Sunucu hatası.' });
+        }
+    },
+
+    // GOOGLE LOGIN
+    async googleLogin(req, res) {
+        const idToken = String(req.body?.token || '').trim();
+        if (!idToken) {
+            return res.status(400).json({ error: 'Google token zorunludur.' });
+        }
+        if (!GOOGLE_CLIENT_ID || !googleClient) {
+            return res.status(503).json({ error: 'Google giriş şu anda yapılandırılmamış.' });
+        }
+
+        try {
+            const ticket = await googleClient.verifyIdToken({
+                idToken,
+                audience: GOOGLE_CLIENT_ID,
+            });
+            const payload = ticket.getPayload() || {};
+            const email = normalizeEmail(payload.email);
+            if (!email) {
+                return res.status(400).json({ error: 'Google hesabından e-posta alınamadı.' });
+            }
+
+            const shouldBootstrapAdmin = BOOTSTRAP_ADMIN_EMAILS.includes(email);
+            const avatarUrl = typeof payload.picture === 'string' ? payload.picture : null;
+            const profileName = toSafeUsername(payload.name, email);
+
+            if (await isDbConnected()) {
+                const found = await pool.query(
+                    `SELECT ${USER_SELECT_FIELDS} FROM users WHERE LOWER(email) = $1 LIMIT 1`,
+                    [email]
+                );
+
+                let user;
+                if (found.rows.length > 0) {
+                    const existing = found.rows[0];
+                    const nextRole = shouldBootstrapAdmin ? 'admin' : existing.role || 'user';
+                    const nextIsAdmin = shouldBootstrapAdmin ? true : Boolean(existing.isAdmin);
+                    const updated = await pool.query(
+                        `UPDATE users
+                         SET avatar_url = COALESCE($1, avatar_url),
+                             role = $2,
+                             is_admin = $3,
+                             cafe_id = NULL,
+                             table_number = NULL
+                         WHERE id = $4
+                         RETURNING ${USER_SELECT_FIELDS}`,
+                        [avatarUrl, nextRole, nextIsAdmin, existing.id]
+                    );
+                    user = updated.rows[0];
+                } else {
+                    const randomPassword = crypto.randomBytes(24).toString('hex');
+                    const hashedPassword = await bcrypt.hash(randomPassword, 10);
+                    const inserted = await pool.query(
+                        `INSERT INTO users (username, email, password_hash, points, department, role, is_admin, avatar_url)
+                         VALUES ($1, $2, $3, 100, $4, $5, $6, $7)
+                         RETURNING ${USER_SELECT_FIELDS}`,
+                        [
+                            profileName,
+                            email,
+                            hashedPassword,
+                            'Google User',
+                            shouldBootstrapAdmin ? 'admin' : 'user',
+                            shouldBootstrapAdmin,
+                            avatarUrl,
+                        ]
+                    );
+                    user = inserted.rows[0];
+                }
+
+                const token = generateToken(user);
+                return res.json({ user: toPublicUser(user), token });
+            }
+
+            let user = memoryState.users.find((u) => normalizeEmail(u.email) === email);
+            if (!user) {
+                const nextId =
+                    (memoryState.users.reduce((max, item) => Math.max(max, Number(item.id) || 0), 0) || 0) + 1;
+                user = {
+                    id: nextId,
+                    username: profileName,
+                    email,
+                    password_hash: await bcrypt.hash(crypto.randomBytes(24).toString('hex'), 10),
+                    points: 100,
+                    wins: 0,
+                    gamesPlayed: 0,
+                    department: 'Google User',
+                    role: shouldBootstrapAdmin ? 'admin' : 'user',
+                    isAdmin: shouldBootstrapAdmin,
+                    cafe_id: null,
+                    table_number: null,
+                    avatar_url: avatarUrl,
+                };
+                memoryState.users.unshift(user);
+            } else {
+                user.avatar_url = avatarUrl || user.avatar_url;
+                user.cafe_id = null;
+                user.table_number = null;
+                if (shouldBootstrapAdmin) {
+                    user.role = 'admin';
+                    user.isAdmin = true;
+                }
+            }
+
+            const token = generateToken(user);
+            return res.json({ user: toPublicUser(user), token });
+        } catch (error) {
+            logger.error('Google auth failed', error);
+            return res.status(401).json({ error: 'Google doğrulaması başarısız.' });
+        }
+    },
+
+    // FORGOT PASSWORD
+    async forgotPassword(req, res) {
+        const normalizedEmail = normalizeEmail(req.body?.email);
+        if (!EMAIL_PATTERN.test(normalizedEmail)) {
+            return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
+        }
+
+        try {
+            const rawToken = crypto.randomBytes(32).toString('hex');
+            const tokenHash = hashResetToken(rawToken);
+            const expiresAt = new Date(Date.now() + PASSWORD_RESET_TOKEN_TTL_MS);
+
+            if (await isDbConnected()) {
+                const lookup = await pool.query(
+                    'SELECT id, email, username FROM users WHERE LOWER(email) = $1 LIMIT 1',
+                    [normalizedEmail]
+                );
+                if (lookup.rows.length === 0) {
+                    return res.json(responseForgotPassword);
+                }
+
+                const user = lookup.rows[0];
+                await pool.query(
+                    `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at, request_ip, user_agent)
+                     VALUES ($1, $2, $3, $4, $5)`,
+                    [
+                        user.id,
+                        tokenHash,
+                        expiresAt,
+                        String(req.ip || '').slice(0, 64),
+                        String(req.headers['user-agent'] || '').slice(0, 255),
+                    ]
+                );
+
+                const resetUrl = buildPasswordResetUrl(rawToken);
+                await sendPasswordResetEmail({
+                    to: user.email,
+                    username: user.username,
+                    resetUrl,
+                    expiresInMinutes: Math.round(PASSWORD_RESET_TOKEN_TTL_MS / 60000),
+                });
+                return res.json(responseForgotPassword);
+            }
+
+            const memoryUser = memoryState.users.find((u) => normalizeEmail(u.email) === normalizedEmail);
+            if (!memoryUser) {
+                return res.json(responseForgotPassword);
+            }
+
+            memoryPasswordResetTokens.push({
+                userId: memoryUser.id,
+                tokenHash,
+                expiresAt: expiresAt.getTime(),
+                usedAt: null,
+            });
+
+            const resetUrl = buildPasswordResetUrl(rawToken);
+            await sendPasswordResetEmail({
+                to: memoryUser.email,
+                username: memoryUser.username,
+                resetUrl,
+                expiresInMinutes: Math.round(PASSWORD_RESET_TOKEN_TTL_MS / 60000),
+            });
+
+            return res.json(responseForgotPassword);
+        } catch (error) {
+            logger.error('forgotPassword flow failed', error);
+            return res.json(responseForgotPassword);
+        }
+    },
+
+    // RESET PASSWORD
+    async resetPassword(req, res) {
+        const token = String(req.body?.token || '').trim();
+        const nextPassword = String(req.body?.password || '');
+
+        if (!token || token.length < 32) {
+            return res.status(400).json({ error: 'Geçersiz veya eksik sıfırlama bağlantısı.' });
+        }
+        if (nextPassword.length < 6 || nextPassword.length > 72) {
+            return res.status(400).json({ error: 'Şifre 6-72 karakter aralığında olmalıdır.' });
+        }
+
+        const tokenHash = hashResetToken(token);
+
+        try {
+            if (await isDbConnected()) {
+                const lookup = await pool.query(
+                    `SELECT id, user_id
+                     FROM password_reset_tokens
+                     WHERE token_hash = $1
+                       AND used_at IS NULL
+                       AND expires_at > NOW()
+                     ORDER BY created_at DESC
+                     LIMIT 1`,
+                    [tokenHash]
+                );
+
+                if (lookup.rows.length === 0) {
+                    return res.status(400).json({ error: 'Sıfırlama bağlantısı geçersiz veya süresi dolmuş.' });
+                }
+
+                const resetRow = lookup.rows[0];
+                const hashedPassword = await bcrypt.hash(nextPassword, 10);
+                const client = await pool.connect();
+                try {
+                    await client.query('BEGIN');
+                    await client.query('UPDATE users SET password_hash = $1 WHERE id = $2', [
+                        hashedPassword,
+                        resetRow.user_id,
+                    ]);
+                    await client.query(
+                        'UPDATE password_reset_tokens SET used_at = NOW() WHERE user_id = $1 AND used_at IS NULL',
+                        [resetRow.user_id]
+                    );
+                    await client.query('COMMIT');
+                } catch (transactionError) {
+                    await client.query('ROLLBACK');
+                    throw transactionError;
+                } finally {
+                    client.release();
+                }
+
+                return res.json({
+                    success: true,
+                    message: 'Şifreniz güncellendi. Yeni şifrenizle giriş yapabilirsiniz.',
+                });
+            }
+
+            const now = Date.now();
+            const memoryToken = [...memoryPasswordResetTokens]
+                .reverse()
+                .find(
+                    (entry) =>
+                        entry.tokenHash === tokenHash &&
+                        entry.usedAt === null &&
+                        Number(entry.expiresAt) > now
+                );
+
+            if (!memoryToken) {
+                return res.status(400).json({ error: 'Sıfırlama bağlantısı geçersiz veya süresi dolmuş.' });
+            }
+
+            const userIndex = memoryState.users.findIndex(
+                (item) => Number(item.id) === Number(memoryToken.userId)
+            );
+            if (userIndex < 0) {
+                return res.status(400).json({ error: 'Sıfırlama bağlantısı geçersiz veya süresi dolmuş.' });
+            }
+
+            memoryState.users[userIndex].password_hash = await bcrypt.hash(nextPassword, 10);
+            const usedAt = Date.now();
+            memoryPasswordResetTokens.forEach((entry) => {
+                if (Number(entry.userId) === Number(memoryToken.userId) && entry.usedAt === null) {
+                    entry.usedAt = usedAt;
+                }
+            });
+
+            return res.json({
+                success: true,
+                message: 'Şifreniz güncellendi. Yeni şifrenizle giriş yapabilirsiniz.',
+            });
+        } catch (error) {
+            logger.error('resetPassword flow failed', error);
+            return res.status(500).json({ error: 'Şifre sıfırlama işlemi tamamlanamadı.' });
         }
     },
 

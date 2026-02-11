@@ -186,7 +186,68 @@ describe('API Layer', () => {
       // Note: Error case testing skipped due to JSDOM fetch mock limitations
     });
 
-    // Note: googleLogin test skipped due to JSDOM navigation limitations
-    // The function works in real browser, but cannot be tested in JSDOM environment
+    describe('googleLogin', () => {
+      it('posts google credential token and stores auth token', async () => {
+        const mockUser = { id: 7, email: 'g@example.com', username: 'google-user' };
+        (fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ user: mockUser, token: 'google-jwt-token' }),
+        });
+
+        const result = await api.auth.googleLogin('google-credential-token');
+
+        expect(fetch).toHaveBeenCalledWith(
+          '/api/auth/google',
+          expect.objectContaining({
+            method: 'POST',
+            body: JSON.stringify({ token: 'google-credential-token' }),
+          })
+        );
+        expect(localStorageMock.setItem).toHaveBeenCalledWith('token', 'google-jwt-token');
+        expect(result).toEqual(mockUser);
+      });
+    });
+
+    describe('forgotPassword', () => {
+      it('requests reset link without exposing account existence', async () => {
+        const payload = { success: true, message: 'Reset mail gönderildi.' };
+        (fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: async () => payload,
+        });
+
+        const result = await api.auth.forgotPassword('test@example.com');
+
+        expect(fetch).toHaveBeenCalledWith(
+          '/api/auth/forgot-password',
+          expect.objectContaining({
+            method: 'POST',
+            body: JSON.stringify({ email: 'test@example.com' }),
+          })
+        );
+        expect(result).toEqual(payload);
+      });
+    });
+
+    describe('resetPassword', () => {
+      it('posts token + new password payload', async () => {
+        const payload = { success: true, message: 'Şifre güncellendi.' };
+        (fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: async () => payload,
+        });
+
+        const result = await api.auth.resetPassword('token-123', 'new-password-123');
+
+        expect(fetch).toHaveBeenCalledWith(
+          '/api/auth/reset-password',
+          expect.objectContaining({
+            method: 'POST',
+            body: JSON.stringify({ token: 'token-123', password: 'new-password-123' }),
+          })
+        );
+        expect(result).toEqual(payload);
+      });
+    });
   });
 });

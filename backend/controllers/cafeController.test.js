@@ -133,6 +133,33 @@ describe('cafeController.checkIn', () => {
       })
     );
   });
+
+  it('accepts nearby check-in when gps accuracy is low but still plausible', async () => {
+    pool.query
+      .mockResolvedValueOnce({
+        rows: [{ id: 1, name: 'Merkez', table_count: 20, latitude: 37.741, longitude: 29.101, radius: 120 }],
+      })
+      .mockResolvedValueOnce({ rowCount: 1 });
+    getDistanceFromLatLonInMeters.mockReturnValueOnce(170);
+
+    const req = {
+      params: { id: '1' },
+      body: { latitude: 37.7412, longitude: 29.1014, tableNumber: 6, accuracy: 80 },
+      user: { id: 77 },
+    };
+    const res = buildRes();
+
+    await cafeController.checkIn(req, res);
+
+    expect(res.status).not.toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        cafeName: 'Merkez',
+        table: 'MASA06',
+      })
+    );
+  });
 });
 
 describe('cafeController.updateLocation', () => {

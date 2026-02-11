@@ -26,6 +26,12 @@ interface UseCafeSelectionReturn {
 const toErrorMessage = (err: unknown, fallback: string): string =>
   err instanceof Error && err.message ? err.message : fallback;
 
+interface LocationCoords {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+}
+
 /**
  * useCafeSelection Hook
  *
@@ -40,7 +46,7 @@ export function useCafeSelection({
   const [selectedCafeIdState, setSelectedCafeIdState] = useState<string | null>(null);
   const [tableNumberState, setTableNumberState] = useState<string>('');
   const [locationStatus, setLocationStatus] = useState<'idle' | 'requesting' | 'ready' | 'denied'>('idle');
-  const [locationCoords, setLocationCoords] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationCoords, setLocationCoords] = useState<LocationCoords | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -115,12 +121,13 @@ export function useCafeSelection({
     }
 
     setLocationStatus('requesting');
-    const coords = await new Promise<{ latitude: number; longitude: number }>((resolve, reject) => {
+    const coords = await new Promise<LocationCoords>((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           resolve({
             latitude: Number(position.coords.latitude),
             longitude: Number(position.coords.longitude),
+            accuracy: Number.isFinite(position.coords.accuracy) ? Number(position.coords.accuracy) : 0,
           });
         },
         (geoError) => {
@@ -170,12 +177,24 @@ export function useCafeSelection({
     setError(null);
 
     try {
-      const coords = locationCoords || (await requestLocation());
+      let coords = locationCoords;
+      try {
+        // Always refresh location at check-in time to avoid stale coordinates
+        coords = await requestLocation();
+      } catch (geoErr) {
+        if (!coords) {
+          throw geoErr;
+        }
+      }
+      if (!coords) {
+        throw new Error('Konum doğrulaması başarısız.');
+      }
       const result = await api.cafes.checkIn({
         cafeId: selectedCafeIdState,
         tableNumber: parsedTableNumber,
         latitude: coords.latitude,
         longitude: coords.longitude,
+        accuracy: coords.accuracy,
       });
 
       const resolvedCafeName = result?.cafeName || result?.cafe?.name || selectedCafe?.name || 'Kafe';

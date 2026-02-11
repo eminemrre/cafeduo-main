@@ -307,16 +307,28 @@ export const api = {
       }
     },
 
-    checkIn: async (params: { cafeId: string | number; tableNumber: number; latitude: number; longitude: number }) => {
+    checkIn: async (params: { cafeId: string | number; tableNumber: number; latitude: number; longitude: number; accuracy?: number }) => {
       // NOTE: userId artık token'dan alınıyor, body'e gönderilmiyor
+      const payload: {
+        cafeId: string | number;
+        tableNumber: number;
+        latitude: number;
+        longitude: number;
+        accuracy?: number;
+      } = {
+        cafeId: params.cafeId,
+        tableNumber: params.tableNumber,
+        latitude: params.latitude,
+        longitude: params.longitude,
+      };
+
+      if (Number.isFinite(params.accuracy)) {
+        payload.accuracy = Number(params.accuracy);
+      }
+
       return await fetchAPI<CafeCheckInResponse>(`/cafes/${params.cafeId}/check-in`, {
         method: 'POST',
-        body: JSON.stringify({
-          cafeId: params.cafeId,
-          tableNumber: params.tableNumber,
-          latitude: params.latitude,
-          longitude: params.longitude,
-        }),
+        body: JSON.stringify(payload),
       });
     },
 

@@ -99,6 +99,7 @@ describe('CafeSelection', () => {
         tableNumber: 5,
         latitude: 37.741,
         longitude: 29.101,
+        accuracy: 10,
       });
     });
     expect(onCheckInSuccess).toHaveBeenCalledWith('Merkez Kafe', 'Masa 5', '10');
@@ -156,6 +157,7 @@ describe('CafeSelection', () => {
         tableNumber: 2,
         latitude: 37.741,
         longitude: 29.101,
+        accuracy: 10,
       });
     });
     expect(window.localStorage.removeItem).toHaveBeenCalledWith('last_cafe_id');

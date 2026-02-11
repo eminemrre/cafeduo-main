@@ -63,13 +63,13 @@ describe('API Layer additional coverage', () => {
       json: async () => ({ success: true }),
     });
 
-    await api.cafes.checkIn({ cafeId: 7, tableNumber: 3, latitude: 37.741, longitude: 29.101 });
+    await api.cafes.checkIn({ cafeId: 7, tableNumber: 3, latitude: 37.741, longitude: 29.101, accuracy: 12 });
 
     expect(fetch).toHaveBeenCalledWith(
       '/api/cafes/7/check-in',
       expect.objectContaining({
         method: 'POST',
-        body: JSON.stringify({ cafeId: 7, tableNumber: 3, latitude: 37.741, longitude: 29.101 }),
+        body: JSON.stringify({ cafeId: 7, tableNumber: 3, latitude: 37.741, longitude: 29.101, accuracy: 12 }),
       })
     );
   });

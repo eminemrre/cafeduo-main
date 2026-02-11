@@ -261,6 +261,7 @@ describe('useCafeSelection', () => {
       tableNumber: 3,
       latitude: 37.741,
       longitude: 29.101,
+      accuracy: 5,
     });
     expect(onCheckInSuccess).toHaveBeenCalledWith('Kafe X', 'MASA03', '5');
     expect(window.localStorage.setItem).toHaveBeenCalledWith('last_cafe_id', '5');

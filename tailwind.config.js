@@ -49,9 +49,9 @@ module.exports = {
         highlight: "#f5c16c",
       },
       fontFamily: {
-        sans: ['"Noto Sans"', '"Exo 2"', "sans-serif"],
-        display: ['"Noto Sans"', '"Exo 2"', "sans-serif"],
-        pixel: ['"Noto Sans"', '"Exo 2"', "sans-serif"],
+        sans: ['"Exo 2"', '"Noto Sans"', "sans-serif"],
+        display: ['"Exo 2"', '"Noto Sans"', "sans-serif"],
+        pixel: ['"JetBrains Mono"', '"Exo 2"', '"Noto Sans"', "sans-serif"],
         retro: ['"JetBrains Mono"', '"Noto Sans"', "monospace"],
       },
       boxShadow: {

@@ -12,6 +12,11 @@ const parsePositiveInt = (value, fallback) => {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 };
 
+const wait = (ms) =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+
 const normalizeSmtpPassword = (password, host) => {
   const raw = String(password || '').trim();
   if (!raw.includes(' ')) return raw;
@@ -53,6 +58,24 @@ const resolveTransport = () => {
 
 const transporter = resolveTransport();
 
+const isRetryableSmtpError = (error) => {
+  const code = String(error?.code || '').toUpperCase();
+  return ['ETIMEDOUT', 'ECONNECTION', 'ECONNRESET', 'ESOCKET', 'EAI_AGAIN'].includes(code);
+};
+
+const sendWithTimeout = async ({ from, to, subject, text, timeoutMs }) =>
+  Promise.race([
+    transporter.sendMail({
+      from,
+      to,
+      subject,
+      text,
+    }),
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`SMTP send timeout after ${timeoutMs}ms`)), timeoutMs);
+    }),
+  ]);
+
 const sendPasswordResetEmail = async ({ to, username, resetUrl, expiresInMinutes }) => {
   const safeTo = String(to || '').trim();
   if (!safeTo) {
@@ -87,19 +110,47 @@ const sendPasswordResetEmail = async ({ to, username, resetUrl, expiresInMinutes
   }
 
   const sendTimeoutMs = parsePositiveInt(process.env.SMTP_SEND_TIMEOUT_MS, 15_000);
-  await Promise.race([
-    transporter.sendMail({
-      from: fromAddress,
-      to: safeTo,
-      subject,
-      text,
-    }),
-    new Promise((_, reject) => {
-      setTimeout(() => reject(new Error(`SMTP send timeout after ${sendTimeoutMs}ms`)), sendTimeoutMs);
-    }),
-  ]);
+  const maxAttempts = Math.max(1, Math.min(4, parsePositiveInt(process.env.SMTP_SEND_RETRIES, 2)));
 
-  return { delivered: true, mode: 'smtp' };
+  let lastError = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const info = await sendWithTimeout({
+        from: fromAddress,
+        to: safeTo,
+        subject,
+        text,
+        timeoutMs: sendTimeoutMs,
+      });
+
+      logger.info('Password reset e-mail sent', {
+        to: safeTo,
+        attempt,
+        mode: 'smtp',
+        messageId: info?.messageId || null,
+      });
+
+      return { delivered: true, mode: 'smtp', attempt };
+    } catch (error) {
+      lastError = error;
+      const retryable = isRetryableSmtpError(error);
+      logger.error('Password reset e-mail delivery failed', {
+        to: safeTo,
+        attempt,
+        retryable,
+        code: error?.code || null,
+        responseCode: error?.responseCode || null,
+        message: error?.message || String(error),
+      });
+
+      if (!retryable || attempt >= maxAttempts) {
+        break;
+      }
+      await wait(400 * attempt);
+    }
+  }
+
+  throw lastError || new Error('SMTP send failed');
 };
 
 module.exports = {

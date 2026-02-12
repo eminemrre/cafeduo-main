@@ -9,19 +9,19 @@
 @source "./lib/**/*.{js,ts,jsx,tsx}";
 
 :root {
-  --rf-bg: #020713;
-  --rf-bg-soft: #071325;
-  --rf-bg-deep: #01040c;
+  --rf-bg: #020816;
+  --rf-bg-soft: #07172f;
+  --rf-bg-deep: #02050e;
   --rf-ink: #e9f3ff;
-  --rf-muted: #90a5c4;
-  --rf-primary: #0cd6ff;
-  --rf-secondary: #d9a069;
-  --rf-border: rgba(12, 214, 255, 0.28);
+  --rf-muted: #93abcf;
+  --rf-primary: #13d8ff;
+  --rf-secondary: #dca166;
+  --rf-border: rgba(19, 216, 255, 0.3);
   --rf-border-soft: rgba(130, 150, 178, 0.24);
-  --rf-card: rgba(7, 15, 32, 0.84);
-  --rf-card-strong: rgba(6, 13, 28, 0.94);
-  --rf-shadow: 0 18px 50px rgba(0, 0, 0, 0.5);
-  --rf-neon: 0 0 0 1px rgba(12, 214, 255, 0.34), 0 10px 35px rgba(12, 214, 255, 0.18);
+  --rf-card: rgba(8, 17, 36, 0.86);
+  --rf-card-strong: rgba(5, 12, 26, 0.95);
+  --rf-shadow: 0 20px 54px rgba(0, 0, 0, 0.54);
+  --rf-neon: 0 0 0 1px rgba(19, 216, 255, 0.34), 0 12px 36px rgba(19, 216, 255, 0.18);
 }
 
 html {
@@ -36,11 +36,11 @@ body,
 
 body {
   margin: 0;
-  font-family: "Noto Sans", "Exo 2", sans-serif;
+  font-family: "Exo 2", "Noto Sans", sans-serif;
   background:
-    radial-gradient(circle at 8% 10%, rgba(12, 214, 255, 0.13), transparent 30%),
-    radial-gradient(circle at 88% 6%, rgba(217, 160, 105, 0.12), transparent 35%),
-    radial-gradient(circle at 56% 76%, rgba(17, 76, 138, 0.22), transparent 55%),
+    radial-gradient(circle at 12% 10%, rgba(19, 216, 255, 0.15), transparent 34%),
+    radial-gradient(circle at 85% 8%, rgba(220, 161, 102, 0.14), transparent 38%),
+    radial-gradient(circle at 50% 74%, rgba(32, 86, 145, 0.2), transparent 60%),
     linear-gradient(180deg, var(--rf-bg) 0%, var(--rf-bg-soft) 48%, var(--rf-bg-deep) 100%);
   color: var(--rf-ink);
   touch-action: manipulation;
@@ -112,7 +112,7 @@ body::after {
 
 .rf-panel,
 .cd-panel {
-  background: linear-gradient(162deg, rgba(8, 16, 34, 0.92), rgba(8, 19, 41, 0.82));
+  background: linear-gradient(160deg, rgba(8, 17, 37, 0.92), rgba(7, 18, 40, 0.82));
   border: 1px solid var(--rf-border-soft);
   border-radius: 1.6rem;
   backdrop-filter: blur(9px);
@@ -127,9 +127,9 @@ body::after {
 
 .rf-dashboard-shell {
   background:
-    radial-gradient(circle at 10% 8%, rgba(12, 214, 255, 0.12), transparent 30%),
-    radial-gradient(circle at 90% 0%, rgba(217, 160, 105, 0.1), transparent 28%),
-    linear-gradient(180deg, rgba(4, 10, 21, 0.96), rgba(3, 8, 18, 0.98));
+    radial-gradient(circle at 14% 7%, rgba(19, 216, 255, 0.13), transparent 34%),
+    radial-gradient(circle at 88% 4%, rgba(220, 161, 102, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(4, 10, 21, 0.96), rgba(4, 8, 16, 0.99));
 }
 
 .rf-card-flat {

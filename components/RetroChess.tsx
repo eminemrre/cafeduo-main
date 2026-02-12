@@ -65,20 +65,20 @@ const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'] as const;
 
 const PIECE_ASSET: Record<'w' | 'b', Record<'p' | 'n' | 'b' | 'r' | 'q' | 'k', string>> = {
   w: {
-    p: '♙',
-    n: '♘',
-    b: '♗',
-    r: '♖',
-    q: '♕',
-    k: '♔',
+    p: '/assets/games/retro-kit/chess/white-pawn.png',
+    n: '/assets/games/retro-kit/chess/white-knight.png',
+    b: '/assets/games/retro-kit/chess/white-bishop.png',
+    r: '/assets/games/retro-kit/chess/white-rook.png',
+    q: '/assets/games/retro-kit/chess/white-queen.png',
+    k: '/assets/games/retro-kit/chess/white-king.png',
   },
   b: {
-    p: '♟',
-    n: '♞',
-    b: '♝',
-    r: '♜',
-    q: '♛',
-    k: '♚',
+    p: '/assets/games/retro-kit/chess/black-pawn.png',
+    n: '/assets/games/retro-kit/chess/black-knight.png',
+    b: '/assets/games/retro-kit/chess/black-bishop.png',
+    r: '/assets/games/retro-kit/chess/black-rook.png',
+    q: '/assets/games/retro-kit/chess/black-queen.png',
+    k: '/assets/games/retro-kit/chess/black-king.png',
   },
 };
 
@@ -632,9 +632,11 @@ export const RetroChess: React.FC<RetroChessProps> = ({
               const isSelected = selectedSquare === square;
               const isLegal = legalTargets.includes(square);
 
-              const baseClass = isLight ? 'bg-[#13365f]' : 'bg-[#0a1f3f]';
-              const selectedClass = isSelected ? 'border-cyan-300 ring-1 ring-cyan-300/60' : 'border-cyan-500/18';
-              const legalClass = isLegal ? 'before:absolute before:inset-0 before:m-auto before:w-3 before:h-3 before:rounded-full before:bg-cyan-300/85' : '';
+              const baseClass = isLight
+                ? 'bg-[linear-gradient(145deg,#295e91,#1f4a74)]'
+                : 'bg-[linear-gradient(145deg,#102744,#0c1e35)]';
+              const selectedClass = isSelected ? 'border-cyan-200 ring-2 ring-cyan-300/65' : 'border-cyan-500/24';
+              const legalClass = isLegal ? 'before:absolute before:inset-0 before:m-auto before:w-3 before:h-3 before:rounded-full before:bg-cyan-200 before:shadow-[0_0_10px_rgba(165,243,252,0.85)]' : '';
 
               return (
                 <button
@@ -647,20 +649,19 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                   className={`relative aspect-square rounded border transition ${baseClass} ${selectedClass} ${legalClass} disabled:cursor-not-allowed`}
                 >
                   {piece && (
-                    <span
-                      aria-hidden="true"
-                      className={`block w-full text-center leading-none select-none ${
-                        piece.color === 'w'
-                          ? 'text-[#f8fafc] [text-shadow:0_1px_0_rgba(15,23,42,0.75),0_0_10px_rgba(186,230,253,0.35)]'
-                          : 'text-[#0b1220] [text-shadow:0_1px_0_rgba(226,232,240,0.28),0_0_10px_rgba(15,23,42,0.5)]'
-                      }`}
+                    <img
+                      src={PIECE_ASSET[piece.color][piece.type]}
+                      alt={`${piece.color === 'w' ? 'Beyaz' : 'Siyah'} ${piece.type}`}
+                      draggable={false}
+                      className="pointer-events-none mx-auto h-[78%] w-[78%] object-contain select-none"
                       style={{
-                        fontSize: 'clamp(1.45rem, 4.2vw, 2.2rem)',
-                        fontFamily: '"Noto Sans Symbols 2","Segoe UI Symbol","Arial Unicode MS",serif',
+                        imageRendering: 'auto',
+                        filter:
+                          piece.color === 'w'
+                            ? 'drop-shadow(0 1px 1px rgba(0,0,0,0.7)) drop-shadow(0 0 10px rgba(186,230,253,0.55))'
+                            : 'drop-shadow(0 1px 1px rgba(255,255,255,0.45)) drop-shadow(0 0 9px rgba(0,0,0,0.9))',
                       }}
-                    >
-                      {PIECE_ASSET[piece.color][piece.type]}
-                    </span>
+                    />
                   )}
                 </button>
               );

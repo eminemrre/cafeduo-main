@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { OAuth2Client } = require('google-auth-library');
 const { pool, isDbConnected } = require('../db');
-const { logger } = require('../utils/logger'); // Assuming logger structure
+const logger = require('../utils/logger');
 const memoryState = require('../store/memoryState');
 const { sendPasswordResetEmail } = require('../services/emailService');
 
@@ -452,11 +452,17 @@ const authController = {
                 );
 
                 const resetUrl = buildPasswordResetUrl(rawToken);
-                await sendPasswordResetEmail({
+                void sendPasswordResetEmail({
                     to: user.email,
                     username: user.username,
                     resetUrl,
                     expiresInMinutes: Math.round(PASSWORD_RESET_TOKEN_TTL_MS / 60000),
+                }).catch((mailError) => {
+                    logger.error('forgotPassword e-mail send failed', {
+                        userId: user.id,
+                        email: user.email,
+                        error: mailError?.message || String(mailError),
+                    });
                 });
                 return res.json(responseForgotPassword);
             }
@@ -474,11 +480,17 @@ const authController = {
             });
 
             const resetUrl = buildPasswordResetUrl(rawToken);
-            await sendPasswordResetEmail({
+            void sendPasswordResetEmail({
                 to: memoryUser.email,
                 username: memoryUser.username,
                 resetUrl,
                 expiresInMinutes: Math.round(PASSWORD_RESET_TOKEN_TTL_MS / 60000),
+            }).catch((mailError) => {
+                logger.error('forgotPassword e-mail send failed (memory mode)', {
+                    userId: memoryUser.id,
+                    email: memoryUser.email,
+                    error: mailError?.message || String(mailError),
+                });
             });
 
             return res.json(responseForgotPassword);

@@ -23,11 +23,9 @@ jest.mock('../db', () => ({
 }));
 
 jest.mock('../utils/logger', () => ({
-  logger: {
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-  },
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
 }));
 
 const mockSendPasswordResetEmail = jest.fn();
@@ -38,7 +36,7 @@ jest.mock('../services/emailService', () => ({
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { pool, isDbConnected } = require('../db');
-const { logger } = require('../utils/logger');
+const logger = require('../utils/logger');
 process.env.***REMOVED*** = 'test-secret';
 process.env.BOOTSTRAP_ADMIN_EMAILS = 'emin3619@gmail.com';
 process.env.GOOGLE_CLIENT_ID = 'google-client-id-test';
@@ -338,6 +336,38 @@ describe('authController security-critical auth flows', () => {
       message:
         'Eğer e-posta adresi sistemde kayıtlıysa, şifre sıfırlama bağlantısı gönderildi.',
     });
+  });
+
+  it('still returns generic response when SMTP send fails for known account', async () => {
+    pool.query
+      .mockResolvedValueOnce({
+        rows: [{ id: 11, email: 'player@example.com', username: 'player' }],
+      })
+      .mockResolvedValueOnce({ rowCount: 1 });
+    mockSendPasswordResetEmail.mockRejectedValueOnce(new Error('SMTP auth failed'));
+
+    const req = {
+      body: { email: 'player@example.com' },
+      headers: { 'user-agent': 'jest-test' },
+      ip: '127.0.0.1',
+    };
+    const res = buildRes();
+
+    await authController.forgotPassword(req, res);
+    await Promise.resolve();
+
+    expect(res.json).toHaveBeenCalledWith({
+      success: true,
+      message:
+        'Eğer e-posta adresi sistemde kayıtlıysa, şifre sıfırlama bağlantısı gönderildi.',
+    });
+    expect(logger.error).toHaveBeenCalledWith(
+      'forgotPassword e-mail send failed',
+      expect.objectContaining({
+        userId: 11,
+        email: 'player@example.com',
+      })
+    );
   });
 
   it('resets password using valid token and marks token as used', async () => {

@@ -45,16 +45,10 @@ interface AuthLikeError {
   message?: string;
 }
 
-const resolveGoogleClientId = (): string => {
-  try {
-    const value = new Function('return import.meta.env?.VITE_GOOGLE_CLIENT_ID || ""')();
-    return String(value || '').trim();
-  } catch {
-    return '';
-  }
-};
-
-const GOOGLE_CLIENT_ID = resolveGoogleClientId();
+const GOOGLE_CLIENT_ID =
+  typeof window !== 'undefined'
+    ? String((window as Window & { __CAFEDUO_GOOGLE_CLIENT_ID__?: string }).__CAFEDUO_GOOGLE_CLIENT_ID__ || '').trim()
+    : '';
 
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,

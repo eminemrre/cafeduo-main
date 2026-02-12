@@ -8,7 +8,9 @@ interface FeaturedGame {
   duration: string;
   mode: string;
   accent: string;
-  cover: string;
+  tone: string;
+  grid: string;
+  glow: string;
   icon: React.ReactNode;
   badge: string;
   cta: string;
@@ -22,7 +24,9 @@ const featuredGames: FeaturedGame[] = [
     duration: '35-45 sn',
     mode: 'Yüksek tempo',
     accent: 'from-cyan-400/90 to-blue-500/90',
-    cover: '/assets/games/retro-kit/reflex-puzzle.webp',
+    tone: 'radial-gradient(circle at 16% 22%, rgba(34, 213, 238, 0.26), transparent 42%), radial-gradient(circle at 88% 6%, rgba(34, 99, 255, 0.22), transparent 38%), linear-gradient(152deg, rgba(7, 18, 40, 0.96), rgba(9, 33, 72, 0.88))',
+    grid: 'rgba(34, 213, 238, 0.08)',
+    glow: 'rgba(34, 213, 238, 0.25)',
     icon: <Zap size={26} />,
     badge: 'Refleks',
     cta: 'Anında başlat',
@@ -33,7 +37,9 @@ const featuredGames: FeaturedGame[] = [
     duration: '40-55 sn',
     mode: 'Savaş modu',
     accent: 'from-fuchsia-400/90 to-violet-500/90',
-    cover: '/assets/games/retro-kit/war-tanks.webp',
+    tone: 'radial-gradient(circle at 18% 20%, rgba(251, 113, 133, 0.23), transparent 42%), radial-gradient(circle at 85% 10%, rgba(129, 140, 248, 0.22), transparent 40%), linear-gradient(152deg, rgba(12, 16, 42, 0.96), rgba(31, 19, 68, 0.88))',
+    grid: 'rgba(251, 113, 133, 0.08)',
+    glow: 'rgba(192, 132, 252, 0.25)',
     icon: <Swords size={26} />,
     badge: 'Savaş',
     cta: 'Düelloya gir',
@@ -44,7 +50,9 @@ const featuredGames: FeaturedGame[] = [
     duration: '50 sn',
     mode: 'Strateji',
     accent: 'from-amber-400/90 to-orange-500/90',
-    cover: '/assets/games/retro-kit/strategy-hex.webp',
+    tone: 'radial-gradient(circle at 12% 18%, rgba(251, 191, 36, 0.22), transparent 40%), radial-gradient(circle at 82% 8%, rgba(251, 146, 60, 0.22), transparent 36%), linear-gradient(152deg, rgba(20, 17, 41, 0.96), rgba(53, 32, 76, 0.88))',
+    grid: 'rgba(251, 191, 36, 0.09)',
+    glow: 'rgba(251, 191, 36, 0.25)',
     icon: <Crown size={26} />,
     badge: 'Strateji',
     cta: 'Tahtayı aç',
@@ -55,25 +63,23 @@ const featuredGames: FeaturedGame[] = [
     duration: '55 sn',
     mode: 'Bilgi oyunu',
     accent: 'from-emerald-400/90 to-teal-500/90',
-    cover: '/assets/games/retro-kit/knowledge-board.webp',
+    tone: 'radial-gradient(circle at 14% 20%, rgba(74, 222, 128, 0.2), transparent 40%), radial-gradient(circle at 86% 12%, rgba(16, 185, 129, 0.22), transparent 36%), linear-gradient(152deg, rgba(8, 24, 44, 0.96), rgba(8, 40, 63, 0.88))',
+    grid: 'rgba(45, 212, 191, 0.08)',
+    glow: 'rgba(52, 211, 153, 0.24)',
     icon: <Brain size={26} />,
     badge: 'Bilgi',
     cta: 'Bilgi turunu aç',
   },
 ];
 
-const GameCard: React.FC<FeaturedGame> = ({ title, subtitle, duration, mode, accent, cover, icon, badge, cta, disabled }) => (
+const GameCard: React.FC<FeaturedGame> = ({ title, subtitle, duration, mode, accent, tone, grid, glow, icon, badge, cta, disabled }) => (
   <motion.article
     initial={{ opacity: 0, y: 14 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true, margin: '-60px' }}
     transition={{ duration: 0.5 }}
     whileHover={disabled ? {} : { y: -8, rotateX: 2, rotateY: -2 }}
-    style={!disabled ? {
-      backgroundImage: `linear-gradient(170deg,rgba(8,14,30,0.92),rgba(10,24,52,0.88)), url('${cover}')`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-    } : undefined}
+    style={!disabled ? { backgroundImage: tone } : undefined}
     className={`relative rounded-[1.6rem] border p-6 md:p-7 transition-all ${
       disabled
         ? 'border-slate-700/75 bg-[#090f22]/72'
@@ -81,22 +87,38 @@ const GameCard: React.FC<FeaturedGame> = ({ title, subtitle, duration, mode, acc
     }`}
   >
     {!disabled && (
+      <>
+        <div
+          className="pointer-events-none absolute inset-0 opacity-45"
+          style={{
+            backgroundImage: `linear-gradient(${grid} 1px, transparent 1px), linear-gradient(90deg, ${grid} 1px, transparent 1px)`,
+            backgroundSize: '24px 24px',
+          }}
+        />
+        <div
+          className="pointer-events-none absolute -right-16 bottom-0 h-44 w-44 rounded-full blur-3xl"
+          style={{ backgroundColor: glow }}
+        />
+      </>
+    )}
+
+    {!disabled && (
       <motion.div
-        className="pointer-events-none absolute -left-24 top-0 h-24 w-48 -rotate-12 bg-cyan-300/20 blur-2xl"
+        className="pointer-events-none absolute -left-24 top-0 h-24 w-52 -rotate-12 bg-cyan-300/20 blur-2xl"
         animate={{ x: ['0%', '220%'] }}
         transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
       />
     )}
 
-    <div className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${accent} text-white px-3 py-1.5 shadow-lg`}>
+    <div className={`relative z-10 inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${accent} text-white px-3 py-1.5 shadow-lg`}>
       {icon}
       <span className="font-pixel text-[11px] tracking-[0.16em] uppercase">{badge}</span>
     </div>
 
-    <h3 className="mt-5 text-2xl font-display text-white tracking-wide">{title}</h3>
-    <p className="mt-3 text-[var(--rf-muted)] leading-relaxed">{subtitle}</p>
+    <h3 className="relative z-10 mt-5 text-2xl font-display text-white tracking-wide">{title}</h3>
+    <p className="relative z-10 mt-3 text-[var(--rf-muted)] leading-relaxed">{subtitle}</p>
 
-    <div className="mt-6 pt-5 border-t border-slate-700/75 flex items-center justify-between gap-3">
+    <div className="relative z-10 mt-6 pt-5 border-t border-slate-700/75 flex items-center justify-between gap-3">
       <div className="space-y-1">
         <p className="text-xs uppercase tracking-[0.14em] font-pixel text-cyan-300/80">Ortalama süre</p>
         <p className="text-white font-semibold">{duration}</p>
@@ -107,7 +129,7 @@ const GameCard: React.FC<FeaturedGame> = ({ title, subtitle, duration, mode, acc
       </div>
     </div>
 
-    <div className="mt-5 text-sm font-semibold text-cyan-200 flex items-center gap-2 group-hover:text-white transition-colors">
+    <div className="relative z-10 mt-5 text-sm font-semibold text-cyan-200 flex items-center gap-2 group-hover:text-white transition-colors">
       <span>{cta}</span>
       <ArrowUpRight size={16} />
     </div>

@@ -29,9 +29,9 @@ const restoreEnv = (snapshot) => {
 const setBaseSmtpEnv = () => {
   process.env.SMTP_HOST = 'smtp.gmail.com';
   process.env.SMTP_PORT = '587';
-  process.env.SMTP_USER = 'cafeduotr@gmail.com';
-  process.env.SMTP_PASS = 'abcd efgh ijkl mnop';
-  process.env.SMTP_FROM = 'cafeduotr@gmail.com';
+  process.env.SMTP_USER = 'smtp-user@example.test';
+  process.env.SMTP_PASS = 'demo token with spaces';
+  process.env.SMTP_FROM = 'smtp-user@example.test';
   process.env.SMTP_SEND_TIMEOUT_MS = '1200';
   process.env.SMTP_SEND_RETRIES = '2';
 };
@@ -96,8 +96,8 @@ describe('emailService', () => {
       expect.objectContaining({
         host: 'smtp.gmail.com',
         auth: expect.objectContaining({
-          user: 'cafeduotr@gmail.com',
-          pass: 'abcdefghijklmnop',
+          user: 'smtp-user@example.test',
+          pass: 'demotokenwithspaces',
         }),
       })
     );

@@ -31,6 +31,7 @@ describe('Navbar', () => {
     expect(screen.getByText('ANA SAYFA')).toBeInTheDocument();
     expect(screen.getByText('ÖZELLİKLER')).toBeInTheDocument();
     expect(screen.getByText('OYUNLAR')).toBeInTheDocument();
+    expect(screen.getByTestId('navbar-version-pill')).toHaveTextContent(/^v-/);
   });
 
   it('scrolls to section on same page for logged out users', () => {

@@ -78,6 +78,8 @@ nano .env
 | `DATABASE_URL` | PostgreSQL connection string | `postgres://user:pass@localhost:5432/cafeduo` |
 | `JWT_SECRET` | Secret key for JWT tokens | Generate with: `node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"` |
 | `CORS_ORIGIN` | Allowed frontend origins | `https://yourdomain.com` |
+| `APP_VERSION` | Build commit/version info for runtime diagnostics | `050548e` |
+| `APP_BUILD_TIME` | UTC build timestamp for diagnostics | `2026-02-12T14:00:00Z` |
 
 ### Database Configuration
 

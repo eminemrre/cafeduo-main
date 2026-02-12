@@ -112,11 +112,25 @@ const App: React.FC = () => {
     const restoreSession = async () => {
       const token = localStorage.getItem('token');
       const cachedUserRaw = localStorage.getItem('cafe_user');
+      const hasStoredCheckIn = () =>
+        typeof window !== 'undefined' &&
+        Boolean(token) &&
+        sessionStorage.getItem('cafeduo_checked_in_token') === token;
       const syncSessionState = (user: User | null) => {
         if (!isMounted) return;
         setCurrentUser(user);
         setIsLoggedIn(Boolean(user));
-        setHasSessionCheckIn(false);
+        if (!user) {
+          setHasSessionCheckIn(false);
+          return;
+        }
+        if (user.isAdmin || user.role === 'cafe_admin') {
+          setHasSessionCheckIn(true);
+          return;
+        }
+        const table = String(user.table_number || '').trim().toUpperCase();
+        const hasTable = Boolean(table) && table !== 'NULL' && table !== 'UNDEFINED';
+        setHasSessionCheckIn(hasStoredCheckIn() && Boolean(user.cafe_id) && hasTable);
       };
 
       if (!token) {
@@ -221,6 +235,7 @@ const App: React.FC = () => {
     setIsLoggedIn(false);
     setCurrentUser(null);
     setHasSessionCheckIn(false);
+    sessionStorage.removeItem('cafeduo_checked_in_token');
     localStorage.removeItem('cafe_user');
     navigate('/');
   };
@@ -255,6 +270,10 @@ const App: React.FC = () => {
       setCurrentUser(updatedUser);
       setHasSessionCheckIn(true);
       localStorage.setItem('cafe_user', JSON.stringify(updatedUser));
+      const token = localStorage.getItem('token');
+      if (token) {
+        sessionStorage.setItem('cafeduo_checked_in_token', token);
+      }
       navigate('/dashboard');
     }
   };
@@ -271,6 +290,7 @@ const App: React.FC = () => {
       currentUser.role !== 'cafe_admin'
     ) {
       setHasSessionCheckIn(false);
+      sessionStorage.removeItem('cafeduo_checked_in_token');
     }
 
     previousPathRef.current = currentPath;

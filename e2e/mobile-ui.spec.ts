@@ -25,7 +25,7 @@ test.describe('Mobile UI Stability', () => {
     await expect(page.locator('[data-testid="auth-email-input"]')).toBeVisible();
 
     // Akış kartları mobilde kaybolmamalı: 3 adım da görünür olmalı.
-    const flowHeading = page.getByRole('heading', { name: 'Akışı 3 adımda çalıştır.' });
+    const flowHeading = page.getByRole('heading', { name: 'Sistemi 3 adımda devreye al.' });
     await flowHeading.scrollIntoViewIfNeeded();
     await expect(page.getByText('Hesabını aç').first()).toBeVisible();
     await expect(page.getByText('Masanı doğrula').first()).toBeVisible();
@@ -77,5 +77,29 @@ test.describe('Mobile UI Stability', () => {
       () => document.documentElement.scrollWidth > window.innerWidth + 1
     );
     expect(hasHorizontalOverflow).toBeFalsy();
+  });
+
+  test('captures regression snapshots for 375x812 and 768x1024', async ({ page, baseURL }) => {
+    const root = baseURL || 'http://localhost:3000';
+
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto(root);
+    await page.evaluate(() => localStorage.setItem('cookie_consent', 'true'));
+    await page.reload();
+    const mobileShot = await page.screenshot({ fullPage: true });
+    expect(mobileShot.byteLength).toBeGreaterThan(10000);
+    await test.info().attach('home-375x812', {
+      body: mobileShot,
+      contentType: 'image/png',
+    });
+
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await page.goto(root);
+    const tabletShot = await page.screenshot({ fullPage: true });
+    expect(tabletShot.byteLength).toBeGreaterThan(10000);
+    await test.info().attach('home-768x1024', {
+      body: tabletShot,
+      contentType: 'image/png',
+    });
   });
 });

@@ -30,7 +30,7 @@ export const HowItWorks: React.FC = () => {
     <article
       key={step.id}
       data-testid={`how-step-${step.id}`}
-      className="cd-panel p-5 sm:p-6 md:p-7 relative overflow-hidden border-cyan-400/22 w-full bg-[linear-gradient(155deg,rgba(8,18,40,0.95),rgba(7,22,50,0.82))]"
+      className="cd-panel rf-elevated p-5 sm:p-6 md:p-7 relative overflow-hidden border-cyan-400/22 w-full bg-[linear-gradient(155deg,rgba(8,18,40,0.95),rgba(7,22,50,0.82))]"
     >
       <div className="absolute top-3 right-4 text-slate-600/75 font-display text-5xl md:text-6xl">{step.id}</div>
       <div className="absolute inset-x-3 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-300/55 to-transparent" />

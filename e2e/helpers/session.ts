@@ -166,7 +166,7 @@ export const checkInUser = async (
   request: APIRequestContext,
   baseURL: string,
   token: string,
-  options: { cafeId?: number; tableNumber?: number } = {}
+  options: { cafeId?: number; tableNumber?: number; latitude?: number; longitude?: number; accuracy?: number } = {}
 ) => {
   const apiRoot = resolveApiBaseUrl(baseURL);
   await waitForApiReady(request, apiRoot);
@@ -177,10 +177,16 @@ export const checkInUser = async (
   expect(cafes.length).toBeGreaterThan(0);
 
   const selectedCafe = cafes.find((cafe: any) => Number(cafe.id) === Number(options.cafeId)) || cafes[0];
-  const activePin =
-    selectedCafe?.daily_pin && String(selectedCafe.daily_pin) !== '0000'
-      ? String(selectedCafe.daily_pin)
-      : String(selectedCafe?.pin || '1234');
+  const fallbackCoordinates: Record<string, { latitude: number; longitude: number }> = {
+    '1': { latitude: 37.741, longitude: 29.101 },
+    '2': { latitude: 37.742, longitude: 29.102 },
+  };
+  const fallback = fallbackCoordinates[String(selectedCafe?.id)] || fallbackCoordinates['1'];
+  const latitude =
+    Number.isFinite(options.latitude) ? Number(options.latitude) : Number(selectedCafe?.latitude ?? fallback.latitude);
+  const longitude =
+    Number.isFinite(options.longitude) ? Number(options.longitude) : Number(selectedCafe?.longitude ?? fallback.longitude);
+  const accuracy = Number.isFinite(options.accuracy) ? Number(options.accuracy) : 35;
   const tableNumber = options.tableNumber || 1;
 
   const checkInRes = await request.post(`${apiRoot}/api/cafes/${selectedCafe.id}/check-in`, {
@@ -188,7 +194,9 @@ export const checkInUser = async (
       Authorization: `Bearer ${token}`,
     },
     data: {
-      pin: activePin,
+      latitude,
+      longitude,
+      accuracy,
       tableNumber,
     },
   });

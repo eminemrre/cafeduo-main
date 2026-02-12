@@ -327,12 +327,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     });
 
     return (
-        <div className="min-h-screen bg-[var(--rf-bg)] text-[var(--rf-ink)] pt-24 px-4 pb-12 font-sans relative overflow-hidden">
+        <div className="min-h-screen rf-page-shell text-[var(--rf-ink)] pt-24 px-4 pb-[calc(3rem+env(safe-area-inset-bottom))] font-sans relative overflow-hidden">
             <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
             <div className="max-w-7xl mx-auto">
 
                 {/* Header */}
-                <div className="flex items-center justify-between mb-8 bg-gradient-to-r from-[#0a1834]/90 to-[#060d20]/85 p-6 rounded-2xl border border-cyan-400/25 backdrop-blur-md">
+                <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-8 bg-gradient-to-r from-[#0a1834]/90 to-[#060d20]/85 p-6 rounded-2xl border border-cyan-400/25 backdrop-blur-md">
                     <div className="flex items-center gap-4">
                         <div className="p-3 bg-cyan-500/20 rounded-xl shadow-lg shadow-cyan-500/20 border border-cyan-300/35">
                             <Shield size={32} className="text-cyan-200" />
@@ -342,12 +342,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                             <p className="text-cyan-200/80 font-mono text-sm">SİSTEM YÖNETİCİSİ: {currentUser.username}</p>
                         </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex flex-wrap gap-2">
                         {DASHBOARD_TABS.map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={`flex items-center gap-2 px-6 py-3 rounded-xl transition-all duration-300 ${activeTab === tab.id
+                                className={`flex items-center gap-2 px-4 md:px-6 py-3 rounded-xl transition-all duration-300 rf-control ${activeTab === tab.id
                                     ? 'bg-cyan-500 text-[#041226] shadow-lg shadow-cyan-500/30 scale-105'
                                     : 'bg-[#0a1630]/70 text-gray-400 hover:bg-[#102447] hover:text-white'
                                     }`}

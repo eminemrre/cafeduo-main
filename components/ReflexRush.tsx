@@ -330,7 +330,7 @@ export const ReflexRush: React.FC<ReflexRushProps> = ({
 
   return (
     <div
-      className="max-w-2xl mx-auto rf-panel border-cyan-400/22 rounded-xl p-6 text-white relative overflow-hidden"
+      className="max-w-2xl mx-auto rf-panel rf-elevated border-cyan-400/22 rounded-xl p-6 text-white relative overflow-hidden"
       data-testid="reflex-rush"
       style={{
         backgroundImage: `linear-gradient(165deg, rgba(3, 18, 44, 0.92), rgba(4, 28, 56, 0.9)), url('${GAME_ASSETS.backgrounds.reflexRush}')`,

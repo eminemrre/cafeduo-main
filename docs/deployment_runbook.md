@@ -49,6 +49,9 @@ Last updated: 2026-02-07
 3. Copy project to VPS and create env:
    - `cp deploy/.env.production.example .env`
    - fill `.env` with real secrets and domain values
+   - set release traceability vars:
+     - `APP_VERSION=$(git rev-parse --short HEAD)`
+     - `APP_BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")`
 4. Set observability threshold:
    - `REQUEST_LOG_SLOW_MS=1200` (or stricter/lower for more warnings)
 
@@ -58,6 +61,7 @@ Last updated: 2026-02-07
    - `docker compose -f deploy/docker-compose.prod.yml --env-file .env up -d --build`
 2. Verify service health:
    - `curl https://<domain>/health`
+   - `curl https://<domain>/api/meta/version`
    - `docker compose -f deploy/docker-compose.prod.yml ps`
    - `bash deploy/scripts/smoke-vps.sh http://127.0.0.1`
    - `SMOKE_BASE_URL=https://<domain> npm run smoke:prod`

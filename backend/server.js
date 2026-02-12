@@ -175,6 +175,8 @@ const LEGACY_RATE_LIMIT_MAX_REQUESTS = Number(process.env.RATE_LIMIT_MAX_REQUEST
 const API_RATE_LIMIT_WINDOW_MS = Number(process.env.API_RATE_LIMIT_WINDOW_MS || LEGACY_RATE_LIMIT_WINDOW_MS);
 const API_RATE_LIMIT_MAX_REQUESTS =
   Number(process.env.API_RATE_LIMIT_MAX_REQUESTS || 0) || Math.max(LEGACY_RATE_LIMIT_MAX_REQUESTS, 600);
+const APP_VERSION = String(process.env.APP_VERSION || process.env.VITE_APP_VERSION || 'local').trim();
+const APP_BUILD_TIME = String(process.env.APP_BUILD_TIME || process.env.VITE_BUILD_TIME || '').trim();
 
 if (process.env.TRUST_PROXY) {
   const trustProxyEnv = process.env.TRUST_PROXY.trim();
@@ -959,6 +961,14 @@ app.get('/', (req, res) => {
 });
 
 // --- DÜZELTİLEN KISIM BİTİŞİ ---
+
+app.get('/api/meta/version', (req, res) => {
+  res.json({
+    commit: APP_VERSION || 'local',
+    buildTime: APP_BUILD_TIME || null,
+    nodeEnv: process.env.NODE_ENV || 'development',
+  });
+});
 
 // HEALTH CHECK ENDPOINT (for Docker/load balancers)
 app.get('/health', async (req, res) => {

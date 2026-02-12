@@ -2,8 +2,15 @@
   encode zstd gzip
 
   @api path /api* /socket.io* /health
+  @spa path / *.html
   reverse_proxy @api api:3001
   reverse_proxy web:80
+
+  header @spa {
+    Cache-Control "no-cache, no-store, must-revalidate"
+    Pragma "no-cache"
+    Expires "0"
+  }
 
   header {
     X-Content-Type-Options "nosniff"

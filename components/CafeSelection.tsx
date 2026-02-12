@@ -26,9 +26,9 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
   } = useCafeSelection({ currentUser, onCheckInSuccess });
 
   return (
-    <div className="min-h-screen bg-[var(--rf-bg)] text-[var(--rf-ink)] pt-24 pb-10 px-4 font-sans relative overflow-hidden">
+    <div className="min-h-screen rf-page-shell text-[var(--rf-ink)] pt-24 pb-[calc(2.5rem+env(safe-area-inset-bottom))] px-4 font-sans relative overflow-hidden">
       <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
-      <div className="max-w-md w-full mx-auto bg-[linear-gradient(170deg,rgba(8,14,30,0.96),rgba(10,24,52,0.88))] border border-cyan-400/25 rounded-2xl p-8 shadow-[0_30px_70px_rgba(0,0,0,0.45)] relative overflow-hidden">
+      <div className="max-w-md w-full mx-auto bg-[linear-gradient(170deg,rgba(8,14,30,0.96),rgba(10,24,52,0.88))] border border-cyan-400/25 rounded-2xl p-6 sm:p-8 shadow-[0_30px_70px_rgba(0,0,0,0.45)] relative overflow-hidden rf-elevated">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-2 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-60 blur-sm" />
 
         <div className="text-center mb-8">
@@ -63,7 +63,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                 value={selectedCafeId || ''}
                 onChange={(event) => setSelectedCafeId(event.target.value)}
                 data-testid="checkin-cafe-select"
-                className="w-full bg-black/40 border border-gray-600 rounded-xl py-3 pl-10 pr-4 text-white outline-none focus:border-cyan-400 appearance-none cursor-pointer focus:shadow-[0_0_20px_rgba(0,217,255,0.2)]"
+                className="rf-input pl-10 pr-4 appearance-none cursor-pointer"
               >
                 {cafes.map((cafe) => (
                   <option key={cafe.id} value={cafe.id}>
@@ -90,7 +90,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                 min="1"
                 max={maxTableCount}
                 data-testid="checkin-table-input"
-                className="w-full bg-black/40 border border-gray-600 rounded-xl py-3 pl-10 pr-4 text-white outline-none focus:border-cyan-400 focus:shadow-[0_0_20px_rgba(0,217,255,0.2)]"
+                className="rf-input pl-10 pr-4"
               />
             </div>
           </div>
@@ -99,7 +99,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
             <button
               type="button"
               onClick={() => void requestLocationAccess()}
-              className="w-full py-3 rounded-xl font-semibold border border-cyan-400/35 bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-100 flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl font-semibold border border-cyan-400/35 bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-100 flex items-center justify-center gap-2 rf-control"
               onFocus={clearError}
             >
               <LocateFixed size={18} />
@@ -132,7 +132,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
             onClick={() => void checkIn()}
             disabled={loading || !tableNumber}
             data-testid="checkin-submit-button"
-            className={`w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all ${
+            className={`w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all rf-control ${
               loading || !tableNumber
                 ? 'bg-gray-700 cursor-not-allowed opacity-50'
                 : 'bg-cyan-500 hover:bg-cyan-400 text-[#041226] shadow-lg shadow-cyan-500/30 hover:scale-[1.02] active:scale-95'

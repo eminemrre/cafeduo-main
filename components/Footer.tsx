@@ -1,6 +1,7 @@
 import React from 'react';
 import { Instagram, Twitter, Mail, Shield, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { BUILD_META } from '../lib/buildMeta';
 
 export const Footer: React.FC = () => {
   const year = new Date().getFullYear();
@@ -18,6 +19,13 @@ export const Footer: React.FC = () => {
             <p className="mt-3 font-pixel text-[10px] tracking-[0.2em] uppercase text-cyan-300/75">
               © {year} tüm hakları saklıdır
             </p>
+            <span
+              className="rf-version-pill mt-2"
+              data-testid="footer-version-pill"
+              title={BUILD_META.buildTime !== 'unknown' ? `Build: ${BUILD_META.buildTime}` : 'Build bilgisi yok'}
+            >
+              v-{BUILD_META.shortVersion}
+            </span>
           </div>
 
           <div className="space-y-2">

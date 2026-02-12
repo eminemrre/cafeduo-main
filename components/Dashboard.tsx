@@ -317,7 +317,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
   
   if (activeGameId) {
     return (
-      <div className="min-h-screen rf-dashboard-shell text-[var(--rf-ink)] pt-[calc(6rem+env(safe-area-inset-top))] md:pt-24 pb-12 px-4 relative overflow-hidden">
+      <div className="min-h-screen rf-dashboard-shell text-[var(--rf-ink)] pt-[calc(6rem+env(safe-area-inset-top))] md:pt-24 pb-[calc(3rem+env(safe-area-inset-bottom))] px-4 relative overflow-hidden">
         <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
         <div className="max-w-6xl mx-auto">
           {/* Geri butonu */}
@@ -410,7 +410,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
   // ==========================================
   
   return (
-    <div className="min-h-screen rf-dashboard-shell text-[var(--rf-ink)] pt-[calc(6rem+env(safe-area-inset-top))] md:pt-24 pb-12 px-4 relative overflow-hidden">
+    <div className="min-h-screen rf-dashboard-shell text-[var(--rf-ink)] pt-[calc(6rem+env(safe-area-inset-top))] md:pt-24 pb-[calc(3rem+env(safe-area-inset-bottom))] px-4 relative overflow-hidden">
       <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
       <div className="max-w-7xl mx-auto space-y-8">
         
@@ -439,7 +439,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
                   onClick={() => setMainTab(tab.id as typeof mainTab)}
                   data-testid={`dashboard-tab-${tab.id}`}
                   aria-label={tab.label}
-                  className={`rf-tab-button relative flex-1 min-w-0 flex items-center justify-center gap-1 md:gap-2 px-2 md:px-6 py-2.5 md:py-3 rounded-lg font-medium text-[11px] sm:text-sm md:text-base ${
+                  className={`rf-tab-button rf-control relative flex-1 min-w-0 flex items-center justify-center gap-1 md:gap-2 px-1.5 sm:px-2 md:px-6 py-2.5 md:py-3 rounded-lg font-medium text-[10px] sm:text-sm md:text-base ${
                     isActive ? 'rf-tab-active' : ''
                   }`}
                   whileTap={{ scale: 0.98 }}
@@ -459,10 +459,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
                   )}
                   <span className="relative z-10 flex items-center gap-1 md:gap-2 min-w-0">
                     <Icon size={16} className="md:w-5 md:h-5 shrink-0" />
-                    <span className="hidden sm:inline truncate">{tab.label}</span>
-                    <span className="sm:hidden truncate whitespace-nowrap">{tab.mobileLabel}</span>
-                  </span>
-                </motion.button>
+                      <span className="hidden sm:inline truncate">{tab.label}</span>
+                      <span className="sm:hidden max-[380px]:hidden truncate whitespace-nowrap">{tab.mobileLabel}</span>
+                    </span>
+                  </motion.button>
               );
             })}
           </div>
@@ -478,7 +478,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
             transition={{ duration: 0.2 }}
           >
             {mainTab === 'games' && (
-              <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.85fr)_minmax(420px,1fr)] 2xl:grid-cols-[minmax(0,2fr)_minmax(460px,1fr)] gap-6 md:gap-8">
+              <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1.75fr)_minmax(340px,1fr)] 2xl:grid-cols-[minmax(0,1.9fr)_minmax(380px,1fr)] gap-6 md:gap-8">
                 {/* Sol: Oyun Lobisi */}
                 <div className="order-1 min-w-0">
                   <GameSection

@@ -117,3 +117,9 @@ export interface Cafe {
   longitude?: number;
   radius?: number;
 }
+
+export interface BuildMeta {
+  version: string;
+  shortVersion: string;
+  buildTime: string;
+}

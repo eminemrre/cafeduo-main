@@ -23,6 +23,17 @@ fi
 HEALTH_JSON="$(curl -f "${curl_flags[@]}" "${BASE_URL}/health")"
 echo "[smoke-vps] /health -> ${HEALTH_JSON}"
 
+VERSION_JSON="$(curl -f "${curl_flags[@]}" "${BASE_URL}/api/meta/version")"
+echo "[smoke-vps] /api/meta/version -> ${VERSION_JSON}"
+
+INDEX_HEADERS="$(curl -sSI "${curl_flags[@]}" "${BASE_URL}/" | tr -d '\r')"
+if ! echo "${INDEX_HEADERS}" | grep -qi "cache-control: .*no-cache"; then
+  echo "[smoke-vps] index cache-control is not no-cache"
+  echo "${INDEX_HEADERS}"
+  exit 1
+fi
+echo "[smoke-vps] index cache-control check passed"
+
 STATUS_CODE="$(
   curl "${curl_flags[@]}" -o /tmp/cafeduo-smoke-login.json -w "%{http_code}" \
     -X POST "${BASE_URL}/api/auth/login" \

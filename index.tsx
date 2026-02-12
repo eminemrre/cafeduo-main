@@ -14,6 +14,9 @@ if (!rootElement) {
 
 const root = ReactDOM.createRoot(rootElement);
 const googleClientId = String(import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim();
+if (typeof window !== 'undefined') {
+  (window as Window & { __CAFEDUO_GOOGLE_CLIENT_ID__?: string }).__CAFEDUO_GOOGLE_CLIENT_ID__ = googleClientId;
+}
 const appTree = (
   <BrowserRouter>
     <App />

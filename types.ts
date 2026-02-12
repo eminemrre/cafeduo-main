@@ -123,3 +123,19 @@ export interface BuildMeta {
   shortVersion: string;
   buildTime: string;
 }
+
+export interface DeleteCafeCleanup {
+  detachedUsers: number;
+  cafeAdminsDemoted: number;
+  rewardsDeleted: number;
+  gamesForceClosed: number;
+}
+
+export interface DeleteCafeResult {
+  success: boolean;
+  deletedCafe: {
+    id: string | number;
+    name: string;
+  };
+  cleanup: DeleteCafeCleanup;
+}

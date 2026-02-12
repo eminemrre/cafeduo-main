@@ -355,18 +355,21 @@ describe('API Layer additional coverage', () => {
       .mockResolvedValueOnce({ ok: true, json: async () => [] }) // admin users
       .mockResolvedValueOnce({ ok: true, json: async () => [] }) // admin games
       .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }) // update cafe
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 5 }) }); // create cafe
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ id: 5 }) }) // create cafe
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ success: true }) }); // delete cafe
 
     await api.leaderboard.get();
     await api.admin.getUsers();
     await api.admin.getGames();
     await api.admin.updateCafe(2, { name: 'Yeni Kafe' });
     await api.admin.createCafe({ name: 'A Kafe' });
+    await api.admin.deleteCafe(2);
 
     expect(fetch).toHaveBeenNthCalledWith(1, '/api/leaderboard', expect.any(Object));
     expect(fetch).toHaveBeenNthCalledWith(2, '/api/admin/users', expect.any(Object));
     expect(fetch).toHaveBeenNthCalledWith(3, '/api/admin/games', expect.any(Object));
     expect(fetch).toHaveBeenNthCalledWith(4, '/api/admin/cafes/2', expect.objectContaining({ method: 'PUT' }));
     expect(fetch).toHaveBeenNthCalledWith(5, '/api/admin/cafes', expect.objectContaining({ method: 'POST' }));
+    expect(fetch).toHaveBeenNthCalledWith(6, '/api/admin/cafes/2', expect.objectContaining({ method: 'DELETE' }));
   });
 });

@@ -541,6 +541,7 @@ const adminHandlers = createAdminHandlers({
   logger,
   normalizeCafeCreatePayload,
   normalizeCafeUpdatePayload,
+  clearCacheByPattern: clearCache,
   getMemoryUsers: () => MEMORY_USERS,
   setMemoryUsers: (nextUsers) => {
     MEMORY_USERS = nextUsers;
@@ -679,6 +680,9 @@ app.put('/api/admin/cafes/:id', authenticateToken, requireAdmin, adminHandlers.u
 
 // 4.7 CREATE CAFE (Admin only) - PROTECTED
 app.post('/api/admin/cafes', authenticateToken, requireAdmin, adminHandlers.createCafe);
+
+// 4.8 DELETE CAFE (Admin only) - PROTECTED
+app.delete('/api/admin/cafes/:id', authenticateToken, requireAdmin, adminHandlers.deleteCafe);
 
 // ===================================
 // 5. REWARDS ENDPOINTS (for Cafe Admins)

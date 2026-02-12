@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Trash2, Shield, Search, Coffee, Gamepad2, Save, UserPlus, Coins } from 'lucide-react';
-import { Cafe, User } from '../types';
+import { Cafe, DeleteCafeResult, User } from '../types';
 import { api } from '../lib/api';
 import { AddUserModal } from './admin/AddUserModal';
 import { AddCafeModal } from './admin/AddCafeModal';
@@ -84,14 +84,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                 }, {})
             );
 
-            if (cafesData.length > 0 && !selectedCafe) {
-                setSelectedCafe(cafesData[0]);
+            if (cafesData.length === 0) {
+                setSelectedCafe(null);
                 setEditCafeData({
-                    address: cafesData[0].address || '',
-                    total_tables: cafesData[0].total_tables || cafesData[0].table_count || 20,
-                    latitude: cafesData[0].latitude != null ? String(cafesData[0].latitude) : '',
-                    longitude: cafesData[0].longitude != null ? String(cafesData[0].longitude) : '',
-                    radius: Number(cafesData[0].radius || 150),
+                    address: '',
+                    total_tables: 20,
+                    latitude: '',
+                    longitude: '',
+                    radius: 150,
+                });
+            } else {
+                const selectedCafeId = selectedCafe ? Number(selectedCafe.id) : null;
+                const resolvedCafe = selectedCafeId
+                    ? cafesData.find((cafe) => Number(cafe.id) === selectedCafeId) || cafesData[0]
+                    : cafesData[0];
+
+                setSelectedCafe(resolvedCafe);
+                setEditCafeData({
+                    address: resolvedCafe.address || '',
+                    total_tables: resolvedCafe.total_tables || resolvedCafe.table_count || 20,
+                    latitude: resolvedCafe.latitude != null ? String(resolvedCafe.latitude) : '',
+                    longitude: resolvedCafe.longitude != null ? String(resolvedCafe.longitude) : '',
+                    radius: Number(resolvedCafe.radius || 150),
                 });
             }
         } catch (error) {
@@ -314,6 +328,46 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
             loadData();
         } catch (error) {
             alert('Kafe eklenirken hata oluştu.');
+        }
+    };
+
+    const handleDeleteCafe = async () => {
+        if (!selectedCafe) {
+            alert('Silinecek bir kafe seçin.');
+            return;
+        }
+
+        if (cafes.length <= 1) {
+            alert('Sistemde en az bir kafe kalmalıdır.');
+            return;
+        }
+
+        const confirmationMessage = `${selectedCafe.name} kafesini silmek istediğinize emin misiniz?\n\nBu işlem bağlı kullanıcıları kafeden ayırır, kafe yöneticilerini user rolüne düşürür, bağlı ödülleri siler ve açık oyunları kapatır.`;
+        if (!window.confirm(confirmationMessage)) {
+            return;
+        }
+
+        try {
+            const result: DeleteCafeResult = await api.admin.deleteCafe(selectedCafe.id);
+            const cleanup = result?.cleanup || {
+                detachedUsers: 0,
+                cafeAdminsDemoted: 0,
+                rewardsDeleted: 0,
+                gamesForceClosed: 0,
+            };
+
+            alert(
+                `${selectedCafe.name} silindi.\n` +
+                `${cleanup.detachedUsers} kullanıcı kafeden ayrıldı.\n` +
+                `${cleanup.cafeAdminsDemoted} kafe yöneticisi user rolüne alındı.\n` +
+                `${cleanup.rewardsDeleted} ödül silindi.\n` +
+                `${cleanup.gamesForceClosed} açık oyun kapatıldı.`
+            );
+
+            await loadData();
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Kafe silinemedi.';
+            alert(message);
         }
     };
 
@@ -623,6 +677,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                         >
                                             <Save size={18} /> DEĞİŞİKLİKLERİ KAYDET
                                         </button>
+                                        <button
+                                            onClick={handleDeleteCafe}
+                                            disabled={cafes.length <= 1}
+                                            data-testid="delete-cafe-button"
+                                            className={`w-full font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-all ${
+                                                cafes.length <= 1
+                                                    ? 'bg-red-950/40 text-red-300/60 border border-red-700/40 cursor-not-allowed'
+                                                    : 'bg-red-700 hover:bg-red-600 text-white shadow-lg shadow-red-700/20'
+                                            }`}
+                                        >
+                                            <Trash2 size={18} /> KAFEYİ SİL
+                                        </button>
+                                        {cafes.length <= 1 && (
+                                            <p className="text-xs text-red-300/80">
+                                                Güvenlik kuralı: Son kafe silinemez.
+                                            </p>
+                                        )}
                                     </div>
                                 )}
                             </div>

@@ -39,6 +39,7 @@ describe('backend/server.js route registry', () => {
       'GET /api/users/:username/active-game',
       'POST /api/admin/cafes',
       'PUT /api/admin/cafes/:id',
+      'DELETE /api/admin/cafes/:id',
     ];
 
     for (const routeKey of expectedSingleRoutes) {

@@ -2,7 +2,17 @@
  * API Layer - REST API Client
  * Handles all HTTP communication with the backend
  */
-import type { User, GameRequest, Reward, Cafe, Achievement, GameHistoryEntry, AdminGameRow, BuildMeta } from '../types';
+import type {
+  User,
+  GameRequest,
+  Reward,
+  Cafe,
+  Achievement,
+  GameHistoryEntry,
+  AdminGameRow,
+  BuildMeta,
+  DeleteCafeResult,
+} from '../types';
 
 const withProtocol = (url: string): string => {
   if (url.startsWith('/') || /^https?:\/\//i.test(url)) return url;
@@ -623,7 +633,13 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       });
-    }
+    },
+
+    deleteCafe: async (cafeId: string | number): Promise<DeleteCafeResult> => {
+      return await fetchAPI(`/admin/cafes/${cafeId}`, {
+        method: 'DELETE',
+      });
+    },
   },
 
 

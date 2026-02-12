@@ -14,6 +14,7 @@ const createAdminHandlers = ({
   normalizeCafeUpdatePayload,
   getMemoryUsers,
   setMemoryUsers,
+  clearCacheByPattern = async () => {},
 }) => {
   const getUsers = async (req, res) =>
     executeDataMode(isDbConnected, {
@@ -355,6 +356,133 @@ const createAdminHandlers = ({
     });
   };
 
+  const deleteCafe = async (req, res) => {
+    const cafeId = Number(req.params?.id);
+    if (!Number.isInteger(cafeId) || cafeId <= 0) {
+      return res.status(400).json({ error: 'Geçersiz kafe kimliği.' });
+    }
+
+    return executeDataMode(isDbConnected, {
+      db: async () => {
+        const client = await pool.connect();
+        let committed = false;
+        try {
+          await client.query('BEGIN');
+
+          const cafeResult = await client.query(
+            'SELECT id, name FROM cafes WHERE id = $1 FOR UPDATE',
+            [cafeId]
+          );
+          if (cafeResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Kafe bulunamadı.' });
+          }
+
+          const cafeCountResult = await client.query('SELECT COUNT(*)::int AS count FROM cafes');
+          const totalCafes = Number(cafeCountResult.rows[0]?.count || 0);
+          if (totalCafes <= 1) {
+            await client.query('ROLLBACK');
+            return res.status(400).json({ error: 'Sistemde en az bir kafe kalmalıdır.' });
+          }
+
+          const usersResult = await client.query(
+            'SELECT id, username, role FROM users WHERE cafe_id = $1',
+            [cafeId]
+          );
+          const users = usersResult.rows || [];
+          const usernames = [...new Set(
+            users
+              .map((user) => String(user.username || '').trim())
+              .filter(Boolean)
+          )];
+
+          const cafeAdminsDemoted = users.filter((user) => user.role === 'cafe_admin').length;
+
+          const detachedUsersResult = await client.query(
+            `
+              UPDATE users
+              SET
+                cafe_id = NULL,
+                table_number = NULL,
+                role = CASE WHEN role = 'cafe_admin' THEN 'user' ELSE role END,
+                is_admin = CASE WHEN role = 'cafe_admin' THEN FALSE ELSE is_admin END
+              WHERE cafe_id = $1
+            `,
+            [cafeId]
+          );
+
+          const rewardsDeletedResult = await client.query(
+            'DELETE FROM rewards WHERE cafe_id = $1',
+            [cafeId]
+          );
+
+          let gamesForceClosed = 0;
+          if (usernames.length > 0) {
+            const forcedGameState = JSON.stringify({
+              forceClosed: true,
+              forceCloseReason: 'cafe_deleted',
+              forceClosedAt: new Date().toISOString(),
+            });
+            const gamesResult = await client.query(
+              `
+                UPDATE games
+                SET
+                  status = 'finished',
+                  game_state = COALESCE(game_state, '{}'::jsonb) || $2::jsonb
+                WHERE status IN ('waiting', 'active')
+                  AND (host_name = ANY($1::text[]) OR guest_name = ANY($1::text[]))
+              `,
+              [usernames, forcedGameState]
+            );
+            gamesForceClosed = gamesResult.rowCount || 0;
+          }
+
+          const deleteCafeResult = await client.query(
+            'DELETE FROM cafes WHERE id = $1 RETURNING id, name',
+            [cafeId]
+          );
+          if (deleteCafeResult.rows.length === 0) {
+            await client.query('ROLLBACK');
+            return res.status(404).json({ error: 'Kafe bulunamadı.' });
+          }
+
+          await client.query('COMMIT');
+          committed = true;
+
+          try {
+            await clearCacheByPattern('cache:/api/cafes*');
+          } catch (cacheErr) {
+            logger.warn('Cafe cache cleanup failed after delete', cacheErr);
+          }
+
+          return res.json({
+            success: true,
+            deletedCafe: deleteCafeResult.rows[0],
+            cleanup: {
+              detachedUsers: detachedUsersResult.rowCount || 0,
+              cafeAdminsDemoted,
+              rewardsDeleted: rewardsDeletedResult.rowCount || 0,
+              gamesForceClosed,
+            },
+          });
+        } catch (err) {
+          if (!committed) {
+            try {
+              await client.query('ROLLBACK');
+            } catch (rollbackErr) {
+              logger.error('Cafe delete rollback error:', rollbackErr);
+            }
+          }
+          return sendApiError(res, logger, 'Cafe delete error', err, 'Kafe silinemedi.');
+        } finally {
+          client.release();
+        }
+      },
+      memory: async () =>
+        res.status(501).json({ error: 'Demo modda kafe silme desteklenmiyor.' }),
+    });
+  };
+
   const deleteUser = async (req, res) => {
     const { id } = req.params;
     if (Number(id) === Number(req.user.id)) {
@@ -393,6 +521,7 @@ const createAdminHandlers = ({
     updateUserPoints,
     updateCafe,
     createCafe,
+    deleteCafe,
     createCafeAdmin,
     deleteUser,
   };
@@ -401,4 +530,3 @@ const createAdminHandlers = ({
 module.exports = {
   createAdminHandlers,
 };
-

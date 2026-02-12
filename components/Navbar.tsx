@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Coffee, LogOut, ChevronRight, Sparkles } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { NAV_ITEMS } from '../constants';
+import { BUILD_META } from '../lib/buildMeta';
 
 interface NavbarProps {
   isLoggedIn?: boolean;
@@ -110,6 +111,13 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
                   </motion.button>
                 </div>
               )}
+              <span
+                className="rf-version-pill hidden lg:inline-flex"
+                data-testid="navbar-version-pill"
+                title={BUILD_META.buildTime !== 'unknown' ? `Build: ${BUILD_META.buildTime}` : 'Build bilgisi yok'}
+              >
+                v-{BUILD_META.shortVersion}
+              </span>
             </div>
 
             <motion.button
@@ -177,6 +185,15 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, onLogout }) 
               </div>
 
               <div className="p-4 space-y-2">
+                <div className="px-2 pb-2">
+                  <span
+                    className="rf-version-pill"
+                    data-testid="navbar-version-pill-mobile"
+                    title={BUILD_META.buildTime !== 'unknown' ? `Build: ${BUILD_META.buildTime}` : 'Build bilgisi yok'}
+                  >
+                    v-{BUILD_META.shortVersion}
+                  </span>
+                </div>
                 {!isLoggedIn ? (
                   NAV_ITEMS.map((item, index) => (
                     <motion.button

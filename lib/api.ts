@@ -2,7 +2,7 @@
  * API Layer - REST API Client
  * Handles all HTTP communication with the backend
  */
-import type { User, GameRequest, Reward, Cafe, Achievement, GameHistoryEntry, AdminGameRow } from '../types';
+import type { User, GameRequest, Reward, Cafe, Achievement, GameHistoryEntry, AdminGameRow, BuildMeta } from '../types';
 
 const withProtocol = (url: string): string => {
   if (url.startsWith('/') || /^https?:\/\//i.test(url)) return url;
@@ -207,6 +207,22 @@ async function fetchAPI<TResponse = unknown>(endpoint: string, options: RequestI
 }
 
 export const api = {
+  meta: {
+    getVersion: async (): Promise<BuildMeta & { nodeEnv?: string }> => {
+      const data = await fetchAPI<{ commit?: string; buildTime?: string | null; nodeEnv?: string }>('/meta/version');
+      const rawVersion = String(data.commit || 'local').trim();
+      const shortVersion = /^[a-f0-9]{8,}$/i.test(rawVersion)
+        ? rawVersion.slice(0, 7)
+        : rawVersion.slice(0, 12);
+      return {
+        version: rawVersion || 'local',
+        shortVersion: shortVersion || 'local',
+        buildTime: String(data.buildTime || 'unknown'),
+        nodeEnv: data.nodeEnv,
+      };
+    },
+  },
+
   // AUTH
   auth: {
     login: async (email: string, password: string): Promise<User> => {

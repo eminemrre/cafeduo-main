@@ -168,7 +168,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
 
       {/* Modal Content */}
       <div
-        className="relative bg-[linear-gradient(170deg,rgba(6,13,29,0.98),rgba(8,24,51,0.9))] border-2 border-cyan-400/35 rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-[0_0_50px_rgba(10,215,255,0.2)] transform transition-all scale-100 opacity-100 max-h-[calc(100vh-1.5rem)] sm:max-h-[min(860px,calc(100vh-3rem))] overflow-y-auto"
+        className="relative bg-[linear-gradient(170deg,rgba(6,13,29,0.98),rgba(8,24,51,0.9))] border-2 border-cyan-400/35 rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-[0_0_50px_rgba(10,215,255,0.2)] transform transition-all scale-100 opacity-100 max-h-[calc(100vh-1.5rem)] sm:max-h-[min(860px,calc(100vh-3rem))] overflow-y-auto rf-modal-scroll"
         data-testid="create-game-modal"
       >
 
@@ -210,12 +210,12 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <div className="text-white font-retro text-lg">{game.name}</div>
+                      <div className="text-white font-retro text-base sm:text-lg leading-tight">{game.name}</div>
                       <div className="text-cyan-300 text-[10px] font-pixel tracking-[0.12em] uppercase">{game.category}</div>
-                      <div className="text-[var(--rf-muted)] text-xs">{game.description}</div>
+                      <div className="text-[var(--rf-muted)] text-xs leading-snug">{game.description}</div>
                     </div>
                     {game.minPoints > 0 ? (
-                      <div className="text-amber-300 text-xs font-pixel shrink-0 text-right leading-tight">
+                      <div className="text-amber-300 text-xs font-pixel shrink-0 text-right leading-tight min-w-[68px]">
                         Min {game.minPoints} Puan
                       </div>
                     ) : null}
@@ -245,7 +245,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                 min={minPoints}
                 max={maxPoints}
                 data-testid="game-points-input"
-                className={`w-full bg-black border-2 ${errors.points && touched.points ? 'border-red-500' : 'border-cyan-400/25'} text-white p-3 pr-16 font-retro text-2xl text-center focus:border-cyan-300 outline-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                className={`w-full bg-black border-2 ${errors.points && touched.points ? 'border-red-500' : 'border-cyan-400/25'} text-white p-3 pr-20 font-retro text-xl sm:text-2xl text-center focus:border-cyan-300 outline-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--rf-muted)] text-sm">Puan</span>
             </div>
@@ -257,7 +257,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                   key={preset.label}
                   type="button"
                   onClick={() => handlePointsChange(preset.value.toString())}
-                  className={`flex-1 py-1 px-2 text-xs border-2 transition-colors ${
+                  className={`flex-1 min-h-[40px] py-1 px-2 text-xs border-2 rounded-md transition-colors ${
                     points === preset.value
                       ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300'
                       : 'border-cyan-400/20 hover:border-cyan-400/35 text-[var(--rf-muted)]'

@@ -13,6 +13,7 @@ describe('Footer', () => {
 
     expect(screen.getByText('CafeDuo')).toBeInTheDocument();
     expect(screen.getByText(`© ${new Date().getFullYear()} tüm hakları saklıdır`)).toBeInTheDocument();
+    expect(screen.getByTestId('footer-version-pill')).toHaveTextContent(/^v-/);
 
     const privacyLink = screen.getByRole('link', { name: /Gizlilik Politikası & KVKK/i });
     expect(privacyLink).toHaveAttribute('href', '/gizlilik');

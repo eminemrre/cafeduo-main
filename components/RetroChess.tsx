@@ -622,7 +622,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
         <p className="text-xs text-emerald-300 mb-3">Kazanan: {serverWinner}</p>
       )}
 
-      <div className="w-full max-w-[620px] mx-auto">
+      <div className="w-full max-w-[620px] mx-auto rounded-2xl border border-cyan-300/22 p-2 sm:p-3 bg-[#06132b]/85 shadow-[0_12px_34px_rgba(0,0,0,0.35)]">
         <div className="grid grid-cols-8 gap-1.5 sm:gap-2" data-testid="retro-chess-board">
           {ranks.map((rank, rankIndex) =>
             files.map((file, fileIndex) => {
@@ -633,8 +633,8 @@ export const RetroChess: React.FC<RetroChessProps> = ({
               const isLegal = legalTargets.includes(square);
 
               const baseClass = isLight
-                ? 'bg-[linear-gradient(145deg,#295e91,#1f4a74)]'
-                : 'bg-[linear-gradient(145deg,#102744,#0c1e35)]';
+                ? 'bg-[linear-gradient(145deg,#356b9f,#25527f)]'
+                : 'bg-[linear-gradient(145deg,#0d2240,#081a31)]';
               const selectedClass = isSelected ? 'border-cyan-200 ring-2 ring-cyan-300/65' : 'border-cyan-500/24';
               const legalClass = isLegal ? 'before:absolute before:inset-0 before:m-auto before:w-3 before:h-3 before:rounded-full before:bg-cyan-200 before:shadow-[0_0_10px_rgba(165,243,252,0.85)]' : '';
 
@@ -653,13 +653,13 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                       src={PIECE_ASSET[piece.color][piece.type]}
                       alt={`${piece.color === 'w' ? 'Beyaz' : 'Siyah'} ${piece.type}`}
                       draggable={false}
-                      className="pointer-events-none mx-auto h-[78%] w-[78%] object-contain select-none"
+                      className="pointer-events-none mx-auto h-[84%] w-[84%] object-contain select-none"
                       style={{
                         imageRendering: 'auto',
                         filter:
                           piece.color === 'w'
-                            ? 'drop-shadow(0 1px 1px rgba(0,0,0,0.7)) drop-shadow(0 0 10px rgba(186,230,253,0.55))'
-                            : 'drop-shadow(0 1px 1px rgba(255,255,255,0.45)) drop-shadow(0 0 9px rgba(0,0,0,0.9))',
+                            ? 'brightness(1.2) contrast(1.15) drop-shadow(0 1px 1px rgba(0,0,0,0.85)) drop-shadow(0 0 12px rgba(186,230,253,0.6))'
+                            : 'brightness(0.98) contrast(1.2) drop-shadow(0 1px 1px rgba(255,255,255,0.55)) drop-shadow(0 0 10px rgba(0,0,0,0.95))',
                       }}
                     />
                   )}

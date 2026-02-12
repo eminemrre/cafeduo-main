@@ -54,8 +54,8 @@ export const ResetPasswordPage: React.FC = () => {
   };
 
   return (
-    <section className="rf-section min-h-[70vh] flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-md rounded-3xl border border-cyan-400/30 bg-[#060f24]/90 shadow-[0_24px_80px_rgba(0,0,0,0.55)] p-6 md:p-8">
+    <section className="rf-section rf-page-shell min-h-[70vh] flex items-center justify-center px-4 py-16">
+      <div className="w-full max-w-md rounded-3xl border border-cyan-400/30 bg-[#060f24]/90 shadow-[0_24px_80px_rgba(0,0,0,0.55)] p-6 md:p-8 rf-elevated">
         <p className="font-pixel text-[10px] tracking-[0.22em] text-cyan-200/80 uppercase">CafeDuo Güvenlik</p>
         <h1 className="font-display text-2xl md:text-3xl text-white mt-2 mb-3">Şifreyi Yenile</h1>
         <p className="text-slate-300 text-sm mb-5">
@@ -85,7 +85,7 @@ export const ResetPasswordPage: React.FC = () => {
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                className="w-full h-12 pl-10 pr-3 rounded-xl border border-cyan-400/25 bg-[#081631] text-white outline-none focus:border-cyan-300 focus:shadow-[0_0_20px_rgba(0,217,255,0.2)]"
+                className="rf-input pl-10 pr-3"
                 placeholder="Yeni şifre"
                 autoComplete="new-password"
               />
@@ -100,7 +100,7 @@ export const ResetPasswordPage: React.FC = () => {
                 type="password"
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
-                className="w-full h-12 pl-10 pr-3 rounded-xl border border-cyan-400/25 bg-[#081631] text-white outline-none focus:border-cyan-300 focus:shadow-[0_0_20px_rgba(0,217,255,0.2)]"
+                className="rf-input pl-10 pr-3"
                 placeholder="Yeni şifre tekrar"
                 autoComplete="new-password"
               />

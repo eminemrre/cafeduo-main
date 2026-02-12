@@ -249,7 +249,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   const inputBaseClass =
-    'w-full h-12 bg-[#07132b]/80 border rounded-xl text-white text-base md:text-lg placeholder:text-slate-500 outline-none transition-all';
+    'rf-input rf-control text-white text-base md:text-lg';
   const inputBorderClass =
     'border-slate-600 focus:border-cyan-300 focus:shadow-[0_0_20px_rgba(0,217,255,0.2)]';
   const inputErrorClass =
@@ -282,7 +282,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
         {/* Modal Container - Full screen on mobile, centered on desktop */}
         <motion.div
-          className="relative w-full sm:max-w-[520px] max-h-[92vh] bg-[linear-gradient(170deg,rgba(8,14,30,0.97),rgba(10,24,52,0.9))] border border-cyan-400/28 shadow-[0_30px_70px_rgba(0,0,0,0.55)] rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col"
+          className="relative w-full sm:max-w-[520px] max-h-[92vh] bg-[linear-gradient(170deg,rgba(8,14,30,0.97),rgba(10,24,52,0.9))] border border-cyan-400/28 shadow-[0_30px_70px_rgba(0,0,0,0.55)] rounded-t-3xl sm:rounded-3xl overflow-hidden flex flex-col rf-elevated"
           initial={{ y: '100%', opacity: 0.5 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: '100%', opacity: 0.5 }}
@@ -313,13 +313,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
 
           {/* Content - Scrollable on mobile */}
-          <div className="p-4 sm:p-6 md:p-7 flex-1 overflow-y-auto flex flex-col gap-5">
+          <div className="p-4 sm:p-6 md:p-7 flex-1 overflow-y-auto rf-modal-scroll flex flex-col gap-5">
 
             <div className="rounded-xl border border-cyan-400/20 bg-[#050d20]/90 p-1 grid grid-cols-2 gap-1">
-              <button
-                type="button"
-                onClick={() => switchMode('login')}
-                className={`h-10 rounded-lg text-sm md:text-base font-semibold transition-all ${
+                <button
+                  type="button"
+                  onClick={() => switchMode('login')}
+                  className={`h-10 rf-control rounded-lg text-sm md:text-base font-semibold transition-all ${
                   mode === 'login'
                     ? 'bg-cyan-500/18 text-cyan-100 border border-cyan-300/35'
                     : 'text-slate-400 hover:text-slate-200'
@@ -327,10 +327,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               >
                 Giriş Yap
               </button>
-              <button
-                type="button"
-                onClick={() => switchMode('register')}
-                className={`h-10 rounded-lg text-sm md:text-base font-semibold transition-all ${
+                <button
+                  type="button"
+                  onClick={() => switchMode('register')}
+                  className={`h-10 rf-control rounded-lg text-sm md:text-base font-semibold transition-all ${
                   mode === 'register'
                     ? 'bg-cyan-500/18 text-cyan-100 border border-cyan-300/35'
                     : 'text-slate-400 hover:text-slate-200'
@@ -476,7 +476,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 type="submit"
                 disabled={isLoading}
                 data-testid="auth-submit-button"
-                className="w-full mt-2 normal-case tracking-[0.06em] text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full mt-2 normal-case tracking-[0.06em] text-base font-semibold disabled:opacity-50 disabled:cursor-not-allowed rf-control"
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center gap-2">

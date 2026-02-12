@@ -242,7 +242,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
             transition={{ duration: 0.8, delay: 0.12 }}
             style={{ x: panelX, y: panelY }}
           >
-            <div className="rf-panel p-6 md:p-8 relative overflow-hidden">
+            <div className="rf-panel rf-elevated p-6 md:p-8 relative overflow-hidden">
               <div className="absolute inset-x-6 top-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent opacity-70" />
               <div className="absolute right-6 top-6 h-20 w-20 rounded-full bg-cyan-400/20 blur-2xl animate-float-slow" />
 
@@ -256,7 +256,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                     </div>
                     <div>
                       <p className="font-semibold text-white">Kafe girişi doğrulandı</p>
-                        <p className="text-sm text-slate-300">Masa ve konum doğrulaması 12 saniyede tamamlandı.</p>
+                      <p className="text-sm text-slate-300">Masa ve konum doğrulaması 12 saniyede tamamlandı.</p>
                     </div>
                   </div>
                 </div>

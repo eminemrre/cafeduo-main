@@ -57,7 +57,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           <div className="rf-card-quiet p-2.5 sm:p-3" data-testid="user-points">
             <div className="flex items-center gap-1.5 text-amber-300 mb-1">
               <Star size={15} />
-              <span className="text-[10px] uppercase tracking-[0.14em]">Puan</span>
+              <span className="text-[10px] uppercase tracking-[0.1em]">Puan</span>
             </div>
             <div className="text-white text-lg sm:text-xl font-semibold leading-none">{user.points}</div>
           </div>
@@ -65,7 +65,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           <div className="rf-card-quiet p-2.5 sm:p-3" data-testid="user-wins">
             <div className="flex items-center gap-1.5 text-cyan-300 mb-1">
               <Trophy size={15} />
-              <span className="text-[10px] uppercase tracking-[0.14em]">Galibiyet</span>
+              <span className="text-[10px] uppercase tracking-[0.1em]">Galibiyet</span>
             </div>
             <div className="text-white text-lg sm:text-xl font-semibold leading-none">{user.wins}</div>
           </div>
@@ -73,7 +73,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           <div className="rf-card-quiet p-2.5 sm:p-3" data-testid="user-games">
             <div className="flex items-center gap-1.5 text-slate-300 mb-1">
               <Gamepad2 size={15} />
-              <span className="text-[10px] uppercase tracking-[0.14em]">Oyun</span>
+              <span className="text-[10px] uppercase tracking-[0.1em]">Oyun</span>
             </div>
             <div className="text-white text-lg sm:text-xl font-semibold leading-none">{user.gamesPlayed}</div>
           </div>

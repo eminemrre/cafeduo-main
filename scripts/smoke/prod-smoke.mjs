@@ -57,6 +57,14 @@ const checkInvalidLoginResponse = async () => {
   assert(text.length > 0, 'Login error response should not be empty');
 };
 
+const checkVersionMeta = async () => {
+  printStep(`Version check: ${baseUrl}/api/meta/version`);
+  const response = await fetchWithTimeout(`${baseUrl}/api/meta/version`);
+  assert(response.ok, `Version endpoint failed with status ${response.status}`);
+  const body = await response.json();
+  assert(typeof body?.commit === 'string' && body.commit.length > 0, 'Version payload missing commit');
+};
+
 const checkOptionalValidLogin = async () => {
   const email = process.env.SMOKE_LOGIN_EMAIL;
   const password = process.env.SMOKE_LOGIN_PASSWORD;
@@ -116,6 +124,7 @@ const checkSocketHandshake = async () => {
 const run = async () => {
   printStep(`Starting smoke tests against ${baseUrl}`);
   await checkHealth();
+  await checkVersionMeta();
   await checkInvalidLoginResponse();
   await checkOptionalValidLogin();
   await checkSocketHandshake();

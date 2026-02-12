@@ -87,7 +87,7 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--rf-bg)] text-[var(--rf-ink)] pt-24 px-4 pb-12 relative overflow-hidden">
+    <div className="min-h-screen rf-page-shell text-[var(--rf-ink)] pt-24 px-4 pb-[calc(3rem+env(safe-area-inset-bottom))] relative overflow-hidden">
       <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-4 mb-8">

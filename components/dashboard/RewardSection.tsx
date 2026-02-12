@@ -57,14 +57,14 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
   const canAfford = (cost: number) => (currentUser?.points ?? 0) >= cost;
 
   return (
-    <div className="rf-panel border-cyan-400/20 rounded-xl p-4 sm:p-6">
+    <div className="rf-panel rf-elevated border-cyan-400/20 rounded-xl p-4 sm:p-6">
       {/* Tab Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
         <div className="flex items-center gap-2 bg-[#08152f] p-1 rounded-lg border border-cyan-400/20 self-start">
           <button
             onClick={() => onTabChange('shop')}
             data-testid="shop-tab"
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all rf-control ${
               activeTab === 'shop'
                 ? 'bg-[#0e355f] text-cyan-50 border border-cyan-300/35'
                 : 'text-[var(--rf-muted)] hover:text-white'
@@ -75,7 +75,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
           <button
             onClick={() => onTabChange('inventory')}
             data-testid="inventory-tab"
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-all rf-control ${
               activeTab === 'inventory'
                 ? 'bg-[#0e355f] text-cyan-50 border border-cyan-300/35'
                 : 'text-[var(--rf-muted)] hover:text-white'
@@ -106,7 +106,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                 return (
                   <motion.div
                     key={reward.id}
-                    className={`relative group bg-[#0b1834]/82 border rounded-xl p-4 sm:p-5 flex flex-col justify-between min-h-[220px] cursor-pointer ${
+                    className={`relative group bg-[#0b1834]/82 border rounded-xl p-4 sm:p-5 flex flex-col justify-between min-h-[205px] cursor-pointer ${
                       affordable
                         ? 'border-cyan-300/30'
                         : 'border-slate-500/35 opacity-60'

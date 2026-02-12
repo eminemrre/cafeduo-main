@@ -22,6 +22,7 @@ jest.mock('../lib/api', () => ({
       updateUserRole: jest.fn(),
       updateCafe: jest.fn(),
       createCafe: jest.fn(),
+      deleteCafe: jest.fn(),
     },
     cafes: {
       list: jest.fn(),
@@ -77,6 +78,16 @@ describe('AdminDashboard', () => {
     (apiModule.api.admin.getUsers as jest.Mock).mockResolvedValue(mockUsers);
     (apiModule.api.admin.getGames as jest.Mock).mockResolvedValue(mockGames);
     (apiModule.api.cafes.list as jest.Mock).mockResolvedValue(mockCafes);
+    (apiModule.api.admin.deleteCafe as jest.Mock).mockResolvedValue({
+      success: true,
+      deletedCafe: { id: 1, name: 'Kafe 1' },
+      cleanup: {
+        detachedUsers: 1,
+        cafeAdminsDemoted: 1,
+        rewardsDeleted: 2,
+        gamesForceClosed: 1,
+      },
+    });
   });
 
   it('renders dashboard title and admin username', async () => {
@@ -277,6 +288,50 @@ describe('AdminDashboard', () => {
     await waitFor(() => {
       expect(screen.getByText(/Yeni Kafe Ekle/)).toBeInTheDocument();
     });
+  });
+
+  it('shows delete cafe button in cafes tab', async () => {
+    render(<AdminDashboard currentUser={mockCurrentUser} />);
+
+    fireEvent.click(screen.getByText('Kafeler'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('delete-cafe-button')).toBeInTheDocument();
+    });
+  });
+
+  it('deletes selected cafe when confirmed', async () => {
+    (window.confirm as jest.Mock).mockReturnValue(true);
+
+    render(<AdminDashboard currentUser={mockCurrentUser} />);
+
+    fireEvent.click(screen.getByText('Kafeler'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('delete-cafe-button')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('delete-cafe-button'));
+
+    await waitFor(() => {
+      expect(apiModule.api.admin.deleteCafe).toHaveBeenCalledWith(1);
+    });
+  });
+
+  it('disables delete cafe button when only one cafe exists', async () => {
+    (apiModule.api.cafes.list as jest.Mock).mockResolvedValueOnce([
+      { id: 9, name: 'Tek Kafe', address: 'Adres', total_tables: 10, pin: '1234' },
+    ]);
+
+    render(<AdminDashboard currentUser={mockCurrentUser} />);
+
+    fireEvent.click(screen.getByText('Kafeler'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('delete-cafe-button')).toBeDisabled();
+    });
+
+    expect(screen.getByText('Güvenlik kuralı: Son kafe silinemez.')).toBeInTheDocument();
   });
 
   it('opens add cafe modal when clicking add button', async () => {

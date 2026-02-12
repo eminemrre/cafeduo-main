@@ -23,6 +23,7 @@ describe('adminHandlers', () => {
   let memoryUsers;
   let handlers;
   let isDbConnected;
+  let clearCacheByPattern;
 
   beforeEach(() => {
     memoryUsers = [
@@ -31,6 +32,7 @@ describe('adminHandlers', () => {
     ];
 
     isDbConnected = jest.fn().mockResolvedValue(false);
+    clearCacheByPattern = jest.fn().mockResolvedValue(undefined);
 
     handlers = createAdminHandlers({
       pool: { query: jest.fn() },
@@ -39,6 +41,7 @@ describe('adminHandlers', () => {
       logger: { error: jest.fn() },
       normalizeCafeCreatePayload,
       normalizeCafeUpdatePayload,
+      clearCacheByPattern,
       getMemoryUsers: () => memoryUsers,
       setMemoryUsers: (nextUsers) => {
         memoryUsers = nextUsers;
@@ -137,5 +140,100 @@ describe('adminHandlers', () => {
     expect(res.payload.cafe.total_tables).toBe(22);
     expect(res.payload.cafe.pin).toBe('4321');
   });
-});
 
+  describe('deleteCafe (db mode)', () => {
+    const createDbContext = () => {
+      const client = {
+        query: jest.fn(),
+        release: jest.fn(),
+      };
+      const pool = {
+        connect: jest.fn().mockResolvedValue(client),
+      };
+      const logger = {
+        error: jest.fn(),
+        warn: jest.fn(),
+      };
+      const cacheCleaner = jest.fn().mockResolvedValue(undefined);
+      const dbHandlers = createAdminHandlers({
+        pool,
+        isDbConnected: jest.fn().mockResolvedValue(true),
+        bcrypt: { hash: jest.fn().mockResolvedValue('hashed') },
+        logger,
+        normalizeCafeCreatePayload,
+        normalizeCafeUpdatePayload,
+        clearCacheByPattern: cacheCleaner,
+        getMemoryUsers: () => [],
+        setMemoryUsers: () => {},
+      });
+
+      return { dbHandlers, client, pool, logger, cacheCleaner };
+    };
+
+    it('deletes cafe and returns cleanup summary', async () => {
+      const { dbHandlers, client, cacheCleaner } = createDbContext();
+      client.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [{ id: 2, name: 'Kafe B' }] }) // cafe lock
+        .mockResolvedValueOnce({ rows: [{ count: 3 }] }) // cafe count
+        .mockResolvedValueOnce({ rows: [{ id: 10, username: 'u1', role: 'user' }, { id: 11, username: 'a1', role: 'cafe_admin' }] }) // users
+        .mockResolvedValueOnce({ rowCount: 2 }) // detach users
+        .mockResolvedValueOnce({ rowCount: 4 }) // delete rewards
+        .mockResolvedValueOnce({ rowCount: 3 }) // close games
+        .mockResolvedValueOnce({ rows: [{ id: 2, name: 'Kafe B' }] }) // delete cafe
+        .mockResolvedValueOnce({}); // COMMIT
+
+      const req = { params: { id: '2' } };
+      const res = createMockRes();
+
+      await dbHandlers.deleteCafe(req, res);
+
+      expect(res.statusCode).toBe(200);
+      expect(res.payload.success).toBe(true);
+      expect(res.payload.deletedCafe).toEqual({ id: 2, name: 'Kafe B' });
+      expect(res.payload.cleanup).toEqual({
+        detachedUsers: 2,
+        cafeAdminsDemoted: 1,
+        rewardsDeleted: 4,
+        gamesForceClosed: 3,
+      });
+      expect(cacheCleaner).toHaveBeenCalledWith('cache:/api/cafes*');
+      expect(client.release).toHaveBeenCalled();
+    });
+
+    it('rejects deleting the last cafe', async () => {
+      const { dbHandlers, client } = createDbContext();
+      client.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [{ id: 1, name: 'Tek Kafe' }] }) // cafe lock
+        .mockResolvedValueOnce({ rows: [{ count: 1 }] }) // cafe count
+        .mockResolvedValueOnce({}); // ROLLBACK
+
+      const req = { params: { id: '1' } };
+      const res = createMockRes();
+
+      await dbHandlers.deleteCafe(req, res);
+
+      expect(res.statusCode).toBe(400);
+      expect(String(res.payload.error)).toContain('en az bir kafe');
+      expect(client.release).toHaveBeenCalled();
+    });
+
+    it('returns 404 when cafe does not exist', async () => {
+      const { dbHandlers, client } = createDbContext();
+      client.query
+        .mockResolvedValueOnce({}) // BEGIN
+        .mockResolvedValueOnce({ rows: [] }) // cafe lock
+        .mockResolvedValueOnce({}); // ROLLBACK
+
+      const req = { params: { id: '999' } };
+      const res = createMockRes();
+
+      await dbHandlers.deleteCafe(req, res);
+
+      expect(res.statusCode).toBe(404);
+      expect(String(res.payload.error)).toContain('Kafe bulunamadı');
+      expect(client.release).toHaveBeenCalled();
+    });
+  });
+});

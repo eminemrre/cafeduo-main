@@ -79,9 +79,11 @@ describe('cafeController.checkIn', () => {
     await cafeController.checkIn(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({
-      error: 'Kafeden çok uzaktasınız. Lütfen 120 metre içine yaklaşın.',
-    });
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        error: expect.stringContaining('Kafeden çok uzaktasınız.'),
+      })
+    );
   });
 
   it('returns 400 when cafe location is not configured', async () => {

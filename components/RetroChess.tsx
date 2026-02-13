@@ -63,23 +63,32 @@ interface GameStateUpdatedPayload {
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const;
 const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'] as const;
 
-const PIECE_ASSET: Record<'w' | 'b', Record<'p' | 'n' | 'b' | 'r' | 'q' | 'k', string>> = {
+const PIECE_SYMBOL: Record<'w' | 'b', Record<'p' | 'n' | 'b' | 'r' | 'q' | 'k', string>> = {
   w: {
-    p: '/assets/games/retro-kit/chess/white-pawn.png',
-    n: '/assets/games/retro-kit/chess/white-knight.png',
-    b: '/assets/games/retro-kit/chess/white-bishop.png',
-    r: '/assets/games/retro-kit/chess/white-rook.png',
-    q: '/assets/games/retro-kit/chess/white-queen.png',
-    k: '/assets/games/retro-kit/chess/white-king.png',
+    p: '♙',
+    n: '♘',
+    b: '♗',
+    r: '♖',
+    q: '♕',
+    k: '♔',
   },
   b: {
-    p: '/assets/games/retro-kit/chess/black-pawn.png',
-    n: '/assets/games/retro-kit/chess/black-knight.png',
-    b: '/assets/games/retro-kit/chess/black-bishop.png',
-    r: '/assets/games/retro-kit/chess/black-rook.png',
-    q: '/assets/games/retro-kit/chess/black-queen.png',
-    k: '/assets/games/retro-kit/chess/black-king.png',
+    p: '♟',
+    n: '♞',
+    b: '♝',
+    r: '♜',
+    q: '♛',
+    k: '♚',
   },
+};
+
+const PIECE_LABEL: Record<'p' | 'n' | 'b' | 'r' | 'q' | 'k', string> = {
+  p: 'Piyon',
+  n: 'At',
+  b: 'Fil',
+  r: 'Kale',
+  q: 'Vezir',
+  k: 'Şah',
 };
 
 const normalizeWinner = (value: unknown): string | null => {
@@ -633,10 +642,10 @@ export const RetroChess: React.FC<RetroChessProps> = ({
               const isLegal = legalTargets.includes(square);
 
               const baseClass = isLight
-                ? 'bg-[linear-gradient(145deg,#356b9f,#25527f)]'
-                : 'bg-[linear-gradient(145deg,#0d2240,#081a31)]';
-              const selectedClass = isSelected ? 'border-cyan-200 ring-2 ring-cyan-300/65' : 'border-cyan-500/24';
-              const legalClass = isLegal ? 'before:absolute before:inset-0 before:m-auto before:w-3 before:h-3 before:rounded-full before:bg-cyan-200 before:shadow-[0_0_10px_rgba(165,243,252,0.85)]' : '';
+                ? 'bg-[linear-gradient(145deg,#4d88bf,#2f679f)]'
+                : 'bg-[linear-gradient(145deg,#102b4f,#0a1f39)]';
+              const selectedClass = isSelected ? 'border-cyan-100 ring-2 ring-cyan-200/85' : 'border-cyan-500/30';
+              const legalClass = isLegal ? 'before:absolute before:inset-0 before:m-auto before:w-3.5 before:h-3.5 before:rounded-full before:bg-cyan-200 before:shadow-[0_0_16px_rgba(165,243,252,0.95)]' : '';
 
               return (
                 <button
@@ -649,19 +658,27 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                   className={`relative aspect-square rounded border transition ${baseClass} ${selectedClass} ${legalClass} disabled:cursor-not-allowed`}
                 >
                   {piece && (
-                    <img
-                      src={PIECE_ASSET[piece.color][piece.type]}
-                      alt={`${piece.color === 'w' ? 'Beyaz' : 'Siyah'} ${piece.type}`}
-                      draggable={false}
-                      className="pointer-events-none mx-auto h-[84%] w-[84%] object-contain select-none"
+                    <span
+                      aria-label={`${piece.color === 'w' ? 'Beyaz' : 'Siyah'} ${PIECE_LABEL[piece.type]}`}
+                      className={`pointer-events-none absolute inset-0 flex items-center justify-center select-none ${
+                        piece.color === 'w' ? 'text-slate-50' : 'text-[#071327]'
+                      }`}
                       style={{
-                        imageRendering: 'auto',
-                        filter:
+                        fontSize: 'clamp(1.2rem, 4.7vw, 2.05rem)',
+                        fontFamily: '"Noto Sans", "Exo 2", sans-serif',
+                        lineHeight: 1,
+                        textShadow:
                           piece.color === 'w'
-                            ? 'brightness(1.2) contrast(1.15) drop-shadow(0 1px 1px rgba(0,0,0,0.85)) drop-shadow(0 0 12px rgba(186,230,253,0.6))'
-                            : 'brightness(0.98) contrast(1.2) drop-shadow(0 1px 1px rgba(255,255,255,0.55)) drop-shadow(0 0 10px rgba(0,0,0,0.95))',
+                            ? '0 1px 0 rgba(4,19,42,0.95), 0 0 16px rgba(165,243,252,0.45)'
+                            : '0 1px 0 rgba(225,246,255,0.45), 0 0 12px rgba(34,211,238,0.22)',
+                        WebkitTextStroke:
+                          piece.color === 'w'
+                            ? '0.7px rgba(6,18,40,0.95)'
+                            : '0.85px rgba(170,230,255,0.72)',
                       }}
-                    />
+                    >
+                      {PIECE_SYMBOL[piece.color][piece.type]}
+                    </span>
                   )}
                 </button>
               );

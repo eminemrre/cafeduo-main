@@ -311,7 +311,7 @@ describe('useGames', () => {
     expect(result.current.activeGameType).toBe('Refleks Avı');
   });
 
-  it('keeps serverActiveGame on first empty poll and clears on second empty poll', async () => {
+  it('auto-joins active game returned by server state', async () => {
     (api.games.list as jest.Mock).mockResolvedValue([]);
     (api.users.getActiveGame as jest.Mock)
       .mockResolvedValueOnce({
@@ -322,31 +322,22 @@ describe('useGames', () => {
         table: 'MASA01',
         status: 'active',
       })
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce(null);
+      .mockResolvedValue(null);
 
     const { result } = renderHook(() =>
       useGames({ currentUser: mockUser, tableCode: mockTableCode })
     );
 
-    await waitFor(() => {
-      expect(result.current.serverActiveGame?.id).toBe(88);
-    });
-
     await act(async () => {
-      jest.advanceTimersByTime(4000);
       await Promise.resolve();
-    });
-
-    // First empty response should be ignored to prevent flicker.
-    expect(result.current.serverActiveGame?.id).toBe(88);
-
-    await act(async () => {
-      jest.advanceTimersByTime(4000);
+      jest.advanceTimersByTime(50);
       await Promise.resolve();
     });
 
     await waitFor(() => {
+      expect(result.current.activeGameId).toBe(88);
+      expect(result.current.activeGameType).toBe('Refleks Avı');
+      expect(result.current.opponentName).toBe('hostA');
       expect(result.current.serverActiveGame).toBeNull();
     });
   });

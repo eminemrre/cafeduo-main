@@ -198,6 +198,98 @@ const createGameHandlers = ({
     };
   };
 
+  const parseIsoTimestampMs = (value) => {
+    const parsed = Date.parse(String(value || ''));
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const normalizeRuntimeChessClock = (rawClock) => {
+    const source = rawClock && typeof rawClock === 'object' ? rawClock : {};
+    const config = normalizeChessClockConfig(source);
+    const whiteRaw = Number(source.whiteMs);
+    const blackRaw = Number(source.blackMs);
+    const parsedTick = parseIsoTimestampMs(source.lastTickAt);
+
+    return {
+      baseMs: config.baseMs,
+      incrementMs: config.incrementMs,
+      label: source.label ? String(source.label).slice(0, 32) : config.label,
+      whiteMs: Number.isFinite(whiteRaw) ? Math.max(0, Math.floor(whiteRaw)) : config.baseMs,
+      blackMs: Number.isFinite(blackRaw) ? Math.max(0, Math.floor(blackRaw)) : config.baseMs,
+      lastTickAt: parsedTick ? new Date(parsedTick).toISOString() : null,
+    };
+  };
+
+  const buildChessTimeoutResolution = ({
+    gameType,
+    status,
+    hostName,
+    guestName,
+    gameState,
+  }) => {
+    if (!isChessGameType(gameType)) return null;
+    if (normalizeGameStatus(status) !== GAME_STATUS.ACTIVE) return null;
+
+    const currentState = gameState && typeof gameState === 'object' ? gameState : {};
+    const currentChessState =
+      currentState.chess && typeof currentState.chess === 'object'
+        ? currentState.chess
+        : null;
+    if (!currentChessState) return null;
+
+    const normalizedClock = normalizeRuntimeChessClock(currentChessState.clock);
+    const lastTickAtMs = parseIsoTimestampMs(normalizedClock.lastTickAt);
+    if (!lastTickAtMs) return null;
+
+    let chess;
+    try {
+      chess = new Chess(String(currentChessState.fen || ''));
+    } catch {
+      chess = new Chess();
+    }
+
+    const activeColor = chess.turn() === 'b' ? 'b' : 'w';
+    const activeClockKey = activeColor === 'w' ? 'whiteMs' : 'blackMs';
+    const elapsedMs = Math.max(0, Date.now() - lastTickAtMs);
+    const remainingMs = Math.max(0, Number(normalizedClock[activeClockKey] || 0) - elapsedMs);
+    if (remainingMs > 0) return null;
+
+    const host = String(hostName || '').trim();
+    const guest = String(guestName || '').trim();
+    const timeoutWinner = activeColor === 'w' ? guest : host;
+    const nowIso = new Date().toISOString();
+
+    const nextChessState = {
+      ...buildChessStateFromEngine(chess, currentChessState, null),
+      winner: timeoutWinner || null,
+      result: 'timeout',
+      isGameOver: true,
+      timedOutColor: activeColor,
+      clock: {
+        ...normalizedClock,
+        [activeClockKey]: 0,
+        lastTickAt: null,
+      },
+      updatedAt: nowIso,
+    };
+
+    const nextGameState = {
+      ...currentState,
+      chess: nextChessState,
+    };
+    if (timeoutWinner) {
+      nextGameState.resolvedWinner = timeoutWinner;
+    } else if (nextGameState.resolvedWinner) {
+      delete nextGameState.resolvedWinner;
+    }
+
+    return {
+      winner: timeoutWinner || null,
+      nextGameState,
+      nextChessState,
+    };
+  };
+
   const emitRealtimeUpdate = (gameId, payload) => {
     try {
       if (!io || typeof io.to !== 'function') return;
@@ -867,8 +959,7 @@ const createGameHandlers = ({
     const actor = String(req.user?.username || '').trim().toLowerCase();
     const adminActor = isAdminActor(req.user);
     if (await isDbConnected()) {
-      const result = await pool.query(
-        `
+      const baseSelectQuery = `
         SELECT
           id,
           host_name as "hostName",
@@ -884,19 +975,74 @@ const createGameHandlers = ({
           created_at as "createdAt"
         FROM games
         WHERE id = $1
-      `,
-        [id]
-      );
-      if (result.rows.length > 0) {
-        const row = result.rows[0];
-        const host = String(row.hostName || '').trim().toLowerCase();
-        const guest = String(row.guestName || '').trim().toLowerCase();
-        if (!adminActor && actor && actor !== host && actor !== guest) {
-          return res.status(403).json({ error: 'Bu oyunun detaylarını görme yetkin yok.' });
-        }
-        return res.json(row);
+      `;
+
+      const result = await pool.query(baseSelectQuery, [id]);
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Game not found' });
       }
-      return res.status(404).json({ error: 'Game not found' });
+
+      let row = result.rows[0];
+      const host = String(row.hostName || '').trim().toLowerCase();
+      const guest = String(row.guestName || '').trim().toLowerCase();
+      if (!adminActor && actor && actor !== host && actor !== guest) {
+        return res.status(403).json({ error: 'Bu oyunun detaylarını görme yetkin yok.' });
+      }
+
+      const timeoutResolution = buildChessTimeoutResolution({
+        gameType: row.gameType,
+        status: row.status,
+        hostName: row.hostName,
+        guestName: row.guestName,
+        gameState: row.gameState,
+      });
+
+      if (timeoutResolution) {
+        const updateResult = await pool.query(
+          `
+            UPDATE games
+            SET status = 'finished',
+                winner = $2::text,
+                game_state = $3::jsonb
+            WHERE id = $1
+              AND status = 'active'
+            RETURNING
+              id,
+              host_name as "hostName",
+              game_type as "gameType",
+              points,
+              table_code as "table",
+              status,
+              guest_name as "guestName",
+              winner,
+              player1_move as "player1Move",
+              player2_move as "player2Move",
+              game_state as "gameState",
+              created_at as "createdAt"
+          `,
+          [id, timeoutResolution.winner, JSON.stringify(timeoutResolution.nextGameState)]
+        );
+
+        if (updateResult.rows.length > 0) {
+          row = updateResult.rows[0];
+          emitRealtimeUpdate(id, {
+            type: 'game_finished',
+            gameId: id,
+            status: 'finished',
+            winner: timeoutResolution.winner,
+            reason: 'timeout',
+            chess: timeoutResolution.nextChessState,
+            gameState: timeoutResolution.nextGameState,
+          });
+        } else {
+          const refreshed = await pool.query(baseSelectQuery, [id]);
+          if (refreshed.rows.length > 0) {
+            row = refreshed.rows[0];
+          }
+        }
+      }
+
+      return res.json(row);
     }
 
     const game = getMemoryGames().find((item) => String(item.id) === String(id));
@@ -908,6 +1054,37 @@ const createGameHandlers = ({
     if (!adminActor && actor && actor !== host && actor !== guest) {
       return res.status(403).json({ error: 'Bu oyunun detaylarını görme yetkin yok.' });
     }
+
+    const timeoutResolution = buildChessTimeoutResolution({
+      gameType: game.gameType,
+      status: game.status,
+      hostName: game.hostName,
+      guestName: game.guestName,
+      gameState: game.gameState,
+    });
+
+    if (timeoutResolution) {
+      const timeoutTransition = assertGameStatusTransition({
+        fromStatus: game.status,
+        toStatus: GAME_STATUS.FINISHED,
+        context: 'chess_timeout_read_memory',
+      });
+      if (timeoutTransition.ok) {
+        game.status = GAME_STATUS.FINISHED;
+        game.winner = timeoutResolution.winner;
+        game.gameState = timeoutResolution.nextGameState;
+        emitRealtimeUpdate(id, {
+          type: 'game_finished',
+          gameId: id,
+          status: game.status,
+          winner: timeoutResolution.winner,
+          reason: 'timeout',
+          chess: timeoutResolution.nextChessState,
+          gameState: timeoutResolution.nextGameState,
+        });
+      }
+    }
+
     return res.json(game);
   };
 

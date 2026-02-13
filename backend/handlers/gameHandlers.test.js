@@ -346,6 +346,49 @@ describe('gameHandlers (memory mode)', () => {
     expect(memoryGames[0].player2Move).toBe('e5');
   });
 
+  it('finishes chess immediately when active side clock is exhausted during state fetch', async () => {
+    const timedOutTick = new Date(Date.now() - 4000).toISOString();
+    memoryGames = [
+      {
+        id: 19,
+        hostName: 'u1',
+        guestName: 'u2',
+        gameType: 'Retro Satranç',
+        points: 90,
+        table: 'MASA05',
+        status: 'active',
+        gameState: {
+          chess: {
+            fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+            moveHistory: [],
+            clock: {
+              baseMs: 1000,
+              incrementMs: 0,
+              label: '1+0',
+              whiteMs: 1000,
+              blackMs: 1000,
+              lastTickAt: timedOutTick,
+            },
+          },
+        },
+      },
+    ];
+
+    const req = {
+      params: { id: '19' },
+      user: { username: 'u1', role: 'user', isAdmin: false },
+    };
+    const res = createMockRes();
+
+    await handlers.getGameState(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.payload?.status).toBe('finished');
+    expect(res.payload?.winner).toBe('u2');
+    expect(memoryGames[0].status).toBe('finished');
+    expect(memoryGames[0].gameState?.chess?.result).toBe('timeout');
+  });
+
   it('accepts score submissions and resolves winner', async () => {
     memoryGames = [
       {

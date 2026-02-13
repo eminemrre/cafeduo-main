@@ -2,6 +2,7 @@ import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { KnowledgeQuiz } from './KnowledgeQuiz';
 import { User } from '../types';
+import { buildQuizRoundSet } from '../lib/knowledgeQuizQuestions';
 
 describe('KnowledgeQuiz', () => {
   const mockUser: User = {
@@ -26,6 +27,7 @@ describe('KnowledgeQuiz', () => {
 
   it('plays all rounds and resolves local winner in bot mode', () => {
     const onGameEnd = jest.fn();
+    const quizSet = buildQuizRoundSet('1:emin', 10);
     render(
       <KnowledgeQuiz
         currentUser={mockUser}
@@ -36,10 +38,10 @@ describe('KnowledgeQuiz', () => {
       />
     );
 
-    const correctAnswers = [2, 2, 2, 1, 1];
-    correctAnswers.forEach((answer, idx) => {
-      fireEvent.click(screen.getByTestId(`knowledge-option-${answer}`));
-      if (idx < correctAnswers.length - 1) {
+    quizSet.forEach((question, idx) => {
+      expect(screen.getByTestId('knowledge-question')).toHaveTextContent(question.question);
+      fireEvent.click(screen.getByTestId(`knowledge-option-${question.answerIndex}`));
+      if (idx < quizSet.length - 1) {
         act(() => {
           jest.advanceTimersByTime(800);
         });
@@ -69,4 +71,3 @@ describe('KnowledgeQuiz', () => {
     expect(onLeave).toHaveBeenCalledTimes(1);
   });
 });
-

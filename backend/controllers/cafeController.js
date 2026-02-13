@@ -66,16 +66,19 @@ const parseAccuracy = (value) => {
     if (!Number.isFinite(parsed) || parsed < 0) {
         return null;
     }
-    // Cap unrealistic accuracy values to avoid over-permissive geo checks
-    return Math.min(parsed, 300);
+    // Desktop/IP tabanlı ölçümlerde doğruluk değeri yüksek gelebilir.
+    // Tamamen serbest bırakmak yerine kontrollü bir üst sınır uyguluyoruz.
+    return Math.min(parsed, 1500);
 };
 
 const getEffectiveRadius = (baseRadius, clientAccuracy) => {
-    const defaultDriftBuffer = 60; // meters
-    const accuracyBuffer = clientAccuracy === null
-        ? defaultDriftBuffer
-        : Math.max(20, clientAccuracy);
-    return Math.round(baseRadius + accuracyBuffer);
+    const safeBase = Math.max(40, Math.round(Number(baseRadius) || 150));
+    const defaultDriftBuffer = 120; // meters
+    if (clientAccuracy === null) {
+        return Math.min(2500, safeBase + defaultDriftBuffer);
+    }
+    const accuracyBuffer = Math.min(1200, Math.max(50, Math.round(clientAccuracy * 0.9)));
+    return Math.min(2500, safeBase + accuracyBuffer);
 };
 
 const cafeController = {
@@ -209,7 +212,7 @@ const cafeController = {
             );
             if (Number.isFinite(distance) && distance > effectiveRadius) {
                 return res.status(400).json({
-                    error: `Kafeden çok uzaktasınız. Lütfen ${fallbackRadius} metre içine yaklaşın.`,
+                    error: `Kafeden çok uzaktasınız. Yaklaşık ${Math.round(distance)} metre uzaktasınız, doğrulama sınırı ${effectiveRadius} metre.`,
                 });
             }
 
@@ -268,8 +271,9 @@ const cafeController = {
             );
 
             if (!Number.isFinite(distance) || distance > effectiveRadius) {
+                const distanceLabel = Number.isFinite(distance) ? `${Math.round(distance)} metre` : 'belirlenemeyen bir mesafede';
                 return res.status(400).json({
-                    error: `Kafeden çok uzaktasınız. Lütfen ${radius} metre içine yaklaşın.`,
+                    error: `Kafeden çok uzaktasınız. Yaklaşık ${distanceLabel} görünüyorsunuz, doğrulama sınırı ${effectiveRadius} metre.`,
                 });
             }
 

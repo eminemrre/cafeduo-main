@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, User, Mail, Lock, ArrowRight, AlertTriangle, Briefcase, Check, Eye, EyeOff } from 'lucide-react';
+import { X, User, Mail, Lock, ArrowRight, AlertTriangle, Briefcase, Check, Eye, EyeOff, ChevronDown } from 'lucide-react';
 import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { RetroButton } from './RetroButton';
 import { User as UserType } from '../types';
@@ -249,13 +249,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   const inputBaseClass =
-    'rf-input rf-control text-white text-base md:text-lg';
+    'rf-input rf-control h-12 text-white text-base md:text-lg leading-none';
   const inputBorderClass =
     'border-slate-600 focus:border-cyan-300 focus:shadow-[0_0_20px_rgba(0,217,255,0.2)]';
   const inputErrorClass =
     'border-red-500 focus:border-red-500 focus:shadow-[0_0_20px_rgba(255,86,114,0.2)]';
   const iconBaseClass =
-    'absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-cyan-300';
+    'absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-cyan-300';
   const googleClientId =
     typeof window !== 'undefined'
       ? String((window as Window & { __CAFEDUO_GOOGLE_CLIENT_ID__?: string }).__CAFEDUO_GOOGLE_CLIENT_ID__ || '').trim()
@@ -352,7 +352,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
             )}
 
-            <form className="space-y-3.5" onSubmit={handleSubmit}>
+            <form className="space-y-4" onSubmit={handleSubmit}>
 
               {mode === 'register' && !isForgotPasswordMode && (
                 <>
@@ -366,7 +366,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       placeholder="Kullanıcı adı"
                       className={`${inputBaseClass} ${
                         fieldErrors.username && touched.username ? inputErrorClass : inputBorderClass
-                      } pl-10 pr-10`}
+                      } pl-11 pr-10`}
                     />
                     {!fieldErrors.username && touched.username && username && (
                       <Check className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-400" size={18} />
@@ -380,25 +380,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
                   <div className="relative group">
                     <Briefcase className={`${iconBaseClass} z-10`} size={18} />
-                    <div className="relative">
-                      <select
-                        value={department}
-                        onChange={(e) => setDepartment(e.target.value)}
-                        className={`${inputBaseClass} ${inputBorderClass} pl-10 pr-10 appearance-none cursor-pointer text-sm md:text-base`}
-                      >
-                        <option value="" className="bg-[#0b152c] text-slate-300">
-                          Bölüm seçiniz (isteğe bağlı)
+                    <select
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                      className={`${inputBaseClass} ${inputBorderClass} pl-11 pr-11 appearance-none cursor-pointer`}
+                    >
+                      <option value="" className="bg-[#0b152c] text-slate-300">
+                        Bölüm seçiniz (isteğe bağlı)
+                      </option>
+                      {PAU_DEPARTMENTS.map(dept => (
+                        <option key={dept} value={dept} className="bg-[#0b152c] text-white">
+                          {dept}
                         </option>
-                        {PAU_DEPARTMENTS.map(dept => (
-                          <option key={dept} value={dept} className="bg-[#0b152c] text-white">
-                            {dept}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
-                      </div>
-                    </div>
+                      ))}
+                    </select>
+                    <ChevronDown
+                      size={16}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"
+                    />
                   </div>
                 </>
               )}
@@ -414,7 +413,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   data-testid="auth-email-input"
                   className={`${inputBaseClass} ${
                     fieldErrors.email && touched.email ? inputErrorClass : inputBorderClass
-                  } pl-10 pr-10`}
+                  } pl-11 pr-10`}
                 />
                 {!fieldErrors.email && touched.email && email && (
                   <Check className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-400" size={18} />
@@ -439,7 +438,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       data-testid="auth-password-input"
                       className={`${inputBaseClass} ${
                         fieldErrors.password && touched.password ? inputErrorClass : inputBorderClass
-                      } pl-10 pr-12`}
+                      } pl-11 pr-12`}
                     />
                     <button
                       type="button"

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { User } from '../types';
 import { RetroButton } from './RetroButton';
 import { api } from '../lib/api';
@@ -6,6 +6,7 @@ import { submitScoreAndWaitForWinner } from '../lib/multiplayer';
 import { GAME_ASSETS } from '../lib/gameAssets';
 import { playGameSfx } from '../lib/gameAudio';
 import { socketService } from '../lib/socket';
+import { buildQuizRoundSet } from '../lib/knowledgeQuizQuestions';
 
 interface KnowledgeQuizProps {
   currentUser: User;
@@ -14,12 +15,6 @@ interface KnowledgeQuizProps {
   isBot: boolean;
   onGameEnd: (winner: string, points: number) => void;
   onLeave: () => void;
-}
-
-interface QuizQuestion {
-  question: string;
-  options: string[];
-  answerIndex: number;
 }
 
 interface LiveSubmissionState {
@@ -49,33 +44,7 @@ interface GameStateUpdatedPayload {
   gameId?: string | number;
 }
 
-const QUIZ_QUESTIONS: QuizQuestion[] = [
-  {
-    question: 'Türkiye Cumhuriyeti hangi yılda ilan edildi?',
-    options: ['1919', '1920', '1923', '1938'],
-    answerIndex: 2,
-  },
-  {
-    question: 'Dünya üzerindeki en büyük okyanus hangisidir?',
-    options: ['Atlas Okyanusu', 'Hint Okyanusu', 'Pasifik Okyanusu', 'Arktik Okyanusu'],
-    answerIndex: 2,
-  },
-  {
-    question: 'Bir byte kaç bit eder?',
-    options: ['4', '6', '8', '10'],
-    answerIndex: 2,
-  },
-  {
-    question: 'Güneşe en yakın gezegen hangisidir?',
-    options: ['Venüs', 'Merkür', 'Mars', 'Dünya'],
-    answerIndex: 1,
-  },
-  {
-    question: 'İstanbul Boğazı hangi iki denizi birbirine bağlar?',
-    options: ['Ege - Akdeniz', 'Marmara - Karadeniz', 'Karadeniz - Ege', 'Akdeniz - Kızıldeniz'],
-    answerIndex: 1,
-  },
-];
+const QUIZ_ROUND_COUNT = 10;
 
 export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
   currentUser,
@@ -98,9 +67,21 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
   const advanceTimerRef = useRef<number | null>(null);
   const pollRef = useRef<number | null>(null);
   const finishHandledRef = useRef(false);
-
-  const currentQuestion = QUIZ_QUESTIONS[roundIndex];
-  const maxRounds = QUIZ_QUESTIONS.length;
+  const fallbackQuestion = useMemo(
+    () => ({
+      question: 'Soru yüklenemedi. Lütfen tekrar deneyin.',
+      options: ['Seçenek A', 'Seçenek B', 'Seçenek C', 'Seçenek D'] as [string, string, string, string],
+      answerIndex: 0,
+    }),
+    []
+  );
+  const quizQuestions = useMemo(
+    () => buildQuizRoundSet(`${String(gameId || 'local')}:${String(currentUser.username || '')}`, QUIZ_ROUND_COUNT),
+    [currentUser.username, gameId]
+  );
+  const maxRounds = quizQuestions.length;
+  const currentQuestion =
+    quizQuestions[Math.min(roundIndex, Math.max(0, maxRounds - 1))] || fallbackQuestion;
   const targetName = isBot ? 'BOT' : (opponentName || 'Rakip');
 
   const resolveActorAndOpponent = useCallback((snapshot: GameSnapshot) => {
@@ -261,7 +242,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
   };
 
   const handleAnswer = (optionIndex: number) => {
-    if (done || resolvingMatch || selectedOption !== null) return;
+    if (done || resolvingMatch || selectedOption !== null || !currentQuestion) return;
 
     const isCorrect = optionIndex === currentQuestion.answerIndex;
     const rivalCorrect = isBot ? Math.random() < 0.55 : false;
@@ -333,7 +314,9 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
       <p className="text-sm text-[var(--rf-muted)] mb-4">{message}</p>
 
       <div className="rounded-xl border border-cyan-400/25 bg-[#08152f]/85 p-4">
-        <p className="text-base md:text-lg font-semibold text-white leading-relaxed mb-4">{currentQuestion.question}</p>
+        <p data-testid="knowledge-question" className="text-base md:text-lg font-semibold text-white leading-relaxed mb-4">
+          {currentQuestion.question}
+        </p>
         <div className="grid grid-cols-1 gap-2.5">
           {currentQuestion.options.map((option, idx) => {
             const isPicked = selectedOption === idx;

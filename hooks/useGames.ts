@@ -215,6 +215,7 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
   const gamesRequestInFlightRef = useRef(false);
   const activeGameRequestInFlightRef = useRef(false);
   const historyRequestInFlightRef = useRef(false);
+  const autoJoinCooldownUntilRef = useRef(0);
 
   useEffect(() => {
     activeGameIdRef.current = activeGameId;
@@ -427,24 +428,7 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
    * Oyundan ayrıl
    */
   const leaveGame = useCallback(() => {
-    const fallbackTable =
-      tableCode ||
-      currentUser.table_number ||
-      'MASA00';
-
-    if (activeGameId) {
-      setServerActiveGame((prev) =>
-        prev ?? {
-          id: activeGameId,
-          hostName: currentUser.username,
-          guestName: opponentName,
-          gameType: activeGameType || 'Oyun',
-          points: 0,
-          table: fallbackTable,
-          status: 'active',
-        }
-      );
-    }
+    autoJoinCooldownUntilRef.current = Date.now() + 5000;
 
     setActiveGameId(null);
     setActiveGameType('');
@@ -454,15 +438,7 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
 
     // Oyundan çıkınca rejoin bilgisini anında tazele.
     void checkActiveGame({ ignoreLocalActive: true });
-  }, [
-    activeGameId,
-    activeGameType,
-    checkActiveGame,
-    currentUser.table_number,
-    currentUser.username,
-    opponentName,
-    tableCode,
-  ]);
+  }, [checkActiveGame]);
 
   /**
    * Aktif oyunu manuel olarak ayarla
@@ -473,6 +449,9 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
     opponent?: string,
     bot: boolean = false
   ) => {
+    if (gameId) {
+      autoJoinCooldownUntilRef.current = 0;
+    }
     setActiveGameId(gameId);
     setActiveGameType(gameType);
     setOpponentName(opponent);
@@ -482,6 +461,31 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
       missingActivePollCountRef.current = 0;
     }
   }, []);
+
+  useEffect(() => {
+    if (activeGameId || !serverActiveGame) return;
+    if (Date.now() < autoJoinCooldownUntilRef.current) return;
+
+    const resolvedId = String(serverActiveGame.id ?? '').trim();
+    if (!resolvedId || resolvedId === 'undefined' || resolvedId === 'null') {
+      return;
+    }
+
+    const actor = String(currentUser.username || '').trim().toLowerCase();
+    const host = String(serverActiveGame.hostName || '').trim();
+    const guest = String(serverActiveGame.guestName || '').trim();
+    const resolvedOpponent =
+      host.toLowerCase() === actor
+        ? guest || undefined
+        : host || undefined;
+
+    setActiveGameId(serverActiveGame.id);
+    setActiveGameType(String(serverActiveGame.gameType || ''));
+    setOpponentName(resolvedOpponent);
+    setIsBot(false);
+    setServerActiveGame(null);
+    missingActivePollCountRef.current = 0;
+  }, [activeGameId, currentUser.username, serverActiveGame]);
 
   /**
    * İlk yükleme ve polling

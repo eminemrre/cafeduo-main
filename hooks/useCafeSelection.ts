@@ -173,11 +173,28 @@ export function useCafeSelection({
       enableHighAccuracy: true,
       timeout: 16000,
       maximumAge: 15000,
-    }).catch((preciseError: unknown) => {
+    }).catch(async (preciseError: unknown) => {
       const geoError = (typeof preciseError === 'object' && preciseError !== null
         ? preciseError
         : {}) as GeoErrorLike;
-      throw new Error(getGeoErrorMessage(geoError));
+      if (geoError.code === 1) {
+        throw new Error(getGeoErrorMessage(geoError));
+      }
+
+      // Özellikle masaüstünde GPS hassas modu timeout verdiğinde
+      // ağ tabanlı lokasyonla son bir deneme yapıyoruz.
+      try {
+        return await getPosition({
+          enableHighAccuracy: false,
+          timeout: 12000,
+          maximumAge: 600000,
+        });
+      } catch (fallbackError: unknown) {
+        const fallbackGeoError = (typeof fallbackError === 'object' && fallbackError !== null
+          ? fallbackError
+          : {}) as GeoErrorLike;
+        throw new Error(getGeoErrorMessage(fallbackGeoError));
+      }
     });
 
     setLocationCoords(coords);

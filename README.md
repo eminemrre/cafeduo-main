@@ -1,236 +1,145 @@
 <div align="center">
 
-# ☕ CafeDuo
+# CafeDuo
 
-**Üniversite Öğrencileri İçin Oyunlaştırılmış Kafe Sadakat Platformu**
+**Gamified cafe loyalty platform for university communities.**
 
-Kafelere gel, arkadaşlarınla oyun oyna, puan kazan, gerçek ödüller al!
+Play real-time games in participating cafes, collect points, and redeem rewards.
 
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![Socket.IO](https://img.shields.io/badge/Socket.IO-Gerçek%20Zamanlı-010101?logo=socket.io)](https://socket.io/)
+[![Socket.IO](https://img.shields.io/badge/Socket.IO-Real--Time-010101?logo=socket.io)](https://socket.io/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql)](https://www.postgresql.org/)
-[![Tests](https://img.shields.io/badge/Testler-145%20geçiyor-brightgreen)]()
-[![Docker](https://img.shields.io/badge/Docker-Hazır-2496ED?logo=docker)](Dockerfile)
-[![License: MIT](https://img.shields.io/badge/Lisans-MIT-blue)](LICENSE)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)](Dockerfile)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
 
-[Özellikler](#-özellikler) · [Hızlı Başlangıç](#-hızlı-başlangıç) · [Ekran Görüntüleri](#-ekran-görüntüleri) · [Mimari](#️-mimari) · [Katkıda Bulunma](#-katkıda-bulunma)
+[Overview](#overview) · [Live](#live) · [Key Features](#key-features) · [Architecture](#architecture-and-tech-stack) · [Quick Start](#quick-start) · [Testing](#testing) · [Roadmap](#roadmap)
 
 </div>
 
 ---
 
-## 🎯 Problem
+## Overview
 
-Türkiye'de kafeler müşteri bağlılığını artırmakta zorlanıyor. Geleneksel sadakat kartları kaybolur, uygulamalar indirilmez, sosyal etkileşim eksik kalır.
+CafeDuo combines cafe check-ins, multiplayer mini-games, and reward redemption in one full-stack system.
 
-## 💡 Çözüm
+The product is designed for:
 
-**CafeDuo**, üniversite öğrencilerini kafe kültürüyle buluşturan **oyunlaştırılmış** bir platformdur:
+- increasing repeat visits,
+- creating social engagement in-venue,
+- and turning loyalty into measurable gameplay activity.
 
-1. **Check-in**: Kafeye geldiğinde PIN ile otur
-2. **Oyna**: Aynı kafedeki arkadaşlarınla gerçek zamanlı oyunlar oyna
-3. **Kazan**: Her galibiyet puan kazandırır
-4. **Harca**: Puanlarını bedava kahve, tatlı ve indirimlere dönüştür
+## Live
 
----
+- Production web app: https://cafeduotr.com
 
-## ✨ Özellikler
+## Key Features
 
-### 🎮 Çok Oyunculu Oyunlar
-| Oyun | Açıklama |
-|------|----------|
-| ✊✋✌️ **Taş Kağıt Makas** | Klasik oyun, gerçek zamanlı eşleşme |
-| ⚔️ **Gladyatör Arena** | Sıra tabanlı savaş oyunu |
-| 🎯 **Oyun Lobisi** | Anında oluştur veya katıl |
-| 🔍 **Canlı Eşleşme** | Aynı kafedeki rakipleri bul |
+- In-cafe check-in flow
+: PIN-based session validation for cafe tables and local engagement.
 
-### 📍 Kafe Check-in Sistemi
-- **PIN Doğrulama** — Her masaya özel güvenli kodlar
-- **Konum Bazlı** — Sadece geçerli kafe lokasyonlarında çalışır
-- **Arkadaş Keşfi** — Aynı kafede kimlerin olduğunu gör
-- **Harita Entegrasyonu** — Leaflet ile yakındaki kafeleri bul
+- Real-time multiplayer gameplay
+: Socket.IO powered game lobbies and live match state.
 
-### 🏆 Puan & Liderlik Tablosu
-- 🎯 Oyun kazanarak puan topla
-- 📅 Günlük check-in bonusu
-- 🌍 Genel sıralama tablosu
-- 🏅 Başarı rozetleri
+- Loyalty and rewards
+: Point accumulation, leaderboard logic, and reward redemption flow.
 
-### 🎁 Ödül Mağazası
-- ☕ Puanları bedava içecek, atıştırmalık veya indirimlere dönüştür
-- 📦 Envanter sistemi — kazanılan ödülleri yönet
-- 📱 QR kodla kasada hızlı kullanım
+- Cafe discovery and map support
+: Nearby cafe browsing with map integration.
 
-### 🎨 Modern UI/UX
-- 📱 Mobil ve masaüstü uyumlu responsive tasarım
-- ✨ Framer Motion ile akıcı mikro-animasyonlar
-- 🌙 Arcade tarzı göz alıcı karanlık tema
-- 🔔 Toast bildirimleri ile anlık geri bildirim
-- 💀 Skeleton loading ile profesyonel yükleme ekranları
+- Full-stack operational tooling
+: Dockerized setup, smoke checks, and deployment documentation.
 
----
+## Architecture and Tech Stack
 
-## 🛠️ Teknoloji Yığını
+| Layer | Technology |
+|---|---|
+| Frontend | React 18 + TypeScript + Vite |
+| Styling | Tailwind CSS + Framer Motion |
+| Backend | Node.js + Express |
+| Real-Time | Socket.IO |
+| Database | PostgreSQL |
+| Cache | Redis |
+| Auth & Security | JWT, bcrypt, Helmet, rate limiting, reCAPTCHA |
+| Testing | Jest + React Testing Library + Playwright |
+| DevOps | Docker + Docker Compose |
 
-| Katman | Teknoloji |
-|--------|-----------|
-| **Frontend** | React 18 + TypeScript + Vite |
-| **Stil** | Tailwind CSS v4 + Framer Motion |
-| **Durum Yönetimi** | React Context + Custom Hooks |
-| **Backend** | Node.js + Express.js |
-| **Gerçek Zamanlı** | Socket.IO (WebSocket) |
-| **Veritabanı** | PostgreSQL 15 |
-| **Önbellek** | Redis (ioredis) |
-| **Kimlik Doğrulama** | JWT + bcrypt + Google OAuth |
-| **Güvenlik** | Helmet + Rate Limiting + reCAPTCHA |
-| **E-posta** | Nodemailer |
-| **Harita** | Leaflet + React-Leaflet |
-| **Test** | Jest + React Testing Library + Playwright E2E |
-| **DevOps** | Docker + Docker Compose |
+## Quick Start
 
----
+### Prerequisites
 
-## 🚀 Hızlı Başlangıç
-
-### Gereksinimler
 - Node.js 18+
-- PostgreSQL 15+ (veya Docker kullanın)
+- PostgreSQL 15+ (or Docker)
 
-### Docker ile (Önerilen)
+### Option A: Docker (recommended)
 
 ```bash
-# Repoyu klonlayın
 git clone https://github.com/eminemre35/cafeduo-main.git
 cd cafeduo-main
-
-# .env dosyasını oluşturun
 cp .env.example .env
-
-# Docker ile başlatın
 docker-compose up -d
-
-# Uygulama hazır:
-# Frontend: http://localhost:3000
-# Backend:  http://localhost:3001
 ```
 
-### Manuel Kurulum
+Default local endpoints:
+
+- Frontend: `http://localhost:3000`
+- Backend: `http://localhost:3001`
+
+### Option B: Local development
 
 ```bash
-# 1. Bağımlılıkları yükleyin
 npm install
-
-# 2. Veritabanını oluşturun
 createdb cafeduo
 psql cafeduo < schema.sql
-
-# 3. .env dosyasını düzenleyin
 cp .env.example .env
-
-# 4. Geliştirme sunucusunu başlatın
 npm run dev
 ```
 
----
-
-## 📊 Test
+## Testing
 
 ```bash
-# Unit testler
 npm test
-
-# Coverage raporu
 npm run test:coverage
-
-# E2E testler (Playwright)
 npm run test:e2e
-
-# Tüm testler
 npm run test:all
-
-# Canlı ortam smoke testi
 npm run smoke:live
 ```
 
-**Test Durumu:** 145 test geçiyor ✅
+## Deployment Status
 
----
+| Target | Status | Notes |
+|---|---|---|
+| Web App | Live | Served at `https://cafeduotr.com` |
+| API + Realtime | Active | Node/Express + Socket.IO backend |
+| Containerized Deploy | Ready | Docker and deployment docs included |
 
-## 🏗️ Mimari
+## Roadmap
 
-```
-┌──────────────────────────────────────────────────────┐
-│                    İstemci (React)                     │
-│  ┌────────────┐  ┌────────────┐  ┌────────────────┐  │
-│  │ Bileşenler │  │ Socket.IO  │  │ React Router   │  │
-│  │ (UI)       │  │ İstemci    │  │ (Navigasyon)   │  │
-│  └────────────┘  └────────────┘  └────────────────┘  │
-└──────────────────┬───────────────────────────────────┘
-                   │ HTTP / WebSocket
-                   ▼
-┌──────────────────────────────────────────────────────┐
-│                   API Sunucusu                        │
-│  ┌────────────┐  ┌────────────┐  ┌────────────────┐  │
-│  │ Express    │  │ Socket.IO  │  │ JWT + Helmet   │  │
-│  │ Routes     │  │ Sunucu     │  │ Güvenlik       │  │
-│  └────────────┘  └────────────┘  └────────────────┘  │
-└──────────────────┬───────────────────────────────────┘
-                   │ SQL
-                   ▼
-┌──────────────────────────────────────────────────────┐
-│          PostgreSQL + Redis                           │
-│  ┌────────────┐  ┌────────────┐  ┌────────────────┐  │
-│  │ Kullanıcılar│ │  Oyunlar   │  │   Ödüller      │  │
-│  └────────────┘  └────────────┘  └────────────────┘  │
-└──────────────────────────────────────────────────────┘
-```
+- Product roadmap: [ROADMAP.md](ROADMAP.md)
+- Engineering roadmap: [ROADMAP_SENIOR.md](ROADMAP_SENIOR.md)
+- Deployment playbook: [DEPLOYMENT.md](DEPLOYMENT.md)
 
----
+## Contributing
 
-## 📂 Proje Yapısı
+Contributions are welcome.
 
-```
-cafeduo-main/
-├── components/           # React bileşenleri
-│   ├── dashboard/        # Ana panel bölümleri
-│   ├── ui/               # Yeniden kullanılabilir UI
-│   └── ...
-├── hooks/                # Custom React hooks
-├── contexts/             # React context (Auth, Toast)
-├── backend/              # Express.js API
-│   ├── server.js         # Ana sunucu
-│   └── db.js             # Veritabanı bağlantısı
-├── e2e/                  # Playwright E2E testleri
-├── schema.sql            # Veritabanı şeması
-├── docker-compose.yml    # Docker kurulumu
-└── Dockerfile            # Container tanımı
-```
+1. Read [CONTRIBUTING.md](CONTRIBUTING.md).
+2. Open an issue for large features or behavior changes.
+3. Submit a pull request with clear test coverage notes.
 
----
+Additional project policies:
 
-## 🤝 Katkıda Bulunma
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- [SECURITY.md](SECURITY.md)
 
-Katkılarınızı bekliyoruz! 
+## License
 
-1. Repoyu forklayın
-2. Feature branch oluşturun (`git checkout -b feature/harika-ozellik`)
-3. Değişikliklerinizi commit edin (`git commit -m 'feat: harika özellik eklendi'`)
-4. Push edin (`git push origin feature/harika-ozellik`)
-5. Pull Request açın
-
----
-
-## 📄 Lisans
-
-Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır.
+This project is licensed under the MIT License. See [LICENSE](LICENSE).
 
 ---
 
 <div align="center">
 
-**Üniversite öğrencileri için ☕ ve 🎮 ile yapıldı**
-
-⭐ Projeyi beğendiyseniz yıldız bırakmayı unutmayın!
+Built for community-driven cafe engagement.
 
 </div>

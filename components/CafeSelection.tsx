@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Navigation, Coffee, AlertTriangle, CheckCircle, LocateFixed } from 'lucide-react';
+import { MapPin, Navigation, Coffee, AlertTriangle, CheckCircle, LocateFixed, ChevronDown } from 'lucide-react';
 import type { User } from '../types';
 import { useCafeSelection } from '../hooks/useCafeSelection';
 
@@ -24,6 +24,11 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
     requestLocationAccess,
     checkIn,
   } = useCafeSelection({ currentUser, onCheckInSuccess });
+
+  const fieldBaseClass =
+    'rf-input rf-control h-12 font-sans text-[1.02rem] leading-[1.1] text-white tracking-normal';
+  const fieldIconClass =
+    'absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none transition-colors group-focus-within:text-cyan-300';
 
   return (
     <div className="min-h-screen rf-page-shell text-[var(--rf-ink)] pt-24 pb-[calc(2.5rem+env(safe-area-inset-bottom))] px-4 font-sans relative overflow-hidden">
@@ -56,14 +61,14 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
             <label htmlFor="checkin-cafe-select" className="block text-[var(--rf-muted)] text-sm mb-2 font-bold">
               Kafe Seçimi
             </label>
-            <div className="relative">
-              <Coffee className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+            <div className="relative group">
+              <Coffee className={fieldIconClass} size={18} />
               <select
                 id="checkin-cafe-select"
                 value={selectedCafeId || ''}
                 onChange={(event) => setSelectedCafeId(event.target.value)}
                 data-testid="checkin-cafe-select"
-                className="rf-input pl-10 pr-4 appearance-none cursor-pointer"
+                className={`${fieldBaseClass} pl-12 pr-12 appearance-none cursor-pointer`}
               >
                 {cafes.map((cafe) => (
                   <option key={cafe.id} value={cafe.id}>
@@ -71,7 +76,10 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                   </option>
                 ))}
               </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none">▼</div>
+              <ChevronDown
+                size={16}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none"
+              />
             </div>
           </div>
 
@@ -79,8 +87,8 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
             <label htmlFor="checkin-table-input" className="block text-[var(--rf-muted)] text-sm mb-2 font-bold">
               Masa Numarası
             </label>
-            <div className="relative">
-              <Navigation className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
+            <div className="relative group">
+              <Navigation className={fieldIconClass} size={18} />
               <input
                 id="checkin-table-input"
                 type="number"
@@ -90,7 +98,8 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                 min="1"
                 max={maxTableCount}
                 data-testid="checkin-table-input"
-                className="rf-input pl-10 pr-4"
+                inputMode="numeric"
+                className={`${fieldBaseClass} pl-12 pr-4 rf-number-clean`}
               />
             </div>
           </div>

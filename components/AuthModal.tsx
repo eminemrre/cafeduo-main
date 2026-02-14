@@ -249,13 +249,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   const inputBaseClass =
-    'rf-input rf-control h-12 text-white text-base md:text-lg leading-none';
+    'rf-input rf-control h-12 text-white font-sans text-[1.02rem] md:text-[1.08rem] leading-[1.1] tracking-normal';
   const inputBorderClass =
     'border-slate-600 focus:border-cyan-300 focus:shadow-[0_0_20px_rgba(0,217,255,0.2)]';
   const inputErrorClass =
     'border-red-500 focus:border-red-500 focus:shadow-[0_0_20px_rgba(255,86,114,0.2)]';
   const iconBaseClass =
-    'absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition-colors group-focus-within:text-cyan-300';
+    'absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none transition-colors group-focus-within:text-cyan-300';
   const googleClientId =
     typeof window !== 'undefined'
       ? String((window as Window & { __CAFEDUO_GOOGLE_CLIENT_ID__?: string }).__CAFEDUO_GOOGLE_CLIENT_ID__ || '').trim()
@@ -366,7 +366,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       placeholder="Kullanıcı adı"
                       className={`${inputBaseClass} ${
                         fieldErrors.username && touched.username ? inputErrorClass : inputBorderClass
-                      } pl-11 pr-10`}
+                      } pl-12 pr-11`}
                     />
                     {!fieldErrors.username && touched.username && username && (
                       <Check className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-400" size={18} />
@@ -383,7 +383,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <select
                       value={department}
                       onChange={(e) => setDepartment(e.target.value)}
-                      className={`${inputBaseClass} ${inputBorderClass} pl-11 pr-11 appearance-none cursor-pointer`}
+                      className={`${inputBaseClass} ${inputBorderClass} pl-12 pr-12 appearance-none cursor-pointer`}
                     >
                       <option value="" className="bg-[#0b152c] text-slate-300">
                         Bölüm seçiniz (isteğe bağlı)
@@ -396,7 +396,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     </select>
                     <ChevronDown
                       size={16}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400"
                     />
                   </div>
                 </>
@@ -413,7 +413,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   data-testid="auth-email-input"
                   className={`${inputBaseClass} ${
                     fieldErrors.email && touched.email ? inputErrorClass : inputBorderClass
-                  } pl-11 pr-10`}
+                  } pl-12 pr-11`}
                 />
                 {!fieldErrors.email && touched.email && email && (
                   <Check className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-400" size={18} />
@@ -438,7 +438,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       data-testid="auth-password-input"
                       className={`${inputBaseClass} ${
                         fieldErrors.password && touched.password ? inputErrorClass : inputBorderClass
-                      } pl-11 pr-12`}
+                      } pl-12 pr-12`}
                     />
                     <button
                       type="button"

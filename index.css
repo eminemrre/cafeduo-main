@@ -265,6 +265,16 @@ body::after {
   border-radius: var(--rf-radius-sm);
 }
 
+.rf-number-clean::-webkit-outer-spin-button,
+.rf-number-clean::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.rf-number-clean[type="number"] {
+  -moz-appearance: textfield;
+}
+
 .rf-elevated {
   box-shadow: 0 18px 44px rgba(2, 9, 24, 0.54), 0 0 0 1px rgba(10, 215, 255, 0.12);
 }

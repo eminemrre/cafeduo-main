@@ -68,7 +68,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                 value={selectedCafeId || ''}
                 onChange={(event) => setSelectedCafeId(event.target.value)}
                 data-testid="checkin-cafe-select"
-                className={`${fieldBaseClass} pl-12 pr-12 appearance-none cursor-pointer`}
+                className={`${fieldBaseClass} rf-input-icon-double appearance-none cursor-pointer`}
               >
                 {cafes.map((cafe) => (
                   <option key={cafe.id} value={cafe.id}>
@@ -99,7 +99,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                 max={maxTableCount}
                 data-testid="checkin-table-input"
                 inputMode="numeric"
-                className={`${fieldBaseClass} pl-12 pr-4 rf-number-clean`}
+                className={`${fieldBaseClass} rf-input-icon-left pr-4 rf-number-clean`}
               />
             </div>
           </div>

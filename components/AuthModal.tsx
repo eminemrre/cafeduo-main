@@ -366,7 +366,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       placeholder="Kullanıcı adı"
                       className={`${inputBaseClass} ${
                         fieldErrors.username && touched.username ? inputErrorClass : inputBorderClass
-                      } pl-12 pr-11`}
+                      } rf-input-icon-double`}
                     />
                     {!fieldErrors.username && touched.username && username && (
                       <Check className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-400" size={18} />
@@ -383,7 +383,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <select
                       value={department}
                       onChange={(e) => setDepartment(e.target.value)}
-                      className={`${inputBaseClass} ${inputBorderClass} pl-12 pr-12 appearance-none cursor-pointer`}
+                      className={`${inputBaseClass} ${inputBorderClass} rf-input-icon-double appearance-none cursor-pointer`}
                     >
                       <option value="" className="bg-[#0b152c] text-slate-300">
                         Bölüm seçiniz (isteğe bağlı)
@@ -413,7 +413,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   data-testid="auth-email-input"
                   className={`${inputBaseClass} ${
                     fieldErrors.email && touched.email ? inputErrorClass : inputBorderClass
-                  } pl-12 pr-11`}
+                  } rf-input-icon-double`}
                 />
                 {!fieldErrors.email && touched.email && email && (
                   <Check className="absolute right-3 top-1/2 -translate-y-1/2 text-emerald-400" size={18} />
@@ -438,7 +438,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       data-testid="auth-password-input"
                       className={`${inputBaseClass} ${
                         fieldErrors.password && touched.password ? inputErrorClass : inputBorderClass
-                      } pl-12 pr-12`}
+                      } rf-input-icon-double`}
                     />
                     <button
                       type="button"
@@ -507,17 +507,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <span className="h-px flex-1 bg-slate-700/80" />
                 </div>
                 <div className="flex justify-center">
-                  <GoogleLogin
-                    onSuccess={handleGoogleLogin}
-                    onError={() => {
-                      setError('Google ile giriş işlemi başlatılamadı.');
-                      toast.error('Google ile giriş işlemi başlatılamadı.');
-                    }}
-                    theme="filled_black"
-                    shape="pill"
-                    text="continue_with"
-                    width="320"
-                  />
+                  <div className="google-login-shell w-full max-w-[320px] overflow-hidden rounded-full">
+                    <GoogleLogin
+                      onSuccess={handleGoogleLogin}
+                      onError={() => {
+                        setError('Google ile giriş işlemi başlatılamadı.');
+                        toast.error('Google ile giriş işlemi başlatılamadı.');
+                      }}
+                      theme="filled_black"
+                      shape="pill"
+                      text="continue_with"
+                      width="320"
+                    />
+                  </div>
                 </div>
               </div>
             )}

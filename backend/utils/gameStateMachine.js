@@ -63,10 +63,48 @@ const assertGameStatusTransition = ({ fromStatus, toStatus, context = 'game' }) 
   return { ok: true, from, to };
 };
 
+const assertRequiredGameStatus = ({ currentStatus, requiredStatus, context = 'game' }) => {
+  const from = normalizeGameStatus(currentStatus);
+  const to = normalizeGameStatus(requiredStatus);
+
+  if (!isValidStatus(from)) {
+    return {
+      ok: false,
+      code: 'invalid_game_status',
+      message: `Geçersiz oyun durumu (${context}): "${String(currentStatus || '')}".`,
+      from,
+      to,
+    };
+  }
+
+  if (!isValidStatus(to)) {
+    return {
+      ok: false,
+      code: 'invalid_target_status',
+      message: `Geçersiz hedef oyun durumu (${context}): "${String(requiredStatus || '')}".`,
+      from,
+      to,
+    };
+  }
+
+  if (from !== to) {
+    return {
+      ok: false,
+      code: 'invalid_status_transition',
+      message: `Geçersiz oyun durumu geçişi (${context}): ${from} -> ${to}.`,
+      from,
+      to,
+    };
+  }
+
+  return { ok: true, from, to };
+};
+
 module.exports = {
   GAME_STATUS,
   normalizeGameStatus,
   isValidStatus,
   canTransitionGameStatus,
   assertGameStatusTransition,
+  assertRequiredGameStatus,
 };

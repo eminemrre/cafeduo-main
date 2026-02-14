@@ -455,6 +455,12 @@ paths:
                   success:
                     type: boolean
                     example: true
+        409:
+          description: Oyun durum geçişi geçersiz veya oyun dolu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameStatusTransitionError'
 
   /api/games/{id}/move:
     post:
@@ -500,6 +506,12 @@ paths:
                 properties:
                   success:
                     type: boolean
+        409:
+          description: Oyun aktif olmadığı için hamle reddedildi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameStatusTransitionError'
 
   /api/games/{id}/finish:
     post:
@@ -530,6 +542,12 @@ paths:
       responses:
         200:
           description: Oyun sonlandırıldı
+        409:
+          description: Oyun durum geçişi veya finalizasyon kuralı geçersiz
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameStatusTransitionError'
 
   /api/games/{id}:
     delete:
@@ -1312,7 +1330,7 @@ components:
           example: "MASA04"
         status:
           type: string
-          enum: ["waiting", "active", "finished"]
+          enum: ["waiting", "active", "finishing", "finished"]
           example: "waiting"
         player1Move:
           type: string
@@ -1335,6 +1353,26 @@ components:
         - gameType
         - points
         - status
+
+    GameStatusTransitionError:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Geçersiz oyun durumu geçişi (join_game): finished -> active."
+        code:
+          type: string
+          enum: ["invalid_game_status", "invalid_target_status", "invalid_status_transition"]
+          example: "invalid_status_transition"
+        fromStatus:
+          type: string
+          example: "finished"
+        toStatus:
+          type: string
+          example: "active"
+      required:
+        - error
+        - code
 
     Reward:
       type: object

@@ -74,6 +74,13 @@ describe('gameMoveService (db mode)', () => {
         moveHistory: [],
       }),
       assertGameStatusTransition: () => ({ ok: true }),
+      assertRequiredGameStatus: ({ currentStatus, requiredStatus }) => ({
+        ok: currentStatus === requiredStatus,
+        code: 'invalid_status_transition',
+        message: 'invalid',
+        from: currentStatus,
+        to: requiredStatus,
+      }),
       mapTransitionError: () => ({}),
       sanitizeLiveSubmission: (payload) => payload,
       getGameParticipants: (game) => [game.host_name, game.guest_name].filter(Boolean),

@@ -2,6 +2,7 @@ const { Chess } = require('chess.js');
 const {
   GAME_STATUS,
   assertGameStatusTransition,
+  assertRequiredGameStatus,
   normalizeGameStatus,
 } = require('../utils/gameStateMachine');
 const { createGameMoveService } = require('../services/gameMoveService');
@@ -794,8 +795,13 @@ const createGameHandlers = ({
         }
 
         if (game.status === 'finished') {
+          const finishedJoinTransition = assertGameStatusTransition({
+            fromStatus: game.status,
+            toStatus: GAME_STATUS.ACTIVE,
+            context: 'join_game',
+          });
           await client.query('ROLLBACK');
-          return res.status(409).json({ error: 'Bu oyun zaten tamamlandı.' });
+          return res.status(409).json(mapTransitionError(finishedJoinTransition));
         }
 
         const requiredStake = Math.max(0, Math.floor(Number(game.points || 0)));
@@ -933,7 +939,12 @@ const createGameHandlers = ({
       return res.status(400).json({ error: 'Kendi oyununa katılamazsın.' });
     }
     if (game.status === 'finished') {
-      return res.status(409).json({ error: 'Bu oyun zaten tamamlandı.' });
+      const finishedJoinTransition = assertGameStatusTransition({
+        fromStatus: game.status,
+        toStatus: GAME_STATUS.ACTIVE,
+        context: 'join_game_memory',
+      });
+      return res.status(409).json(mapTransitionError(finishedJoinTransition));
     }
     {
       const requiredStake = Math.max(0, Math.floor(Number(game.points || 0)));
@@ -1228,6 +1239,7 @@ const createGameHandlers = ({
     createInitialChessState,
     buildChessStateFromEngine,
     assertGameStatusTransition,
+    assertRequiredGameStatus,
     mapTransitionError,
     sanitizeLiveSubmission,
     getGameParticipants,
@@ -1274,9 +1286,14 @@ const createGameHandlers = ({
           await client.query('ROLLBACK');
           return res.status(400).json({ error: 'Beraberlik teklifi sadece satranç oyununda kullanılabilir.' });
         }
-        if (normalizeGameStatus(game.status) !== GAME_STATUS.ACTIVE) {
+        const drawOfferStatus = assertRequiredGameStatus({
+          currentStatus: game.status,
+          requiredStatus: GAME_STATUS.ACTIVE,
+          context: 'draw_offer',
+        });
+        if (!drawOfferStatus.ok) {
           await client.query('ROLLBACK');
-          return res.status(409).json({ error: 'Beraberlik teklifi için oyun aktif olmalı.' });
+          return res.status(409).json(mapTransitionError(drawOfferStatus));
         }
 
         const nowIso = new Date().toISOString();
@@ -1517,8 +1534,13 @@ const createGameHandlers = ({
     if (!isChessGameType(game.gameType)) {
       return res.status(400).json({ error: 'Beraberlik teklifi sadece satranç oyununda kullanılabilir.' });
     }
-    if (normalizeGameStatus(game.status) !== GAME_STATUS.ACTIVE) {
-      return res.status(409).json({ error: 'Beraberlik teklifi için oyun aktif olmalı.' });
+    const drawOfferStatus = assertRequiredGameStatus({
+      currentStatus: game.status,
+      requiredStatus: GAME_STATUS.ACTIVE,
+      context: 'draw_offer_memory',
+    });
+    if (!drawOfferStatus.ok) {
+      return res.status(409).json(mapTransitionError(drawOfferStatus));
     }
 
     const nowIso = new Date().toISOString();
@@ -1717,9 +1739,14 @@ const createGameHandlers = ({
           await client.query('ROLLBACK');
           return res.status(403).json({ error: 'Bu oyunda teslim olma yetkin yok.' });
         }
-        if (normalizeGameStatus(game.status) !== GAME_STATUS.ACTIVE) {
+        const resignStatus = assertRequiredGameStatus({
+          currentStatus: game.status,
+          requiredStatus: GAME_STATUS.ACTIVE,
+          context: 'resign_game',
+        });
+        if (!resignStatus.ok) {
           await client.query('ROLLBACK');
-          return res.status(409).json({ error: 'Teslim olmak için oyun aktif olmalı.' });
+          return res.status(409).json(mapTransitionError(resignStatus));
         }
 
         const winnerByResign = findOpponentName(actorParticipant, game);
@@ -1822,8 +1849,13 @@ const createGameHandlers = ({
     if (!actorParticipant) {
       return res.status(403).json({ error: 'Bu oyunda teslim olma yetkin yok.' });
     }
-    if (normalizeGameStatus(game.status) !== GAME_STATUS.ACTIVE) {
-      return res.status(409).json({ error: 'Teslim olmak için oyun aktif olmalı.' });
+    const resignStatus = assertRequiredGameStatus({
+      currentStatus: game.status,
+      requiredStatus: GAME_STATUS.ACTIVE,
+      context: 'resign_game_memory',
+    });
+    if (!resignStatus.ok) {
+      return res.status(409).json(mapTransitionError(resignStatus));
     }
 
     const winnerByResign = findOpponentName(actorParticipant, {

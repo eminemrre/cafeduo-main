@@ -1,57 +1,73 @@
 # Game State Machine Contract
 
-Son guncelleme: 2026-02-10
-Kapsam: CafeDuo PvP oyun akisi
+Son güncelleme: 2026-02-14  
+Kapsam: CafeDuo PvP oyun akışı
 
 ## Durumlar
 
-- `waiting`: Oyun olusturuldu, ikinci oyuncu bekleniyor.
-- `active`: Oyun basladi, hamle/ilerleme aliyor.
-- `finishing`: Sonuc kapatma asamasi (ileride asenkron finalize icin ayrildi).
-- `finished`: Oyun sonuclandi, winner/draw net.
+- `waiting`: Oyun oluşturuldu, ikinci oyuncu bekleniyor.
+- `active`: Oyun başladı, hamle/ilerleme kabul ediliyor.
+- `finishing`: Sonuç kapatma aşaması (asenkron finalize için ayrılmış ara durum).
+- `finished`: Oyun sonuçlandı, kazanan/beraberlik kesinleşti.
 
-## Gecerli gecisler
+## Geçerli Geçişler
 
 | From | To | Neden |
 |---|---|---|
-| `waiting` | `active` | Oyuncu oyuna katildi |
-| `waiting` | `finished` | Zorunlu kapanis / timeout / admin finalizasyonu |
+| `waiting` | `active` | Oyuncu oyuna katıldı |
+| `waiting` | `finished` | Zorunlu kapanış / admin kapanışı |
 | `active` | `active` | Oyun devam ediyor (hamle) |
-| `active` | `finishing` | Sonuc hesaplama baslangici (opsiyonel) |
-| `active` | `finished` | Son hamle/sonuc olustu |
-| `finishing` | `finished` | Finalizasyon tamamlandi |
-| `finished` | `finished` | Idempotent tekrar cagri |
+| `active` | `finishing` | Sonuç hesaplama başlangıcı (opsiyonel) |
+| `active` | `finished` | Timeout, teslim olma, mat, beraberlik, finalizasyon |
+| `finishing` | `finished` | Finalizasyon tamamlandı |
+| `finished` | `finished` | Idempotent tekrar çağrı |
 
-## Gecersiz gecisler
+## Geçersiz Geçişler
 
-Asagidaki ornekler API tarafinda `409` ile reddedilir:
+Aşağıdaki örnekler API tarafında tutarlı `4xx` (çoğunlukla `409`) döner:
 
 - `waiting -> finishing`
 - `finished -> active`
-- Bilinmeyen status degerleri (or. `paused`)
+- Bilinmeyen status değerleri (örn. `paused`)
+- `active` dışında hamle/score/live/game_state güncelleme denemeleri
 
-Hata sekli:
+Hata şekli:
 
 ```json
 {
-  "error": "Gecersiz oyun durumu gecisi (...)",
+  "error": "Geçersiz oyun durumu geçişi (...)",
   "code": "invalid_status_transition",
   "fromStatus": "waiting",
-  "toStatus": "finishing"
+  "toStatus": "active"
 }
 ```
 
-## Uygulama noktasi
+## Rejoin Sözleşmesi
+
+- `waiting`:
+  - Host oyun lobisinde kalır.
+  - Başka oyuncu `join` ile oyunu `active` yapar.
+- `active`:
+  - Host/guest aynı kullanıcıyla tekrar `join` çağırırsa idempotent olarak oyuna döner.
+  - Üçüncü oyuncu `409` alır.
+- `finishing`:
+  - Yeni katılım ve hamle kapalıdır, yalnızca sonuçlanma beklenir.
+- `finished`:
+  - `join` ile yeniden aktive edilemez (`invalid_status_transition`).
+  - Oyun durumu sadece okuma amaçlı alınır.
+
+## Uygulama Noktaları
 
 - `POST /api/games/:id/join`:
-  - `waiting -> active` disi gecisler engellenir.
+  - `waiting -> active` geçişini uygular.
+  - `finished -> active` gibi geçişleri engeller.
 - `POST /api/games/:id/move`:
-  - Satranc ve durum degistiren akislarda `active -> active|finished` guard uygulanir.
+  - Satranç/live/score/legacy hamleleri için aktif oyun şartı zorunludur.
 - `POST /api/games/:id/finish`:
   - `finished` idempotent kabul edilir.
-  - Diger gecersiz finalizasyonlar engellenir.
+  - Geçersiz finalizasyonlar engellenir.
 
 ## Notlar
 
-- Mevcut sistemde `finishing` statusu runtime'da zorunlu degil; ileri fazlarda asenkron finalize pipeline'i icin ayrilmistir.
-- `status` tek dogruluk kaynagi olarak server tarafinda yonetilir.
+- `status` server-authoritative tek doğruluk kaynağıdır.
+- `finishing` mevcut sürümde opsiyonel ara durumdur; ileri sprintlerde finalize pipeline için kullanılacaktır.

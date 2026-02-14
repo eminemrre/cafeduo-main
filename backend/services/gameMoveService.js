@@ -13,6 +13,7 @@ const createGameMoveService = ({
   createInitialChessState,
   buildChessStateFromEngine,
   assertGameStatusTransition,
+  assertRequiredGameStatus,
   mapTransitionError,
   sanitizeLiveSubmission,
   getGameParticipants,
@@ -92,10 +93,6 @@ const createGameMoveService = ({
         }
 
         const game = gameResult.rows[0];
-        if (game.status === 'finished') {
-          await client.query('ROLLBACK');
-          return res.status(409).json({ error: 'Bu oyun tamamlandı, hamle kabul edilmiyor.' });
-        }
 
         const actorParticipant = normalizeParticipantName(actorName, game);
         const adminActor = isAdminActor(req.user);
@@ -112,9 +109,14 @@ const createGameMoveService = ({
             return res.status(400).json({ error: 'Bu oyun türü satranç hamlesi kabul etmiyor.' });
           }
 
-          if (game.status !== 'active') {
+          const chessMoveStatus = assertRequiredGameStatus({
+            currentStatus: game.status,
+            requiredStatus: GAME_STATUS.ACTIVE,
+            context: 'chess_move',
+          });
+          if (!chessMoveStatus.ok) {
             await client.query('ROLLBACK');
-            return res.status(409).json({ error: 'Satranç hamlesi için oyun aktif olmalı.' });
+            return res.status(409).json(mapTransitionError(chessMoveStatus));
           }
 
           const resolvedColor = adminActor
@@ -313,9 +315,14 @@ const createGameMoveService = ({
         }
 
         if (liveSubmission) {
-          if (game.status !== 'active') {
+          const liveSubmissionStatus = assertRequiredGameStatus({
+            currentStatus: game.status,
+            requiredStatus: GAME_STATUS.ACTIVE,
+            context: 'live_submission',
+          });
+          if (!liveSubmissionStatus.ok) {
             await client.query('ROLLBACK');
-            return res.status(409).json({ error: 'Canlı ilerleme bildirimi için oyun aktif olmalı.' });
+            return res.status(409).json(mapTransitionError(liveSubmissionStatus));
           }
           if (!actorParticipant) {
             await client.query('ROLLBACK');
@@ -392,9 +399,14 @@ const createGameMoveService = ({
         }
 
         if (scoreSubmission) {
-          if (game.status !== 'active') {
+          const scoreSubmissionStatus = assertRequiredGameStatus({
+            currentStatus: game.status,
+            requiredStatus: GAME_STATUS.ACTIVE,
+            context: 'score_submission',
+          });
+          if (!scoreSubmissionStatus.ok) {
             await client.query('ROLLBACK');
-            return res.status(409).json({ error: 'Skor gönderimi için oyun aktif olmalı.' });
+            return res.status(409).json(mapTransitionError(scoreSubmissionStatus));
           }
 
           if (!actorParticipant) {
@@ -446,6 +458,16 @@ const createGameMoveService = ({
         }
 
         if (gameState && typeof gameState === 'object') {
+          const gameStateUpdateStatus = assertRequiredGameStatus({
+            currentStatus: game.status,
+            requiredStatus: GAME_STATUS.ACTIVE,
+            context: 'game_state_update',
+          });
+          if (!gameStateUpdateStatus.ok) {
+            await client.query('ROLLBACK');
+            return res.status(409).json(mapTransitionError(gameStateUpdateStatus));
+          }
+
           const mergedState = {
             ...currentState,
             ...gameState,
@@ -470,6 +492,16 @@ const createGameMoveService = ({
             gameState: mergedState,
           });
           return res.json({ success: true, gameState: mergedState });
+        }
+
+        const legacyMoveStatus = assertRequiredGameStatus({
+          currentStatus: game.status,
+          requiredStatus: GAME_STATUS.ACTIVE,
+          context: 'legacy_move',
+        });
+        if (!legacyMoveStatus.ok) {
+          await client.query('ROLLBACK');
+          return res.status(409).json(mapTransitionError(legacyMoveStatus));
         }
 
         const hostName = String(game.host_name || '').trim().toLowerCase();
@@ -514,9 +546,6 @@ const createGameMoveService = ({
     if (!game) {
       return res.status(404).json({ error: 'Oyun bulunamadı.' });
     }
-    if (game.status === 'finished') {
-      return res.status(409).json({ error: 'Bu oyun tamamlandı, hamle kabul edilmiyor.' });
-    }
 
     const actorParticipant = normalizeParticipantName(actorName, {
       host_name: game.hostName,
@@ -531,8 +560,13 @@ const createGameMoveService = ({
       if (!isChessGameType(game.gameType)) {
         return res.status(400).json({ error: 'Bu oyun türü satranç hamlesi kabul etmiyor.' });
       }
-      if (game.status !== 'active') {
-        return res.status(409).json({ error: 'Satranç hamlesi için oyun aktif olmalı.' });
+      const chessMoveStatus = assertRequiredGameStatus({
+        currentStatus: game.status,
+        requiredStatus: GAME_STATUS.ACTIVE,
+        context: 'chess_move_memory',
+      });
+      if (!chessMoveStatus.ok) {
+        return res.status(409).json(mapTransitionError(chessMoveStatus));
       }
 
       const resolvedColor = adminActor
@@ -696,8 +730,13 @@ const createGameMoveService = ({
     }
 
     if (liveSubmission) {
-      if (game.status !== 'active') {
-        return res.status(409).json({ error: 'Canlı ilerleme bildirimi için oyun aktif olmalı.' });
+      const liveSubmissionStatus = assertRequiredGameStatus({
+        currentStatus: game.status,
+        requiredStatus: GAME_STATUS.ACTIVE,
+        context: 'live_submission_memory',
+      });
+      if (!liveSubmissionStatus.ok) {
+        return res.status(409).json(mapTransitionError(liveSubmissionStatus));
       }
       if (!actorParticipant) {
         return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
@@ -764,6 +803,14 @@ const createGameMoveService = ({
     }
 
     if (scoreSubmission) {
+      const scoreSubmissionStatus = assertRequiredGameStatus({
+        currentStatus: game.status,
+        requiredStatus: GAME_STATUS.ACTIVE,
+        context: 'score_submission_memory',
+      });
+      if (!scoreSubmissionStatus.ok) {
+        return res.status(409).json(mapTransitionError(scoreSubmissionStatus));
+      }
       if (!actorParticipant) {
         return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
       }
@@ -805,6 +852,15 @@ const createGameMoveService = ({
     }
 
     if (gameState && typeof gameState === 'object') {
+      const gameStateUpdateStatus = assertRequiredGameStatus({
+        currentStatus: game.status,
+        requiredStatus: GAME_STATUS.ACTIVE,
+        context: 'game_state_update_memory',
+      });
+      if (!gameStateUpdateStatus.ok) {
+        return res.status(409).json(mapTransitionError(gameStateUpdateStatus));
+      }
+
       game.gameState = { ...(game.gameState || {}), ...gameState };
       emitRealtimeUpdate(id, {
         type: 'game_state',
@@ -812,6 +868,15 @@ const createGameMoveService = ({
         gameState: game.gameState,
       });
       return res.json({ success: true, gameState: game.gameState });
+    }
+
+    const legacyMoveStatus = assertRequiredGameStatus({
+      currentStatus: game.status,
+      requiredStatus: GAME_STATUS.ACTIVE,
+      context: 'legacy_move_memory',
+    });
+    if (!legacyMoveStatus.ok) {
+      return res.status(409).json(mapTransitionError(legacyMoveStatus));
     }
 
     const hostName = String(game.hostName || '').trim().toLowerCase();

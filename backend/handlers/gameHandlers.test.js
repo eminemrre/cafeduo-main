@@ -253,6 +253,33 @@ describe('gameHandlers (memory mode)', () => {
     expect(res.payload).toMatchObject({ error: 'Oyun dolu.' });
   });
 
+  it('returns transition payload when trying to join a finished game', async () => {
+    memoryGames = [
+      {
+        id: 73,
+        hostName: 'u1',
+        guestName: 'u2',
+        gameType: 'Refleks Avı',
+        points: 20,
+        table: 'MASA05',
+        status: 'finished',
+      },
+    ];
+
+    const joinReq = {
+      params: { id: '73' },
+      user: { username: 'u3', role: 'user', isAdmin: false, table_number: '9', cafe_id: 2 },
+    };
+    const res = createMockRes();
+
+    await handlers.joinGame(joinReq, res);
+
+    expect(res.statusCode).toBe(409);
+    expect(res.payload?.code).toBe('invalid_status_transition');
+    expect(res.payload?.fromStatus).toBe('finished');
+    expect(res.payload?.toStatus).toBe('active');
+  });
+
   it('rejects join when player has insufficient points for stake', async () => {
     memoryGames = [
       {
@@ -517,6 +544,34 @@ describe('gameHandlers (memory mode)', () => {
     await handlers.makeMove(moveReq2, moveRes2);
     expect(moveRes2.statusCode).toBe(200);
     expect(moveRes2.payload.resolvedWinner).toBe('u1');
+  });
+
+  it('returns transition payload when move is sent to non-active game', async () => {
+    memoryGames = [
+      {
+        id: 41,
+        hostName: 'u1',
+        guestName: 'u2',
+        gameType: 'Refleks Avı',
+        points: 20,
+        table: 'MASA01',
+        status: 'finished',
+        gameState: {},
+      },
+    ];
+
+    const moveReq = {
+      params: { id: '41' },
+      user: { username: 'u1', role: 'user', isAdmin: false },
+      body: { move: 'left' },
+    };
+    const moveRes = createMockRes();
+    await handlers.makeMove(moveReq, moveRes);
+
+    expect(moveRes.statusCode).toBe(409);
+    expect(moveRes.payload?.code).toBe('invalid_status_transition');
+    expect(moveRes.payload?.fromStatus).toBe('finished');
+    expect(moveRes.payload?.toStatus).toBe('active');
   });
 
   it('includes chess move count and tempo in user history response', async () => {

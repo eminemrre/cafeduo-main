@@ -3,6 +3,7 @@ const {
   normalizeGameStatus,
   canTransitionGameStatus,
   assertGameStatusTransition,
+  assertRequiredGameStatus,
 } = require('./gameStateMachine');
 
 describe('gameStateMachine', () => {
@@ -60,5 +61,29 @@ describe('gameStateMachine', () => {
 
     expect(result.ok).toBe(false);
     expect(result.code).toBe('invalid_game_status');
+  });
+
+  it('accepts required status when current status matches', () => {
+    const result = assertRequiredGameStatus({
+      currentStatus: GAME_STATUS.ACTIVE,
+      requiredStatus: GAME_STATUS.ACTIVE,
+      context: 'active_only_endpoint',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.from).toBe('active');
+    expect(result.to).toBe('active');
+  });
+
+  it('returns transition error when required status does not match current status', () => {
+    const result = assertRequiredGameStatus({
+      currentStatus: GAME_STATUS.WAITING,
+      requiredStatus: GAME_STATUS.ACTIVE,
+      context: 'active_only_endpoint',
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.code).toBe('invalid_status_transition');
+    expect(result.message).toContain('waiting -> active');
   });
 });

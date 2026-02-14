@@ -71,6 +71,38 @@ const parseAccuracy = (value) => {
     return Math.min(parsed, 1500);
 };
 
+const normalizeVerificationCode = (value) => {
+    return String(value || '')
+        .trim()
+        .toUpperCase()
+        .replace(/\s+/g, '');
+};
+
+const buildExpectedVerificationCodes = (cafe, tableNumber) => {
+    const normalizedTable = Math.max(1, Math.floor(Number(tableNumber) || 0));
+    const tableLabel = `MASA${String(normalizedTable).padStart(2, '0')}`;
+    const shortTable = String(normalizedTable);
+    const basePins = [cafe?.daily_pin, cafe?.pin]
+        .map((value) => normalizeVerificationCode(value))
+        .filter(Boolean);
+    const uniquePins = Array.from(new Set(basePins));
+
+    const expected = new Set();
+    for (const pin of uniquePins) {
+        expected.add(pin);
+        expected.add(`${pin}-${tableLabel}`);
+        expected.add(`${pin}-${shortTable}`);
+    }
+    return expected;
+};
+
+const isVerificationCodeValid = ({ providedCode, cafe, tableNumber }) => {
+    const normalizedCode = normalizeVerificationCode(providedCode);
+    if (!normalizedCode) return false;
+    const expectedCodes = buildExpectedVerificationCodes(cafe, tableNumber);
+    return expectedCodes.has(normalizedCode);
+};
+
 const getEffectiveRadius = (baseRadius, clientAccuracy) => {
     const safeBase = Math.max(40, Math.round(Number(baseRadius) || 150));
     const defaultDriftBuffer = 120; // meters
@@ -188,38 +220,47 @@ const cafeController = {
     // CHECK-IN (Location based)
     async checkIn(req, res) {
         const { id } = req.params;
-        const { latitude, longitude, tableNumber, accuracy } = req.body;
+        const { latitude, longitude, tableNumber, accuracy, tableVerificationCode } = req.body;
         const userId = req.user.id;
 
         const parsedLatitude = parseDecimal(latitude);
         const parsedLongitude = parseDecimal(longitude);
         const parsedAccuracy = parseAccuracy(accuracy);
-        if (!Number.isFinite(parsedLatitude) || !Number.isFinite(parsedLongitude)) {
-            return res.status(400).json({ error: 'Kafe doğrulaması için konum izni gerekli.' });
-        }
+        const hasLocation = Number.isFinite(parsedLatitude) && Number.isFinite(parsedLongitude);
+        const normalizedVerificationCode = normalizeVerificationCode(tableVerificationCode);
 
         if (!(await isDbConnected())) {
             const cafe = FALLBACK_CAFES.find((item) => Number(item.id) === Number(id));
             if (!cafe) return res.status(404).json({ error: 'Kafe bulunamadı.' });
 
-            const fallbackRadius = parseRadius(cafe.radius, 150);
-            const effectiveRadius = getEffectiveRadius(fallbackRadius, parsedAccuracy);
-            const distance = getDistanceFromLatLonInMeters(
-                parsedLatitude,
-                parsedLongitude,
-                Number(cafe.latitude),
-                Number(cafe.longitude)
-            );
-            if (Number.isFinite(distance) && distance > effectiveRadius) {
-                return res.status(400).json({
-                    error: `Kafeden çok uzaktasınız. Yaklaşık ${Math.round(distance)} metre uzaktasınız, doğrulama sınırı ${effectiveRadius} metre.`,
-                });
-            }
-
             const maxTableCount = Number(cafe.table_count || 20);
             const parsedTableNumber = Number(tableNumber);
             if (!Number.isInteger(parsedTableNumber) || parsedTableNumber < 1 || parsedTableNumber > maxTableCount) {
                 return res.status(400).json({ error: `Masa numarası 1-${maxTableCount} aralığında olmalıdır.` });
+            }
+
+            const fallbackRadius = parseRadius(cafe.radius, 150);
+            if (hasLocation) {
+                const effectiveRadius = getEffectiveRadius(fallbackRadius, parsedAccuracy);
+                const distance = getDistanceFromLatLonInMeters(
+                    parsedLatitude,
+                    parsedLongitude,
+                    Number(cafe.latitude),
+                    Number(cafe.longitude)
+                );
+                if (Number.isFinite(distance) && distance > effectiveRadius) {
+                    return res.status(400).json({
+                        error: `Kafeden çok uzaktasınız. Yaklaşık ${Math.round(distance)} metre uzaktasınız, doğrulama sınırı ${effectiveRadius} metre.`,
+                    });
+                }
+            } else if (!isVerificationCodeValid({
+                providedCode: normalizedVerificationCode,
+                cafe,
+                tableNumber: parsedTableNumber,
+            })) {
+                return res.status(400).json({
+                    error: 'Konum doğrulanamadı. Masa doğrulama kodu geçersiz.',
+                });
             }
 
             const userIndex = memoryState.users.findIndex((user) => Number(user.id) === Number(userId));
@@ -252,35 +293,45 @@ const cafeController = {
 
             const cafe = cafeResult.rows[0];
 
-            // 2. Location Check (Geofencing)
-            const cafeLatitude = parseCoordinate(cafe.latitude);
-            const cafeLongitude = parseCoordinate(cafe.longitude);
-            if (cafeLatitude === null || cafeLongitude === null) {
-                return res.status(400).json({
-                    error: 'Bu kafe için konum doğrulaması henüz ayarlanmadı. Lütfen kafe yetkilisine bildirin.',
-                });
-            }
-
-            const radius = parseRadius(cafe.radius, 150);
-            const effectiveRadius = getEffectiveRadius(radius, parsedAccuracy);
-            const distance = getDistanceFromLatLonInMeters(
-                parsedLatitude,
-                parsedLongitude,
-                cafeLatitude,
-                cafeLongitude
-            );
-
-            if (!Number.isFinite(distance) || distance > effectiveRadius) {
-                const distanceLabel = Number.isFinite(distance) ? `${Math.round(distance)} metre` : 'belirlenemeyen bir mesafede';
-                return res.status(400).json({
-                    error: `Kafeden çok uzaktasınız. Yaklaşık ${distanceLabel} görünüyorsunuz, doğrulama sınırı ${effectiveRadius} metre.`,
-                });
-            }
-
             const maxTableCount = Number(cafe.table_count || cafe.total_tables || 20);
             const parsedTableNumber = Number(tableNumber);
             if (!Number.isInteger(parsedTableNumber) || parsedTableNumber < 1 || parsedTableNumber > maxTableCount) {
                 return res.status(400).json({ error: `Masa numarası 1-${maxTableCount} aralığında olmalıdır.` });
+            }
+
+            if (hasLocation) {
+                // 2. Location Check (Geofencing)
+                const cafeLatitude = parseCoordinate(cafe.latitude);
+                const cafeLongitude = parseCoordinate(cafe.longitude);
+                if (cafeLatitude === null || cafeLongitude === null) {
+                    return res.status(400).json({
+                        error: 'Bu kafe için konum doğrulaması henüz ayarlanmadı. Lütfen kafe yetkilisine bildirin.',
+                    });
+                }
+
+                const radius = parseRadius(cafe.radius, 150);
+                const effectiveRadius = getEffectiveRadius(radius, parsedAccuracy);
+                const distance = getDistanceFromLatLonInMeters(
+                    parsedLatitude,
+                    parsedLongitude,
+                    cafeLatitude,
+                    cafeLongitude
+                );
+
+                if (!Number.isFinite(distance) || distance > effectiveRadius) {
+                    const distanceLabel = Number.isFinite(distance) ? `${Math.round(distance)} metre` : 'belirlenemeyen bir mesafede';
+                    return res.status(400).json({
+                        error: `Kafeden çok uzaktasınız. Yaklaşık ${distanceLabel} görünüyorsunuz, doğrulama sınırı ${effectiveRadius} metre.`,
+                    });
+                }
+            } else if (!isVerificationCodeValid({
+                providedCode: normalizedVerificationCode,
+                cafe,
+                tableNumber: parsedTableNumber,
+            })) {
+                return res.status(400).json({
+                    error: 'Konum alınamadı. Giriş için konum izni verin veya geçerli masa doğrulama kodu girin.',
+                });
             }
 
             // 3. Update User

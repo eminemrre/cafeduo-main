@@ -389,6 +389,101 @@ describe('gameHandlers (memory mode)', () => {
     expect(memoryGames[0].gameState?.chess?.result).toBe('timeout');
   });
 
+  it('supports draw offer flow and settles game as draw on acceptance', async () => {
+    memoryGames = [
+      {
+        id: 55,
+        hostName: 'u1',
+        guestName: 'u2',
+        gameType: 'Retro Satranç',
+        points: 40,
+        table: 'MASA05',
+        status: 'active',
+        gameState: {
+          chess: {
+            fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+            moveHistory: [],
+            clock: { baseMs: 180000, incrementMs: 2000, whiteMs: 180000, blackMs: 180000, lastTickAt: null },
+          },
+        },
+      },
+    ];
+
+    const offerReq = {
+      params: { id: '55' },
+      user: { username: 'u1', role: 'user', isAdmin: false },
+      body: { action: 'offer' },
+    };
+    const offerRes = createMockRes();
+    await handlers.drawOffer(offerReq, offerRes);
+
+    expect(offerRes.statusCode).toBe(200);
+    expect(offerRes.payload?.drawOffer).toMatchObject({
+      status: 'pending',
+      offeredBy: 'u1',
+    });
+
+    const acceptReq = {
+      params: { id: '55' },
+      user: { username: 'u2', role: 'user', isAdmin: false },
+      body: { action: 'accept' },
+    };
+    const acceptRes = createMockRes();
+    await handlers.drawOffer(acceptReq, acceptRes);
+
+    expect(acceptRes.statusCode).toBe(200);
+    expect(acceptRes.payload).toMatchObject({ success: true, draw: true, winner: null });
+    expect(memoryGames[0].status).toBe('finished');
+    expect(memoryGames[0].winner).toBeNull();
+    expect(memoryGames[0].gameState?.chess?.result).toBe('draw-agreement');
+
+    const user1 = memoryUsers.find((u) => u.username === 'u1');
+    const user2 = memoryUsers.find((u) => u.username === 'u2');
+    expect(user1.points).toBe(200);
+    expect(user2.points).toBe(200);
+    expect(user1.gamesPlayed).toBe(1);
+    expect(user2.gamesPlayed).toBe(1);
+  });
+
+  it('marks resigning player as loser and transfers stake to opponent', async () => {
+    memoryGames = [
+      {
+        id: 56,
+        hostName: 'u1',
+        guestName: 'u2',
+        gameType: 'Retro Satranç',
+        points: 40,
+        table: 'MASA05',
+        status: 'active',
+        gameState: {
+          chess: {
+            fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+            moveHistory: [],
+            clock: { baseMs: 180000, incrementMs: 2000, whiteMs: 180000, blackMs: 180000, lastTickAt: null },
+          },
+        },
+      },
+    ];
+
+    const resignReq = {
+      params: { id: '56' },
+      user: { username: 'u1', role: 'user', isAdmin: false },
+    };
+    const resignRes = createMockRes();
+    await handlers.resignGame(resignReq, resignRes);
+
+    expect(resignRes.statusCode).toBe(200);
+    expect(resignRes.payload).toMatchObject({ success: true, winner: 'u2', reason: 'resign' });
+    expect(memoryGames[0].status).toBe('finished');
+    expect(memoryGames[0].winner).toBe('u2');
+    expect(memoryGames[0].gameState?.chess?.result).toBe('resign');
+
+    const loser = memoryUsers.find((u) => u.username === 'u1');
+    const winner = memoryUsers.find((u) => u.username === 'u2');
+    expect(loser.points).toBe(160);
+    expect(winner.points).toBe(240);
+  });
+
   it('accepts score submissions and resolves winner', async () => {
     memoryGames = [
       {

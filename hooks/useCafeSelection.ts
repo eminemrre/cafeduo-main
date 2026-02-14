@@ -11,6 +11,7 @@ interface UseCafeSelectionReturn {
   cafes: Cafe[];
   selectedCafeId: string | null;
   tableNumber: string;
+  tableVerificationCode: string;
   loading: boolean;
   error: string | null;
   selectedCafe: Cafe | null;
@@ -18,6 +19,7 @@ interface UseCafeSelectionReturn {
   locationStatus: 'idle' | 'requesting' | 'ready' | 'denied';
   setSelectedCafeId: (cafeId: string) => void;
   setTableNumber: (tableNumber: string) => void;
+  setTableVerificationCode: (code: string) => void;
   clearError: () => void;
   requestLocationAccess: () => Promise<void>;
   checkIn: () => Promise<void>;
@@ -64,6 +66,7 @@ export function useCafeSelection({
   const [cafes, setCafes] = useState<Cafe[]>([]);
   const [selectedCafeIdState, setSelectedCafeIdState] = useState<string | null>(null);
   const [tableNumberState, setTableNumberState] = useState<string>('');
+  const [tableVerificationCodeState, setTableVerificationCodeState] = useState<string>('');
   const [locationStatus, setLocationStatus] = useState<'idle' | 'requesting' | 'ready' | 'denied'>('idle');
   const [locationCoords, setLocationCoords] = useState<LocationCoords | null>(null);
   const [loading, setLoading] = useState(false);
@@ -127,6 +130,11 @@ export function useCafeSelection({
 
   const setTableNumber = useCallback((tableNumber: string) => {
     setTableNumberState(tableNumber);
+    if (error) setError(null);
+  }, [error]);
+
+  const setTableVerificationCode = useCallback((code: string) => {
+    setTableVerificationCodeState(code);
     if (error) setError(null);
   }, [error]);
 
@@ -229,23 +237,29 @@ export function useCafeSelection({
 
     try {
       let coords = locationCoords;
+      const normalizedVerificationCode = String(tableVerificationCodeState || '').trim();
       try {
         // Always refresh location at check-in time to avoid stale coordinates
         coords = await requestLocation();
       } catch (geoErr) {
-        if (!coords) {
+        if (!coords && !normalizedVerificationCode) {
           throw geoErr;
         }
       }
-      if (!coords) {
-        throw new Error('Konum doğrulaması başarısız.');
+      if (!coords && !normalizedVerificationCode) {
+        throw new Error('Konum alınamadı. Masa doğrulama kodunu girip tekrar deneyin.');
       }
       const result = await api.cafes.checkIn({
         cafeId: selectedCafeIdState,
         tableNumber: parsedTableNumber,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
-        accuracy: coords.accuracy,
+        ...(coords
+          ? {
+              latitude: coords.latitude,
+              longitude: coords.longitude,
+              accuracy: coords.accuracy,
+            }
+          : {}),
+        ...(normalizedVerificationCode ? { tableVerificationCode: normalizedVerificationCode } : {}),
       });
 
       const resolvedCafeName = result?.cafeName || result?.cafe?.name || selectedCafe?.name || 'Kafe';
@@ -274,6 +288,7 @@ export function useCafeSelection({
     requestLocation,
     selectedCafe,
     selectedCafeIdState,
+    tableVerificationCodeState,
     tableNumberState,
   ]);
 
@@ -281,6 +296,7 @@ export function useCafeSelection({
     cafes,
     selectedCafeId: selectedCafeIdState,
     tableNumber: tableNumberState,
+    tableVerificationCode: tableVerificationCodeState,
     loading,
     error,
     selectedCafe,
@@ -288,6 +304,7 @@ export function useCafeSelection({
     locationStatus,
     setSelectedCafeId,
     setTableNumber,
+    setTableVerificationCode,
     clearError,
     requestLocationAccess,
     checkIn,

@@ -265,6 +265,19 @@ body::after {
   border-radius: var(--rf-radius-sm);
 }
 
+.rf-input-icon-left {
+  padding-left: 2.9rem !important;
+}
+
+.rf-input-icon-right {
+  padding-right: 2.9rem !important;
+}
+
+.rf-input-icon-double {
+  padding-left: 2.9rem !important;
+  padding-right: 2.9rem !important;
+}
+
 .rf-number-clean::-webkit-outer-spin-button,
 .rf-number-clean::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -273,6 +286,10 @@ body::after {
 
 .rf-number-clean[type="number"] {
   -moz-appearance: textfield;
+}
+
+.google-login-shell > *:not(:first-child) {
+  display: none !important;
 }
 
 .rf-elevated {

@@ -353,23 +353,40 @@ export const api = {
       }
     },
 
-    checkIn: async (params: { cafeId: string | number; tableNumber: number; latitude: number; longitude: number; accuracy?: number }) => {
+    checkIn: async (params: {
+      cafeId: string | number;
+      tableNumber: number;
+      latitude?: number;
+      longitude?: number;
+      accuracy?: number;
+      tableVerificationCode?: string;
+    }) => {
       // NOTE: userId artık token'dan alınıyor, body'e gönderilmiyor
       const payload: {
         cafeId: string | number;
         tableNumber: number;
-        latitude: number;
-        longitude: number;
+        latitude?: number;
+        longitude?: number;
         accuracy?: number;
+        tableVerificationCode?: string;
       } = {
         cafeId: params.cafeId,
         tableNumber: params.tableNumber,
-        latitude: params.latitude,
-        longitude: params.longitude,
       };
+
+      if (Number.isFinite(params.latitude)) {
+        payload.latitude = Number(params.latitude);
+      }
+      if (Number.isFinite(params.longitude)) {
+        payload.longitude = Number(params.longitude);
+      }
 
       if (Number.isFinite(params.accuracy)) {
         payload.accuracy = Number(params.accuracy);
+      }
+      const verificationCode = String(params.tableVerificationCode || '').trim();
+      if (verificationCode) {
+        payload.tableVerificationCode = verificationCode;
       }
 
       return await fetchAPI<CafeCheckInResponse>(`/cafes/${params.cafeId}/check-in`, {
@@ -468,6 +485,25 @@ export const api = {
       return await fetchAPI(`/games/${gameId}/finish`, {
         method: 'POST',
         body: JSON.stringify({ winner }),
+      });
+    },
+
+    drawOffer: async (
+      gameId: number | string,
+      action: 'offer' | 'accept' | 'reject' | 'cancel'
+    ): Promise<{ success: boolean; drawOffer?: unknown; winner?: string | null; draw?: boolean }> => {
+      return await fetchAPI(`/games/${gameId}/draw-offer`, {
+        method: 'POST',
+        body: JSON.stringify({ action }),
+      });
+    },
+
+    resign: async (
+      gameId: number | string
+    ): Promise<{ success: boolean; winner?: string | null; reason?: string }> => {
+      return await fetchAPI(`/games/${gameId}/resign`, {
+        method: 'POST',
+        body: JSON.stringify({}),
       });
     },
 

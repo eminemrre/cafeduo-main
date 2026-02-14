@@ -39,6 +39,13 @@ interface ChessRealtimeState {
     spentMs?: number;
     remainingMs?: number;
   }>;
+  drawOffer?: {
+    status?: string;
+    offeredBy?: string;
+    createdAt?: string;
+    respondedBy?: string;
+    respondedAt?: string;
+  };
 }
 
 interface GameSnapshot {
@@ -58,7 +65,22 @@ interface GameStateUpdatedPayload {
   status?: string;
   winner?: string | null;
   chess?: ChessRealtimeState;
+  drawOffer?: DrawOfferState | null;
+  gameState?: {
+    chess?: ChessRealtimeState;
+  };
+  action?: string;
 }
+
+interface DrawOfferState {
+  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
+  offeredBy: string;
+  createdAt: string;
+  respondedBy?: string;
+  respondedAt?: string;
+}
+
+const DRAW_OFFER_STATUSES = new Set(['pending', 'accepted', 'rejected', 'cancelled']);
 
 const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const;
 const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'] as const;
@@ -132,6 +154,23 @@ const parseRetryAfterMs = (message: string): number => {
   return seconds * 1000;
 };
 
+const normalizeDrawOfferState = (value: unknown): DrawOfferState | null => {
+  if (!value || typeof value !== 'object') return null;
+  const source = value as Record<string, unknown>;
+  const statusRaw = String(source.status || '').trim().toLowerCase();
+  const offeredBy = String(source.offeredBy || '').trim();
+  if (!offeredBy || !DRAW_OFFER_STATUSES.has(statusRaw)) return null;
+  const createdAt = String(source.createdAt || '').trim() || new Date().toISOString();
+
+  return {
+    status: statusRaw as DrawOfferState['status'],
+    offeredBy,
+    createdAt,
+    respondedBy: source.respondedBy ? String(source.respondedBy) : undefined,
+    respondedAt: source.respondedAt ? String(source.respondedAt) : undefined,
+  };
+};
+
 export const RetroChess: React.FC<RetroChessProps> = ({
   currentUser,
   gameId,
@@ -176,6 +215,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     white: 3 * 60 * 1000,
     black: 3 * 60 * 1000,
   });
+  const [drawOffer, setDrawOffer] = useState<DrawOfferState | null>(null);
   const concludeRef = useRef(false);
   const pollingRef = useRef<number | null>(null);
   const requestInFlightRef = useRef(false);
@@ -206,6 +246,16 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     if (playerColor === 'w') return guestName || opponentName || 'Rakip';
     return hostName || opponentName || 'Rakip';
   }, [guestName, hostName, isBot, opponentName, playerColor]);
+  const actorKey = String(currentUser.username || '').trim().toLowerCase();
+  const pendingDrawOffer = drawOffer && drawOffer.status === 'pending' ? drawOffer : null;
+  const isPendingOfferByActor = Boolean(
+    pendingDrawOffer &&
+      actorKey &&
+      pendingDrawOffer.offeredBy.trim().toLowerCase() === actorKey
+  );
+  const isPendingOfferByOpponent = Boolean(pendingDrawOffer) && !isPendingOfferByActor;
+  const canUseChessMatchActions =
+    Boolean(gameId) && !isBot && Boolean(playerColor) && serverStatus !== 'finished';
 
   const clearSelection = () => {
     setSelectedSquare(null);
@@ -237,6 +287,8 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     if (snapshot.status) setServerStatus(String(snapshot.status));
     const winner = normalizeWinner(snapshot.winner || snapshot.gameState?.chess?.winner);
     if (winner) setServerWinner(winner);
+    const snapshotDrawOffer = normalizeDrawOfferState(snapshot.gameState?.chess?.drawOffer);
+    setDrawOffer(snapshotDrawOffer);
     const incomingMoves = Array.isArray(snapshot.gameState?.chess?.moveHistory)
       ? snapshot.gameState?.chess?.moveHistory
       : [];
@@ -314,6 +366,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     setDisplayClock({ white: 3 * 60 * 1000, black: 3 * 60 * 1000 });
     pollPauseUntilRef.current = 0;
     lastRealtimeAtRef.current = 0;
+    setDrawOffer(null);
     clearSelection();
     if (isBot || !gameId) {
       setHostName(currentUser.username);
@@ -336,6 +389,30 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       if (String(payload?.gameId || '') !== String(gameId)) return;
       lastRealtimeAtRef.current = Date.now();
 
+      if (payload.type === 'draw_offer_updated') {
+        const incomingOffer = normalizeDrawOfferState(
+          payload.drawOffer || payload.gameState?.chess?.drawOffer || payload.chess?.drawOffer
+        );
+        setDrawOffer(incomingOffer);
+        if (incomingOffer?.status === 'pending') {
+          const byActor =
+            actorKey &&
+            incomingOffer.offeredBy.trim().toLowerCase() === actorKey;
+          setMessage(
+            byActor
+              ? 'Beraberlik teklifin gönderildi. Rakibin yanıtı bekleniyor.'
+              : 'Rakibin beraberlik teklifi gönderdi.'
+          );
+        }
+        if (incomingOffer?.status === 'rejected') {
+          setMessage('Beraberlik teklifi reddedildi.');
+        }
+        if (incomingOffer?.status === 'cancelled') {
+          setMessage('Beraberlik teklifi geri çekildi.');
+        }
+        return;
+      }
+
       if (payload.type === 'game_joined') {
         setMessage('Rakip oyuna bağlandı. Satranç başladı.');
         void fetchGameSnapshot(true);
@@ -345,6 +422,10 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       if (payload.type === 'game_finished') {
         setServerStatus('finished');
         setServerWinner(normalizeWinner(payload.winner));
+        const incomingOffer = normalizeDrawOfferState(
+          payload.drawOffer || payload.gameState?.chess?.drawOffer || payload.chess?.drawOffer
+        );
+        setDrawOffer(incomingOffer);
         void fetchGameSnapshot(true);
         return;
       }
@@ -373,6 +454,10 @@ export const RetroChess: React.FC<RetroChessProps> = ({
         if (payload.status) setServerStatus(String(payload.status));
         const winner = normalizeWinner(payload.winner || payload.chess.winner);
         if (winner) setServerWinner(winner);
+        const incomingOffer = normalizeDrawOfferState(
+          payload.drawOffer || payload.gameState?.chess?.drawOffer || payload.chess.drawOffer
+        );
+        setDrawOffer(incomingOffer);
         if (payload.chess.isGameOver || engine.isGameOver() || payload.status === 'finished') {
           concludeGame(winner, engine);
           return;
@@ -385,7 +470,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     return () => {
       socket.off('game_state_updated', handleRealtime);
     };
-  }, [concludeGame, fetchGameSnapshot, gameId, isBot]);
+  }, [actorKey, concludeGame, fetchGameSnapshot, gameId, isBot]);
 
   useEffect(() => {
     if (isBot || !gameId) return;
@@ -529,6 +614,72 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     }
   }, [chess, concludeGame, fetchGameSnapshot, gameId, isBot, runBotMove, serverStatus, submitting]);
 
+  const submitDrawOffer = useCallback(async (action: 'offer' | 'accept' | 'reject' | 'cancel') => {
+    if (!canUseChessMatchActions || submitting || !gameId) return;
+    setSubmitting(true);
+    try {
+      const result = await api.games.drawOffer(gameId, action);
+      const nextOffer = normalizeDrawOfferState(result.drawOffer);
+      setDrawOffer(nextOffer);
+
+      if (result.draw) {
+        setServerStatus('finished');
+        setServerWinner(normalizeWinner(result.winner));
+        setMessage('Beraberlik kabul edildi. Oyun berabere bitti.');
+        void fetchGameSnapshot(true);
+        return;
+      }
+
+      if (action === 'offer') {
+        setMessage('Beraberlik teklifi gönderildi. Rakibin yanıtı bekleniyor.');
+      } else if (action === 'accept') {
+        setMessage('Beraberlik teklifi kabul edildi.');
+      } else if (action === 'reject') {
+        setMessage('Beraberlik teklifini reddettin.');
+      } else if (action === 'cancel') {
+        setMessage('Beraberlik teklifini geri çektin.');
+      }
+    } catch (err) {
+      setMessage(err instanceof Error && err.message ? err.message : 'Beraberlik işlemi yapılamadı.');
+      void fetchGameSnapshot(true);
+    } finally {
+      setSubmitting(false);
+    }
+  }, [canUseChessMatchActions, fetchGameSnapshot, gameId, submitting]);
+
+  const resignAndLeave = useCallback(async (leaveAfterResign = false) => {
+    if (!gameId || isBot || !playerColor || serverStatus === 'finished') {
+      if (leaveAfterResign) onLeave();
+      return;
+    }
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const result = await api.games.resign(gameId);
+      const winner = normalizeWinner(result.winner);
+      setServerStatus('finished');
+      setServerWinner(winner);
+      setDrawOffer(null);
+      setMessage('Oyundan ayrıldın ve teslim oldun.');
+      void fetchGameSnapshot(true);
+      if (leaveAfterResign) {
+        onLeave();
+      }
+    } catch (err) {
+      setMessage(err instanceof Error && err.message ? err.message : 'Teslim olma işlemi başarısız.');
+    } finally {
+      setSubmitting(false);
+    }
+  }, [fetchGameSnapshot, gameId, isBot, onLeave, playerColor, serverStatus, submitting]);
+
+  const handleLeave = useCallback(() => {
+    if (canUseChessMatchActions) {
+      void resignAndLeave(true);
+      return;
+    }
+    onLeave();
+  }, [canUseChessMatchActions, onLeave, resignAndLeave]);
+
   const handleSquareClick = (square: Square) => {
     if (submitting || serverStatus === 'finished') return;
     if (!isBot && playerColor && !isMyTurn) {
@@ -584,7 +735,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
 
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-pixel text-lg">Retro Satranç (Klasik)</h2>
-        <button onClick={onLeave} className="text-[var(--rf-muted)] hover:text-white text-sm">
+        <button onClick={handleLeave} className="text-[var(--rf-muted)] hover:text-white text-sm">
           Oyundan Çık
         </button>
       </div>
@@ -629,6 +780,13 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       )}
       {serverWinner && (
         <p className="text-xs text-emerald-300 mb-3">Kazanan: {serverWinner}</p>
+      )}
+      {pendingDrawOffer && (
+        <p className="text-xs text-cyan-200 mb-3">
+          {isPendingOfferByActor
+            ? 'Gönderdiğin beraberlik teklifi için rakip yanıtı bekleniyor.'
+            : `${pendingDrawOffer.offeredBy} beraberlik teklifi gönderdi.`}
+        </p>
       )}
 
       <div className="w-full max-w-[620px] mx-auto rounded-2xl border border-cyan-300/22 p-2 sm:p-3 bg-[#06132b]/85 shadow-[0_12px_34px_rgba(0,0,0,0.35)]">
@@ -687,11 +845,57 @@ export const RetroChess: React.FC<RetroChessProps> = ({
         </div>
       </div>
 
+      {canUseChessMatchActions && (
+        <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {!pendingDrawOffer && (
+            <RetroButton
+              onClick={() => void submitDrawOffer('offer')}
+              disabled={submitting}
+            >
+              Beraberlik Teklif Et
+            </RetroButton>
+          )}
+          {isPendingOfferByActor && (
+            <RetroButton
+              onClick={() => void submitDrawOffer('cancel')}
+              disabled={submitting}
+              variant="secondary"
+            >
+              Teklifi Geri Çek
+            </RetroButton>
+          )}
+          {isPendingOfferByOpponent && (
+            <RetroButton
+              onClick={() => void submitDrawOffer('accept')}
+              disabled={submitting}
+            >
+              Beraberliği Kabul Et
+            </RetroButton>
+          )}
+          {isPendingOfferByOpponent && (
+            <RetroButton
+              onClick={() => void submitDrawOffer('reject')}
+              disabled={submitting}
+              variant="secondary"
+            >
+              Teklifi Reddet
+            </RetroButton>
+          )}
+          <RetroButton
+            onClick={() => void resignAndLeave(false)}
+            disabled={submitting}
+            variant="danger"
+          >
+            Teslim Ol
+          </RetroButton>
+        </div>
+      )}
+
       <div className="mt-5 flex flex-col sm:flex-row gap-2">
         <RetroButton onClick={() => void fetchGameSnapshot()} disabled={loading || submitting || isBot}>
           Senkronu Yenile
         </RetroButton>
-        <RetroButton onClick={onLeave} variant="secondary">
+        <RetroButton onClick={handleLeave} variant="secondary">
           Lobiye Dön
         </RetroButton>
       </div>

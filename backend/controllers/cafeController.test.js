@@ -31,7 +31,10 @@ describe('cafeController.checkIn', () => {
     isDbConnected.mockResolvedValue(true);
   });
 
-  it('returns 400 when location is missing', async () => {
+  it('returns 400 when location is missing and verification code is absent', async () => {
+    pool.query.mockResolvedValueOnce({
+      rows: [{ id: 1, name: 'Merkez', table_count: 5, latitude: 37.741, longitude: 29.101, radius: 150, daily_pin: '1234' }],
+    });
     const req = {
       params: { id: '1' },
       body: { tableNumber: 2 },
@@ -42,7 +45,35 @@ describe('cafeController.checkIn', () => {
     await cafeController.checkIn(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Kafe doğrulaması için konum izni gerekli.' });
+    expect(res.json).toHaveBeenCalledWith({
+      error: 'Konum alınamadı. Giriş için konum izni verin veya geçerli masa doğrulama kodu girin.',
+    });
+  });
+
+  it('accepts check-in with valid table verification code when location is missing', async () => {
+    pool.query
+      .mockResolvedValueOnce({
+        rows: [{ id: 1, name: 'Merkez', table_count: 20, latitude: null, longitude: null, radius: 120, daily_pin: '1234', pin: '5555' }],
+      })
+      .mockResolvedValueOnce({ rowCount: 1 });
+
+    const req = {
+      params: { id: '1' },
+      body: { tableNumber: 4, tableVerificationCode: '1234-MASA04' },
+      user: { id: 77 },
+    };
+    const res = buildRes();
+
+    await cafeController.checkIn(req, res);
+
+    expect(res.status).not.toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        cafeName: 'Merkez',
+        table: 'MASA04',
+      })
+    );
   });
 
   it('returns 400 for out-of-range table number', async () => {

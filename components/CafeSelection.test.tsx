@@ -74,7 +74,7 @@ describe('CafeSelection', () => {
       expect(api.cafes.list).toHaveBeenCalled();
     });
 
-    expect(screen.getByText('KONUMU DOĞRULA & OYNA')).toBeDisabled();
+    expect(screen.getByText('KAFEYE GİR & OYNA')).toBeDisabled();
   });
 
   it('submits check-in with geolocation and stores last cafe/table on success', async () => {
@@ -91,7 +91,7 @@ describe('CafeSelection', () => {
     });
 
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '5' } });
-    fireEvent.click(screen.getByText('KONUMU DOĞRULA & OYNA'));
+    fireEvent.click(screen.getByText('KAFEYE GİR & OYNA'));
 
     await waitFor(() => {
       expect(api.cafes.checkIn).toHaveBeenCalledWith({
@@ -121,7 +121,7 @@ describe('CafeSelection', () => {
     });
 
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '4' } });
-    fireEvent.click(screen.getByText('KONUMU DOĞRULA & OYNA'));
+    fireEvent.click(screen.getByText('KAFEYE GİR & OYNA'));
 
     await waitFor(() => {
       expect(onCheckInSuccess).toHaveBeenCalledWith('Merkez Kafe', 'MASA04', '10');
@@ -149,7 +149,7 @@ describe('CafeSelection', () => {
       expect(api.cafes.list).toHaveBeenCalled();
     });
 
-    fireEvent.click(screen.getByText('KONUMU DOĞRULA & OYNA'));
+    fireEvent.click(screen.getByText('KAFEYE GİR & OYNA'));
 
     await waitFor(() => {
       expect(api.cafes.checkIn).toHaveBeenCalledWith({
@@ -172,7 +172,7 @@ describe('CafeSelection', () => {
     });
 
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '2' } });
-    fireEvent.click(screen.getByText('KONUMU DOĞRULA & OYNA'));
+    fireEvent.click(screen.getByText('KAFEYE GİR & OYNA'));
 
     await waitFor(() => {
       expect(screen.getByText(/Sunucuya bağlanılamadı/)).toBeInTheDocument();
@@ -195,10 +195,43 @@ describe('CafeSelection', () => {
     await waitFor(() => expect(api.cafes.list).toHaveBeenCalled());
 
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '2' } });
-    fireEvent.click(screen.getByText('KONUMU DOĞRULA & OYNA'));
+    fireEvent.click(screen.getByText('KAFEYE GİR & OYNA'));
 
     await waitFor(() => {
       expect(screen.getByText(/Konum izni reddedildi/)).toBeInTheDocument();
+    });
+  });
+
+  it('allows fallback check-in with table verification code when geolocation times out', async () => {
+    Object.defineProperty(window.navigator, 'geolocation', {
+      configurable: true,
+      value: {
+        getCurrentPosition: jest.fn(
+          (_onSuccess: (pos: GeolocationPosition) => void, onError: (err: GeolocationPositionError) => void) => {
+            onError({ code: 3 } as GeolocationPositionError);
+          }
+        ),
+      },
+    });
+
+    (api.cafes.checkIn as jest.Mock).mockResolvedValueOnce({
+      cafeName: 'Merkez Kafe',
+      table: 'MASA03',
+    });
+
+    render(<CafeSelection currentUser={currentUser} onCheckInSuccess={jest.fn()} />);
+    await waitFor(() => expect(api.cafes.list).toHaveBeenCalled());
+
+    fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '3' } });
+    fireEvent.change(screen.getByLabelText(/Masa Doğrulama Kodu/i), { target: { value: '1234-MASA03' } });
+    fireEvent.click(screen.getByText('KAFEYE GİR & OYNA'));
+
+    await waitFor(() => {
+      expect(api.cafes.checkIn).toHaveBeenCalledWith({
+        cafeId: '10',
+        tableNumber: 3,
+        tableVerificationCode: '1234-MASA03',
+      });
     });
   });
 });

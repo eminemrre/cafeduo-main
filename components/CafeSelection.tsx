@@ -13,6 +13,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
     cafes,
     selectedCafeId,
     tableNumber,
+    tableVerificationCode,
     loading,
     error,
     selectedCafe,
@@ -20,6 +21,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
     locationStatus,
     setSelectedCafeId,
     setTableNumber,
+    setTableVerificationCode,
     clearError,
     requestLocationAccess,
     checkIn,
@@ -104,6 +106,21 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
             </div>
           </div>
 
+          <div>
+            <label htmlFor="checkin-verification-code" className="block text-[var(--rf-muted)] text-sm mb-2 font-bold">
+              Masa Doğrulama Kodu (opsiyonel)
+            </label>
+            <input
+              id="checkin-verification-code"
+              type="text"
+              placeholder="Konum alınamazsa personel kodunu girin"
+              value={tableVerificationCode}
+              onChange={(event) => setTableVerificationCode(event.target.value)}
+              autoComplete="one-time-code"
+              className={`${fieldBaseClass} px-4`}
+            />
+          </div>
+
           <div className="space-y-3">
             <button
               type="button"
@@ -155,7 +172,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
             ) : (
               <>
                 <MapPin size={20} />
-                KONUMU DOĞRULA & OYNA
+                KAFEYE GİR & OYNA
               </>
             )}
           </button>

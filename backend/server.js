@@ -714,6 +714,12 @@ app.get('/api/games/:id', authenticateToken, gameHandlers.getGameState);
 // 7. MAKE MOVE
 app.post('/api/games/:id/move', authenticateToken, gameHandlers.makeMove);
 
+// 7.1 CHESS DRAW OFFER ACTIONS
+app.post('/api/games/:id/draw-offer', authenticateToken, gameHandlers.drawOffer);
+
+// 7.2 RESIGN ACTIVE GAME
+app.post('/api/games/:id/resign', authenticateToken, gameHandlers.resignGame);
+
 // 8. FINISH GAME
 app.post('/api/games/:id/finish', authenticateToken, gameHandlers.finishGame);
 

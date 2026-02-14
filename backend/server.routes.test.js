@@ -35,6 +35,8 @@ describe('backend/server.js route registry', () => {
       'GET /api/games',
       'POST /api/games',
       'POST /api/games/:id/join',
+      'POST /api/games/:id/draw-offer',
+      'POST /api/games/:id/resign',
       'GET /api/users/:username/game-history',
       'GET /api/users/:username/active-game',
       'POST /api/admin/cafes',

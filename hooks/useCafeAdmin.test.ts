@@ -56,6 +56,9 @@ describe('useCafeAdmin', () => {
       expect(result.current.locationLatitude).toBe('');
       expect(result.current.locationLongitude).toBe('');
       expect(result.current.locationRadius).toBe('150');
+      expect(result.current.locationSecondaryLatitude).toBe('');
+      expect(result.current.locationSecondaryLongitude).toBe('');
+      expect(result.current.locationSecondaryRadius).toBe('150');
     });
   });
 
@@ -150,6 +153,9 @@ describe('useCafeAdmin', () => {
       latitude: 37.742,
       longitude: 29.102,
       radius: 180,
+      secondaryLatitude: null,
+      secondaryLongitude: null,
+      secondaryRadius: null,
     });
     expect(result.current.locationStatus).toBe('success');
   });
@@ -169,6 +175,33 @@ describe('useCafeAdmin', () => {
 
     expect(result.current.locationStatus).toBe('error');
     expect(result.current.locationMessage).toBe('db fail');
+  });
+
+  it('submits secondary location when provided', async () => {
+    const { result } = renderHook(() => useCafeAdmin({ currentUser: baseUser }));
+
+    act(() => {
+      result.current.setLocationLatitude('37.741');
+      result.current.setLocationLongitude('29.101');
+      result.current.setLocationRadius('150');
+      result.current.setLocationSecondaryLatitude('37.744');
+      result.current.setLocationSecondaryLongitude('29.109');
+      result.current.setLocationSecondaryRadius('260');
+    });
+
+    await act(async () => {
+      await result.current.updateLocation();
+    });
+
+    expect(api.cafes.updateLocation).toHaveBeenCalledWith(1, {
+      latitude: 37.741,
+      longitude: 29.101,
+      radius: 150,
+      secondaryLatitude: 37.744,
+      secondaryLongitude: 29.109,
+      secondaryRadius: 260,
+    });
+    expect(result.current.locationStatus).toBe('success');
   });
 
   it('sets location error when cafe assignment is missing on update', async () => {
@@ -229,6 +262,9 @@ describe('useCafeAdmin', () => {
       expect(result.current.locationLatitude).toBe('');
       expect(result.current.locationLongitude).toBe('');
       expect(result.current.locationRadius).toBe('150');
+      expect(result.current.locationSecondaryLatitude).toBe('');
+      expect(result.current.locationSecondaryLongitude).toBe('');
+      expect(result.current.locationSecondaryRadius).toBe('150');
     });
 
     act(() => {

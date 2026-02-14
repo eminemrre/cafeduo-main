@@ -26,6 +26,28 @@ describe('cafeAdminValidation', () => {
         latitude: 37.77,
         longitude: 29.1,
         radius: 250,
+        secondaryLatitude: null,
+        secondaryLongitude: null,
+        secondaryRadius: null,
+      });
+    });
+
+    it('accepts optional secondary location for create payload', () => {
+      const result = normalizeCafeCreatePayload({
+        name: 'Test Cafe',
+        latitude: 37.77,
+        longitude: 29.1,
+        radius: 200,
+        secondaryLatitude: 37.771,
+        secondaryLongitude: 29.101,
+        secondaryRadius: 320,
+      });
+
+      expect(result.ok).toBe(true);
+      expect(result.value).toMatchObject({
+        secondaryLatitude: 37.771,
+        secondaryLongitude: 29.101,
+        secondaryRadius: 320,
       });
     });
 
@@ -75,6 +97,21 @@ describe('cafeAdminValidation', () => {
       });
     });
 
+    it('normalizes secondary location updates when both coordinates are provided', () => {
+      const result = normalizeCafeUpdatePayload({
+        secondaryLatitude: '37.75',
+        secondaryLongitude: '29.15',
+        secondaryRadius: 300,
+      });
+
+      expect(result.ok).toBe(true);
+      expect(result.value).toEqual({
+        secondaryLatitude: 37.75,
+        secondaryLongitude: 29.15,
+        secondaryRadius: 300,
+      });
+    });
+
     it('allows null to clear optional geo fields', () => {
       const result = normalizeCafeUpdatePayload({
         latitude: null,
@@ -89,6 +126,14 @@ describe('cafeAdminValidation', () => {
         radius: null,
       });
     });
+
+    it('rejects partial secondary location updates', () => {
+      const result = normalizeCafeUpdatePayload({
+        secondaryLatitude: 37.74,
+      });
+
+      expect(result.ok).toBe(false);
+      expect(result.error).toContain('Ek konum');
+    });
   });
 });
-

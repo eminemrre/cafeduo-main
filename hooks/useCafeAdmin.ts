@@ -30,9 +30,15 @@ interface UseCafeAdminReturn {
   locationLatitude: string;
   locationLongitude: string;
   locationRadius: string;
+  locationSecondaryLatitude: string;
+  locationSecondaryLongitude: string;
+  locationSecondaryRadius: string;
   setLocationLatitude: (value: string) => void;
   setLocationLongitude: (value: string) => void;
   setLocationRadius: (value: string) => void;
+  setLocationSecondaryLatitude: (value: string) => void;
+  setLocationSecondaryLongitude: (value: string) => void;
+  setLocationSecondaryRadius: (value: string) => void;
   locationStatus: CafeLocationStatus;
   locationMessage: string;
   locationLoading: boolean;
@@ -142,6 +148,9 @@ export function useCafeAdmin({ currentUser }: UseCafeAdminProps): UseCafeAdminRe
   const [locationLatitude, setLocationLatitude] = useState('');
   const [locationLongitude, setLocationLongitude] = useState('');
   const [locationRadius, setLocationRadius] = useState('150');
+  const [locationSecondaryLatitude, setLocationSecondaryLatitude] = useState('');
+  const [locationSecondaryLongitude, setLocationSecondaryLongitude] = useState('');
+  const [locationSecondaryRadius, setLocationSecondaryRadius] = useState('150');
   const [locationStatus, setLocationStatus] = useState<CafeLocationStatus>('idle');
   const [locationMessage, setLocationMessage] = useState('');
   const [locationLoading, setLocationLoading] = useState(false);
@@ -153,6 +162,9 @@ export function useCafeAdmin({ currentUser }: UseCafeAdminProps): UseCafeAdminRe
       setLocationLatitude('');
       setLocationLongitude('');
       setLocationRadius('150');
+      setLocationSecondaryLatitude('');
+      setLocationSecondaryLongitude('');
+      setLocationSecondaryRadius('150');
       return;
     }
 
@@ -162,11 +174,17 @@ export function useCafeAdmin({ currentUser }: UseCafeAdminProps): UseCafeAdminRe
       setLocationLatitude(cafe?.latitude != null ? String(cafe.latitude) : '');
       setLocationLongitude(cafe?.longitude != null ? String(cafe.longitude) : '');
       setLocationRadius(String(Number(cafe?.radius || 150)));
+      setLocationSecondaryLatitude(cafe?.secondary_latitude != null ? String(cafe.secondary_latitude) : '');
+      setLocationSecondaryLongitude(cafe?.secondary_longitude != null ? String(cafe.secondary_longitude) : '');
+      setLocationSecondaryRadius(String(Number(cafe?.secondary_radius || cafe?.radius || 150)));
     } catch (err) {
       console.error('Failed to fetch cafe info', err);
       setLocationLatitude('');
       setLocationLongitude('');
       setLocationRadius('150');
+      setLocationSecondaryLatitude('');
+      setLocationSecondaryLongitude('');
+      setLocationSecondaryRadius('150');
     }
   }, [cafeId]);
 
@@ -251,6 +269,12 @@ export function useCafeAdmin({ currentUser }: UseCafeAdminProps): UseCafeAdminRe
     const latitude = Number(locationLatitude);
     const longitude = Number(locationLongitude);
     const radius = Number(locationRadius);
+    const hasSecondaryInput =
+      Boolean(String(locationSecondaryLatitude || '').trim()) ||
+      Boolean(String(locationSecondaryLongitude || '').trim());
+    const secondaryLatitude = Number(locationSecondaryLatitude);
+    const secondaryLongitude = Number(locationSecondaryLongitude);
+    const secondaryRadius = Number(locationSecondaryRadius);
     if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
       setLocationStatus('error');
       setLocationMessage('Enlem -90 ile 90 arasında olmalıdır.');
@@ -266,14 +290,41 @@ export function useCafeAdmin({ currentUser }: UseCafeAdminProps): UseCafeAdminRe
       setLocationMessage('Yarıçap 10-5000 metre arasında olmalıdır.');
       return;
     }
+    if (hasSecondaryInput) {
+      if (!Number.isFinite(secondaryLatitude) || secondaryLatitude < -90 || secondaryLatitude > 90) {
+        setLocationStatus('error');
+        setLocationMessage('İkinci konum enlem değeri -90 ile 90 arasında olmalıdır.');
+        return;
+      }
+      if (!Number.isFinite(secondaryLongitude) || secondaryLongitude < -180 || secondaryLongitude > 180) {
+        setLocationStatus('error');
+        setLocationMessage('İkinci konum boylam değeri -180 ile 180 arasında olmalıdır.');
+        return;
+      }
+      if (!Number.isFinite(secondaryRadius) || secondaryRadius < 10 || secondaryRadius > 5000) {
+        setLocationStatus('error');
+        setLocationMessage('İkinci konum yarıçapı 10-5000 metre arasında olmalıdır.');
+        return;
+      }
+    }
 
     setLocationLoading(true);
     setLocationStatus('idle');
     setLocationMessage('');
 
     try {
-      await api.cafes.updateLocation(cafeId, { latitude, longitude, radius });
+      await api.cafes.updateLocation(cafeId, {
+        latitude,
+        longitude,
+        radius,
+        secondaryLatitude: hasSecondaryInput ? secondaryLatitude : null,
+        secondaryLongitude: hasSecondaryInput ? secondaryLongitude : null,
+        secondaryRadius: hasSecondaryInput ? secondaryRadius : null,
+      });
       setLocationRadius(String(Math.round(radius)));
+      if (hasSecondaryInput) {
+        setLocationSecondaryRadius(String(Math.round(secondaryRadius)));
+      }
       setLocationStatus('success');
       setLocationMessage('Kafe konumu güncellendi.');
     } catch (err) {
@@ -282,7 +333,15 @@ export function useCafeAdmin({ currentUser }: UseCafeAdminProps): UseCafeAdminRe
     } finally {
       setLocationLoading(false);
     }
-  }, [cafeId, locationLatitude, locationLongitude, locationRadius]);
+  }, [
+    cafeId,
+    locationLatitude,
+    locationLongitude,
+    locationRadius,
+    locationSecondaryLatitude,
+    locationSecondaryLongitude,
+    locationSecondaryRadius,
+  ]);
 
   const pickCurrentLocation = useCallback(async () => {
     setLocationStatus('idle');
@@ -316,9 +375,15 @@ export function useCafeAdmin({ currentUser }: UseCafeAdminProps): UseCafeAdminRe
     locationLatitude,
     locationLongitude,
     locationRadius,
+    locationSecondaryLatitude,
+    locationSecondaryLongitude,
+    locationSecondaryRadius,
     setLocationLatitude,
     setLocationLongitude,
     setLocationRadius,
+    setLocationSecondaryLatitude,
+    setLocationSecondaryLongitude,
+    setLocationSecondaryRadius,
     locationStatus,
     locationMessage,
     locationLoading,

@@ -33,9 +33,15 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
     locationLatitude,
     locationLongitude,
     locationRadius,
+    locationSecondaryLatitude,
+    locationSecondaryLongitude,
+    locationSecondaryRadius,
     setLocationLatitude,
     setLocationLongitude,
     setLocationRadius,
+    setLocationSecondaryLatitude,
+    setLocationSecondaryLongitude,
+    setLocationSecondaryRadius,
     locationStatus,
     locationMessage,
     locationLoading,
@@ -51,11 +57,24 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
       rewardCount: rewards.length,
       locationSummary:
         locationLatitude && locationLongitude
-          ? `${locationLatitude}, ${locationLongitude} (${locationRadius}m)`
+          ? `${locationLatitude}, ${locationLongitude} (${locationRadius}m)${
+              locationSecondaryLatitude && locationSecondaryLongitude
+                ? ` + ${locationSecondaryLatitude}, ${locationSecondaryLongitude} (${locationSecondaryRadius}m)`
+                : ''
+            }`
           : 'Konum tanımlı değil',
       lastCouponCode: lastItem?.code || null,
     }),
-    [lastItem?.code, locationLatitude, locationLongitude, locationRadius, rewards.length]
+    [
+      lastItem?.code,
+      locationLatitude,
+      locationLongitude,
+      locationRadius,
+      locationSecondaryLatitude,
+      locationSecondaryLongitude,
+      locationSecondaryRadius,
+      rewards.length,
+    ]
   );
 
   const handleCreateReward = useCallback(async () => {
@@ -162,9 +181,15 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
               latitude={locationLatitude}
               longitude={locationLongitude}
               radius={locationRadius}
+              secondaryLatitude={locationSecondaryLatitude}
+              secondaryLongitude={locationSecondaryLongitude}
+              secondaryRadius={locationSecondaryRadius}
               onLatitudeChange={setLocationLatitude}
               onLongitudeChange={setLocationLongitude}
               onRadiusChange={setLocationRadius}
+              onSecondaryLatitudeChange={setLocationSecondaryLatitude}
+              onSecondaryLongitudeChange={setLocationSecondaryLongitude}
+              onSecondaryRadiusChange={setLocationSecondaryRadius}
               onPickCurrentLocation={pickCurrentLocation}
               onSubmit={updateLocation}
               status={locationStatus}

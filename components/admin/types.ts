@@ -20,6 +20,9 @@ export interface AdminCafeFormData {
   latitude: string;
   longitude: string;
   radius: number;
+  secondaryLatitude: string;
+  secondaryLongitude: string;
+  secondaryRadius: number;
 }
 
 export interface AdminCafeEditData {
@@ -28,6 +31,9 @@ export interface AdminCafeEditData {
   latitude: string;
   longitude: string;
   radius: number;
+  secondaryLatitude: string;
+  secondaryLongitude: string;
+  secondaryRadius: number;
 }
 
 export type AdminUserRow = User;

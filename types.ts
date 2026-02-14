@@ -116,6 +116,9 @@ export interface Cafe {
   latitude?: number;
   longitude?: number;
   radius?: number;
+  secondary_latitude?: number;
+  secondary_longitude?: number;
+  secondary_radius?: number;
 }
 
 export interface BuildMeta {

@@ -39,6 +39,9 @@ const EMPTY_CAFE_FORM: AdminCafeFormData = {
     latitude: '',
     longitude: '',
     radius: 150,
+    secondaryLatitude: '',
+    secondaryLongitude: '',
+    secondaryRadius: 150,
 };
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) => {
@@ -60,6 +63,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         latitude: '',
         longitude: '',
         radius: 150,
+        secondaryLatitude: '',
+        secondaryLongitude: '',
+        secondaryRadius: 150,
     });
 
     useEffect(() => {
@@ -92,6 +98,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                     latitude: '',
                     longitude: '',
                     radius: 150,
+                    secondaryLatitude: '',
+                    secondaryLongitude: '',
+                    secondaryRadius: 150,
                 });
             } else {
                 const selectedCafeId = selectedCafe ? Number(selectedCafe.id) : null;
@@ -106,6 +115,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                     latitude: resolvedCafe.latitude != null ? String(resolvedCafe.latitude) : '',
                     longitude: resolvedCafe.longitude != null ? String(resolvedCafe.longitude) : '',
                     radius: Number(resolvedCafe.radius || 150),
+                    secondaryLatitude: resolvedCafe.secondary_latitude != null ? String(resolvedCafe.secondary_latitude) : '',
+                    secondaryLongitude: resolvedCafe.secondary_longitude != null ? String(resolvedCafe.secondary_longitude) : '',
+                    secondaryRadius: Number(resolvedCafe.secondary_radius || resolvedCafe.radius || 150),
                 });
             }
         } catch (error) {
@@ -121,6 +133,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         const latitude = Number(editCafeData.latitude);
         const longitude = Number(editCafeData.longitude);
         const radius = Number(editCafeData.radius);
+        const hasSecondaryInput =
+            Boolean(String(editCafeData.secondaryLatitude).trim())
+            || Boolean(String(editCafeData.secondaryLongitude).trim());
+        const secondaryLatitude = Number(editCafeData.secondaryLatitude);
+        const secondaryLongitude = Number(editCafeData.secondaryLongitude);
+        const secondaryRadius = Number(editCafeData.secondaryRadius);
         if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
             alert('Kafe konumu için geçerli enlem ve boylam girin.');
             return;
@@ -128,6 +146,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         if (!Number.isFinite(radius) || radius < 10 || radius > 5000) {
             alert('Yarıçap 10-5000 metre arasında olmalıdır.');
             return;
+        }
+        if (hasSecondaryInput) {
+            if (!Number.isFinite(secondaryLatitude) || !Number.isFinite(secondaryLongitude)) {
+                alert('İkinci konum için enlem ve boylam birlikte girilmelidir.');
+                return;
+            }
+            if (
+                !Number.isFinite(secondaryRadius)
+                || secondaryRadius < 10
+                || secondaryRadius > 5000
+            ) {
+                alert('İkinci konum yarıçapı 10-5000 metre arasında olmalıdır.');
+                return;
+            }
         }
 
         try {
@@ -137,6 +169,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                 latitude,
                 longitude,
                 radius,
+                secondaryLatitude: hasSecondaryInput ? secondaryLatitude : null,
+                secondaryLongitude: hasSecondaryInput ? secondaryLongitude : null,
+                secondaryRadius: hasSecondaryInput ? secondaryRadius : null,
             });
             alert('Kafe bilgileri güncellendi!');
             loadData();
@@ -155,6 +190,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                 latitude: cafe.latitude != null ? String(cafe.latitude) : '',
                 longitude: cafe.longitude != null ? String(cafe.longitude) : '',
                 radius: Number(cafe.radius || 150),
+                secondaryLatitude: cafe.secondary_latitude != null ? String(cafe.secondary_latitude) : '',
+                secondaryLongitude: cafe.secondary_longitude != null ? String(cafe.secondary_longitude) : '',
+                secondaryRadius: Number(cafe.secondary_radius || cafe.radius || 150),
             });
         }
     };
@@ -307,6 +345,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         const latitude = Number(newCafeData.latitude);
         const longitude = Number(newCafeData.longitude);
         const radius = Number(newCafeData.radius);
+        const hasSecondaryInput =
+            Boolean(String(newCafeData.secondaryLatitude).trim())
+            || Boolean(String(newCafeData.secondaryLongitude).trim());
+        const secondaryLatitude = Number(newCafeData.secondaryLatitude);
+        const secondaryLongitude = Number(newCafeData.secondaryLongitude);
+        const secondaryRadius = Number(newCafeData.secondaryRadius);
         if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
             alert('Yeni kafe için geçerli enlem ve boylam zorunludur.');
             return;
@@ -315,12 +359,29 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
             alert('Yarıçap 10-5000 metre arasında olmalıdır.');
             return;
         }
+        if (hasSecondaryInput) {
+            if (!Number.isFinite(secondaryLatitude) || !Number.isFinite(secondaryLongitude)) {
+                alert('İkinci konum için enlem ve boylam birlikte girilmelidir.');
+                return;
+            }
+            if (
+                !Number.isFinite(secondaryRadius)
+                || secondaryRadius < 10
+                || secondaryRadius > 5000
+            ) {
+                alert('İkinci konum yarıçapı 10-5000 metre arasında olmalıdır.');
+                return;
+            }
+        }
         try {
             await api.admin.createCafe({
                 ...newCafeData,
                 latitude,
                 longitude,
                 radius,
+                secondaryLatitude: hasSecondaryInput ? secondaryLatitude : null,
+                secondaryLongitude: hasSecondaryInput ? secondaryLongitude : null,
+                secondaryRadius: hasSecondaryInput ? secondaryRadius : null,
             });
             alert('Yeni kafe eklendi!');
             setShowAddCafeModal(false);
@@ -669,6 +730,47 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                                 placeholder="150"
                                             />
                                             <p className="text-xs text-gray-500 mt-1">Kullanıcılar yalnızca bu konum yarıçapı içindeyken check-in yapabilir.</p>
+                                        </div>
+
+                                        <div className="pt-4 border-t border-gray-700/60 space-y-4">
+                                            <p className="text-sm text-cyan-300 font-semibold">İkinci Konum (Opsiyonel)</p>
+                                            <div>
+                                                <label className="block text-gray-400 text-sm mb-2">Ek Enlem</label>
+                                                <input
+                                                    type="number"
+                                                    step="0.000001"
+                                                    value={editCafeData.secondaryLatitude}
+                                                    onChange={e => setEditCafeData({ ...editCafeData, secondaryLatitude: e.target.value })}
+                                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-cyan-500 font-mono"
+                                                    placeholder="37.742000"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-gray-400 text-sm mb-2">Ek Boylam</label>
+                                                <input
+                                                    type="number"
+                                                    step="0.000001"
+                                                    value={editCafeData.secondaryLongitude}
+                                                    onChange={e => setEditCafeData({ ...editCafeData, secondaryLongitude: e.target.value })}
+                                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-cyan-500 font-mono"
+                                                    placeholder="29.102000"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-gray-400 text-sm mb-2">Ek Konum Yarıçapı (metre)</label>
+                                                <input
+                                                    type="number"
+                                                    min="10"
+                                                    max="5000"
+                                                    value={editCafeData.secondaryRadius}
+                                                    onChange={e => setEditCafeData({ ...editCafeData, secondaryRadius: parseInt(e.target.value || '0', 10) })}
+                                                    className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-cyan-500"
+                                                    placeholder="150"
+                                                />
+                                            </div>
+                                            <p className="text-xs text-gray-500">
+                                                Masaüstü/mobil sapmaları için ikinci bir doğrulama alanı tanımlayabilirsiniz.
+                                            </p>
                                         </div>
 
                                         <button

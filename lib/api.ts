@@ -404,7 +404,14 @@ export const api = {
 
     updateLocation: async (
       cafeId: string | number,
-      params: { latitude: number; longitude: number; radius: number }
+      params: {
+        latitude: number;
+        longitude: number;
+        radius: number;
+        secondaryLatitude?: number | null;
+        secondaryLongitude?: number | null;
+        secondaryRadius?: number | null;
+      }
     ) => {
       return await fetchAPI(`/cafes/${cafeId}/location`, {
         method: 'PUT',

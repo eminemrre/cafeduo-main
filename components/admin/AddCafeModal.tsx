@@ -96,6 +96,51 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
             />
           </div>
 
+          <div className="pt-2 border-t border-gray-700/60">
+            <p className="text-sm text-cyan-200 font-semibold mb-3">İkinci Konum (Opsiyonel)</p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-gray-400 text-sm mb-2">Ek Enlem</label>
+                <input
+                  type="number"
+                  step="0.000001"
+                  value={formData.secondaryLatitude}
+                  onChange={(e) => onFormChange({ ...formData, secondaryLatitude: e.target.value })}
+                  className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-cyan-500 font-mono"
+                  placeholder="37.742000"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-400 text-sm mb-2">Ek Boylam</label>
+                <input
+                  type="number"
+                  step="0.000001"
+                  value={formData.secondaryLongitude}
+                  onChange={(e) => onFormChange({ ...formData, secondaryLongitude: e.target.value })}
+                  className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-cyan-500 font-mono"
+                  placeholder="29.102000"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-400 text-sm mb-2">Ek Konum Yarıçapı (metre)</label>
+                <input
+                  type="number"
+                  min="10"
+                  max="5000"
+                  value={formData.secondaryRadius}
+                  onChange={(e) =>
+                    onFormChange({
+                      ...formData,
+                      secondaryRadius: Number.parseInt(e.target.value || '0', 10),
+                    })
+                  }
+                  className="w-full bg-black/40 border border-gray-600 rounded-lg p-3 text-white outline-none focus:border-cyan-500"
+                  placeholder="150"
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="flex gap-3 mt-8">
             <button
               onClick={onClose}

@@ -193,6 +193,46 @@ describe('cafeController.checkIn', () => {
       })
     );
   });
+
+  it('accepts check-in when user is inside secondary location radius', async () => {
+    pool.query
+      .mockResolvedValueOnce({
+        rows: [{
+          id: 1,
+          name: 'Merkez',
+          table_count: 20,
+          latitude: 37.741,
+          longitude: 29.101,
+          radius: 120,
+          secondary_latitude: 37.743,
+          secondary_longitude: 29.105,
+          secondary_radius: 180,
+        }],
+      })
+      .mockResolvedValueOnce({ rowCount: 1 });
+
+    getDistanceFromLatLonInMeters
+      .mockReturnValueOnce(380) // primary
+      .mockReturnValueOnce(70); // secondary
+
+    const req = {
+      params: { id: '1' },
+      body: { latitude: 37.7429, longitude: 29.1048, tableNumber: 5, accuracy: 40 },
+      user: { id: 77 },
+    };
+    const res = buildRes();
+
+    await cafeController.checkIn(req, res);
+
+    expect(res.status).not.toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        cafeName: 'Merkez',
+        table: 'MASA05',
+      })
+    );
+  });
 });
 
 describe('cafeController.updateLocation', () => {
@@ -229,7 +269,7 @@ describe('cafeController.updateLocation', () => {
     await cafeController.updateLocation(req, res);
 
     expect(pool.query).toHaveBeenCalledWith(
-      'UPDATE cafes SET latitude = $1, longitude = $2, radius = $3 WHERE id = $4 RETURNING id, name, latitude, longitude, radius',
+      expect.stringContaining('UPDATE cafes'),
       [37.75, 29.11, 160, '3']
     );
     expect(res.json).toHaveBeenCalledWith(
@@ -238,5 +278,42 @@ describe('cafeController.updateLocation', () => {
         message: 'Kafe konumu güncellendi.',
       })
     );
+  });
+
+  it('updates optional secondary location when provided', async () => {
+    pool.query.mockResolvedValueOnce({
+      rows: [{
+        id: 3,
+        name: 'Kafe 3',
+        latitude: 37.75,
+        longitude: 29.11,
+        radius: 160,
+        secondary_latitude: 37.751,
+        secondary_longitude: 29.112,
+        secondary_radius: 240,
+      }],
+    });
+
+    const req = {
+      params: { id: '3' },
+      body: {
+        latitude: 37.75,
+        longitude: 29.11,
+        radius: 160,
+        secondaryLatitude: 37.751,
+        secondaryLongitude: 29.112,
+        secondaryRadius: 240,
+      },
+      user: { id: 11, role: 'cafe_admin', cafe_id: 3 },
+    };
+    const res = buildRes();
+
+    await cafeController.updateLocation(req, res);
+
+    expect(pool.query).toHaveBeenCalledWith(
+      expect.stringContaining('secondary_latitude'),
+      [37.75, 29.11, 160, 37.751, 29.112, 240, '3']
+    );
+    expect(res.status).not.toHaveBeenCalledWith(400);
   });
 });

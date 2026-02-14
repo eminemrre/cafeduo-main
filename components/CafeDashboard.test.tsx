@@ -166,6 +166,9 @@ describe('CafeDashboard', () => {
         latitude: 37.742001,
         longitude: 29.102001,
         radius: 220,
+        secondaryLatitude: null,
+        secondaryLongitude: null,
+        secondaryRadius: null,
       });
     });
     expect(screen.getByText('Kafe konumu güncellendi.')).toBeInTheDocument();

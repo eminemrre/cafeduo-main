@@ -464,6 +464,9 @@ const initDb = async () => {
       await addColumn('cafes', 'longitude', 'DECIMAL(11, 8)');
       await addColumn('cafes', 'table_count', 'INTEGER DEFAULT 20');
       await addColumn('cafes', 'radius', 'INTEGER DEFAULT 500'); // Meters
+      await addColumn('cafes', 'secondary_latitude', 'DECIMAL(10, 8)');
+      await addColumn('cafes', 'secondary_longitude', 'DECIMAL(11, 8)');
+      await addColumn('cafes', 'secondary_radius', 'INTEGER');
       await addColumn('cafes', 'daily_pin', "VARCHAR(6) DEFAULT '0000'"); // Daily PIN code
 
       // 7. Seed Initial Cafes

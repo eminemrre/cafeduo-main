@@ -34,4 +34,7 @@ export interface CafeInfoState {
   latitude: number | null;
   longitude: number | null;
   radius: number;
+  secondaryLatitude?: number | null;
+  secondaryLongitude?: number | null;
+  secondaryRadius?: number | null;
 }

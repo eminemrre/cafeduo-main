@@ -21,6 +21,9 @@ const toFiniteInteger = (value) => {
 };
 
 const validateRange = (value, min, max) => value >= min && value <= max;
+const hasOwn = (object, key) =>
+  Object.prototype.hasOwnProperty.call(object || {}, key);
+const isEmpty = (value) => value === null || value === undefined || value === '';
 
 const normalizePin = (value) => {
   const pin = asTrimmedString(value);
@@ -119,6 +122,56 @@ const normalizeCafeCreatePayload = (payload = {}) => {
     return radiusCheck;
   }
 
+  const secondaryLatitudeRaw = payload.secondaryLatitude !== undefined
+    ? payload.secondaryLatitude
+    : payload.secondary_latitude;
+  const secondaryLongitudeRaw = payload.secondaryLongitude !== undefined
+    ? payload.secondaryLongitude
+    : payload.secondary_longitude;
+  const secondaryRadiusRaw = payload.secondaryRadius !== undefined
+    ? payload.secondaryRadius
+    : payload.secondary_radius;
+  const hasSecondaryInput =
+    secondaryLatitudeRaw !== undefined ||
+    secondaryLongitudeRaw !== undefined ||
+    secondaryRadiusRaw !== undefined;
+
+  let secondaryLatitude = null;
+  let secondaryLongitude = null;
+  let secondaryRadius = null;
+  if (hasSecondaryInput) {
+    const secondaryLatMissing = isEmpty(secondaryLatitudeRaw);
+    const secondaryLngMissing = isEmpty(secondaryLongitudeRaw);
+
+    if (secondaryLatMissing !== secondaryLngMissing) {
+      return { ok: false, error: 'Ek konum için enlem ve boylam birlikte girilmelidir.' };
+    }
+
+    if (!secondaryLatMissing && !secondaryLngMissing) {
+      const secondaryLatitudeCheck = normalizeLatitude(secondaryLatitudeRaw);
+      if (!secondaryLatitudeCheck.ok) {
+        return { ok: false, error: `Ek konum: ${secondaryLatitudeCheck.error}` };
+      }
+
+      const secondaryLongitudeCheck = normalizeLongitude(secondaryLongitudeRaw);
+      if (!secondaryLongitudeCheck.ok) {
+        return { ok: false, error: `Ek konum: ${secondaryLongitudeCheck.error}` };
+      }
+
+      const secondaryRadiusCheck =
+        isEmpty(secondaryRadiusRaw)
+          ? { ok: true, value: radiusCheck.value }
+          : normalizeRadius(secondaryRadiusRaw);
+      if (!secondaryRadiusCheck.ok) {
+        return { ok: false, error: `Ek konum: ${secondaryRadiusCheck.error}` };
+      }
+
+      secondaryLatitude = secondaryLatitudeCheck.value;
+      secondaryLongitude = secondaryLongitudeCheck.value;
+      secondaryRadius = secondaryRadiusCheck.value;
+    }
+  }
+
   return {
     ok: true,
     value: {
@@ -130,6 +183,9 @@ const normalizeCafeCreatePayload = (payload = {}) => {
       latitude: latitudeCheck.value,
       longitude: longitudeCheck.value,
       radius: radiusCheck.value,
+      secondaryLatitude,
+      secondaryLongitude,
+      secondaryRadius,
     },
   };
 };
@@ -194,6 +250,70 @@ const normalizeCafeUpdatePayload = (payload = {}) => {
     }
   }
 
+  const hasSecondaryLatitude =
+    hasOwn(payload, 'secondaryLatitude') || hasOwn(payload, 'secondary_latitude');
+  const hasSecondaryLongitude =
+    hasOwn(payload, 'secondaryLongitude') || hasOwn(payload, 'secondary_longitude');
+  const hasSecondaryRadius =
+    hasOwn(payload, 'secondaryRadius') || hasOwn(payload, 'secondary_radius');
+  const hasSecondaryInput = hasSecondaryLatitude || hasSecondaryLongitude || hasSecondaryRadius;
+
+  if (hasSecondaryInput) {
+    const secondaryLatitudeRaw = hasOwn(payload, 'secondaryLatitude')
+      ? payload.secondaryLatitude
+      : payload.secondary_latitude;
+    const secondaryLongitudeRaw = hasOwn(payload, 'secondaryLongitude')
+      ? payload.secondaryLongitude
+      : payload.secondary_longitude;
+    const secondaryRadiusRaw = hasOwn(payload, 'secondaryRadius')
+      ? payload.secondaryRadius
+      : payload.secondary_radius;
+
+    const secondaryLatitudeMissing = isEmpty(secondaryLatitudeRaw);
+    const secondaryLongitudeMissing = isEmpty(secondaryLongitudeRaw);
+
+    if (hasSecondaryRadius && !hasSecondaryLatitude && !hasSecondaryLongitude) {
+      return {
+        ok: false,
+        error: 'Ek yarıçap güncellemek için ek enlem ve boylam birlikte gönderilmelidir.',
+      };
+    }
+
+    if (secondaryLatitudeMissing !== secondaryLongitudeMissing) {
+      return { ok: false, error: 'Ek konum için enlem ve boylam birlikte güncellenmelidir.' };
+    }
+
+    if (secondaryLatitudeMissing && secondaryLongitudeMissing) {
+      updates.secondaryLatitude = null;
+      updates.secondaryLongitude = null;
+      updates.secondaryRadius = null;
+    } else {
+      const secondaryLatitudeCheck = normalizeLatitude(secondaryLatitudeRaw);
+      if (!secondaryLatitudeCheck.ok) {
+        return { ok: false, error: `Ek konum: ${secondaryLatitudeCheck.error}` };
+      }
+      const secondaryLongitudeCheck = normalizeLongitude(secondaryLongitudeRaw);
+      if (!secondaryLongitudeCheck.ok) {
+        return { ok: false, error: `Ek konum: ${secondaryLongitudeCheck.error}` };
+      }
+
+      updates.secondaryLatitude = secondaryLatitudeCheck.value;
+      updates.secondaryLongitude = secondaryLongitudeCheck.value;
+
+      if (hasSecondaryRadius) {
+        if (isEmpty(secondaryRadiusRaw)) {
+          updates.secondaryRadius = null;
+        } else {
+          const secondaryRadiusCheck = normalizeRadius(secondaryRadiusRaw);
+          if (!secondaryRadiusCheck.ok) {
+            return { ok: false, error: `Ek konum: ${secondaryRadiusCheck.error}` };
+          }
+          updates.secondaryRadius = secondaryRadiusCheck.value;
+        }
+      }
+    }
+  }
+
   if (Object.keys(updates).length === 0) {
     return { ok: false, error: 'Güncellenecek alan bulunamadı.' };
   }
@@ -205,4 +325,3 @@ module.exports = {
   normalizeCafeCreatePayload,
   normalizeCafeUpdatePayload,
 };
-

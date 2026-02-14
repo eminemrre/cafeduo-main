@@ -261,6 +261,18 @@ const createAdminHandlers = ({
             updates.push(`radius = $${paramCount++}`);
             values.push(updatesPayload.radius);
           }
+          if (updatesPayload.secondaryLatitude !== undefined) {
+            updates.push(`secondary_latitude = $${paramCount++}`);
+            values.push(updatesPayload.secondaryLatitude);
+          }
+          if (updatesPayload.secondaryLongitude !== undefined) {
+            updates.push(`secondary_longitude = $${paramCount++}`);
+            values.push(updatesPayload.secondaryLongitude);
+          }
+          if (updatesPayload.secondaryRadius !== undefined) {
+            updates.push(`secondary_radius = $${paramCount++}`);
+            values.push(updatesPayload.secondaryRadius);
+          }
 
           values.push(id);
           const query = `UPDATE cafes SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`;
@@ -290,8 +302,20 @@ const createAdminHandlers = ({
       db: async () => {
         try {
           const result = await pool.query(
-            `INSERT INTO cafes (name, address, total_tables, pin, latitude, longitude, table_count, radius) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+            `INSERT INTO cafes (
+              name,
+              address,
+              total_tables,
+              pin,
+              latitude,
+              longitude,
+              table_count,
+              radius,
+              secondary_latitude,
+              secondary_longitude,
+              secondary_radius
+            ) 
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
              RETURNING *`,
             [
               cafe.name,
@@ -302,6 +326,9 @@ const createAdminHandlers = ({
               cafe.longitude,
               cafe.tableCount,
               cafe.radius,
+              cafe.secondaryLatitude,
+              cafe.secondaryLongitude,
+              cafe.secondaryRadius,
             ]
           );
 
@@ -326,6 +353,9 @@ const createAdminHandlers = ({
             longitude: cafe.longitude,
             table_count: cafe.tableCount,
             radius: cafe.radius,
+            secondary_latitude: cafe.secondaryLatitude,
+            secondary_longitude: cafe.secondaryLongitude,
+            secondary_radius: cafe.secondaryRadius,
           },
         }),
     });

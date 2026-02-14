@@ -113,6 +113,68 @@ const getEffectiveRadius = (baseRadius, clientAccuracy) => {
     return Math.min(2500, safeBase + accuracyBuffer);
 };
 
+const getSecondaryLatitude = (cafe) => parseCoordinate(cafe?.secondary_latitude ?? cafe?.secondaryLatitude);
+const getSecondaryLongitude = (cafe) => parseCoordinate(cafe?.secondary_longitude ?? cafe?.secondaryLongitude);
+const getSecondaryRadius = (cafe, fallbackRadius) =>
+    parseRadius(cafe?.secondary_radius ?? cafe?.secondaryRadius, fallbackRadius);
+
+const buildCafeLocationTargets = (cafe) => {
+    const targets = [];
+
+    const primaryLatitude = parseCoordinate(cafe?.latitude);
+    const primaryLongitude = parseCoordinate(cafe?.longitude);
+    const primaryRadius = parseRadius(cafe?.radius, 150);
+    if (primaryLatitude !== null && primaryLongitude !== null) {
+        targets.push({
+            key: 'primary',
+            label: 'ana konum',
+            latitude: primaryLatitude,
+            longitude: primaryLongitude,
+            radius: primaryRadius,
+        });
+    }
+
+    const secondaryLatitude = getSecondaryLatitude(cafe);
+    const secondaryLongitude = getSecondaryLongitude(cafe);
+    if (secondaryLatitude !== null && secondaryLongitude !== null) {
+        targets.push({
+            key: 'secondary',
+            label: 'ek konum',
+            latitude: secondaryLatitude,
+            longitude: secondaryLongitude,
+            radius: getSecondaryRadius(cafe, primaryRadius),
+        });
+    }
+
+    return targets;
+};
+
+const evaluateDistanceAgainstTargets = ({ latitude, longitude, accuracy, targets }) => {
+    const checks = targets.map((target) => {
+        const distance = getDistanceFromLatLonInMeters(
+            latitude,
+            longitude,
+            target.latitude,
+            target.longitude
+        );
+        const effectiveRadius = getEffectiveRadius(target.radius, accuracy);
+
+        return {
+            ...target,
+            distance,
+            effectiveRadius,
+            within: Number.isFinite(distance) && distance <= effectiveRadius,
+        };
+    });
+
+    const accepted = checks.find((check) => check.within) || null;
+    const nearest = checks
+        .filter((check) => Number.isFinite(check.distance))
+        .sort((a, b) => a.distance - b.distance)[0] || null;
+
+    return { checks, accepted, nearest };
+};
+
 const cafeController = {
     // GET ALL CAFES
     async getAllCafes(req, res) {
@@ -172,7 +234,8 @@ const cafeController = {
     // UPDATE CAFE LOCATION (Protected: Cafe Admin)
     async updateLocation(req, res) {
         const { id } = req.params;
-        const { latitude, longitude, radius } = req.body || {};
+        const body = req.body || {};
+        const { latitude, longitude, radius } = body;
 
         if (!hasCafeManagementAccess(req.user, id)) {
             return res.status(403).json({ error: 'Bu kafe için işlem yetkiniz yok.' });
@@ -194,10 +257,99 @@ const cafeController = {
             return res.status(400).json({ error: 'Yarıçap 10-5000 metre aralığında olmalıdır.' });
         }
 
+        const hasSecondaryLatitude = Object.prototype.hasOwnProperty.call(body, 'secondaryLatitude')
+            || Object.prototype.hasOwnProperty.call(body, 'secondary_latitude');
+        const hasSecondaryLongitude = Object.prototype.hasOwnProperty.call(body, 'secondaryLongitude')
+            || Object.prototype.hasOwnProperty.call(body, 'secondary_longitude');
+        const hasSecondaryRadius = Object.prototype.hasOwnProperty.call(body, 'secondaryRadius')
+            || Object.prototype.hasOwnProperty.call(body, 'secondary_radius');
+        const hasSecondaryUpdate = hasSecondaryLatitude || hasSecondaryLongitude || hasSecondaryRadius;
+
+        const secondaryLatitudeRaw = hasSecondaryLatitude
+            ? (body.secondaryLatitude ?? body.secondary_latitude)
+            : undefined;
+        const secondaryLongitudeRaw = hasSecondaryLongitude
+            ? (body.secondaryLongitude ?? body.secondary_longitude)
+            : undefined;
+        const secondaryRadiusRaw = hasSecondaryRadius
+            ? (body.secondaryRadius ?? body.secondary_radius)
+            : undefined;
+
+        const secondaryLatitudeEmpty = secondaryLatitudeRaw === null || secondaryLatitudeRaw === '';
+        const secondaryLongitudeEmpty = secondaryLongitudeRaw === null || secondaryLongitudeRaw === '';
+        const secondaryRadiusEmpty = secondaryRadiusRaw === null || secondaryRadiusRaw === '';
+
+        let secondaryLatitudeValue = null;
+        let secondaryLongitudeValue = null;
+        let secondaryRadiusValue = null;
+
+        if (hasSecondaryUpdate) {
+            if (hasSecondaryRadius && !hasSecondaryLatitude && !hasSecondaryLongitude) {
+                return res.status(400).json({ error: 'Ek yarıçap için ek enlem ve boylam da girin.' });
+            }
+
+            if ((secondaryLatitudeEmpty && !secondaryLongitudeEmpty) || (!secondaryLatitudeEmpty && secondaryLongitudeEmpty)) {
+                return res.status(400).json({ error: 'Ek konum için enlem ve boylam birlikte girilmelidir.' });
+            }
+
+            const clearingSecondary = secondaryLatitudeEmpty && secondaryLongitudeEmpty;
+            if (clearingSecondary) {
+                if (hasSecondaryRadius && !secondaryRadiusEmpty) {
+                    return res.status(400).json({ error: 'Ek konumu temizlerken yarıçap değeri gönderilemez.' });
+                }
+                secondaryLatitudeValue = null;
+                secondaryLongitudeValue = null;
+                secondaryRadiusValue = null;
+            } else {
+                const parsedSecondaryLatitude = parseDecimal(secondaryLatitudeRaw);
+                if (!Number.isFinite(parsedSecondaryLatitude) || parsedSecondaryLatitude < -90 || parsedSecondaryLatitude > 90) {
+                    return res.status(400).json({ error: 'Ek konum enlem değeri -90 ile 90 arasında olmalıdır.' });
+                }
+
+                const parsedSecondaryLongitude = parseDecimal(secondaryLongitudeRaw);
+                if (!Number.isFinite(parsedSecondaryLongitude) || parsedSecondaryLongitude < -180 || parsedSecondaryLongitude > 180) {
+                    return res.status(400).json({ error: 'Ek konum boylam değeri -180 ile 180 arasında olmalıdır.' });
+                }
+
+                let parsedSecondaryRadius = parsedRadius;
+                if (hasSecondaryRadius && !secondaryRadiusEmpty) {
+                    parsedSecondaryRadius = parseDecimal(secondaryRadiusRaw);
+                    if (!Number.isFinite(parsedSecondaryRadius) || parsedSecondaryRadius < 10 || parsedSecondaryRadius > 5000) {
+                        return res.status(400).json({ error: 'Ek konum yarıçapı 10-5000 metre aralığında olmalıdır.' });
+                    }
+                }
+
+                secondaryLatitudeValue = parsedSecondaryLatitude;
+                secondaryLongitudeValue = parsedSecondaryLongitude;
+                secondaryRadiusValue = Math.round(parsedSecondaryRadius);
+            }
+        }
+
         try {
+            const updates = [
+                'latitude = $1',
+                'longitude = $2',
+                'radius = $3',
+            ];
+            const values = [parsedLatitude, parsedLongitude, Math.round(parsedRadius)];
+
+            if (hasSecondaryUpdate) {
+                updates.push(`secondary_latitude = $${values.length + 1}`);
+                values.push(secondaryLatitudeValue);
+                updates.push(`secondary_longitude = $${values.length + 1}`);
+                values.push(secondaryLongitudeValue);
+                updates.push(`secondary_radius = $${values.length + 1}`);
+                values.push(secondaryRadiusValue);
+            }
+
+            values.push(id);
+
             const result = await pool.query(
-                'UPDATE cafes SET latitude = $1, longitude = $2, radius = $3 WHERE id = $4 RETURNING id, name, latitude, longitude, radius',
-                [parsedLatitude, parsedLongitude, Math.round(parsedRadius), id]
+                `UPDATE cafes
+                 SET ${updates.join(', ')}
+                 WHERE id = $${values.length}
+                 RETURNING id, name, latitude, longitude, radius, secondary_latitude, secondary_longitude, secondary_radius`,
+                values
             );
 
             if (result.rows.length === 0) {
@@ -239,18 +391,29 @@ const cafeController = {
                 return res.status(400).json({ error: `Masa numarası 1-${maxTableCount} aralığında olmalıdır.` });
             }
 
-            const fallbackRadius = parseRadius(cafe.radius, 150);
+            const locationTargets = buildCafeLocationTargets(cafe);
             if (hasLocation) {
-                const effectiveRadius = getEffectiveRadius(fallbackRadius, parsedAccuracy);
-                const distance = getDistanceFromLatLonInMeters(
-                    parsedLatitude,
-                    parsedLongitude,
-                    Number(cafe.latitude),
-                    Number(cafe.longitude)
-                );
-                if (Number.isFinite(distance) && distance > effectiveRadius) {
+                if (locationTargets.length === 0) {
                     return res.status(400).json({
-                        error: `Kafeden çok uzaktasınız. Yaklaşık ${Math.round(distance)} metre uzaktasınız, doğrulama sınırı ${effectiveRadius} metre.`,
+                        error: 'Bu kafe için konum doğrulaması henüz ayarlanmadı. Lütfen kafe yetkilisine bildirin.',
+                    });
+                }
+
+                const { accepted, nearest } = evaluateDistanceAgainstTargets({
+                    latitude: parsedLatitude,
+                    longitude: parsedLongitude,
+                    accuracy: parsedAccuracy,
+                    targets: locationTargets,
+                });
+
+                if (!accepted) {
+                    const nearestDistance = nearest && Number.isFinite(nearest.distance)
+                        ? `${Math.round(nearest.distance)} metre`
+                        : 'belirlenemeyen bir mesafe';
+                    const nearestRadius = nearest ? nearest.effectiveRadius : getEffectiveRadius(150, parsedAccuracy);
+                    const nearestLabel = nearest ? ` (${nearest.label})` : '';
+                    return res.status(400).json({
+                        error: `Kafeden çok uzaktasınız. Yaklaşık ${nearestDistance}${nearestLabel} görünüyorsunuz, doğrulama sınırı ${nearestRadius} metre.`,
                     });
                 }
             } else if (!isVerificationCodeValid({
@@ -301,27 +464,28 @@ const cafeController = {
 
             if (hasLocation) {
                 // 2. Location Check (Geofencing)
-                const cafeLatitude = parseCoordinate(cafe.latitude);
-                const cafeLongitude = parseCoordinate(cafe.longitude);
-                if (cafeLatitude === null || cafeLongitude === null) {
+                const locationTargets = buildCafeLocationTargets(cafe);
+                if (locationTargets.length === 0) {
                     return res.status(400).json({
                         error: 'Bu kafe için konum doğrulaması henüz ayarlanmadı. Lütfen kafe yetkilisine bildirin.',
                     });
                 }
 
-                const radius = parseRadius(cafe.radius, 150);
-                const effectiveRadius = getEffectiveRadius(radius, parsedAccuracy);
-                const distance = getDistanceFromLatLonInMeters(
-                    parsedLatitude,
-                    parsedLongitude,
-                    cafeLatitude,
-                    cafeLongitude
-                );
+                const { accepted, nearest } = evaluateDistanceAgainstTargets({
+                    latitude: parsedLatitude,
+                    longitude: parsedLongitude,
+                    accuracy: parsedAccuracy,
+                    targets: locationTargets,
+                });
 
-                if (!Number.isFinite(distance) || distance > effectiveRadius) {
-                    const distanceLabel = Number.isFinite(distance) ? `${Math.round(distance)} metre` : 'belirlenemeyen bir mesafede';
+                if (!accepted) {
+                    const distanceLabel = nearest && Number.isFinite(nearest.distance)
+                        ? `${Math.round(nearest.distance)} metre`
+                        : 'belirlenemeyen bir mesafe';
+                    const nearestRadius = nearest ? nearest.effectiveRadius : getEffectiveRadius(150, parsedAccuracy);
+                    const nearestLabel = nearest ? ` (${nearest.label})` : '';
                     return res.status(400).json({
-                        error: `Kafeden çok uzaktasınız. Yaklaşık ${distanceLabel} görünüyorsunuz, doğrulama sınırı ${effectiveRadius} metre.`,
+                        error: `Kafeden çok uzaktasınız. Yaklaşık ${distanceLabel}${nearestLabel} görünüyorsunuz, doğrulama sınırı ${nearestRadius} metre.`,
                     });
                 }
             } else if (!isVerificationCodeValid({

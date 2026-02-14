@@ -5,6 +5,13 @@ CREATE TABLE IF NOT EXISTS cafes (
     address TEXT,
     total_tables INTEGER DEFAULT 10,
     pin VARCHAR(4) DEFAULT '0000',
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8),
+    radius INTEGER DEFAULT 500,
+    secondary_latitude DECIMAL(10, 8),
+    secondary_longitude DECIMAL(11, 8),
+    secondary_radius INTEGER,
+    daily_pin VARCHAR(6) DEFAULT '0000',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -66,6 +73,27 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='cafes' AND column_name='pin') THEN
         ALTER TABLE cafes ADD COLUMN pin VARCHAR(4) DEFAULT '0000';
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='cafes' AND column_name='latitude') THEN
+        ALTER TABLE cafes ADD COLUMN latitude DECIMAL(10, 8);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='cafes' AND column_name='longitude') THEN
+        ALTER TABLE cafes ADD COLUMN longitude DECIMAL(11, 8);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='cafes' AND column_name='radius') THEN
+        ALTER TABLE cafes ADD COLUMN radius INTEGER DEFAULT 500;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='cafes' AND column_name='secondary_latitude') THEN
+        ALTER TABLE cafes ADD COLUMN secondary_latitude DECIMAL(10, 8);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='cafes' AND column_name='secondary_longitude') THEN
+        ALTER TABLE cafes ADD COLUMN secondary_longitude DECIMAL(11, 8);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='cafes' AND column_name='secondary_radius') THEN
+        ALTER TABLE cafes ADD COLUMN secondary_radius INTEGER;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='cafes' AND column_name='daily_pin') THEN
+        ALTER TABLE cafes ADD COLUMN daily_pin VARCHAR(6) DEFAULT '0000';
     END IF;
 END $$;
 

@@ -2,6 +2,24 @@
   "name": "cafeduo-app",
   "version": "1.0.0",
   "description": "Üniversite öğrencileri için oyunlaştırılmış kafe sadakat platformu. Check-in yap, oyun oyna, puan kazan, ödül al.",
+  "keywords": [
+    "gamification",
+    "cafes",
+    "loyalty-program",
+    "react",
+    "typescript",
+    "socket.io",
+    "postgresql",
+    "fullstack",
+    "turkey"
+  ],
+  "author": "Emin Emre <emin3619@gmail.com>",
+  "homepage": "https://cafeduotr.com",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eminemre35/cafeduo-main.git"
+  },
+  "license": "MIT",
   "scripts": {
     "start": "node backend/server.js",
     "server": "nodemon --watch backend --ext js,mjs,cjs,json backend/server.js",

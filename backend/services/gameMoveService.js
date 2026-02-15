@@ -32,6 +32,11 @@ const createGameMoveService = ({
     return Number.isFinite(parsed) ? parsed : null;
   };
 
+  const normalizeSubmissionKey = (value) => {
+    const key = String(value || '').trim();
+    return key ? key.slice(0, 96) : null;
+  };
+
   const normalizeClockState = (rawClock) => {
     const source = rawClock && typeof rawClock === 'object' ? rawClock : {};
     const baseMs = Math.max(60_000, Math.min(1_800_000, Math.floor(Number(source.baseMs || DEFAULT_CLOCK.baseMs))));
@@ -341,6 +346,29 @@ const createGameMoveService = ({
             currentLive.submissions && typeof currentLive.submissions === 'object'
               ? currentLive.submissions
               : {};
+          const currentActorSubmission =
+            currentSubmissions[actorParticipant] && typeof currentSubmissions[actorParticipant] === 'object'
+              ? currentSubmissions[actorParticipant]
+              : {};
+          const incomingLiveKey = normalizeSubmissionKey(safeLive.submissionKey);
+          const existingLiveKey = normalizeSubmissionKey(currentActorSubmission?.submissionKey);
+          if (incomingLiveKey && existingLiveKey && incomingLiveKey === existingLiveKey) {
+            await client.query('ROLLBACK');
+            const participants = getGameParticipants(game);
+            const waitingFor = participants.filter((name) => !currentSubmissions[name]?.done);
+            const resolvedWinner =
+              participants.every((name) => Boolean(currentSubmissions[name]?.done))
+                ? pickWinnerFromResults(currentSubmissions, participants)
+                : null;
+            return res.json({
+              success: true,
+              idempotent: true,
+              gameState: currentState,
+              live: currentLive,
+              waitingFor,
+              resolvedWinner: resolvedWinner || null,
+            });
+          }
 
           const nextSubmissions = {
             ...currentSubmissions,
@@ -416,13 +444,34 @@ const createGameMoveService = ({
 
           const scorePayload =
             scoreSubmission && typeof scoreSubmission === 'object' ? scoreSubmission : {};
+          const currentResults =
+            currentState.results && typeof currentState.results === 'object' ? currentState.results : {};
+          const currentActorScore =
+            currentResults[actorParticipant] && typeof currentResults[actorParticipant] === 'object'
+              ? currentResults[actorParticipant]
+              : {};
+          const incomingScoreSubmission = sanitizeScoreSubmission({
+            ...scorePayload,
+            username: actorName,
+          });
+          const incomingScoreKey = normalizeSubmissionKey(incomingScoreSubmission?.submissionKey);
+          const existingScoreKey = normalizeSubmissionKey(currentActorScore?.submissionKey);
+          if (incomingScoreKey && existingScoreKey && incomingScoreKey === existingScoreKey) {
+            await client.query('ROLLBACK');
+            const participants = getGameParticipants(game);
+            const resolvedWinner = pickWinnerFromResults(currentResults, participants);
+            return res.json({
+              success: true,
+              idempotent: true,
+              gameState: currentState,
+              resolvedWinner: resolvedWinner || null,
+              waitingFor: participants.filter((name) => !currentResults[name]),
+            });
+          }
 
           const nextResults = {
-            ...(currentState.results && typeof currentState.results === 'object' ? currentState.results : {}),
-            [actorParticipant]: sanitizeScoreSubmission({
-              ...scorePayload,
-              username: actorName,
-            }),
+            ...currentResults,
+            [actorParticipant]: incomingScoreSubmission,
           };
 
           const participants = getGameParticipants(game);
@@ -753,6 +802,31 @@ const createGameMoveService = ({
         liveState.submissions && typeof liveState.submissions === 'object'
           ? liveState.submissions
           : {};
+      const currentActorSubmission =
+        currentSubmissions[actorParticipant] && typeof currentSubmissions[actorParticipant] === 'object'
+          ? currentSubmissions[actorParticipant]
+          : {};
+      const incomingLiveKey = normalizeSubmissionKey(safeLive.submissionKey);
+      const existingLiveKey = normalizeSubmissionKey(currentActorSubmission?.submissionKey);
+      if (incomingLiveKey && existingLiveKey && incomingLiveKey === existingLiveKey) {
+        const participants = getGameParticipants({
+          host_name: game.hostName,
+          guest_name: game.guestName,
+        });
+        const waitingFor = participants.filter((name) => !currentSubmissions[name]?.done);
+        const resolvedWinner =
+          participants.every((name) => Boolean(currentSubmissions[name]?.done))
+            ? pickWinnerFromResults(currentSubmissions, participants)
+            : null;
+        return res.json({
+          success: true,
+          idempotent: true,
+          gameState: game.gameState || {},
+          live: liveState,
+          waitingFor,
+          resolvedWinner: resolvedWinner || null,
+        });
+      }
 
       const nextSubmissions = {
         ...currentSubmissions,
@@ -823,10 +897,31 @@ const createGameMoveService = ({
       }
       game.gameState = game.gameState || {};
       game.gameState.results = game.gameState.results || {};
-      game.gameState.results[canonicalParticipant] = sanitizeScoreSubmission({
+      const incomingScoreSubmission = sanitizeScoreSubmission({
         ...(typeof scoreSubmission === 'object' ? scoreSubmission : {}),
         username: actorName,
       });
+      const existingScoreSubmission =
+        game.gameState.results[canonicalParticipant] && typeof game.gameState.results[canonicalParticipant] === 'object'
+          ? game.gameState.results[canonicalParticipant]
+          : {};
+      const incomingScoreKey = normalizeSubmissionKey(incomingScoreSubmission?.submissionKey);
+      const existingScoreKey = normalizeSubmissionKey(existingScoreSubmission?.submissionKey);
+      if (incomingScoreKey && existingScoreKey && incomingScoreKey === existingScoreKey) {
+        const participants = getGameParticipants({
+          host_name: game.hostName,
+          guest_name: game.guestName,
+        });
+        const resolvedWinner = pickWinnerFromResults(game.gameState.results, participants);
+        return res.json({
+          success: true,
+          idempotent: true,
+          gameState: game.gameState,
+          resolvedWinner: resolvedWinner || null,
+          waitingFor: participants.filter((name) => !game.gameState.results[name]),
+        });
+      }
+      game.gameState.results[canonicalParticipant] = incomingScoreSubmission;
 
       const participants = getGameParticipants({
         host_name: game.hostName,

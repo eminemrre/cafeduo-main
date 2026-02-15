@@ -646,7 +646,7 @@ describe('gameHandlers (memory mode)', () => {
     expect(memoryGames).toHaveLength(0);
   });
 
-  it('allows forfeit finish only when actor picks opponent as winner', async () => {
+  it('rejects manual finish until server resolves winner', async () => {
     memoryGames = [
       {
         id: 33,
@@ -668,12 +668,12 @@ describe('gameHandlers (memory mode)', () => {
     const finishRes = createMockRes();
     await handlers.finishGame(finishReq, finishRes);
 
-    expect(finishRes.statusCode).toBe(200);
-    expect(memoryGames[0].status).toBe('finished');
-    expect(memoryGames[0].winner).toBe('u2');
+    expect(finishRes.statusCode).toBe(409);
+    expect(finishRes.payload?.code).toBe('server_result_pending');
+    expect(memoryGames[0].status).toBe('active');
   });
 
-  it('rejects manual finish when actor tries to set self as winner', async () => {
+  it('rejects manual self winner with server_result_pending for non-admin', async () => {
     memoryGames = [
       {
         id: 34,
@@ -695,9 +695,36 @@ describe('gameHandlers (memory mode)', () => {
     const finishRes = createMockRes();
     await handlers.finishGame(finishReq, finishRes);
 
-    expect(finishRes.statusCode).toBe(403);
-    expect(finishRes.payload?.error).toContain('sadece rakibini');
+    expect(finishRes.statusCode).toBe(409);
+    expect(finishRes.payload?.code).toBe('server_result_pending');
     expect(memoryGames[0].status).toBe('active');
+  });
+
+  it('allows admin to finalize with manual winner override when server result is missing', async () => {
+    memoryGames = [
+      {
+        id: 35,
+        hostName: 'u1',
+        guestName: 'u2',
+        gameType: 'Refleks Avı',
+        points: 30,
+        table: 'MASA01',
+        status: 'active',
+        gameState: {},
+      },
+    ];
+
+    const finishReq = {
+      params: { id: '35' },
+      user: { username: 'adminUser', role: 'admin', isAdmin: true },
+      body: { winner: 'u2' },
+    };
+    const finishRes = createMockRes();
+    await handlers.finishGame(finishReq, finishRes);
+
+    expect(finishRes.statusCode).toBe(200);
+    expect(memoryGames[0].status).toBe('finished');
+    expect(memoryGames[0].winner).toBe('u2');
   });
 
   it('applies point transfer on finish (winner +stake, loser -stake)', async () => {

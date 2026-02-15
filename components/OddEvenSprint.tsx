@@ -1,7 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { User } from '../types';
 import { RetroButton } from './RetroButton';
-import { api } from '../lib/api';
 import { submitScoreAndWaitForWinner } from '../lib/multiplayer';
 import { GAME_ASSETS } from '../lib/gameAssets';
 import { playGameSfx } from '../lib/gameAudio';
@@ -51,7 +50,7 @@ export const OddEvenSprint: React.FC<OddEvenSprintProps> = ({
 
     try {
       const durationMs = Math.max(1, Date.now() - matchStartedAtRef.current);
-      const { winner } = await submitScoreAndWaitForWinner({
+      const { winner, finished } = await submitScoreAndWaitForWinner({
         gameId,
         username: currentUser.username,
         score: playerScoreValue,
@@ -59,20 +58,25 @@ export const OddEvenSprint: React.FC<OddEvenSprintProps> = ({
         durationMs,
       });
 
-      const resolvedWinner = winner || localWinner;
-      try {
-        await api.games.finish(gameId, resolvedWinner);
-      } catch {
-        // Finishing failures should not block the game flow
+      if (!finished) {
+        setMessage('Sunucu sonucu henüz kesinleştirmedi. Lobiye dönüp birkaç saniye sonra tekrar kontrol et.');
+        setTimeout(() => onGameEnd('Sonuç Bekleniyor', 0), 900);
+        return;
       }
 
-      const points = resolvedWinner === currentUser.username ? 10 : 0;
-      setMessage(points > 0 ? 'Maçı kazandın.' : 'Maçı rakip aldı.');
+      const resolvedWinner = winner || 'Berabere';
+      const points = winner && winner === currentUser.username ? 10 : 0;
+      setMessage(
+        !winner
+          ? 'Maç berabere tamamlandı.'
+          : points > 0
+            ? 'Maçı kazandın.'
+            : 'Maçı rakip aldı.'
+      );
       setTimeout(() => onGameEnd(resolvedWinner, points), 900);
     } catch {
-      const fallbackPoints = localWinner === currentUser.username ? 10 : 0;
-      setMessage('Bağlantı dalgalandı, yerel sonuç uygulandı.');
-      setTimeout(() => onGameEnd(localWinner, fallbackPoints), 900);
+      setMessage('Bağlantı sorunu: sonuç sunucudan doğrulanamadı. Lobiye dönüp tekrar kontrol et.');
+      setTimeout(() => onGameEnd('Sonuç Bekleniyor', 0), 900);
     } finally {
       setResolvingMatch(false);
     }

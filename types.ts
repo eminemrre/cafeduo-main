@@ -43,7 +43,7 @@ export interface GameRequest {
   gameType: string;
   points: number;
   table: string;
-  status: 'waiting' | 'active' | 'finished' | 'playing';
+  status: 'waiting' | 'active' | 'finishing' | 'finished' | 'playing';
   guestName?: string;
   player1Move?: string;
   player2Move?: string;

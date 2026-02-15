@@ -6,6 +6,7 @@ jest.mock('./api', () => ({
     games: {
       submitScore: jest.fn(),
       get: jest.fn(),
+      finish: jest.fn(),
     },
   },
 }));
@@ -77,7 +78,10 @@ describe('submitScoreAndWaitForWinner', () => {
 
   it('submits score and returns winner when scoreboard is ready', async () => {
     (api.games.submitScore as jest.Mock).mockResolvedValue(undefined);
+    (api.games.finish as jest.Mock).mockResolvedValue({ success: true });
     (api.games.get as jest.Mock).mockResolvedValue({
+      status: 'finished',
+      winner: 'emin',
       gameState: {
         results: {
           emin: { score: 9, roundsWon: 3, durationMs: 12000 },
@@ -96,25 +100,43 @@ describe('submitScoreAndWaitForWinner', () => {
       pollIntervalMs: 0,
     });
 
-    expect(api.games.submitScore).toHaveBeenCalledWith(7, {
-      username: 'emin',
-      score: 9,
-      roundsWon: 3,
-      durationMs: 12000,
-    });
+    expect(api.games.submitScore).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({
+        username: 'emin',
+        score: 9,
+        roundsWon: 3,
+        durationMs: 12000,
+        submissionKey: expect.any(String),
+      })
+    );
     expect(result).toEqual(
       expect.objectContaining({
         winner: 'emin',
         timedOut: false,
+        finished: true,
       })
     );
   });
 
   it('continues polling after transient fetch error and eventually finds winner', async () => {
     (api.games.submitScore as jest.Mock).mockResolvedValue(undefined);
+    (api.games.finish as jest.Mock).mockResolvedValue({ success: true });
     (api.games.get as jest.Mock)
       .mockRejectedValueOnce(new Error('temporary'))
       .mockResolvedValueOnce({
+        status: 'active',
+        gameState: {
+          resolvedWinner: 'rakip',
+          results: {
+            emin: { score: 4 },
+            rakip: { score: 5 },
+          },
+        },
+      })
+      .mockResolvedValueOnce({
+        status: 'finished',
+        winner: 'rakip',
         gameState: {
           results: {
             emin: { score: 4 },
@@ -131,9 +153,11 @@ describe('submitScoreAndWaitForWinner', () => {
       pollIntervalMs: 0,
     });
 
-    expect(api.games.get).toHaveBeenCalledTimes(2);
+    expect(api.games.get).toHaveBeenCalledTimes(3);
+    expect(api.games.finish).toHaveBeenCalledWith('g-11');
     expect(result.winner).toBe('rakip');
     expect(result.timedOut).toBe(false);
+    expect(result.finished).toBe(true);
   });
 
   it('times out when a complete scoreboard never arrives', async () => {
@@ -156,6 +180,7 @@ describe('submitScoreAndWaitForWinner', () => {
 
     expect(result.timedOut).toBe(true);
     expect(result.winner).toBeNull();
+    expect(result.finished).toBe(false);
     expect(result.scoreboard).toEqual({
       emin: { score: 2 },
     });
@@ -184,6 +209,7 @@ describe('submitScoreAndWaitForWinner', () => {
 
     expect(result.timedOut).toBe(true);
     expect(result.winner).toBeNull();
+    expect(result.finished).toBe(false);
     expect(result.scoreboard).toEqual({
       emin: { score: 4 },
     });

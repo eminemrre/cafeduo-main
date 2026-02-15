@@ -149,12 +149,15 @@ const createGameHandlers = ({
     const safeRound = Math.max(0, Math.floor(Number(payload?.round || 0)));
     const done = Boolean(payload?.done);
     const mode = normalizeGameType(payload?.mode) || null;
+    const submissionKeyRaw = String(payload?.submissionKey || payload?.submission_key || '').trim();
+    const submissionKey = submissionKeyRaw ? submissionKeyRaw.slice(0, 96) : undefined;
     return {
       mode,
       score: safeScore,
       roundsWon: safeRounds,
       round: safeRound,
       done,
+      ...(submissionKey ? { submissionKey } : {}),
       updatedAt: new Date().toISOString(),
     };
   };
@@ -1968,7 +1971,8 @@ const createGameHandlers = ({
         const winnerFromRequest = normalizeParticipantName(requestedWinner, game);
         const requestedWinnerRaw = String(requestedWinner || '').trim();
         const derivedWinner = winnerFromState || winnerFromResults;
-        const finalWinner = derivedWinner || winnerFromRequest;
+        const manualWinnerAllowed = adminActor && Boolean(winnerFromRequest);
+        const finalWinner = derivedWinner || (manualWinnerAllowed ? winnerFromRequest : null);
         const currentGameState =
           game.game_state && typeof game.game_state === 'object'
             ? { ...game.game_state }
@@ -1981,29 +1985,25 @@ const createGameHandlers = ({
           !finalWinner;
         const settlementAlreadyApplied = Boolean(currentGameState?.settlementApplied);
 
-        if (requestedWinnerRaw && !winnerFromRequest && !derivedWinner) {
+        if (requestedWinnerRaw && !winnerFromRequest && adminActor && !derivedWinner) {
           await client.query('ROLLBACK');
           return res.status(400).json({ error: 'Geçersiz kazanan bilgisi.' });
         }
 
-        // Manual winner override is only allowed for admin or forfeiting to opponent.
-        if (!derivedWinner && winnerFromRequest && !adminActor) {
-          const canonicalActor = normalizeParticipantName(actorName, game);
-          if (!canonicalActor) {
-            await client.query('ROLLBACK');
-            return res.status(403).json({ error: 'Bu oyunu kapatma yetkin yok.' });
-          }
-          if (winnerFromRequest.toLowerCase() === canonicalActor.toLowerCase()) {
-            await client.query('ROLLBACK');
-            return res.status(403).json({
-              error: 'Oyunu manuel kapatırken sadece rakibini kazanan olarak seçebilirsin.',
-            });
-          }
+        if (!adminActor && requestedWinnerRaw && !derivedWinner) {
+          await client.query('ROLLBACK');
+          return res.status(409).json({
+            error: 'Sonuç henüz sunucu tarafından belirlenmedi. Önce tüm skorlar tamamlanmalı.',
+            code: 'server_result_pending',
+          });
         }
 
-        if (!finalWinner && !isChessDraw) {
+        if (!finalWinner && !isChessDraw && !manualWinnerAllowed) {
           await client.query('ROLLBACK');
-          return res.status(409).json({ error: 'Kazanan belirlenemedi. Her iki oyuncu da skoru göndermeli.' });
+          return res.status(409).json({
+            error: 'Sonuç henüz sunucu tarafından belirlenmedi. Her iki oyuncu skoru tamamlamalı.',
+            code: 'server_result_pending',
+          });
         }
 
         if (game.status === 'finished') {
@@ -2166,33 +2166,29 @@ const createGameHandlers = ({
     });
     const requestedWinnerRaw = String(requestedWinner || '').trim();
     const derivedWinner = winnerFromState || winnerFromResults;
-    const finalWinner = derivedWinner || winnerFromRequest;
+    const manualWinnerAllowed = adminActor && Boolean(winnerFromRequest);
+    const finalWinner = derivedWinner || (manualWinnerAllowed ? winnerFromRequest : null);
     const isChessDraw =
       isChessGameType(game.gameType) &&
       Boolean(game.gameState?.chess?.isGameOver) &&
       !finalWinner;
 
-    if (requestedWinnerRaw && !winnerFromRequest && !derivedWinner) {
+    if (requestedWinnerRaw && !winnerFromRequest && adminActor && !derivedWinner) {
       return res.status(400).json({ error: 'Geçersiz kazanan bilgisi.' });
     }
 
-    if (!derivedWinner && winnerFromRequest && !adminActor) {
-      const canonicalActor = normalizeParticipantName(actorName, {
-        host_name: game.hostName,
-        guest_name: game.guestName,
+    if (!adminActor && requestedWinnerRaw && !derivedWinner) {
+      return res.status(409).json({
+        error: 'Sonuç henüz sunucu tarafından belirlenmedi. Önce tüm skorlar tamamlanmalı.',
+        code: 'server_result_pending',
       });
-      if (!canonicalActor) {
-        return res.status(403).json({ error: 'Bu oyunu kapatma yetkin yok.' });
-      }
-      if (winnerFromRequest.toLowerCase() === canonicalActor.toLowerCase()) {
-        return res.status(403).json({
-          error: 'Oyunu manuel kapatırken sadece rakibini kazanan olarak seçebilirsin.',
-        });
-      }
     }
 
-    if (!finalWinner && !isChessDraw) {
-      return res.status(409).json({ error: 'Kazanan belirlenemedi. Her iki oyuncu da skoru göndermeli.' });
+    if (!finalWinner && !isChessDraw && !manualWinnerAllowed) {
+      return res.status(409).json({
+        error: 'Sonuç henüz sunucu tarafından belirlenmedi. Her iki oyuncu skoru tamamlamalı.',
+        code: 'server_result_pending',
+      });
     }
 
     const settlementAlreadyApplied = Boolean(game.gameState?.settlementApplied);

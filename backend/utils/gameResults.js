@@ -4,6 +4,10 @@ const toSafeNumber = (value, fallback = 0) => {
 };
 
 const normalizeName = (value) => String(value || '').trim();
+const sanitizeSubmissionKey = (value) => {
+  const key = normalizeName(value);
+  return key ? key.slice(0, 96) : undefined;
+};
 
 const getGameParticipants = (game) => {
   const participants = [normalizeName(game?.host_name), normalizeName(game?.guest_name)].filter(Boolean);
@@ -30,12 +34,16 @@ const sanitizeScoreSubmission = (scoreSubmission) => {
     typeof scoreSubmission?.submittedAt === 'string' && scoreSubmission.submittedAt
       ? scoreSubmission.submittedAt
       : new Date().toISOString();
+  const submissionKey = sanitizeSubmissionKey(
+    scoreSubmission?.submissionKey ?? scoreSubmission?.submission_key
+  );
 
   return {
     score,
     roundsWon,
     durationMs,
     submittedAt,
+    ...(submissionKey ? { submissionKey } : {}),
   };
 };
 

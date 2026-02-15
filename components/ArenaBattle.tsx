@@ -168,12 +168,13 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
           roundsWon: score,
           round: currentRound,
           done: isDoneRound,
+          submissionKey: `arena|${String(gameId)}|${currentUser.username}|${currentRound}|${score}|${isDoneRound ? 1 : 0}`,
         },
       });
     } catch (err) {
       console.error('ArenaBattle live submission failed', err);
     }
-  }, [gameId, isBot]);
+  }, [currentUser.username, gameId, isBot]);
 
   useEffect(() => {
     finishHandledRef.current = false;
@@ -265,7 +266,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
 
     try {
       const durationMs = Math.max(1, Date.now() - matchStartedAtRef.current);
-      const { winner } = await submitScoreAndWaitForWinner({
+      const { winner, finished } = await submitScoreAndWaitForWinner({
         gameId,
         username: currentUser.username,
         score: playerScoreValue,
@@ -273,22 +274,28 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
         durationMs,
       });
 
-      const resolvedWinner = winner || localWinner;
-      try {
-        await api.games.finish(gameId, resolvedWinner);
-      } catch {
-        // UI akışını bloke etmesin
+      if (!finished) {
+        setMessage('Sunucu sonucu henüz kesinleştirmedi. Lobiye dönüp birkaç saniye sonra tekrar kontrol et.');
+        finishHandledRef.current = true;
+        setTimeout(() => onGameEnd('Sonuç Bekleniyor', 0), 900);
+        return;
       }
 
-      const points = resolvedWinner === currentUser.username ? 10 : 0;
-      setMessage(points > 0 ? 'Maçı kazandın.' : 'Maçı rakip aldı.');
+      const resolvedWinner = winner || 'Berabere';
+      const points = winner && winner === currentUser.username ? 10 : 0;
+      setMessage(
+        !winner
+          ? 'Maç berabere tamamlandı.'
+          : points > 0
+            ? 'Maçı kazandın.'
+            : 'Maçı rakip aldı.'
+      );
       finishHandledRef.current = true;
       setTimeout(() => onGameEnd(resolvedWinner, points), 900);
     } catch {
-      const fallbackPoints = localWinner === currentUser.username ? 10 : 0;
-      setMessage('Bağlantı dalgalandı, yerel sonuç uygulandı.');
+      setMessage('Bağlantı sorunu: sonuç sunucudan doğrulanamadı.');
       finishHandledRef.current = true;
-      setTimeout(() => onGameEnd(localWinner, fallbackPoints), 900);
+      setTimeout(() => onGameEnd('Sonuç Bekleniyor', 0), 900);
     } finally {
       setResolvingMatch(false);
     }

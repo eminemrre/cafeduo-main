@@ -481,9 +481,6 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - player
-                - move
               properties:
                 player:
                   type: string
@@ -496,6 +493,34 @@ paths:
                 gameState:
                   type: object
                   description: Oyun durumu (JSON)
+                scoreSubmission:
+                  type: object
+                  properties:
+                    username:
+                      type: string
+                    score:
+                      type: integer
+                    roundsWon:
+                      type: integer
+                    durationMs:
+                      type: integer
+                    submissionKey:
+                      type: string
+                liveSubmission:
+                  type: object
+                  properties:
+                    mode:
+                      type: string
+                    score:
+                      type: integer
+                    roundsWon:
+                      type: integer
+                    round:
+                      type: integer
+                    done:
+                      type: boolean
+                    submissionKey:
+                      type: string
       responses:
         200:
           description: Hamle kaydedildi
@@ -532,8 +557,6 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - winner
               properties:
                 winner:
                   type: string

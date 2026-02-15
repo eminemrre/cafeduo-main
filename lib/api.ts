@@ -459,13 +459,20 @@ export const api = {
         gameState?: unknown;
         player?: 'host' | 'guest';
         move?: string;
-        scoreSubmission?: { username: string; score: number; roundsWon?: number; durationMs?: number };
+        scoreSubmission?: {
+          username: string;
+          score: number;
+          roundsWon?: number;
+          durationMs?: number;
+          submissionKey?: string;
+        };
         liveSubmission?: {
           mode?: string;
           score?: number;
           roundsWon?: number;
           round?: number;
           done?: boolean;
+          submissionKey?: string;
         };
         chessMove?: { from: string; to: string; promotion?: 'q' | 'r' | 'b' | 'n' };
       }
@@ -478,7 +485,13 @@ export const api = {
 
     submitScore: async (
       gameId: number | string,
-      payload: { username: string; score: number; roundsWon?: number; durationMs?: number }
+      payload: {
+        username: string;
+        score: number;
+        roundsWon?: number;
+        durationMs?: number;
+        submissionKey?: string;
+      }
     ) => {
       return await fetchAPI(`/games/${gameId}/move`, {
         method: 'POST',
@@ -488,10 +501,10 @@ export const api = {
       });
     },
 
-    finish: async (gameId: number | string, winner: string) => {
+    finish: async (gameId: number | string, winner?: string | null) => {
       return await fetchAPI(`/games/${gameId}/finish`, {
         method: 'POST',
-        body: JSON.stringify({ winner }),
+        body: JSON.stringify(winner ? { winner } : {}),
       });
     },
 

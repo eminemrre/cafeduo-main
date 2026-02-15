@@ -41,6 +41,30 @@ const filterScoreboardToParticipants = (
   return filtered;
 };
 
+const buildSubmissionKey = (params: {
+  gameId: number | string;
+  username: string;
+  score: number;
+  roundsWon?: number;
+  durationMs?: number;
+}) => {
+  const base = `${normalizeName(params.username).toLowerCase()}|${String(params.gameId)}|${params.score}|${params.roundsWon ?? ''}|${params.durationMs ?? ''}`;
+  const entropy = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+  return `${base}|${entropy}`.slice(0, 96);
+};
+
+const extractAuthoritativeWinner = (game: any): string | null => {
+  const winner = normalizeName(
+    game?.winner ??
+    game?.gameState?.resolvedWinner ??
+    game?.gameState?.live?.resolvedWinner
+  );
+  return winner || null;
+};
+
+const isGameFinished = (game: any): boolean =>
+  String(game?.status || '').trim().toLowerCase() === 'finished';
+
 export const pickWinnerFromScoreboard = (scoreboard: Scoreboard): string | null => {
   const entries = Object.entries(scoreboard);
   if (entries.length < 2) return null;
@@ -74,7 +98,7 @@ export const submitScoreAndWaitForWinner = async (params: {
   durationMs?: number;
   timeoutMs?: number;
   pollIntervalMs?: number;
-}): Promise<{ winner: string | null; timedOut: boolean; scoreboard: Scoreboard }> => {
+}): Promise<{ winner: string | null; timedOut: boolean; scoreboard: Scoreboard; finished: boolean }> => {
   const {
     gameId,
     username,
@@ -90,6 +114,7 @@ export const submitScoreAndWaitForWinner = async (params: {
     score,
     roundsWon,
     durationMs,
+    submissionKey: buildSubmissionKey({ gameId, username, score, roundsWon, durationMs }),
   });
 
   const deadline = Date.now() + timeoutMs;
@@ -109,9 +134,17 @@ export const submitScoreAndWaitForWinner = async (params: {
           ? (maybeResults as Scoreboard)
           : {};
       scoreboard = filterScoreboardToParticipants(rawScoreboard, participants);
-      const winner = pickWinnerFromScoreboard(scoreboard);
-      if (winner) {
-        return { winner, timedOut: false, scoreboard };
+      const serverWinner = extractAuthoritativeWinner(game);
+      if (isGameFinished(game)) {
+        return { winner: serverWinner, timedOut: false, scoreboard, finished: true };
+      }
+
+      if (serverWinner) {
+        try {
+          await api.games.finish(gameId);
+        } catch {
+          // başka istemci finish etmiş olabilir; polling devam eder
+        }
       }
     } catch {
       // Polling sırasında geçici hataları yumuşat
@@ -121,8 +154,9 @@ export const submitScoreAndWaitForWinner = async (params: {
   }
 
   return {
-    winner: pickWinnerFromScoreboard(scoreboard),
+    winner: null,
     timedOut: true,
     scoreboard,
+    finished: false,
   };
 };

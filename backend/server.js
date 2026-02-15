@@ -45,6 +45,7 @@ const authRoutes = require('./routes/authRoutes');
 const cafeRoutes = require('./routes/cafeRoutes'); // Cafe Routes Import
 const { createAdminRoutes } = require('./routes/adminRoutes');
 const { createCommerceRoutes } = require('./routes/commerceRoutes');
+const { createProfileRoutes } = require('./routes/profileRoutes');
 const { createGameRoutes } = require('./routes/gameRoutes');
 const memoryState = require('./store/memoryState');
 const {
@@ -60,6 +61,7 @@ const {
 const { createAdminHandlers } = require('./handlers/adminHandlers');
 const { createCommerceHandlers } = require('./handlers/commerceHandlers');
 const { createGameHandlers } = require('./handlers/gameHandlers');
+const { createProfileHandlers } = require('./handlers/profileHandlers');
 const { createGameRepository } = require('./repositories/gameRepository');
 const { createGameService } = require('./services/gameService');
 const { authenticateToken, requireOwnership } = require('./middleware/auth'); // Auth Middleware Imports
@@ -603,6 +605,17 @@ const gameHandlers = createGameHandlers({
   getMemoryUsers: () => MEMORY_USERS,
 });
 
+const profileHandlers = createProfileHandlers({
+  pool,
+  isDbConnected,
+  logger,
+  getMemoryUsers: () => MEMORY_USERS,
+  setMemoryUsers: (nextUsers) => {
+    MEMORY_USERS = nextUsers;
+    memoryState.users = nextUsers;
+  },
+});
+
 const gameRoutes = createGameRoutes({
   authenticateToken,
   gameHandlers,
@@ -618,6 +631,13 @@ const commerceRoutes = createCommerceRoutes({
   authenticateToken,
   cache,
   commerceHandlers,
+});
+
+const profileRoutes = createProfileRoutes({
+  cache,
+  authenticateToken,
+  requireOwnership,
+  profileHandlers,
 });
 
 const promoteBootstrapAdmins = async () => {
@@ -705,6 +725,9 @@ app.use('/api', commerceRoutes);
 // 6. GAME ROUTES (Modularized)
 app.use('/api', gameRoutes);
 
+// Profile/Leaderboard Routes (Modularized)
+app.use('/api', profileRoutes);
+
 // NOTE: Duplicate admin endpoints removed. Using protected versions above.
 
 // CHECK-IN (Moved to cafeController)
@@ -721,148 +744,6 @@ app.use(express.static(path.join(__dirname, '../dist')));
 // ... (keep existing API routes)
 
 // Duplicate /api/rewards endpoints removed. The secured canonical handlers are defined above.
-
-// 15. LEADERBOARD
-app.get('/api/leaderboard', cache(60), async (req, res) => { // Cache for 1 min (Real-time critical)
-  const { type, department } = req.query; // type: 'general' or 'department'
-
-  if (await isDbConnected()) {
-    try {
-      let query = 'SELECT id, username, points, wins, games_played as "gamesPlayed", department FROM users';
-      let params = [];
-
-      if (type === 'department' && department) {
-        query += ' WHERE department = $1';
-        params.push(department);
-      }
-
-      query += ' ORDER BY points DESC LIMIT 50';
-
-      const result = await pool.query(query, params);
-      res.json(result.rows);
-    } catch (err) {
-      res.status(500).json({ error: 'Liderlik tablosu yüklenemedi.' });
-    }
-  } else {
-    // Memory fallback
-    let users = [...MEMORY_USERS];
-    if (type === 'department' && department) {
-      users = users.filter(u => u.department === department);
-    }
-    users.sort((a, b) => b.points - a.points);
-    res.json(users.slice(0, 50));
-  }
-});
-
-// 16. ACHIEVEMENTS: GET ALL & USER STATUS
-app.get('/api/achievements/:userId', authenticateToken, requireOwnership('userId'), async (req, res) => {
-  const { userId } = req.params;
-
-  if (await isDbConnected()) {
-    try {
-      // Get all achievements
-      const allAchievements = await pool.query('SELECT * FROM achievements ORDER BY points_reward ASC');
-
-      // Get user's unlocked achievements
-      const userUnlocked = await pool.query('SELECT achievement_id, unlocked_at FROM user_achievements WHERE user_id = $1', [userId]);
-      const unlockedMap = new Map();
-      userUnlocked.rows.forEach(row => unlockedMap.set(row.achievement_id, row.unlocked_at));
-
-      const result = allAchievements.rows.map(ach => ({
-        ...ach,
-        unlocked: unlockedMap.has(ach.id),
-        unlockedAt: unlockedMap.get(ach.id) || null
-      }));
-
-      res.json(result);
-    } catch (err) {
-      res.status(500).json({ error: 'Başarımlar yüklenemedi.' });
-    }
-  } else {
-    res.json([]); // Fallback
-  }
-});
-
-// 16. CHECK ACHIEVEMENTS (Call this after game/point updates)
-const checkAchievements = async (userId) => {
-  if (!await isDbConnected()) return;
-
-  try {
-    const userRes = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
-    if (userRes.rows.length === 0) return;
-    const user = userRes.rows[0];
-
-    const achievementsRes = await pool.query('SELECT * FROM achievements');
-    const achievements = achievementsRes.rows;
-
-    for (const ach of achievements) {
-      let qualified = false;
-      if (ach.condition_type === 'points' && user.points >= ach.condition_value) qualified = true;
-      if (ach.condition_type === 'wins' && user.wins >= ach.condition_value) qualified = true;
-      if (ach.condition_type === 'games_played' && user.games_played >= ach.condition_value) qualified = true;
-
-      if (qualified) {
-        // Try to insert (ignore if already exists due to UNIQUE constraint)
-        const insertRes = await pool.query(
-          'INSERT INTO user_achievements (user_id, achievement_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING *',
-          [userId, ach.id]
-        );
-
-        if (insertRes.rows.length > 0) {
-          // Newly unlocked! Give reward
-          await pool.query('UPDATE users SET points = points + $1 WHERE id = $2', [ach.points_reward, userId]);
-          console.log(`🏆 Achievement Unlocked: ${user.username} - ${ach.title} (+${ach.points_reward} pts)`);
-        }
-      }
-    }
-  } catch (err) {
-    console.error('Achievement Check Error:', err);
-  }
-};
-
-// Hook into User Update to check achievements - PROTECTED
-app.put('/api/users/:id', authenticateToken, requireOwnership('id'), async (req, res) => {
-  const { id } = req.params;
-  const { points, wins, gamesPlayed } = req.body;
-  const nextPoints = Math.floor(Number(points));
-  const nextWins = Math.floor(Number(wins));
-  const nextGamesPlayed = Math.floor(Number(gamesPlayed));
-  const safeDepartment = String(req.body.department || '').slice(0, 120);
-
-  if (![nextPoints, nextWins, nextGamesPlayed].every((value) => Number.isFinite(value) && value >= 0)) {
-    return res.status(400).json({ error: 'Puan, galibiyet ve oyun sayısı geçerli pozitif sayılar olmalıdır.' });
-  }
-
-  if (await isDbConnected()) {
-    const result = await pool.query(
-      'UPDATE users SET points = $1, wins = $2, games_played = $3, department = $4 WHERE id = $5 RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number, avatar_url',
-      [nextPoints, nextWins, nextGamesPlayed, safeDepartment, id]
-    );
-
-    const user = result.rows[0];
-
-    // Fetch cafe name if cafe_id exists
-    if (user.cafe_id) {
-      const cafeRes = await pool.query('SELECT name FROM cafes WHERE id = $1', [user.cafe_id]);
-      if (cafeRes.rows.length > 0) {
-        user.cafe_name = cafeRes.rows[0].name;
-      }
-    }
-
-    // Check achievements asynchronously (don't await)
-    checkAchievements(id);
-
-    res.json(user);
-  } else {
-    const idx = MEMORY_USERS.findIndex(u => u.id == id);
-    if (idx !== -1) {
-      MEMORY_USERS[idx] = { ...MEMORY_USERS[idx], points: nextPoints, wins: nextWins, gamesPlayed: nextGamesPlayed };
-      res.json(MEMORY_USERS[idx]);
-    } else {
-      res.status(404).json({ error: 'User not found' });
-    }
-  }
-});
 
 // --- DÜZELTİLEN KISIM BAŞLANGICI ---
 

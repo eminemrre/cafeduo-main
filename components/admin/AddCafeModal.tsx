@@ -12,10 +12,12 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <div className="bg-[linear-gradient(170deg,rgba(8,14,30,0.96),rgba(10,24,52,0.88))] border border-cyan-400/25 rounded-2xl p-8 max-w-md w-full relative">
-        <h2 className="text-2xl font-bold text-white mb-6">Yeni Kafe Ekle</h2>
+      <div className="bg-[linear-gradient(170deg,rgba(8,14,30,0.96),rgba(10,24,52,0.88))] border border-cyan-400/25 rounded-2xl max-w-md w-full relative overflow-hidden max-h-[calc(100vh-2rem)] flex flex-col">
+        <div className="px-8 pt-8 pb-4 border-b border-cyan-400/15">
+          <h2 className="text-2xl font-bold text-white">Yeni Kafe Ekle</h2>
+        </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto px-8 py-5 min-h-0">
           <div>
             <label className="block text-gray-400 text-sm mb-2">Kafe Adı *</label>
             <input
@@ -141,7 +143,7 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
             </div>
           </div>
 
-          <div className="flex gap-3 mt-8">
+          <div className="flex gap-3 mt-8 sticky bottom-0 pt-4 bg-[linear-gradient(180deg,rgba(6,16,36,0),rgba(6,16,36,0.96)_24%,rgba(6,16,36,0.99))]">
             <button
               onClick={onClose}
               className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-xl transition-colors"

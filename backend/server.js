@@ -43,6 +43,7 @@ const { cache, clearCache } = require('./middleware/cache'); // Redis Cache Impo
 const { buildRateLimiterOptions } = require('./middleware/rateLimit');
 const authRoutes = require('./routes/authRoutes');
 const cafeRoutes = require('./routes/cafeRoutes'); // Cafe Routes Import
+const { createGameRoutes } = require('./routes/gameRoutes');
 const memoryState = require('./store/memoryState');
 const {
   getGameParticipants,
@@ -57,6 +58,8 @@ const {
 const { createAdminHandlers } = require('./handlers/adminHandlers');
 const { createCommerceHandlers } = require('./handlers/commerceHandlers');
 const { createGameHandlers } = require('./handlers/gameHandlers');
+const { createGameRepository } = require('./repositories/gameRepository');
+const { createGameService } = require('./services/gameService');
 const { authenticateToken, requireAdmin, requireOwnership, requireCafeAdmin } = require('./middleware/auth'); // Auth Middleware Imports
 
 // Simple Logger (can be replaced with Winston in production)
@@ -585,6 +588,24 @@ const gameHandlers = createGameHandlers({
   getMemoryUsers: () => MEMORY_USERS,
 });
 
+const gameRepository = createGameRepository({
+  pool,
+  supportedGameTypes: SUPPORTED_GAME_TYPES,
+});
+
+const gameService = createGameService({
+  isDbConnected,
+  gameRepository,
+  getMemoryGames: () => MEMORY_GAMES,
+  supportedGameTypes: SUPPORTED_GAME_TYPES,
+});
+
+const gameRoutes = createGameRoutes({
+  authenticateToken,
+  gameHandlers,
+  gameService,
+});
+
 const promoteBootstrapAdmins = async () => {
   if (BOOTSTRAP_ADMIN_EMAILS.length === 0) return;
 
@@ -702,35 +723,8 @@ app.delete('/api/rewards/:id', authenticateToken, requireCafeAdmin, commerceHand
 
 // 2.6 FUNCTIONS REMOVED (Moved to backend/utils/geo.js)
 
-// 3. GET GAMES
-app.get('/api/games', authenticateToken, gameHandlers.getGames);
-
-// 4. CREATE GAME
-app.post('/api/games', authenticateToken, gameHandlers.createGame);
-
-// 5. JOIN GAME
-app.post('/api/games/:id/join', authenticateToken, gameHandlers.joinGame);
-
-// 6. GET GAME STATE (Polling)
-app.get('/api/games/:id', authenticateToken, gameHandlers.getGameState);
-
-// 7. MAKE MOVE
-app.post('/api/games/:id/move', authenticateToken, gameHandlers.makeMove);
-
-// 7.1 CHESS DRAW OFFER ACTIONS
-app.post('/api/games/:id/draw-offer', authenticateToken, gameHandlers.drawOffer);
-
-// 7.2 RESIGN ACTIVE GAME
-app.post('/api/games/:id/resign', authenticateToken, gameHandlers.resignGame);
-
-// 8. FINISH GAME
-app.post('/api/games/:id/finish', authenticateToken, gameHandlers.finishGame);
-
-// 9. DELETE GAME
-app.delete('/api/games/:id', authenticateToken, gameHandlers.deleteGame);
-
-// 9.1 USER GAME HISTORY
-app.get('/api/users/:username/game-history', authenticateToken, gameHandlers.getUserGameHistory);
+// 6. GAME ROUTES (Modularized)
+app.use('/api', gameRoutes);
 
 
 
@@ -868,58 +862,6 @@ const checkAchievements = async (userId) => {
     console.error('Achievement Check Error:', err);
   }
 };
-
-// 17. GET ACTIVE GAME FOR USER
-app.get('/api/users/:username/active-game', authenticateToken, async (req, res) => {
-  const { username } = req.params;
-  const actor = String(req.user?.username || '').trim().toLowerCase();
-  const target = String(username || '').trim().toLowerCase();
-  const isAdminActor = req.user?.role === 'admin' || req.user?.isAdmin === true;
-  if (!isAdminActor && actor !== target) {
-    return res.status(403).json({ error: 'Sadece kendi aktif oyununuzu görüntüleyebilirsiniz.' });
-  }
-
-  if (await isDbConnected()) {
-    try {
-      const result = await pool.query(`
-        SELECT 
-          id, 
-          host_name as "hostName", 
-          game_type as "gameType", 
-          points, 
-          table_code as "table", 
-          status, 
-          guest_name as "guestName", 
-          player1_move as "player1Move", 
-          player2_move as "player2Move", 
-          game_state as "gameState", 
-          created_at as "createdAt" 
-        FROM games 
-        WHERE (host_name = $1 OR guest_name = $1)
-          AND status = 'active'
-          AND game_type = ANY($2::text[])
-        ORDER BY created_at DESC
-        LIMIT 1
-      `, [username, [...SUPPORTED_GAME_TYPES]]);
-
-      if (result.rows.length > 0) {
-        res.json(result.rows[0]);
-      } else {
-        res.json(null);
-      }
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Aktif oyun sorgulanamadı.' });
-    }
-  } else {
-    const game = MEMORY_GAMES.find(g =>
-      (g.hostName === username || g.guestName === username) &&
-      g.status === 'active' &&
-      SUPPORTED_GAME_TYPES.has(String(g.gameType || '').trim())
-    );
-    res.json(game || null);
-  }
-});
 
 // Hook into User Update to check achievements - PROTECTED
 app.put('/api/users/:id', authenticateToken, requireOwnership('id'), async (req, res) => {

@@ -1,0 +1,52 @@
+{
+  "baseUrl": "https://cafeduotr.com",
+  "requests": 20,
+  "generatedAt": "2026-02-17T13:27:41.623Z",
+  "results": [
+    {
+      "endpoint": "health",
+      "method": "GET",
+      "path": "/health",
+      "requests": 20,
+      "successRate": 100,
+      "p50Ms": 35.74765900000011,
+      "p95Ms": 317.561695,
+      "p99Ms": 1146.1691899999998,
+      "avgMs": 114.08438604999996,
+      "maxMs": 1146.1691899999998,
+      "statuses": [
+        200
+      ]
+    },
+    {
+      "endpoint": "meta_version",
+      "method": "GET",
+      "path": "/api/meta/version",
+      "requests": 20,
+      "successRate": 100,
+      "p50Ms": 34.251248999999916,
+      "p95Ms": 85.96483100000023,
+      "p99Ms": 144.51593900000034,
+      "avgMs": 51.33904740000007,
+      "maxMs": 144.51593900000034,
+      "statuses": [
+        200
+      ]
+    },
+    {
+      "endpoint": "auth_invalid_login",
+      "method": "POST",
+      "path": "/api/auth/login",
+      "requests": 20,
+      "successRate": 100,
+      "p50Ms": 69.0709969999998,
+      "p95Ms": 182.6875289999998,
+      "p99Ms": 332.18981000000076,
+      "avgMs": 86.7007018999999,
+      "maxMs": 332.18981000000076,
+      "statuses": [
+        401
+      ]
+    }
+  ]
+}

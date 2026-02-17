@@ -34,6 +34,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:debug": "playwright test --debug",
     "test:all": "npm run test && npm run test:e2e",
+    "perf:api-p95": "node scripts/perf/api-p95.mjs",
     "smoke:prod": "node scripts/smoke/prod-smoke.mjs",
     "smoke:live": "SMOKE_BASE_URL=https://cafeduotr.com node scripts/smoke/prod-smoke.mjs"
   },

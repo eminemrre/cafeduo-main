@@ -154,6 +154,18 @@ jobs:
           ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
             "cd '${DEPLOY_PATH}' && SMOKE_EXPECT_COMMIT='${SMOKE_EXPECT_COMMIT}' bash deploy/scripts/smoke-vps.sh http://127.0.0.1"
 
+      - name: Run VPS DB explain probes
+        continue-on-error: true
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "cd '${DEPLOY_PATH}' && bash deploy/scripts/db-explain-vps.sh"
+
       - name: Run public smoke checks
         env:
           SMOKE_BASE_URL: ${{ secrets.DEPLOY_SITE_URL }}

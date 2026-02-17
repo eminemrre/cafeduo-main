@@ -41,6 +41,7 @@ const { Server } = require("socket.io");
 const { pool, isDbConnected } = require('./db');
 const { cache, clearCache } = require('./middleware/cache'); // Redis Cache Import
 const { buildRateLimiterOptions } = require('./middleware/rateLimit');
+const { notFoundHandler, createErrorHandler } = require('./middleware/errorContract');
 const authRoutes = require('./routes/authRoutes');
 const cafeRoutes = require('./routes/cafeRoutes'); // Cafe Routes Import
 const { createAdminRoutes } = require('./routes/adminRoutes');
@@ -75,6 +76,7 @@ const logger = {
   warn: (...args) => console.warn(new Date().toISOString(), '[WARN]', ...args),
   debug: (...args) => process.env.NODE_ENV === 'development' && console.log(new Date().toISOString(), '[DEBUG]', ...args)
 };
+const handleApiError = createErrorHandler({ logger });
 
 const DEFAULT_ALLOWED_ORIGINS = [
   'https://cafeduotr.com',
@@ -741,72 +743,8 @@ app.use(express.static(path.join(__dirname, '../dist')));
 // GLOBAL ERROR HANDLING
 // ==========================================
 
-// 404 Handler
-app.use((req, res) => {
-  res.status(404).json({
-    error: 'Route not found',
-    code: 'ROUTE_NOT_FOUND',
-    path: req.originalUrl,
-    requestId: req.requestId,
-  });
-});
-
-// Global Error Handler
-app.use((err, req, res, next) => {
-  // Log error with context
-  logger.error({
-    message: err.message,
-    stack: err.stack,
-    path: req.originalUrl,
-    method: req.method,
-    requestId: req.requestId,
-    userId: req.user?.id,
-    ip: req.ip,
-    timestamp: new Date().toISOString()
-  });
-
-  // Handle specific error types
-  if (err.code === '23505') { // PostgreSQL unique violation
-    return res.status(409).json({
-      error: 'Resource already exists',
-      code: 'DUPLICATE_ENTRY',
-      requestId: req.requestId,
-    });
-  }
-
-  if (err.code === '23503') { // PostgreSQL foreign key violation
-    return res.status(400).json({
-      error: 'Referenced resource not found',
-      code: 'FOREIGN_KEY_VIOLATION',
-      requestId: req.requestId,
-    });
-  }
-
-  if (err.name === 'JsonWebTokenError') {
-    return res.status(403).json({
-      error: 'Invalid token',
-      code: 'TOKEN_INVALID',
-      requestId: req.requestId,
-    });
-  }
-
-  if (err.name === 'TokenExpiredError') {
-    return res.status(403).json({
-      error: 'Token expired',
-      code: 'TOKEN_EXPIRED',
-      requestId: req.requestId,
-    });
-  }
-
-  // Default error response
-  const isDev = process.env.NODE_ENV === 'development';
-  res.status(err.status || 500).json({
-    error: isDev ? err.message : 'Internal server error',
-    code: err.code || 'INTERNAL_ERROR',
-    requestId: req.requestId,
-    ...(isDev && { stack: err.stack })
-  });
-});
+app.use(notFoundHandler);
+app.use(handleApiError);
 
 // ==========================================
 // PROCESS ERROR HANDLERS

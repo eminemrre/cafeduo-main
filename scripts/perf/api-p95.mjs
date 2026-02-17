@@ -7,6 +7,9 @@ const BASE_URL = (process.env.PERF_BASE_URL || 'https://cafeduotr.com').replace(
 const REQUESTS = Math.max(5, Number(process.env.PERF_REQUESTS || 20));
 const OUT_DIR = process.env.PERF_OUT_DIR || 'docs/reports';
 const TIMEOUT_MS = Math.max(2000, Number(process.env.PERF_TIMEOUT_MS || 12000));
+const HEALTH_P95_MAX_MS = Number(process.env.PERF_HEALTH_P95_MAX_MS || 500);
+const META_P95_MAX_MS = Number(process.env.PERF_META_P95_MAX_MS || 300);
+const LOGIN_P95_MAX_MS = Number(process.env.PERF_LOGIN_P95_MAX_MS || 500);
 
 const endpoints = [
   {
@@ -132,6 +135,28 @@ const run = async () => {
   await fs.writeFile(path.join(OUT_DIR, 'api-p95-latest.json'), `${JSON.stringify(payload, null, 2)}\n`);
   await fs.writeFile(path.join(OUT_DIR, 'api-p95-latest.md'), markdown);
   process.stdout.write(markdown);
+
+  const resultByKey = new Map(results.map((item) => [item.endpoint, item]));
+  const thresholdChecks = [
+    { key: 'health', label: '/health', maxMs: HEALTH_P95_MAX_MS },
+    { key: 'meta_version', label: '/api/meta/version', maxMs: META_P95_MAX_MS },
+    { key: 'auth_invalid_login', label: '/api/auth/login (invalid)', maxMs: LOGIN_P95_MAX_MS },
+  ];
+
+  const failures = thresholdChecks
+    .map((check) => {
+      const item = resultByKey.get(check.key);
+      if (!item) return `${check.label}: no data`;
+      if (item.successRate < 100) return `${check.label}: successRate=${item.successRate.toFixed(1)}%`;
+      if (item.p95Ms > check.maxMs) return `${check.label}: p95=${item.p95Ms.toFixed(1)}ms > ${check.maxMs}ms`;
+      return null;
+    })
+    .filter(Boolean);
+
+  if (failures.length > 0) {
+    process.stderr.write(`[api-p95] threshold check failed:\n- ${failures.join('\n- ')}\n`);
+    process.exit(1);
+  }
 };
 
 run().catch((error) => {

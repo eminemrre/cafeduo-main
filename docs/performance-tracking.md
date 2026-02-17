@@ -19,12 +19,17 @@ Eşikler (script fail koşulu):
 - `/health` p95 <= `500ms` (workflow'da `600ms`)
 - `/api/meta/version` p95 <= `300ms` (workflow'da `350ms`)
 - `/api/auth/login` (invalid) p95 <= `500ms` (workflow'da `600ms`)
+- `/api/auth/me` p95 <= `500ms` (workflow'da `700ms`, yalnızca login secret varsa)
+- `/api/games` p95 <= `700ms` (workflow'da `900ms`, yalnızca login secret varsa)
 
 ## Otomasyon
 
 - Workflow: `.github/workflows/perf-baseline.yml`
 - Çalışma sıklığı: her `6` saatte bir + manuel tetikleme.
 - Çıktı: GitHub artifact `api-p95-report` (`api-p95-latest.md` + `api-p95-latest.json`).
+- Auth probe için kullanılan secret'lar:
+  - `SMOKE_LOGIN_EMAIL`
+  - `SMOKE_LOGIN_PASSWORD`
 
 ## DB EXPLAIN ANALYZE (Deploy Pipeline)
 

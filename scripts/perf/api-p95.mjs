@@ -10,6 +10,11 @@ const TIMEOUT_MS = Math.max(2000, Number(process.env.PERF_TIMEOUT_MS || 12000));
 const HEALTH_P95_MAX_MS = Number(process.env.PERF_HEALTH_P95_MAX_MS || 500);
 const META_P95_MAX_MS = Number(process.env.PERF_META_P95_MAX_MS || 300);
 const LOGIN_P95_MAX_MS = Number(process.env.PERF_LOGIN_P95_MAX_MS || 500);
+const AUTH_ME_P95_MAX_MS = Number(process.env.PERF_AUTH_ME_P95_MAX_MS || 500);
+const GAMES_P95_MAX_MS = Number(process.env.PERF_GAMES_P95_MAX_MS || 700);
+const REQUIRE_AUTH_PROBES = String(process.env.PERF_REQUIRE_AUTH || 'false').toLowerCase() === 'true';
+const PERF_LOGIN_EMAIL = process.env.PERF_LOGIN_EMAIL || process.env.SMOKE_LOGIN_EMAIL || '';
+const PERF_LOGIN_PASSWORD = process.env.PERF_LOGIN_PASSWORD || process.env.SMOKE_LOGIN_PASSWORD || '';
 
 const endpoints = [
   {
@@ -31,6 +36,23 @@ const endpoints = [
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email: 'perf.invalid@example.com', password: 'wrong-pass-123' }),
     expectedStatuses: [401, 429],
+  },
+];
+
+const authEndpoints = (token) => [
+  {
+    key: 'auth_me',
+    method: 'GET',
+    path: '/api/auth/me',
+    headers: { Authorization: `Bearer ${token}` },
+    expectedStatuses: [200],
+  },
+  {
+    key: 'games_list',
+    method: 'GET',
+    path: '/api/games',
+    headers: { Authorization: `Bearer ${token}` },
+    expectedStatuses: [200],
   },
 ];
 
@@ -94,14 +116,16 @@ const runEndpoint = async (endpoint) => {
   };
 };
 
-const buildMarkdown = (results) => {
+const buildMarkdown = (results, meta = {}) => {
   const now = new Date().toISOString();
+  const authProbeState = meta.authProbeState || 'disabled';
   const lines = [
     '# API P95 Baseline',
     '',
     `- Base URL: \`${BASE_URL}\``,
     `- Requests per endpoint: \`${REQUESTS}\``,
     `- Generated at (UTC): \`${now}\``,
+    `- Auth probes: \`${authProbeState}\``,
     '',
     '| Endpoint | Method | Requests | Success % | P50 (ms) | P95 (ms) | P99 (ms) | Avg (ms) | Max (ms) | Statuses |',
     '|---|---:|---:|---:|---:|---:|---:|---:|---:|---|',
@@ -116,12 +140,68 @@ const buildMarkdown = (results) => {
   return `${lines.join('\n')}\n`;
 };
 
+const getAuthToken = async () => {
+  if (!PERF_LOGIN_EMAIL || !PERF_LOGIN_PASSWORD) return null;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const bodyResponse = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: PERF_LOGIN_EMAIL,
+        password: PERF_LOGIN_PASSWORD,
+      }),
+      signal: controller.signal,
+    });
+    if (!bodyResponse.ok) {
+      if (REQUIRE_AUTH_PROBES) {
+        throw new Error(`auth login failed for perf probes (status=${bodyResponse.status})`);
+      }
+      return null;
+    }
+    const payload = await bodyResponse.json();
+    if (!payload?.token) {
+      if (REQUIRE_AUTH_PROBES) {
+        throw new Error('auth login response missing token for perf probes');
+      }
+      return null;
+    }
+    return String(payload.token);
+  } catch (error) {
+    if (REQUIRE_AUTH_PROBES) {
+      throw error;
+    }
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
 const run = async () => {
+  const selectedEndpoints = [...endpoints];
+  const authLoginAttempted = Boolean(PERF_LOGIN_EMAIL && PERF_LOGIN_PASSWORD);
+  const authToken = await getAuthToken();
+
+  if (authToken) {
+    selectedEndpoints.push(...authEndpoints(authToken));
+  } else if (REQUIRE_AUTH_PROBES) {
+    throw new Error('PERF_REQUIRE_AUTH=true but login credentials are missing or invalid');
+  }
+
   const results = [];
-  for (const endpoint of endpoints) {
+  for (const endpoint of selectedEndpoints) {
     const report = await runEndpoint(endpoint);
     results.push(report);
   }
+
+  const hasAuthenticatedRows = results.some((item) => item.endpoint === 'auth_me' || item.endpoint === 'games_list');
+  const authProbeState = hasAuthenticatedRows
+    ? 'enabled'
+    : authLoginAttempted
+      ? 'login-unavailable'
+      : 'disabled';
 
   const payload = {
     baseUrl: BASE_URL,
@@ -130,7 +210,7 @@ const run = async () => {
     results,
   };
 
-  const markdown = buildMarkdown(results);
+  const markdown = buildMarkdown(results, { authProbeState });
   await fs.mkdir(OUT_DIR, { recursive: true });
   await fs.writeFile(path.join(OUT_DIR, 'api-p95-latest.json'), `${JSON.stringify(payload, null, 2)}\n`);
   await fs.writeFile(path.join(OUT_DIR, 'api-p95-latest.md'), markdown);
@@ -141,12 +221,14 @@ const run = async () => {
     { key: 'health', label: '/health', maxMs: HEALTH_P95_MAX_MS },
     { key: 'meta_version', label: '/api/meta/version', maxMs: META_P95_MAX_MS },
     { key: 'auth_invalid_login', label: '/api/auth/login (invalid)', maxMs: LOGIN_P95_MAX_MS },
+    { key: 'auth_me', label: '/api/auth/me', maxMs: AUTH_ME_P95_MAX_MS },
+    { key: 'games_list', label: '/api/games', maxMs: GAMES_P95_MAX_MS },
   ];
 
   const failures = thresholdChecks
     .map((check) => {
       const item = resultByKey.get(check.key);
-      if (!item) return `${check.label}: no data`;
+      if (!item) return null;
       if (item.successRate < 100) return `${check.label}: successRate=${item.successRate.toFixed(1)}%`;
       if (item.p95Ms > check.maxMs) return `${check.label}: p95=${item.p95Ms.toFixed(1)}ms > ${check.maxMs}ms`;
       return null;

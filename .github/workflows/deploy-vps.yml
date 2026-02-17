@@ -103,10 +103,13 @@ jobs:
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           DEPLOY_ENV_B64: ${{ secrets.DEPLOY_ENV_B64 }}
+          GITHUB_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
+          APP_VERSION="${GITHUB_SHA}"
+          APP_BUILD_TIME="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "DEPLOY_PATH='${DEPLOY_PATH}' DEPLOY_ENV_B64='${DEPLOY_ENV_B64}' bash -s" <<'REMOTE'
+            "DEPLOY_PATH='${DEPLOY_PATH}' DEPLOY_ENV_B64='${DEPLOY_ENV_B64}' APP_VERSION='${APP_VERSION}' APP_BUILD_TIME='${APP_BUILD_TIME}' bash -s" <<'REMOTE'
             set -euo pipefail
 
             if ! command -v docker >/dev/null 2>&1; then
@@ -132,6 +135,9 @@ jobs:
 
             cd "$DEPLOY_PATH"
             echo "$DEPLOY_ENV_B64" | base64 -d > .env
+            grep -Ev '^(APP_VERSION|APP_BUILD_TIME)=' .env > .env.tmp || true
+            printf 'APP_VERSION=%s\nAPP_BUILD_TIME=%s\n' "$APP_VERSION" "$APP_BUILD_TIME" >> .env.tmp
+            mv .env.tmp .env
             run_compose -f deploy/docker-compose.prod.yml --env-file .env up -d --build --remove-orphans
             docker image prune -f
           REMOTE
@@ -142,14 +148,16 @@ jobs:
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SMOKE_EXPECT_COMMIT: ${{ github.sha }}
         run: |
           set -euo pipefail
           ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "cd '${DEPLOY_PATH}' && bash deploy/scripts/smoke-vps.sh http://127.0.0.1"
+            "cd '${DEPLOY_PATH}' && SMOKE_EXPECT_COMMIT='${SMOKE_EXPECT_COMMIT}' bash deploy/scripts/smoke-vps.sh http://127.0.0.1"
 
       - name: Run public smoke checks
         env:
           SMOKE_BASE_URL: ${{ secrets.DEPLOY_SITE_URL }}
+          SMOKE_EXPECT_COMMIT: ${{ github.sha }}
         run: |
           set -euo pipefail
           if [ -z "${SMOKE_BASE_URL:-}" ]; then

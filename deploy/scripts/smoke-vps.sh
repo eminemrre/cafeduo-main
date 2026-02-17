@@ -25,6 +25,14 @@ echo "[smoke-vps] /health -> ${HEALTH_JSON}"
 
 VERSION_JSON="$(curl -f "${curl_flags[@]}" "${BASE_URL}/api/meta/version")"
 echo "[smoke-vps] /api/meta/version -> ${VERSION_JSON}"
+if [[ -n "${SMOKE_EXPECT_COMMIT:-}" ]]; then
+  VERSION_COMMIT="$(printf '%s' "${VERSION_JSON}" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("commit",""))')"
+  if [[ "${VERSION_COMMIT}" != "${SMOKE_EXPECT_COMMIT}" ]]; then
+    echo "[smoke-vps] commit mismatch. expected=${SMOKE_EXPECT_COMMIT} actual=${VERSION_COMMIT}"
+    exit 1
+  fi
+  echo "[smoke-vps] commit check passed (${VERSION_COMMIT})"
+fi
 
 INDEX_HEADERS="$(curl -sSI "${curl_flags[@]}" "${BASE_URL}/" | tr -d '\r')"
 if ! echo "${INDEX_HEADERS}" | grep -qi "cache-control: .*no-cache"; then

@@ -3,6 +3,7 @@
 import { io } from 'socket.io-client';
 
 const baseUrl = (process.env.SMOKE_BASE_URL || process.argv[2] || 'https://cafeduotr.com').replace(/\/+$/, '');
+const expectedCommit = (process.env.SMOKE_EXPECT_COMMIT || '').trim();
 
 const printStep = (message) => {
   process.stdout.write(`\n[smoke] ${message}\n`);
@@ -63,6 +64,12 @@ const checkVersionMeta = async () => {
   assert(response.ok, `Version endpoint failed with status ${response.status}`);
   const body = await response.json();
   assert(typeof body?.commit === 'string' && body.commit.length > 0, 'Version payload missing commit');
+  if (expectedCommit) {
+    assert(
+      body.commit === expectedCommit,
+      `Version commit mismatch: expected ${expectedCommit}, got ${body.commit}`
+    );
+  }
 };
 
 const checkOptionalValidLogin = async () => {

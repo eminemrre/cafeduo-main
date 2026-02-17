@@ -1,12 +1,23 @@
 const jwt = require('jsonwebtoken');
 const { pool, isDbConnected } = require('../db');
 const memoryState = require('../store/memoryState');
+const { buildApiErrorPayload } = require('../utils/routeHelpers');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
 if (!JWT_SECRET) {
     throw new Error('JWT_SECRET is required. Refusing to start with an insecure fallback secret.');
 }
+
+const sendAuthError = (res, { status, code, message, details = null }) => {
+    const payload = buildApiErrorPayload(res, {
+        code,
+        message,
+        details,
+        status,
+    });
+    return res.status(status).json(payload);
+};
 
 /**
  * Enhanced JWT Authentication Middleware
@@ -18,15 +29,17 @@ const authenticateToken = async (req, res, next) => {
         const token = isBearer ? authHeader.slice(7).trim() : null;
 
         if (!token) {
-            return res.status(401).json({
-                error: 'Access token required',
-                code: 'TOKEN_MISSING'
+            return sendAuthError(res, {
+                status: 401,
+                code: 'TOKEN_MISSING',
+                message: 'Access token required',
             });
         }
         if (token.length > 2048) {
-            return res.status(401).json({
-                error: 'Invalid token format',
-                code: 'TOKEN_INVALID_FORMAT'
+            return sendAuthError(res, {
+                status: 401,
+                code: 'TOKEN_INVALID_FORMAT',
+                message: 'Invalid token format',
             });
         }
 
@@ -45,9 +58,10 @@ const authenticateToken = async (req, res, next) => {
             );
 
             if (result.rows.length === 0) {
-                return res.status(401).json({
-                    error: 'User not found',
-                    code: 'USER_NOT_FOUND'
+                return sendAuthError(res, {
+                    status: 401,
+                    code: 'USER_NOT_FOUND',
+                    message: 'User not found',
                 });
             }
 
@@ -75,46 +89,61 @@ const authenticateToken = async (req, res, next) => {
         next();
     } catch (err) {
         if (err.name === 'JsonWebTokenError') {
-            return res.status(403).json({
-                error: 'Invalid token',
-                code: 'TOKEN_INVALID'
+            return sendAuthError(res, {
+                status: 403,
+                code: 'TOKEN_INVALID',
+                message: 'Invalid token',
             });
         }
         if (err.name === 'TokenExpiredError') {
-            return res.status(403).json({
-                error: 'Token expired',
-                code: 'TOKEN_EXPIRED'
+            return sendAuthError(res, {
+                status: 403,
+                code: 'TOKEN_EXPIRED',
+                message: 'Token expired',
             });
         }
 
         console.error('Auth middleware error:', err);
-        return res.status(500).json({
-            error: 'Authentication error',
-            code: 'AUTH_ERROR'
+        return sendAuthError(res, {
+            status: 500,
+            code: 'AUTH_ERROR',
+            message: 'Authentication error',
         });
     }
 };
 
 const requireAdmin = (req, res, next) => {
-    if (!req.user) return res.status(401).json({ error: 'Auth required' });
+    if (!req.user) {
+        return sendAuthError(res, {
+            status: 401,
+            code: 'AUTH_REQUIRED',
+            message: 'Auth required',
+        });
+    }
     if (req.user.role !== 'admin' && !req.user.isAdmin) {
-        return res.status(403).json({ error: 'Admin access required' });
+        return sendAuthError(res, {
+            status: 403,
+            code: 'ADMIN_REQUIRED',
+            message: 'Admin access required',
+        });
     }
     next();
 };
 
 const requireCafeAdmin = (req, res, next) => {
     if (!req.user) {
-        return res.status(401).json({
-            error: 'Authentication required',
-            code: 'AUTH_REQUIRED'
+        return sendAuthError(res, {
+            status: 401,
+            code: 'AUTH_REQUIRED',
+            message: 'Authentication required',
         });
     }
 
     if (req.user.role !== 'cafe_admin' && req.user.role !== 'admin') {
-        return res.status(403).json({
-            error: 'Cafe admin access required',
-            code: 'CAFE_ADMIN_REQUIRED'
+        return sendAuthError(res, {
+            status: 403,
+            code: 'CAFE_ADMIN_REQUIRED',
+            message: 'Cafe admin access required',
         });
     }
 
@@ -124,9 +153,10 @@ const requireCafeAdmin = (req, res, next) => {
 const requireOwnership = (paramName = 'id') => {
     return (req, res, next) => {
         if (!req.user) {
-            return res.status(401).json({
-                error: 'Authentication required',
-                code: 'AUTH_REQUIRED'
+            return sendAuthError(res, {
+                status: 401,
+                code: 'AUTH_REQUIRED',
+                message: 'Authentication required',
             });
         }
 
@@ -139,9 +169,10 @@ const requireOwnership = (paramName = 'id') => {
 
         // Check if user owns the resource
         if (parseInt(resourceUserId) !== req.user.id) {
-            return res.status(403).json({
-                error: 'Access denied to this resource',
-                code: 'ACCESS_DENIED'
+            return sendAuthError(res, {
+                status: 403,
+                code: 'ACCESS_DENIED',
+                message: 'Access denied to this resource',
             });
         }
 

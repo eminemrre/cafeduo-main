@@ -1,0 +1,44 @@
+name: Perf Baseline
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'
+
+jobs:
+  api-p95:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run API P95 probe
+        env:
+          PERF_BASE_URL: ${{ secrets.DEPLOY_SITE_URL }}
+          PERF_REQUESTS: 25
+          PERF_HEALTH_P95_MAX_MS: 600
+          PERF_META_P95_MAX_MS: 350
+          PERF_LOGIN_P95_MAX_MS: 600
+        run: |
+          set -euo pipefail
+          if [ -z "${PERF_BASE_URL:-}" ]; then
+            PERF_BASE_URL="https://cafeduotr.com"
+          fi
+          npm run perf:api-p95
+
+      - name: Upload perf artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-p95-report
+          path: docs/reports/api-p95-latest.*
+          if-no-files-found: error

@@ -450,6 +450,13 @@ const initDb = async () => {
           console.error(`⚠️ Sütun eklenemedi: ${table}.${column}`, e.message);
         }
       };
+      const createIndex = async (indexName, query) => {
+        try {
+          await pool.query(query);
+        } catch (e) {
+          console.error(`⚠️ Index oluşturulamadı: ${indexName}`, e.message);
+        }
+      };
 
       await addColumn('users', 'department', 'VARCHAR(255)');
       await addColumn('users', 'is_admin', 'BOOLEAN DEFAULT FALSE');
@@ -478,6 +485,48 @@ const initDb = async () => {
       await addColumn('cafes', 'secondary_longitude', 'DECIMAL(11, 8)');
       await addColumn('cafes', 'secondary_radius', 'INTEGER');
       await addColumn('cafes', 'daily_pin', "VARCHAR(6) DEFAULT '0000'"); // Daily PIN code
+
+      // 7. Performance Indexes (Sprint 5)
+      await createIndex(
+        'idx_games_status_created_at',
+        'CREATE INDEX IF NOT EXISTS idx_games_status_created_at ON games (status, created_at DESC)'
+      );
+      await createIndex(
+        'idx_games_status_table_created_at',
+        'CREATE INDEX IF NOT EXISTS idx_games_status_table_created_at ON games (status, table_code, created_at DESC)'
+      );
+      await createIndex(
+        'idx_games_status_type_created_at',
+        'CREATE INDEX IF NOT EXISTS idx_games_status_type_created_at ON games (status, game_type, created_at DESC)'
+      );
+      await createIndex(
+        'idx_games_status_host_created_at',
+        'CREATE INDEX IF NOT EXISTS idx_games_status_host_created_at ON games (status, host_name, created_at DESC)'
+      );
+      await createIndex(
+        'idx_games_status_guest_created_at',
+        'CREATE INDEX IF NOT EXISTS idx_games_status_guest_created_at ON games (status, guest_name, created_at DESC)'
+      );
+      await createIndex(
+        'idx_games_host_created_at',
+        'CREATE INDEX IF NOT EXISTS idx_games_host_created_at ON games (host_name, created_at DESC)'
+      );
+      await createIndex(
+        'idx_games_guest_created_at',
+        'CREATE INDEX IF NOT EXISTS idx_games_guest_created_at ON games (guest_name, created_at DESC)'
+      );
+      await createIndex(
+        'idx_users_lower_username_cafe',
+        'CREATE INDEX IF NOT EXISTS idx_users_lower_username_cafe ON users ((LOWER(username)), cafe_id)'
+      );
+      await createIndex(
+        'idx_users_cafe_table_number',
+        'CREATE INDEX IF NOT EXISTS idx_users_cafe_table_number ON users (cafe_id, table_number)'
+      );
+      await createIndex(
+        'idx_user_items_user_is_used',
+        'CREATE INDEX IF NOT EXISTS idx_user_items_user_is_used ON user_items (user_id, is_used)'
+      );
 
       // 7. Seed Initial Cafes
       await pool.query(`INSERT INTO cafes (name, table_count, radius, daily_pin) VALUES ('PAÜ İİBF Kantin', 50, 150, '1234'), ('PAÜ Yemekhane', 100, 200, '5678') ON CONFLICT (name) DO NOTHING`);

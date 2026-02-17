@@ -30,6 +30,10 @@ CREATE TABLE IF NOT EXISTS users (
     table_number INTEGER, -- Current table number when checked in
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX IF NOT EXISTS idx_users_lower_username_cafe
+    ON users ((LOWER(username)), cafe_id);
+CREATE INDEX IF NOT EXISTS idx_users_cafe_table_number
+    ON users(cafe_id, table_number);
 
 -- Password reset tokens table
 CREATE TABLE IF NOT EXISTS password_reset_tokens (
@@ -101,12 +105,31 @@ END $$;
 CREATE TABLE IF NOT EXISTS games (
     id SERIAL PRIMARY KEY,
     host_name VARCHAR(255) NOT NULL,
+    guest_name VARCHAR(255),
     game_type VARCHAR(50) NOT NULL,
     points INTEGER NOT NULL,
     table_code VARCHAR(50) NOT NULL,
     status VARCHAR(20) DEFAULT 'waiting', -- 'waiting', 'active', 'completed'
+    player1_move VARCHAR(50),
+    player2_move VARCHAR(50),
+    game_state JSONB,
+    winner VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX IF NOT EXISTS idx_games_status_created_at
+    ON games(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_games_status_table_created_at
+    ON games(status, table_code, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_games_status_type_created_at
+    ON games(status, game_type, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_games_status_host_created_at
+    ON games(status, host_name, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_games_status_guest_created_at
+    ON games(status, guest_name, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_games_host_created_at
+    ON games(host_name, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_games_guest_created_at
+    ON games(guest_name, created_at DESC);
 
 -- User Items (Inventory) table
 CREATE TABLE IF NOT EXISTS user_items (
@@ -119,6 +142,8 @@ CREATE TABLE IF NOT EXISTS user_items (
     used_at TIMESTAMP WITH TIME ZONE,
     redeemed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX IF NOT EXISTS idx_user_items_user_is_used
+    ON user_items(user_id, is_used);
 
 -- Add columns to user_items if they don't exist
 DO $$

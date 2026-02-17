@@ -357,7 +357,7 @@ paths:
       tags:
         - Games
       summary: Yeni oyun oluştur
-      description: Yeni bir oyun lobisi oluşturur
+      description: Yeni bir oyun lobisi oluşturur (host auth token içinden alınır)
       security: []
       requestBody:
         required: true
@@ -366,35 +366,58 @@ paths:
             schema:
               type: object
               required:
-                - hostName
                 - gameType
-                - points
-                - table
               properties:
-                hostName:
-                  type: string
-                  example: "GamerTr_99"
                 gameType:
                   type: string
-                  enum: ["Refleks Avı", "Ritim Kopyala", "Çift Tek Sprint"]
+                  enum: ["Refleks Avı", "Tank Düellosu", "Retro Satranç", "Bilgi Yarışı"]
                   example: "Refleks Avı"
                 points:
                   type: integer
-                  minimum: 50
-                  maximum: 1000
+                  minimum: 0
+                  maximum: 5000
                   example: 150
                 table:
                   type: string
                   example: "MASA04"
+                chessClock:
+                  type: object
+                  properties:
+                    baseSeconds:
+                      type: integer
+                      minimum: 60
+                      maximum: 1800
+                      example: 180
+                    incrementSeconds:
+                      type: integer
+                      minimum: 0
+                      maximum: 30
+                      example: 2
       responses:
-        200:
+        201:
           description: Oyun oluşturuldu
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Game'
+        400:
+          description: Doğrulama hatası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        401:
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         500:
           description: Sunucu hatası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
 
   /api/games/{id}:
     get:
@@ -424,7 +447,7 @@ paths:
       tags:
         - Games
       summary: Oyuna katıl
-      description: Bir oyuna misafir olarak katılır
+      description: Bir oyuna misafir olarak katılır (guest auth token içinden alınır)
       security: []
       parameters:
         - name: id
@@ -432,18 +455,6 @@ paths:
           required: true
           schema:
             type: integer
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - guestName
-              properties:
-                guestName:
-                  type: string
-                  example: "Rival_Pro"
       responses:
         200:
           description: Katılım başarılı
@@ -455,6 +466,18 @@ paths:
                   success:
                     type: boolean
                     example: true
+        400:
+          description: Doğrulama hatası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        401:
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         409:
           description: Oyun durum geçişi geçersiz veya oyun dolu
           content:
@@ -467,7 +490,7 @@ paths:
       tags:
         - Games
       summary: Hamle yap
-      description: Oyun içinde bir hamle yapar
+      description: Oyun içinde tek bir hamle türü gönderir (chessMove/liveSubmission/scoreSubmission/gameState/move)
       security: []
       parameters:
         - name: id
@@ -488,8 +511,23 @@ paths:
                   description: Oyuncu rolü
                 move:
                   type: string
-                  enum: ["rock", "paper", "scissors"]
-                  description: Refleks Avı hamlesi
+                  maxLength: 64
+                  description: Legacy hamle alanı
+                chessMove:
+                  type: object
+                  required: [from, to]
+                  properties:
+                    from:
+                      type: string
+                      pattern: '^[a-h][1-8]$'
+                      example: e2
+                    to:
+                      type: string
+                      pattern: '^[a-h][1-8]$'
+                      example: e4
+                    promotion:
+                      type: string
+                      enum: [q, r, b, n]
                 gameState:
                   type: object
                   description: Oyun durumu (JSON)
@@ -521,6 +559,12 @@ paths:
                       type: boolean
                     submissionKey:
                       type: string
+              oneOf:
+                - required: [chessMove]
+                - required: [liveSubmission]
+                - required: [scoreSubmission]
+                - required: [gameState]
+                - required: [move]
       responses:
         200:
           description: Hamle kaydedildi
@@ -531,6 +575,18 @@ paths:
                 properties:
                   success:
                     type: boolean
+        400:
+          description: Doğrulama hatası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        401:
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         409:
           description: Oyun aktif olmadığı için hamle reddedildi
           content:
@@ -1378,24 +1434,23 @@ components:
         - status
 
     GameStatusTransitionError:
-      type: object
-      properties:
-        error:
-          type: string
-          example: "Geçersiz oyun durumu geçişi (join_game): finished -> active."
-        code:
-          type: string
-          enum: ["invalid_game_status", "invalid_target_status", "invalid_status_transition"]
-          example: "invalid_status_transition"
-        fromStatus:
-          type: string
-          example: "finished"
-        toStatus:
-          type: string
-          example: "active"
-      required:
-        - error
-        - code
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            code:
+              type: string
+              enum: ["invalid_game_status", "invalid_target_status", "invalid_status_transition"]
+              example: "invalid_status_transition"
+            details:
+              type: object
+              properties:
+                fromStatus:
+                  type: string
+                  example: "finished"
+                toStatus:
+                  type: string
+                  example: "active"
 
     Reward:
       type: object
@@ -1566,14 +1621,51 @@ components:
           format: date-time
           nullable: true
 
-    Error:
+    ApiError:
       type: object
       properties:
-        error:
-          type: string
-          example: "E-posta kullanımda."
         code:
           type: string
           example: "TOKEN_MISSING"
+        message:
+          type: string
+          example: "Access token required"
+        details:
+          nullable: true
+        requestId:
+          type: string
+          nullable: true
+          example: "1b4f4f2e-3703-47ef-a2f4-8f84efff2f0a"
+        error:
+          type: string
+          description: message alanı için backward-compatible alias
+          example: "Access token required"
       required:
-        - error
+        - code
+        - message
+
+    ValidationError:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'
+        - type: object
+          properties:
+            code:
+              type: string
+              enum: ["VALIDATION_ERROR"]
+            details:
+              type: array
+              items:
+                type: object
+                properties:
+                  path:
+                    type: string
+                    example: "body.points"
+                  message:
+                    type: string
+                    example: "points 0 ile 5000 arasında sayı olmalıdır."
+                  value:
+                    nullable: true
+
+    Error:
+      allOf:
+        - $ref: '#/components/schemas/ApiError'

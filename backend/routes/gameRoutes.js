@@ -1,4 +1,10 @@
 const express = require('express');
+const {
+  validateGameIdParam,
+  validateCreateGamePayload,
+  validateJoinGamePayload,
+  validateMovePayload,
+} = require('../validators/gameValidators');
 
 const createGameRoutes = ({
   authenticateToken,
@@ -8,14 +14,14 @@ const createGameRoutes = ({
   const router = express.Router();
 
   router.get('/games', authenticateToken, gameHandlers.getGames);
-  router.post('/games', authenticateToken, gameHandlers.createGame);
-  router.post('/games/:id/join', authenticateToken, gameHandlers.joinGame);
-  router.get('/games/:id', authenticateToken, gameHandlers.getGameState);
-  router.post('/games/:id/move', authenticateToken, gameHandlers.makeMove);
-  router.post('/games/:id/draw-offer', authenticateToken, gameHandlers.drawOffer);
-  router.post('/games/:id/resign', authenticateToken, gameHandlers.resignGame);
-  router.post('/games/:id/finish', authenticateToken, gameHandlers.finishGame);
-  router.delete('/games/:id', authenticateToken, gameHandlers.deleteGame);
+  router.post('/games', authenticateToken, validateCreateGamePayload, gameHandlers.createGame);
+  router.post('/games/:id/join', authenticateToken, validateJoinGamePayload, gameHandlers.joinGame);
+  router.get('/games/:id', authenticateToken, validateGameIdParam, gameHandlers.getGameState);
+  router.post('/games/:id/move', authenticateToken, validateMovePayload, gameHandlers.makeMove);
+  router.post('/games/:id/draw-offer', authenticateToken, validateGameIdParam, gameHandlers.drawOffer);
+  router.post('/games/:id/resign', authenticateToken, validateGameIdParam, gameHandlers.resignGame);
+  router.post('/games/:id/finish', authenticateToken, validateGameIdParam, gameHandlers.finishGame);
+  router.delete('/games/:id', authenticateToken, validateGameIdParam, gameHandlers.deleteGame);
   router.get('/users/:username/game-history', authenticateToken, gameHandlers.getUserGameHistory);
 
   router.get('/users/:username/active-game', authenticateToken, async (req, res) => {
@@ -42,4 +48,3 @@ const createGameRoutes = ({
 module.exports = {
   createGameRoutes,
 };
-

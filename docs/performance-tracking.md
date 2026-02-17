@@ -16,7 +16,7 @@ Son ölçüm (UTC): `2026-02-17T13:27:41.625Z`
 
 Eşikler (script fail koşulu):
 
-- `/health` p95 <= `500ms` (workflow'da `600ms`)
+- `/health` p95 <= `500ms` (workflow'da `900ms`)
 - `/api/meta/version` p95 <= `300ms` (workflow'da `350ms`)
 - `/api/auth/login` (invalid) p95 <= `500ms` (workflow'da `600ms`)
 - `/api/auth/me` p95 <= `500ms` (workflow'da `700ms`, yalnızca login secret varsa)

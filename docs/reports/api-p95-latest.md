@@ -2,11 +2,11 @@
 
 - Base URL: `https://cafeduotr.com`
 - Requests per endpoint: `20`
-- Generated at (UTC): `2026-02-17T14:38:31.248Z`
+- Generated at (UTC): `2026-02-17T14:47:06.252Z`
 - Auth probes: `disabled`
 
 | Endpoint | Method | Requests | Success % | P50 (ms) | P95 (ms) | P99 (ms) | Avg (ms) | Max (ms) | Statuses |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| `/health` | GET | 20 | 100.0 | 53.0 | 187.5 | 271.1 | 77.2 | 271.1 | 200 |
-| `/api/meta/version` | GET | 20 | 100.0 | 60.7 | 145.3 | 226.8 | 74.9 | 226.8 | 200 |
-| `/api/auth/login` | POST | 20 | 100.0 | 58.7 | 69.6 | 175.5 | 63.8 | 175.5 | 429 |
+| `/health` | GET | 20 | 100.0 | 51.5 | 137.2 | 314.9 | 69.5 | 314.9 | 200 |
+| `/api/meta/version` | GET | 20 | 100.0 | 58.4 | 73.4 | 85.7 | 57.9 | 85.7 | 200 |
+| `/api/auth/login` | POST | 20 | 100.0 | 54.2 | 72.9 | 84.0 | 57.1 | 84.0 | 401 |

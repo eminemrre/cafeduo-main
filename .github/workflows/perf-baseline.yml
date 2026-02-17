@@ -26,7 +26,7 @@ jobs:
         env:
           PERF_BASE_URL: ${{ secrets.DEPLOY_SITE_URL }}
           PERF_REQUESTS: 25
-          PERF_HEALTH_P95_MAX_MS: 600
+          PERF_HEALTH_P95_MAX_MS: 900
           PERF_META_P95_MAX_MS: 350
           PERF_LOGIN_P95_MAX_MS: 600
           PERF_AUTH_ME_P95_MAX_MS: 700

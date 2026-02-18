@@ -25,11 +25,12 @@ test.describe('Mobile UI Stability', () => {
     await expect(page.locator('[data-testid="auth-email-input"]')).toBeVisible();
 
     // Akış kartları mobilde kaybolmamalı: 3 adım da görünür olmalı.
-    const flowHeading = page.getByRole('heading', { name: 'Sistemi 3 adımda devreye al.' });
+    const flowHeading = page.locator('[data-testid="flow-main-heading"]');
     await flowHeading.scrollIntoViewIfNeeded();
+    await expect(flowHeading).toBeVisible();
     await expect(page.getByText('Hesabını aç').first()).toBeVisible();
-    await expect(page.getByText('Masanı doğrula').first()).toBeVisible();
-    await expect(page.getByText('Yarış ve kazan').first()).toBeVisible();
+    await expect(page.getByText('Kafeye bağlan').first()).toBeVisible();
+    await expect(page.getByText('Eşleş ve kazan').first()).toBeVisible();
 
     const hasHorizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth + 1

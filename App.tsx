@@ -331,8 +331,8 @@ const App: React.FC = () => {
                   userRole={currentUser?.role}
                   isAdmin={currentUser?.isAdmin}
                 />
-                <Games />
                 <HowItWorks />
+                <Games />
                 <About />
               </>
             } />

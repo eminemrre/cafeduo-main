@@ -6,11 +6,13 @@ describe('HowItWorks', () => {
   it('renders three-step flow with timing hints', () => {
     render(<HowItWorks />);
 
-    expect(screen.getByText('Sistemi 3 adımda devreye al.')).toBeInTheDocument();
+    expect(screen.getByTestId('flow-main-heading')).toHaveTextContent(
+      '3 adımda eşleş, oyna, ödüle yaklaş.'
+    );
 
     expect(screen.getAllByText('Hesabını aç').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Masanı doğrula').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('Yarış ve kazan').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Kafeye bağlan').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Eşleş ve kazan').length).toBeGreaterThan(0);
 
     expect(screen.getAllByText('20 sn').length).toBeGreaterThan(0);
     expect(screen.getAllByText('15 sn').length).toBeGreaterThan(0);

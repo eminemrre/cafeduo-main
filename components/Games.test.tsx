@@ -7,21 +7,24 @@ describe('Games', () => {
     render(<Games />);
 
     expect(
-      screen.getByText('Kısa tur mantığıyla çalışan, tekrar oranı yüksek oyun kütüphanesi.')
+      screen.getByTestId('games-main-heading')
     ).toBeInTheDocument();
+    expect(screen.getByTestId('games-main-heading')).toHaveTextContent(
+      'Bekleme dakikalarını oyuna çeviren kısa tur kütüphanesi.'
+    );
 
-    expect(screen.getByText('Refleks Avı')).toBeInTheDocument();
-    expect(screen.getByText('Tank Düellosu')).toBeInTheDocument();
+    expect(screen.getByText('Neon Refleks')).toBeInTheDocument();
+    expect(screen.getByText('Pixel Düello')).toBeInTheDocument();
     expect(screen.getByText('Retro Satranç')).toBeInTheDocument();
-    expect(screen.getByText('Bilgi Yarışı')).toBeInTheDocument();
+    expect(screen.getByText('Bilgi Sprinti')).toBeInTheDocument();
 
-    expect(screen.getByText('Anında başlat')).toBeInTheDocument();
-    expect(screen.getByText('Düelloya gir')).toBeInTheDocument();
-    expect(screen.getByText('Tahtayı aç')).toBeInTheDocument();
-    expect(screen.getByText('Bilgi turunu aç')).toBeInTheDocument();
+    expect(screen.getByText('Reflekse gir')).toBeInTheDocument();
+    expect(screen.getByText('Düelloya başla')).toBeInTheDocument();
+    expect(screen.getByText('Tahtaya geç')).toBeInTheDocument();
+    expect(screen.getByText('Sprinti aç')).toBeInTheDocument();
 
-    expect(screen.getByText('Kısa Seans')).toBeInTheDocument();
-    expect(screen.getByText('Tekrar Motivasyonu')).toBeInTheDocument();
-    expect(screen.getByText('Denge ve Ölçüm')).toBeInTheDocument();
+    expect(screen.getByText('Beklerken Oyna')).toBeInTheDocument();
+    expect(screen.getByText('Anlık Kazanç')).toBeInTheDocument();
+    expect(screen.getByText('Kafe Bağı')).toBeInTheDocument();
   });
 });

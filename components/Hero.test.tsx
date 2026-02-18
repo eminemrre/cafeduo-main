@@ -61,11 +61,11 @@ describe('Hero', () => {
 
     render(<Hero onLogin={onLogin} onRegister={onRegister} isLoggedIn={false} />);
 
-    expect(screen.getByText(/Kafenin ritmini/i)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /ŞİMDİ BAŞLA/i })).toBeInTheDocument();
+    expect(screen.getByTestId('hero-main-heading')).toHaveTextContent(/Bekleme süresini/i);
+    expect(screen.getByRole('button', { name: /KAYDOL VE EŞLEŞ/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /OTURUM AÇ/i })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /ŞİMDİ BAŞLA/i }));
+    fireEvent.click(screen.getByRole('button', { name: /KAYDOL VE EŞLEŞ/i }));
     fireEvent.click(screen.getByRole('button', { name: /OTURUM AÇ/i }));
 
     expect(onRegister).toHaveBeenCalledTimes(1);

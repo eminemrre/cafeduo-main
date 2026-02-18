@@ -6,21 +6,21 @@ const steps = [
     id: '01',
     icon: <UserPlus size={24} className="text-cyan-300" />,
     title: 'Hesabını aç',
-    description: 'Kayıt ol, profilini tamamla ve oyuncu kimliğini saniyeler içinde aktive et.',
+    description: '30 saniyede profilini tamamla ve oyuncu kimliğini aktive et.',
     hint: '20 sn',
   },
   {
     id: '02',
     icon: <Coffee size={24} className="text-fuchsia-300" />,
-    title: 'Masanı doğrula',
-    description: 'Kafeyi seç, masa bilgisini gir ve konum izniyle oturumu güvenli şekilde doğrula.',
+    title: 'Kafeye bağlan',
+    description: 'Kafeni seç, güvenli girişi tamamla ve lobiye düş.',
     hint: '15 sn',
   },
   {
     id: '03',
     icon: <Trophy size={24} className="text-amber-300" />,
-    title: 'Yarış ve kazan',
-    description: 'Mini turu tamamla, puan topla ve kuponunu kasada okut.',
+    title: 'Eşleş ve kazan',
+    description: 'Bekleyen oyuncuyla maça gir, turu bitir, puanı hesabına yaz.',
     hint: '45 sn',
   },
 ];
@@ -60,10 +60,15 @@ export const HowItWorks: React.FC = () => {
     <section id="features" className="cd-section">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-12">
-          <span className="cd-kicker">Sistem akışı</span>
-          <h2 className="mt-4 text-3xl md:text-5xl font-display text-white">Sistemi 3 adımda devreye al.</h2>
+          <span className="cd-kicker">NASIL ÇALIŞIR</span>
+          <h2
+            data-testid="flow-main-heading"
+            className="mt-4 text-3xl md:text-5xl font-display text-white"
+          >
+            3 adımda eşleş, oyna, ödüle yaklaş.
+          </h2>
           <p className="mt-4 text-lg text-[var(--rf-muted)]">
-            Kafe içinde bekleme üretmeden çalışan, ölçülebilir ve personel dostu bir deneyim hattı.
+            Arkadaşını beklerken boşta kalma; bağlan, eşleş ve puanı topla.
           </p>
         </div>
 

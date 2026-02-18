@@ -19,35 +19,35 @@ interface FeaturedGame {
 
 const featuredGames: FeaturedGame[] = [
   {
-    title: 'Refleks Avı',
-    subtitle: 'Ani beliren hedefleri milisaniyeler içinde yakala, zincir kaçırma.',
+    title: 'Neon Refleks',
+    subtitle: 'Beliren hedefleri en hızlı yakala; seri korudukça puanın katlansın.',
     duration: '35-45 sn',
-    mode: 'Yüksek tempo',
+    mode: 'Arcade tempo',
     accent: 'from-cyan-400/90 to-blue-500/90',
     tone: 'radial-gradient(circle at 16% 22%, rgba(34, 213, 238, 0.26), transparent 42%), radial-gradient(circle at 88% 6%, rgba(34, 99, 255, 0.22), transparent 38%), linear-gradient(152deg, rgba(7, 18, 40, 0.96), rgba(9, 33, 72, 0.88))',
     grid: 'rgba(34, 213, 238, 0.08)',
     glow: 'rgba(34, 213, 238, 0.25)',
     icon: <Zap size={26} />,
     badge: 'Refleks',
-    cta: 'Anında başlat',
+    cta: 'Reflekse gir',
   },
   {
-    title: 'Tank Düellosu',
-    subtitle: 'Retro savaş modunda hamle sırasını doğru sürdür, baskıyı kaybetme.',
+    title: 'Pixel Düello',
+    subtitle: 'Hamle sırasını doğru yönet, baskıyı kaybetmeden turu kapat.',
     duration: '40-55 sn',
-    mode: 'Savaş modu',
+    mode: 'Retro savaş',
     accent: 'from-fuchsia-400/90 to-violet-500/90',
     tone: 'radial-gradient(circle at 18% 20%, rgba(251, 113, 133, 0.23), transparent 42%), radial-gradient(circle at 85% 10%, rgba(129, 140, 248, 0.22), transparent 40%), linear-gradient(152deg, rgba(12, 16, 42, 0.96), rgba(31, 19, 68, 0.88))',
     grid: 'rgba(251, 113, 133, 0.08)',
     glow: 'rgba(192, 132, 252, 0.25)',
     icon: <Swords size={26} />,
     badge: 'Savaş',
-    cta: 'Düelloya gir',
+    cta: 'Düelloya başla',
   },
   {
     title: 'Retro Satranç',
-    subtitle: 'At hamlesi odaklı hızlı satranç turu. Doğru kareyi en kısa sürede bul.',
-    duration: '50 sn',
+    subtitle: 'Gerçek zamanlı satrançta hamleni temiz oyna, süreyi doğru yönet.',
+    duration: '3+2 / 5+0',
     mode: 'Strateji',
     accent: 'from-amber-400/90 to-orange-500/90',
     tone: 'radial-gradient(circle at 12% 18%, rgba(251, 191, 36, 0.22), transparent 40%), radial-gradient(circle at 82% 8%, rgba(251, 146, 60, 0.22), transparent 36%), linear-gradient(152deg, rgba(20, 17, 41, 0.96), rgba(53, 32, 76, 0.88))',
@@ -55,20 +55,20 @@ const featuredGames: FeaturedGame[] = [
     glow: 'rgba(251, 191, 36, 0.25)',
     icon: <Crown size={26} />,
     badge: 'Strateji',
-    cta: 'Tahtayı aç',
+    cta: 'Tahtaya geç',
   },
   {
-    title: 'Bilgi Yarışı',
-    subtitle: 'Kısa tur bilgi sorularında hız ve doğrulukla rakibini geç.',
-    duration: '55 sn',
-    mode: 'Bilgi oyunu',
+    title: 'Bilgi Sprinti',
+    subtitle: 'Rastgele sorularda hız ve doğrulukla rakibini geride bırak.',
+    duration: '45-60 sn',
+    mode: 'Quiz modu',
     accent: 'from-emerald-400/90 to-teal-500/90',
     tone: 'radial-gradient(circle at 14% 20%, rgba(74, 222, 128, 0.2), transparent 40%), radial-gradient(circle at 86% 12%, rgba(16, 185, 129, 0.22), transparent 36%), linear-gradient(152deg, rgba(8, 24, 44, 0.96), rgba(8, 40, 63, 0.88))',
     grid: 'rgba(45, 212, 191, 0.08)',
     glow: 'rgba(52, 211, 153, 0.24)',
     icon: <Brain size={26} />,
     badge: 'Bilgi',
-    cta: 'Bilgi turunu aç',
+    cta: 'Sprinti aç',
   },
 ];
 
@@ -142,15 +142,18 @@ export const Games: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-10">
           <div>
-            <span className="cd-kicker">Hızlı tüketilen oyunlar</span>
-            <h2 className="mt-4 text-3xl md:text-5xl font-display text-white max-w-2xl leading-tight">
-              Kısa tur mantığıyla çalışan, tekrar oranı yüksek oyun kütüphanesi.
+            <span className="cd-kicker">HIZLI ARCADE RETRO OYUNLAR</span>
+            <h2
+              data-testid="games-main-heading"
+              className="mt-4 text-3xl md:text-5xl font-display text-white max-w-2xl leading-tight"
+            >
+              Bekleme dakikalarını oyuna çeviren kısa tur kütüphanesi.
             </h2>
           </div>
           <div className="cd-panel px-5 py-4 max-w-sm border-cyan-400/25">
-            <p className="font-pixel text-[10px] uppercase tracking-[0.2em] text-cyan-300/80">Neden bu format?</p>
+            <p className="font-pixel text-[10px] uppercase tracking-[0.2em] text-cyan-300/80">Neden işe yarıyor?</p>
             <p className="mt-2 text-[var(--rf-muted)]">
-              Turlar bir dakikanın altında kalır. Kullanıcı hızlı karar verir, puan döngüsü kesilmez.
+              Turlar kısa, eşleşme hızlı; kullanıcı oyunda kalır ve puan döngüsü kesilmez.
             </p>
           </div>
         </div>
@@ -165,22 +168,22 @@ export const Games: React.FC = () => {
           <div className="cd-panel p-4 flex items-center gap-3 border-cyan-400/20">
             <Timer className="text-cyan-300" size={20} />
             <div>
-              <p className="font-semibold text-white">Kısa Seans</p>
-              <p className="text-sm text-[var(--rf-muted)]">Her oyun 1 dakikanın altında.</p>
+              <p className="font-semibold text-white">Beklerken Oyna</p>
+              <p className="text-sm text-[var(--rf-muted)]">Kafedeki bekleme süresini aktif oyuna dönüştür.</p>
             </div>
           </div>
           <div className="cd-panel p-4 flex items-center gap-3 border-cyan-400/20">
             <Sparkles className="text-fuchsia-300" size={20} />
             <div>
-              <p className="font-semibold text-white">Tekrar Motivasyonu</p>
-              <p className="text-sm text-[var(--rf-muted)]">Anlık puan ve ödül geri bildirimi.</p>
+              <p className="font-semibold text-white">Anlık Kazanç</p>
+              <p className="text-sm text-[var(--rf-muted)]">Her tur puanı cüzdana işlenir, ödül hedefine yaklaştırır.</p>
             </div>
           </div>
           <div className="cd-panel p-4 flex items-center gap-3 border-cyan-400/20">
             <Gauge className="text-amber-300" size={20} />
             <div>
-              <p className="font-semibold text-white">Denge ve Ölçüm</p>
-              <p className="text-sm text-[var(--rf-muted)]">Solo ve rekabetçi modlar aynı ekonomiye bağlı.</p>
+              <p className="font-semibold text-white">Kafe Bağı</p>
+              <p className="text-sm text-[var(--rf-muted)]">Oyun ve ödül döngüsüyle tekrar gelme motivasyonu artar.</p>
             </div>
           </div>
         </div>

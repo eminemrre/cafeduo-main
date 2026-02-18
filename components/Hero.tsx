@@ -130,33 +130,36 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
           >
-            <span className="rf-kicker mb-5">RETRO-NEON SOSYAL KAFE AĞI</span>
+            <span className="rf-kicker mb-5">KAFEDE BEKLERKEN OYUNA BAĞLAN</span>
 
-            <h1 className="font-display text-[2rem] max-[360px]:text-[1.75rem] sm:text-[2.95rem] md:text-[4.45rem] leading-[1.02] text-white tracking-tight drop-shadow-[0_10px_28px_rgba(0,0,0,0.45)]">
-              Kafenin ritmini
+            <h1
+              data-testid="hero-main-heading"
+              className="font-display text-[2rem] max-[360px]:text-[1.75rem] sm:text-[2.95rem] md:text-[4.45rem] leading-[1.02] text-white tracking-tight drop-shadow-[0_10px_28px_rgba(0,0,0,0.45)]"
+            >
+              Bekleme süresini
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-teal-300">
-                mini oyunlarla
+                eşleşmeli mini oyunlarla
               </span>
-              gerçek zamanlı yaşat.
+              ödüllü ana dönüştür.
             </h1>
 
             <p className="mt-5 text-base sm:text-xl md:text-[1.45rem] text-slate-300 max-w-2xl leading-snug">
-              CafeDuo; hızlı maç, canlı skor ve ödül döngüsünü tek dijital omurgada birleştirir.
-              Oyuncu, masa ve kafe paneli aynı akışta senkron kalır.
+              CafeDuo, kafede arkadaşını beklerken seni o an aktif oyuncularla eşleştirir.
+              Kısa maçlarda puan toplar, ödüle yaklaşır ve zamanı keyfe çevirirsin.
             </p>
 
             <div className="mt-5 grid grid-cols-1 min-[520px]:grid-cols-3 gap-2.5 max-w-2xl">
               <div className="rounded-xl border border-cyan-400/32 bg-[#08193a]/70 px-3 py-2">
-                <p className="font-pixel text-[10px] tracking-[0.14em] uppercase text-cyan-300">Hız</p>
-                <p className="text-sm text-slate-100">45 sn ortalama tur</p>
+                <p className="font-pixel text-[10px] tracking-[0.14em] uppercase text-cyan-300">Hızlı Tur</p>
+                <p className="text-sm text-slate-100">45 sn ortalama maç</p>
               </div>
               <div className="rounded-xl border border-cyan-400/32 bg-[#08193a]/70 px-3 py-2">
-                <p className="font-pixel text-[10px] tracking-[0.14em] uppercase text-cyan-300">Senkron</p>
-                <p className="text-sm text-slate-100">Anlık skor yayını</p>
+                <p className="font-pixel text-[10px] tracking-[0.14em] uppercase text-cyan-300">Eşleşme</p>
+                <p className="text-sm text-slate-100">Kafedeki oyuncuyla anlık eşleş</p>
               </div>
               <div className="rounded-xl border border-cyan-400/32 bg-[#08193a]/70 px-3 py-2">
-                <p className="font-pixel text-[10px] tracking-[0.14em] uppercase text-cyan-300">Doğrulama</p>
-                <p className="text-sm text-slate-100">Konum tabanlı giriş</p>
+                <p className="font-pixel text-[10px] tracking-[0.14em] uppercase text-cyan-300">Güvenli Giriş</p>
+                <p className="text-sm text-slate-100">Tek adımda güvenli doğrulama</p>
               </div>
             </div>
 
@@ -179,7 +182,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                         className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base"
                         variant="primary"
                       >
-                        ŞİMDİ BAŞLA <ArrowRight className="ml-2" size={18} />
+                        KAYDOL VE EŞLEŞ <ArrowRight className="ml-2" size={18} />
                       </RetroButton>
                     }
                     variantB={
@@ -188,7 +191,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                         className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base"
                         variant="primary"
                       >
-                        KAYDOL VE OYNA <Sparkles className="ml-2" size={18} />
+                        KAYDOL VE EŞLEŞ <Sparkles className="ml-2" size={18} />
                       </RetroButton>
                     }
                   />
@@ -209,17 +212,17 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
               <div className="rf-panel p-4 animate-neon-pulse rf-horizon">
                 <p className="font-pixel text-[10px] tracking-[0.2em] text-cyan-300 uppercase">Tur Süresi</p>
                 <p className="text-3xl font-display text-white mt-1">45 sn</p>
-                <p className="text-sm text-slate-300 mt-1">Kısa ve tekrar eden maç döngüsü</p>
+                <p className="text-sm text-slate-300 mt-1">Beklerken tek turda tamamlanır.</p>
               </div>
               <div className="rf-panel p-4">
-                <p className="font-pixel text-[10px] tracking-[0.2em] text-cyan-300 uppercase">Oyun Modu</p>
-                <p className="text-3xl font-display text-white mt-1">3+</p>
-                <p className="text-sm text-slate-300 mt-1">Hızlı tüketilen özgün mini oyun</p>
+                <p className="font-pixel text-[10px] tracking-[0.2em] text-cyan-300 uppercase">Eşleşme Modu</p>
+                <p className="text-3xl font-display text-white mt-1">Canlı</p>
+                <p className="text-sm text-slate-300 mt-1">Kafedeki aktif oyuncularla anında eşleş.</p>
               </div>
               <div className="rf-panel p-4">
                 <p className="font-pixel text-[10px] tracking-[0.2em] text-cyan-300 uppercase">Ödül Akışı</p>
                 <p className="text-3xl font-display text-white mt-1">Anlık</p>
-                <p className="text-sm text-slate-300 mt-1">Kupon doğrulama ile kapanış</p>
+                <p className="text-sm text-slate-300 mt-1">Her maç puanı hesabına direkt yansır.</p>
               </div>
             </div>
 
@@ -229,24 +232,24 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                 animate={reduceMotion ? undefined : { x: ['0%', '-50%'] }}
                 transition={reduceMotion ? undefined : { duration: 15, repeat: Infinity, ease: 'linear' }}
               >
-                <span>Canlı skor senkronu</span>
-                <span>Konum doğrulama hattı</span>
-                <span>Kupon kapanış kontrolü</span>
-                <span>Canlı skor senkronu</span>
-                <span>Konum doğrulama hattı</span>
-                <span>Kupon kapanış kontrolü</span>
+                <span>Beklerken eşleş</span>
+                <span>Kısa tur, hızlı sonuç</span>
+                <span>Puanla ödüle yaklaş</span>
+                <span>Beklerken eşleş</span>
+                <span>Kısa tur, hızlı sonuç</span>
+                <span>Puanla ödüle yaklaş</span>
               </motion.div>
             </div>
 
             <div className="mt-6 sm:hidden grid grid-cols-1 gap-2 max-w-2xl">
               <div className="rounded-full border border-cyan-400/25 bg-[#06142b]/78 px-4 py-2 text-[11px] uppercase tracking-[0.14em] font-pixel text-cyan-200/85">
-                Canlı skor senkronu
+                Beklerken eşleş
               </div>
               <div className="rounded-full border border-cyan-400/25 bg-[#06142b]/78 px-4 py-2 text-[11px] uppercase tracking-[0.14em] font-pixel text-cyan-200/85">
-                Konum doğrulama hattı
+                Kısa tur, hızlı sonuç
               </div>
               <div className="rounded-full border border-cyan-400/25 bg-[#06142b]/78 px-4 py-2 text-[11px] uppercase tracking-[0.14em] font-pixel text-cyan-200/85">
-                Kupon kapanış kontrolü
+                Puanla ödüle yaklaş
               </div>
             </div>
           </motion.div>
@@ -263,7 +266,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
               <div className="absolute right-6 top-6 h-20 w-20 rounded-full bg-cyan-400/20 blur-2xl animate-float-slow" />
               <div className="absolute -left-14 bottom-8 h-36 w-36 rounded-full bg-amber-300/15 blur-2xl" />
 
-              <h3 className="font-display text-3xl text-white mb-6 tracking-wide">Canlı Akış Paneli</h3>
+              <h3 className="font-display text-3xl text-white mb-6 tracking-wide">Canlı Bekleme Akışı</h3>
 
               <div className="space-y-4">
                 <div className="rounded-xl border border-cyan-400/30 bg-[#0a1632]/76 p-4">
@@ -272,8 +275,8 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                       <Coffee size={18} />
                     </div>
                     <div>
-                      <p className="font-semibold text-white">Kafe girişi doğrulandı</p>
-                      <p className="text-sm text-slate-300">Masa ve konum doğrulaması 12 saniyede tamamlandı.</p>
+                      <p className="font-semibold text-white">Güvenli giriş tamamlandı</p>
+                      <p className="text-sm text-slate-300">Masa doğrulaması bitti, eşleşme için hazırsın.</p>
                     </div>
                   </div>
                 </div>
@@ -284,15 +287,15 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                       <Gamepad2 size={18} />
                     </div>
                     <div>
-                      <p className="font-semibold text-white">Maç oturumu başlatıldı</p>
-                      <p className="text-sm text-slate-300">Lobiden eşleşme ve skor takibi düşük gecikmeyle sürüyor.</p>
+                      <p className="font-semibold text-white">Eşleşme bulundu</p>
+                      <p className="text-sm text-slate-300">Aynı kafedeki oyuncuyla maç başladı.</p>
                     </div>
                   </div>
                 </div>
 
                 <div className="rounded-xl bg-[#050a19] border border-cyan-400/20 p-4">
                   <div className="flex items-center justify-between text-xs font-pixel uppercase tracking-[0.16em] text-slate-400 mb-2">
-                    <span>Sistem sağlığı</span>
+                    <span>Sistem durumu</span>
                     <span className="text-cyan-300">Aktif</span>
                   </div>
                   <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
@@ -306,7 +309,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                   <div className="mt-3 grid grid-cols-3 gap-2 text-center">
                     <div className="rounded-lg bg-slate-900/70 p-2">
                       <ShieldCheck size={16} className="mx-auto text-cyan-300" />
-                      <p className="text-[11px] text-slate-300 mt-1">Güvenlik</p>
+                      <p className="text-[11px] text-slate-300 mt-1">Eşleşme</p>
                     </div>
                     <div className="rounded-lg bg-slate-900/70 p-2">
                       <Zap size={16} className="mx-auto text-indigo-300" />

@@ -7,19 +7,20 @@ describe('About', () => {
     render(<About />);
 
     expect(
-      screen.getByText('Kafeyi oyun odaklı topluluk alanına çeviren operasyon katmanı.')
+      screen.getByTestId('about-main-heading')
     ).toBeInTheDocument();
+    expect(screen.getByTestId('about-main-heading')).toHaveTextContent(
+      'Bekleyen kullanıcıyı aktif oyuncuya çeviren sosyal oyun altyapısı.'
+    );
 
-    expect(screen.getByText('Operasyonel Altyapı')).toBeInTheDocument();
-    expect(screen.getByText('Hızlı Deneyim')).toBeInTheDocument();
-    expect(screen.getByText('Güvenli İşleyiş')).toBeInTheDocument();
-    expect(screen.getByText('B2B Uyum')).toBeInTheDocument();
+    expect(screen.getByText('Anlık Eşleşme')).toBeInTheDocument();
+    expect(screen.getByText('Kısa Tur Dinamiği')).toBeInTheDocument();
+    expect(screen.getByText('Güvenli Giriş')).toBeInTheDocument();
+    expect(screen.getByText('Ödül Döngüsü')).toBeInTheDocument();
 
-    expect(screen.getByText('Kafe için net değer modeli')).toBeInTheDocument();
-    expect(screen.getByText('Gerçek zamanlı skor ve kupon akışı')).toBeInTheDocument();
-    expect(
-      screen.getByText('Rol bazlı panel yapısı (kullanıcı, kafe admin, sistem admin)')
-    ).toBeInTheDocument();
-    expect(screen.getByText('Deploy-ready Docker tabanlı canlı ortam')).toBeInTheDocument();
+    expect(screen.getByText('Kullanıcı + kafe için net kazanım')).toBeInTheDocument();
+    expect(screen.getByText('Canlı eşleşme ve skor güncellemesi')).toBeInTheDocument();
+    expect(screen.getByText('Kısa tur, yüksek tekrar oynanış döngüsü')).toBeInTheDocument();
+    expect(screen.getByText('Ödül ekonomisiyle kafe sadakati')).toBeInTheDocument();
   });
 });

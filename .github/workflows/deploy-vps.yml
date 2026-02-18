@@ -143,6 +143,20 @@ jobs:
               run_compose -f deploy/docker-compose.prod.yml --env-file .env up -d --build --remove-orphans
             }
 
+            recover_container_runtime() {
+              systemctl daemon-reload || true
+              systemctl unmask containerd.service || true
+              systemctl unmask docker.service || true
+              systemctl enable containerd.service || true
+              systemctl enable docker.service || true
+              systemctl restart containerd.service || true
+              systemctl restart docker.service || service docker restart || true
+              sleep 8
+              docker info >/dev/null 2>&1 || true
+            }
+
+            recover_container_runtime
+
             up_ok=0
             for attempt in 1 2 3; do
               echo "Compose deploy attempt ${attempt}/3"
@@ -152,11 +166,7 @@ jobs:
               fi
 
               echo "Compose attempt ${attempt} failed. Restarting docker services..."
-              systemctl daemon-reload || true
-              systemctl restart docker || service docker restart || true
-              systemctl restart containerd || true
-              sleep 8
-              docker info >/dev/null 2>&1 || true
+              recover_container_runtime
             done
 
             if [ "$up_ok" -ne 1 ]; then

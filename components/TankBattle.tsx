@@ -49,12 +49,14 @@ const TANK_W = 48;
 const TANK_H = 28;
 const BARREL_LEN = 32;
 const PROJECTILE_R = 4;
-const GRAVITY = 0.18;
+const GRAVITY = 0.10;
 const MAX_HP = 3;
 const TERRAIN_SEGMENTS = 40;
 const EXPLOSION_DURATION = 350;
-const HIT_RADIUS = 30;
+const HIT_RADIUS = 40;
 const MIN_TANK_GAP = 0.4; // minimum normalised distance between tanks
+const TURN_TIME = 20; // seconds per turn
+const SPEED_MULT = 0.14; // projectile speed multiplier
 
 // Color palette (retro-futuristic)
 const C = {
@@ -116,6 +118,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
     const [done, setDone] = useState(false);
     const [message, setMessage] = useState('Açı ve güç ayarla, ateş et!');
     const [resolvingMatch, setResolvingMatch] = useState(false);
+    const [turnTimer, setTurnTimer] = useState(TURN_TIME);
 
     const terrainRef = useRef<number[]>(generateTerrain());
     const projectileRef = useRef<{ x: number; y: number; vx: number; vy: number } | null>(null);
@@ -124,6 +127,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
     const finishHandledRef = useRef(false);
     const matchStartedAtRef = useRef(Date.now());
     const pollRef = useRef<number | null>(null);
+    const turnTimerRef = useRef<number | null>(null);
     const hostNameRef = useRef('');
     const guestNameRef = useRef('');
 
@@ -431,7 +435,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
         playGameSfx('hit', 0.3);
 
         const angleRad = angle * (Math.PI / 180);
-        const speed = power * 0.08;
+        const speed = power * SPEED_MULT;
         const startX = playerTankX * CANVAS_W;
         const startY = playerTankY - TANK_H + 4;
 
@@ -576,7 +580,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             const botPower = 55 + Math.random() * 25;
 
             const angleRad = (180 - botAngle) * (Math.PI / 180);
-            const speed = botPower * 0.08;
+            const speed = botPower * SPEED_MULT;
             const startX = opponentTankX * CANVAS_W;
             const startY = opponentTankY - TANK_H + 4;
 
@@ -634,6 +638,51 @@ export const TankBattle: React.FC<TankBattleProps> = ({
         };
     }, [done, fetchSnapshot, gameId, isBot]);
 
+    // ------- Turn Timer (20s) -------
+    useEffect(() => {
+        if (done || firing || resolvingMatch) return;
+        setTurnTimer(TURN_TIME);
+        turnTimerRef.current = window.setInterval(() => {
+            setTurnTimer(prev => {
+                if (prev <= 1) {
+                    // Time's up — switch turn
+                    if (turnTimerRef.current) window.clearInterval(turnTimerRef.current);
+                    setMessage(isPlayerTurn ? 'Süre doldu! Sıra rakipte.' : 'Rakibin süresi doldu! Senin sıran.');
+                    setIsPlayerTurn(p => !p);
+                    generateWind();
+                    if (isBot && isPlayerTurn) {
+                        // Player timed out in bot mode, bot fires
+                        setTimeout(() => botFire(), 600);
+                    }
+                    return TURN_TIME;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => {
+            if (turnTimerRef.current) window.clearInterval(turnTimerRef.current);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isPlayerTurn, done, firing, resolvingMatch]);
+
+    // ------- Leave = Forfeit -------
+    const handleLeave = useCallback(() => {
+        if (!done && !finishHandledRef.current) {
+            finishHandledRef.current = true;
+            setDone(true);
+            setMessage('Oyundan ayrıldın. Rakip kazanıyor.');
+            // Award win to opponent
+            if (!isBot && gameId) {
+                void syncLiveProgress(0, MAX_HP, true);
+                void finalizeMatch(target, 0);
+            } else {
+                setTimeout(() => onGameEnd(target, 0), 500);
+            }
+        } else {
+            onLeave();
+        }
+    }, [done, isBot, gameId, target, onLeave, onGameEnd, syncLiveProgress, finalizeMatch]);
+
     return (
         <div
             className="max-w-3xl mx-auto rf-panel border-cyan-400/22 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden"
@@ -648,7 +697,14 @@ export const TankBattle: React.FC<TankBattleProps> = ({
 
             <div className="flex items-center justify-between mb-4 relative z-10">
                 <h2 className="font-pixel text-lg">Tank Düellosu</h2>
-                <button onClick={onLeave} className="text-[var(--rf-muted)] hover:text-white text-sm px-3 py-1.5 border border-rose-500/30 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 transition-colors">Oyundan Çık</button>
+                <div className="flex items-center gap-3">
+                    {!done && (
+                        <span className={`font-pixel text-sm ${turnTimer <= 5 ? 'text-red-400 animate-pulse' : 'text-cyan-300'}`}>
+                            ⏱ {turnTimer}s
+                        </span>
+                    )}
+                    <button onClick={handleLeave} className="text-[var(--rf-muted)] hover:text-white text-sm px-3 py-1.5 border border-rose-500/30 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 transition-colors">Oyundan Çık</button>
+                </div>
             </div>
 
             {/* Scoreboard */}

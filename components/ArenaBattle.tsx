@@ -163,7 +163,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
     try {
       await api.games.move(gameId, {
         liveSubmission: {
-          mode: 'Tank Düellosu',
+          mode: 'Nişancı Düellosu',
           score,
           roundsWon: score,
           round: currentRound,
@@ -359,7 +359,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
     >
       <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_96%,rgba(34,211,238,0.08)_100%)] [background-size:100%_4px] opacity-50" />
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-pixel text-lg">Tank Düellosu</h2>
+        <h2 className="font-pixel text-lg">Nişancı Düellosu</h2>
         <button onClick={onLeave} className="text-[var(--rf-muted)] hover:text-white text-sm">Oyundan Çık</button>
       </div>
 

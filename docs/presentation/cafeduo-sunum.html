@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CafeDuo Sunum</title>
+    <style>
+      :root {
+        --bg: #030a1a;
+        --bg2: #081b3d;
+        --ink: #e6f2ff;
+        --muted: #9cb5d1;
+        --cyan: #35d9ff;
+        --blue: #2f7de4;
+        --amber: #ffb14a;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: "Inter", "Segoe UI", Arial, sans-serif;
+        color: var(--ink);
+        background:
+          radial-gradient(circle at 15% 20%, rgba(31, 174, 255, 0.18), transparent 45%),
+          radial-gradient(circle at 85% 10%, rgba(255, 177, 74, 0.12), transparent 36%),
+          linear-gradient(180deg, var(--bg), #020713 60%, #02050f);
+      }
+      .deck {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 28px;
+      }
+      .slide {
+        min-height: 86vh;
+        margin: 0 0 24px;
+        padding: 34px;
+        border: 1px solid rgba(53, 217, 255, 0.3);
+        border-radius: 26px;
+        background:
+          linear-gradient(160deg, rgba(5, 16, 40, 0.94), rgba(4, 12, 34, 0.9));
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+        position: relative;
+        overflow: hidden;
+      }
+      .slide::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 6px,
+          rgba(53, 217, 255, 0.03) 7px
+        );
+        pointer-events: none;
+      }
+      .kicker {
+        display: inline-block;
+        font-size: 12px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--cyan);
+        border: 1px solid rgba(53, 217, 255, 0.4);
+        border-radius: 999px;
+        padding: 8px 14px;
+        margin-bottom: 16px;
+      }
+      h1, h2 {
+        margin: 0 0 14px;
+        line-height: 1.08;
+      }
+      h1 {
+        font-size: clamp(32px, 6vw, 70px);
+      }
+      h2 {
+        font-size: clamp(28px, 4.2vw, 52px);
+      }
+      .lead {
+        color: var(--muted);
+        font-size: clamp(16px, 2vw, 24px);
+        line-height: 1.5;
+        max-width: 920px;
+      }
+      .accent { color: var(--cyan); }
+      .grid {
+        margin-top: 24px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+      .card {
+        border: 1px solid rgba(53, 217, 255, 0.26);
+        border-radius: 16px;
+        padding: 16px;
+        background: linear-gradient(140deg, rgba(7, 25, 58, 0.8), rgba(7, 20, 45, 0.86));
+      }
+      .card h3 {
+        margin: 0 0 8px;
+        font-size: 22px;
+      }
+      .card p {
+        margin: 0;
+        color: var(--muted);
+      }
+      ul {
+        margin: 18px 0 0;
+        padding-left: 18px;
+        color: var(--muted);
+        line-height: 1.55;
+        font-size: 20px;
+      }
+      .kpi {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+      .kpi .item {
+        border: 1px solid rgba(53, 217, 255, 0.24);
+        border-radius: 14px;
+        padding: 14px;
+        text-align: center;
+        background: rgba(8, 22, 48, 0.7);
+      }
+      .num {
+        color: var(--amber);
+        font-size: 30px;
+        font-weight: 700;
+      }
+      .small {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      @media (max-width: 920px) {
+        .grid { grid-template-columns: 1fr; }
+        .kpi { grid-template-columns: 1fr 1fr; }
+        .slide { min-height: auto; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="deck">
+      <section class="slide">
+        <span class="kicker">CafeDuo Pitch</span>
+        <h1>Kafede beklemeyi <span class="accent">oyuna ve ödüle</span> çeviriyoruz.</h1>
+        <p class="lead">CafeDuo, bekleyen kullanıcıyı anlık eşleşmeyle aktif oyuncuya dönüştürür. Kullanıcı için keyif + kazanım, kafe için etkileşim + sadakat üretir.</p>
+      </section>
+
+      <section class="slide">
+        <span class="kicker">Problem</span>
+        <h2>Bekleme anı değersiz geçiyor.</h2>
+        <ul>
+          <li>Kullanıcı sıkılıyor, uygulamadan kopuyor.</li>
+          <li>Kafe tarafında masa başı etkileşim düşük kalıyor.</li>
+          <li>Kısa zaman penceresinde değer üreten akış eksik.</li>
+        </ul>
+      </section>
+
+      <section class="slide">
+        <span class="kicker">Çözüm</span>
+        <h2>3 adımda eşleş, oyna, ödüle yaklaş.</h2>
+        <div class="grid">
+          <article class="card"><h3>1) Hesabını Aç</h3><p>Yaklaşık 20 sn</p></article>
+          <article class="card"><h3>2) Kafeye Bağlan</h3><p>Güvenli giriş, yaklaşık 15 sn</p></article>
+          <article class="card"><h3>3) Eşleş ve Oyna</h3><p>Kısa tur, yaklaşık 45 sn</p></article>
+          <article class="card"><h3>Sonuç</h3><p>Puan anında hesabına yansır, ödüle yaklaşırsın.</p></article>
+        </div>
+      </section>
+
+      <section class="slide">
+        <span class="kicker">Kullanıcı Değeri</span>
+        <h2>Bekleme süresi keyifli ve kazançlı hale gelir.</h2>
+        <ul>
+          <li>Kısa tur yapısı ile hızlı oyun döngüsü.</li>
+          <li>Gerçek zamanlı eşleşme ile sosyal etkileşim.</li>
+          <li>Maçtan sonra puan-ödül döngüsüyle devamlılık.</li>
+        </ul>
+      </section>
+
+      <section class="slide">
+        <span class="kicker">Kafe Değeri</span>
+        <h2>Masa başı etkileşim ve tekrar ziyaret artar.</h2>
+        <ul>
+          <li>Kullanıcılar beklerken sistem içinde kalır.</li>
+          <li>Ödül ekonomisi sadakat davranışını güçlendirir.</li>
+          <li>Kafe paneliyle operasyon tek noktadan yönetilir.</li>
+        </ul>
+      </section>
+
+      <section class="slide">
+        <span class="kicker">Akademik / Teknik</span>
+        <h2>Uygulamalı ürün mühendisliği örneği.</h2>
+        <ul>
+          <li>Gerçek zamanlı çok oyunculu altyapı.</li>
+          <li>Rol bazlı güvenlik ve erişim katmanı.</li>
+          <li>CI/CD + VPS canlı dağıtım hattı.</li>
+          <li>Test odaklı kalite: 521/521 test geçişi.</li>
+        </ul>
+      </section>
+
+      <section class="slide">
+        <span class="kicker">KPI</span>
+        <h2>Ölçtüğümüz başarı metrikleri.</h2>
+        <div class="kpi">
+          <div class="item"><div class="num">%?</div><div class="small">Eşleşme başarı oranı</div></div>
+          <div class="item"><div class="num">%?</div><div class="small">Maç tamamlama</div></div>
+          <div class="item"><div class="num">DAU</div><div class="small">Günlük aktif kullanıcı</div></div>
+          <div class="item"><div class="num">%?</div><div class="small">Ödül kullanım oranı</div></div>
+          <div class="item"><div class="num">%?</div><div class="small">Tekrar ziyaret</div></div>
+        </div>
+      </section>
+
+      <section class="slide">
+        <span class="kicker">Yol Haritası</span>
+        <h2>Sonraki sprintler</h2>
+        <div class="grid">
+          <article class="card"><h3>Sprint 1</h3><p>Eşleşme motoru + reconnect/timeout dayanıklılığı</p></article>
+          <article class="card"><h3>Sprint 2</h3><p>Kafe analitik paneli ve KPI dashboard</p></article>
+          <article class="card"><h3>Sprint 3</h3><p>Kampanya, turnuva, büyüme/retention katmanı</p></article>
+          <article class="card"><h3>Hedef</h3><p>Kullanıcı ve kafe tarafında kalıcı değer artışı</p></article>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

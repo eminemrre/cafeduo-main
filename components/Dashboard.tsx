@@ -10,6 +10,7 @@ import { User, Reward } from '../types';
 import { UserProfileModal } from './UserProfileModal';
 import { ReflexRush } from './ReflexRush';
 import { ArenaBattle } from './ArenaBattle';
+import { TankBattle } from './TankBattle';
 import { OddEvenSprint } from './OddEvenSprint';
 import { KnowledgeQuiz } from './KnowledgeQuiz';
 import { RetroChess } from './RetroChess';
@@ -47,14 +48,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
   // ==========================================
   // LOCAL STATE (Sadece UI state'leri)
   // ==========================================
-  
+
   // Tab yönetimi
   const [mainTab, setMainTab] = useState<'games' | 'leaderboard' | 'achievements'>('games');
-  
+
   // Masa kodu state
   const [tableCode, setTableCode] = useState(normalizeTableCode(currentUser.table_number));
   const [isMatched, setIsMatched] = useState(Boolean(currentUser.cafe_id) && Boolean(normalizeTableCode(currentUser.table_number)));
-  
+
   // Modal state'leri
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [profileUser, setProfileUser] = useState<User | null>(null);
@@ -67,7 +68,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
   // ==========================================
   // CUSTOM HOOKS
   // ==========================================
-  
+
   const {
     games,
     loading: gamesLoading,
@@ -178,13 +179,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
   const handleBuyReward = async (reward: Reward) => {
     try {
       const result = await buyReward(reward);
-      
+
       // Kullanıcı puanını güncelle
       onUpdateUser({
         ...currentUser,
         points: result.newPoints
       });
-      
+
       alert(`${reward.title} satın alındı! Kupon kodu: ${result.code}`);
     } catch (err: unknown) {
       const message =
@@ -314,7 +315,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
   // ==========================================
   // RENDER: Aktif Oyun Ekranı
   // ==========================================
-  
+
   if (activeGameId) {
     return (
       <div className="min-h-screen rf-dashboard-shell text-[var(--rf-ink)] pt-[calc(6rem+env(safe-area-inset-top))] md:pt-24 pb-[calc(3rem+env(safe-area-inset-bottom))] px-4 relative overflow-hidden">
@@ -372,8 +373,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
               onGameEnd={handleGameFinish}
               onLeave={handleLeaveGame}
             />
-          ) : activeGameType === 'Tank Düellosu' ? (
+          ) : activeGameType === 'Nişancı Düellosu' ? (
             <ArenaBattle
+              gameId={activeGameId}
+              currentUser={currentUser}
+              opponentName={opponentName || 'Rakip'}
+              isBot={isBot}
+              onGameEnd={handleGameFinish}
+              onLeave={handleLeaveGame}
+            />
+          ) : activeGameType === 'Tank Düellosu' ? (
+            <TankBattle
               gameId={activeGameId}
               currentUser={currentUser}
               opponentName={opponentName || 'Rakip'}
@@ -408,12 +418,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
   // ==========================================
   // RENDER: Ana Dashboard
   // ==========================================
-  
+
   return (
     <div className="min-h-screen rf-dashboard-shell text-[var(--rf-ink)] pt-[calc(6rem+env(safe-area-inset-top))] md:pt-24 pb-[calc(3rem+env(safe-area-inset-bottom))] px-4 relative overflow-hidden">
       <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
       <div className="max-w-7xl mx-auto space-y-8">
-        
+
         {/* Status Bar */}
         <StatusBar
           user={currentUser}
@@ -432,37 +442,35 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = mainTab === tab.id;
-              
+
               return (
                 <motion.button
                   key={tab.id}
                   onClick={() => setMainTab(tab.id as typeof mainTab)}
                   data-testid={`dashboard-tab-${tab.id}`}
                   aria-label={tab.label}
-                  className={`rf-tab-button rf-control relative flex-1 min-w-0 flex items-center justify-center gap-1 md:gap-2 px-1.5 sm:px-2 md:px-6 py-2.5 md:py-3 rounded-lg font-medium text-[10px] sm:text-sm md:text-base ${
-                    isActive ? 'rf-tab-active' : ''
-                  }`}
+                  className={`rf-tab-button rf-control relative flex-1 min-w-0 flex items-center justify-center gap-1 md:gap-2 px-1.5 sm:px-2 md:px-6 py-2.5 md:py-3 rounded-lg font-medium text-[10px] sm:text-sm md:text-base ${isActive ? 'rf-tab-active' : ''
+                    }`}
                   whileTap={{ scale: 0.98 }}
                 >
                   {isActive && (
                     <motion.div
                       layoutId="activeTab"
-                      className={`absolute inset-0 rounded-lg border ${
-                        tab.color === 'cyan'
-                          ? 'bg-[#0d2a4b] border-cyan-300/35'
-                          : tab.color === 'amber'
-                            ? 'bg-[#3a2e20] border-amber-300/35'
-                            : 'bg-[#232b3b] border-slate-300/20'
-                      }`}
+                      className={`absolute inset-0 rounded-lg border ${tab.color === 'cyan'
+                        ? 'bg-[#0d2a4b] border-cyan-300/35'
+                        : tab.color === 'amber'
+                          ? 'bg-[#3a2e20] border-amber-300/35'
+                          : 'bg-[#232b3b] border-slate-300/20'
+                        }`}
                       transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                     />
                   )}
                   <span className="relative z-10 flex items-center gap-1 md:gap-2 min-w-0">
                     <Icon size={16} className="md:w-5 md:h-5 shrink-0" />
-                      <span className="hidden sm:inline truncate">{tab.label}</span>
-                      <span className="sm:hidden max-[380px]:hidden truncate whitespace-nowrap">{tab.mobileLabel}</span>
-                    </span>
-                  </motion.button>
+                    <span className="hidden sm:inline truncate">{tab.label}</span>
+                    <span className="sm:hidden max-[380px]:hidden truncate whitespace-nowrap">{tab.mobileLabel}</span>
+                  </span>
+                </motion.button>
               );
             })}
           </div>

@@ -1,0 +1,105 @@
+{
+  "generatedAtUtc": "2026-02-19T13:28:43Z",
+  "quality": {
+    "coverage": {
+      "statementsPct": 70.03,
+      "branchesPct": 51.65,
+      "functionsPct": 74.04,
+      "linesPct": 71.59,
+      "source": "npm run test:ci console table"
+    },
+    "testSuites": {
+      "passed": 69,
+      "total": 69
+    },
+    "tests": {
+      "passed": 521,
+      "total": 521
+    },
+    "testRuntimeSec": 15.239
+  },
+  "build": {
+    "durationSec": 11.29,
+    "mainJsKb": 443.92,
+    "mainJsGzipKb": 143.05,
+    "mainCssKb": 121.32,
+    "mainCssGzipKb": 19.41
+  },
+  "production": {
+    "health": {
+      "uptime": 60557.8694178,
+      "message": "OK",
+      "timestamp": 1771507315092,
+      "database": true
+    },
+    "version": {
+      "commit": "d3813196649c3e916dcb9f522f73c8904c455fdb",
+      "buildTime": "2026-02-18T20:32:06Z",
+      "nodeEnv": "production"
+    }
+  },
+  "deployment": {
+    "latestRun": {
+      "conclusion": "success",
+      "createdAt": "2026-02-18T20:31:21Z",
+      "databaseId": 22156495680,
+      "displayTitle": "feat(home): revise landing copy and seo messaging",
+      "headBranch": "main",
+      "headSha": "d3813196649c3e916dcb9f522f73c8904c455fdb",
+      "updatedAt": "2026-02-18T20:32:45Z",
+      "url": "https://github.com/eminemrre/cafeduo-main/actions/runs/22156495680"
+    }
+  },
+  "apiP95": {
+    "baseUrl": "https://cafeduotr.com",
+    "requests": 20,
+    "generatedAt": "2026-02-17T14:47:06.251Z",
+    "results": [
+      {
+        "endpoint": "health",
+        "method": "GET",
+        "path": "/health",
+        "requests": 20,
+        "successRate": 100,
+        "p50Ms": 51.51564399999984,
+        "p95Ms": 137.22683800000004,
+        "p99Ms": 314.874542,
+        "avgMs": 69.455117,
+        "maxMs": 314.874542,
+        "statuses": [
+          200
+        ]
+      },
+      {
+        "endpoint": "meta_version",
+        "method": "GET",
+        "path": "/api/meta/version",
+        "requests": 20,
+        "successRate": 100,
+        "p50Ms": 58.374672000000146,
+        "p95Ms": 73.40251100000023,
+        "p99Ms": 85.71968900000002,
+        "avgMs": 57.86800935000002,
+        "maxMs": 85.71968900000002,
+        "statuses": [
+          200
+        ]
+      },
+      {
+        "endpoint": "auth_invalid_login",
+        "method": "POST",
+        "path": "/api/auth/login",
+        "requests": 20,
+        "successRate": 100,
+        "p50Ms": 54.23618299999998,
+        "p95Ms": 72.86323600000014,
+        "p99Ms": 83.99560500000007,
+        "avgMs": 57.05252400000006,
+        "maxMs": 83.99560500000007,
+        "statuses": [
+          401
+        ]
+      }
+    ]
+  }
+}

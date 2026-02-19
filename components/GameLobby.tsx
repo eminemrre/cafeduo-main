@@ -5,7 +5,8 @@ import { GameRequest, User } from '../types';
 
 const gameIcon = (gameType: string) => {
   if (gameType === 'Refleks Avı') return '⚡';
-  if (gameType === 'Tank Düellosu') return '🛡️';
+  if (gameType === 'Nişancı Düellosu') return '🛡️';
+  if (gameType === 'Tank Düellosu') return '🎯';
   if (gameType === 'Ritim Kopyala') return '🛡️';
   if (gameType === 'Retro Satranç') return '♟️';
   if (gameType === 'Çift Tek Sprint') return '🔢';
@@ -29,9 +30,9 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
   currentUser,
   requests,
   onJoinGame,
-  onCancelGame = () => {},
+  onCancelGame = () => { },
   onCreateGameClick,
-  onQuickJoin = () => {},
+  onQuickJoin = () => { },
   quickJoinDisabled = false,
   quickJoinBusy = false,
   onViewProfile
@@ -89,7 +90,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
             <span className="sm:hidden">LOBİ</span>
           </h3>
           <div className="flex items-center gap-2">
-            <motion.span 
+            <motion.span
               className="w-2 h-2 bg-green-500 rounded-full"
               animate={reduceMotion ? undefined : { scale: [1, 1.2, 1] }}
               transition={reduceMotion ? undefined : { repeat: Infinity, duration: 1.5 }}
@@ -103,7 +104,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
           <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-white/5 to-transparent opacity-5" style={{ backgroundSize: '100% 4px' }}></div>
 
           {requests.length === 0 ? (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               className="flex flex-col items-center justify-center py-8 md:py-12 opacity-50"
@@ -130,7 +131,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                 className="bg-[#0c1b38]/78 hover:bg-[#12274e]/82 p-3 md:p-4 rounded-lg border border-cyan-400/16 transition-colors group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative overflow-hidden"
               >
                 {/* Hover highlight */}
-                <motion.div 
+                <motion.div
                   className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"
                   initial={{ opacity: 0 }}
                   whileHover={{ opacity: 1 }}
@@ -149,8 +150,8 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                   </motion.button>
                   <div className="min-w-0 flex-1">
                     <div className="text-white font-bold flex items-center gap-2 font-mono text-sm md:text-base min-w-0">
-                      <button 
-                        onClick={() => onViewProfile(req.hostName || 'Unknown')} 
+                      <button
+                        onClick={() => onViewProfile(req.hostName || 'Unknown')}
                         className="hover:underline hover:text-blue-300 truncate max-w-[11rem] sm:max-w-none"
                       >
                         {req.hostName || 'Unknown'}

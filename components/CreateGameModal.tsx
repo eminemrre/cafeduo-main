@@ -16,7 +16,8 @@ interface CreateGameModalProps {
 
 const GAME_TYPES = [
   { id: 'reflex', name: 'Refleks Avı', category: 'Refleks', description: 'Işık yandığında en hızlı tıkla', minPoints: 0 },
-  { id: 'war', name: 'Tank Düellosu', category: 'Savaş', description: 'Nişan hattında merkezi vur, tur tur isabet topla', minPoints: 40 },
+  { id: 'war', name: 'Nişancı Düellosu', category: 'Savaş', description: 'Nişan hattında merkezi vur, tur tur isabet topla', minPoints: 40 },
+  { id: 'tank', name: 'Tank Düellosu', category: 'Savaş', description: 'Açı ve güç ayarla, rakip tankı vur. İlk 3 isabet alan kazanır.', minPoints: 40 },
   { id: 'chess', name: 'Retro Satranç', category: 'Strateji', description: 'Klasik 2 oyunculu satranç. Gerçek zamanlı ve hamle doğrulamalı.', minPoints: 90 },
   { id: 'knowledge', name: 'Bilgi Yarışı', category: 'Bilgi', description: 'Kısa bilgi sorularında doğru cevabı en hızlı ver', minPoints: 120 },
 ];
@@ -85,7 +86,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   const handlePointsChange = (value: string) => {
     const numValue = parseInt(value) || 0;
     setPoints(numValue);
-    
+
     // Real-time validation
     if (touched.points) {
       const newErrors: ValidationError = { ...errors };
@@ -104,13 +105,13 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
     setGameType(newGameType);
     const game = GAME_TYPES.find(g => g.name === newGameType);
     const newMinPoints = game?.minPoints || 0;
-    
+
     // Auto-adjust points if below minimum
     if (points < newMinPoints) {
       setPoints(newMinPoints);
       toast.warning(`${newGameType} için minimum ${newMinPoints} puan ayarlandı`);
     }
-    
+
     // Clear game type error
     if (errors.gameType) {
       setErrors(prev => ({ ...prev, gameType: undefined }));
@@ -119,9 +120,9 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     setTouched({ gameType: true, points: true });
-    
+
     if (!validate()) {
       toast.error('Lütfen form hatalarını düzeltin');
       return;
@@ -134,12 +135,12 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
       const options =
         gameType === 'Retro Satranç'
           ? {
-              chessClock: {
-                baseSeconds: selectedTempo.baseSeconds,
-                incrementSeconds: selectedTempo.incrementSeconds,
-                label: selectedTempo.label,
-              },
-            }
+            chessClock: {
+              baseSeconds: selectedTempo.baseSeconds,
+              incrementSeconds: selectedTempo.incrementSeconds,
+              label: selectedTempo.label,
+            },
+          }
           : undefined;
       await Promise.resolve(onSubmit(gameType, points, options));
       toast.success(`${gameType} oyunu oluşturuldu!`);
@@ -191,7 +192,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-6">
-          
+
           {/* Game Type Selection */}
           <div>
             <label className="block text-cyan-300 font-pixel text-xs mb-3 tracking-widest">OYUN TÜRÜ SEÇ</label>
@@ -202,11 +203,10 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                   type="button"
                   onClick={() => handleGameTypeChange(game.name)}
                   data-testid={`game-type-${game.id}`}
-                  className={`w-full p-3 border-2 rounded transition-all text-left ${
-                    gameType === game.name
-                      ? 'border-cyan-500 bg-cyan-500/16'
-                      : 'border-cyan-400/20 hover:border-cyan-400/35 bg-black/30'
-                  }`}
+                  className={`w-full p-3 border-2 rounded transition-all text-left ${gameType === game.name
+                    ? 'border-cyan-500 bg-cyan-500/16'
+                    : 'border-cyan-400/20 hover:border-cyan-400/35 bg-black/30'
+                    }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
@@ -249,7 +249,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--rf-muted)] text-sm">Puan</span>
             </div>
-            
+
             {/* Preset Buttons */}
             <div className="flex gap-2 mt-2">
               {presetPoints.map((preset) => (
@@ -257,11 +257,10 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                   key={preset.label}
                   type="button"
                   onClick={() => handlePointsChange(preset.value.toString())}
-                  className={`flex-1 min-h-[40px] py-1 px-2 text-xs border-2 rounded-md transition-colors ${
-                    points === preset.value
-                      ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300'
-                      : 'border-cyan-400/20 hover:border-cyan-400/35 text-[var(--rf-muted)]'
-                  }`}
+                  className={`flex-1 min-h-[40px] py-1 px-2 text-xs border-2 rounded-md transition-colors ${points === preset.value
+                    ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300'
+                    : 'border-cyan-400/20 hover:border-cyan-400/35 text-[var(--rf-muted)]'
+                    }`}
                 >
                   {preset.label}
                 </button>
@@ -284,11 +283,10 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                     key={tempo.id}
                     type="button"
                     onClick={() => setChessTempoId(tempo.id)}
-                    className={`px-3 py-2 rounded border text-xs font-pixel transition-colors ${
-                      chessTempoId === tempo.id
-                        ? 'border-cyan-400 bg-cyan-500/15 text-cyan-200'
-                        : 'border-cyan-400/20 bg-black/30 text-[var(--rf-muted)] hover:border-cyan-400/40'
-                    }`}
+                    className={`px-3 py-2 rounded border text-xs font-pixel transition-colors ${chessTempoId === tempo.id
+                      ? 'border-cyan-400 bg-cyan-500/15 text-cyan-200'
+                      : 'border-cyan-400/20 bg-black/30 text-[var(--rf-muted)] hover:border-cyan-400/40'
+                      }`}
                   >
                     {tempo.label}
                   </button>
@@ -323,8 +321,8 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
             </div>
           </div>
 
-          <RetroButton 
-            type="submit" 
+          <RetroButton
+            type="submit"
             disabled={isSubmitting}
             data-testid="create-game-submit"
             className="w-full shadow-blue-900/20 border-blue-400 hover:border-blue-300 disabled:opacity-50"

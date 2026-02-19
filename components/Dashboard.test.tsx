@@ -48,9 +48,9 @@ jest.mock('./dashboard/StatusBar', () => ({
 }));
 
 jest.mock('./dashboard/GameSection', () => ({
-  GameSection: ({ 
-    currentUser, 
-    isMatched, 
+  GameSection: ({
+    currentUser,
+    isMatched,
     games,
     gamesLoading,
     serverActiveGame,
@@ -67,21 +67,21 @@ jest.mock('./dashboard/GameSection', () => ({
         </div>
       );
     }
-    
+
     return (
       <div data-testid="game-section">
         <span data-testid="games-count">{games.length}</span>
         <span data-testid="games-loading">{gamesLoading ? 'Loading' : 'Loaded'}</span>
-        <button 
-          data-testid="create-game-btn" 
+        <button
+          data-testid="create-game-btn"
           onClick={() => onCreateGame('Refleks Avı', 50)}
           disabled={!isMatched}
         >
           Oyun Kur
         </button>
         {games.map((game: any) => (
-          <button 
-            key={game.id} 
+          <button
+            key={game.id}
             data-testid={`join-game-${game.id}`}
             onClick={() => onJoinGame(game.id)}
             disabled={!isMatched}
@@ -95,7 +95,7 @@ jest.mock('./dashboard/GameSection', () => ({
 }));
 
 jest.mock('./dashboard/RewardSection', () => ({
-  RewardSection: ({ 
+  RewardSection: ({
     currentUser,
     rewards,
     rewardsLoading,
@@ -105,14 +105,14 @@ jest.mock('./dashboard/RewardSection', () => ({
     onBuyReward
   }: any) => (
     <div data-testid="reward-section">
-      <button 
+      <button
         data-testid="shop-tab"
         onClick={() => onTabChange('shop')}
         className={activeTab === 'shop' ? 'active' : ''}
       >
         Mağaza
       </button>
-      <button 
+      <button
         data-testid="inventory-tab"
         onClick={() => onTabChange('inventory')}
         className={activeTab === 'inventory' ? 'active' : ''}
@@ -123,7 +123,7 @@ jest.mock('./dashboard/RewardSection', () => ({
       <span data-testid="rewards-loading">{rewardsLoading ? 'Loading' : 'Loaded'}</span>
       <span data-testid="user-points">{currentUser.points}</span>
       {rewards.map((reward: any) => (
-        <button 
+        <button
           key={reward.id}
           data-testid={`buy-reward-${reward.id}`}
           onClick={() => onBuyReward(reward)}
@@ -165,7 +165,7 @@ jest.mock('./ReflexRush', () => ({
 jest.mock('./ArenaBattle', () => ({
   ArenaBattle: ({ gameId, currentUser, onGameEnd }: any) => (
     <div data-testid="arena-battle">
-      <span>Tank Düellosu - {currentUser.username}</span>
+      <span>Nişancı Düellosu - {currentUser.username}</span>
       <button onClick={() => onGameEnd?.(currentUser.username, 10)}>Savaşı Bitir</button>
     </div>
   )
@@ -268,8 +268,8 @@ describe('Dashboard Integration', () => {
     return render(
       <ToastProvider>
         <AuthProvider>
-          <Dashboard 
-            currentUser={mockUser} 
+          <Dashboard
+            currentUser={mockUser}
             onUpdateUser={mockOnUpdateUser}
             {...props}
           />
@@ -417,11 +417,11 @@ describe('Dashboard Integration', () => {
 
       // Should not show dashboard tabs
       expect(screen.queryByTestId('game-section')).not.toBeInTheDocument();
-      
+
       // Should show the active game component
       expect(screen.getByTestId('rock-paper-scissors')).toBeInTheDocument();
       expect(screen.getByText(/Refleks Avı/)).toBeInTheDocument();
-      
+
       // Should show lobby return button (with arrow character ←)
       expect(screen.getByText('← Lobiye Dön')).toBeInTheDocument();
     });
@@ -468,12 +468,12 @@ describe('Dashboard Integration', () => {
       expect(screen.getByText(/Retro Satranç - testuser/)).toBeInTheDocument();
     });
 
-    it('renders Tank Düellosu component and processes finish', async () => {
+    it('renders Nişancı Düellosu component and processes finish', async () => {
       const mockLeaveGame = jest.fn();
       mockUseGames.mockReturnValue({
         ...defaultGamesState,
         activeGameId: 'game789',
-        activeGameType: 'Tank Düellosu',
+        activeGameType: 'Nişancı Düellosu',
         opponentName: 'rakip',
         leaveGame: mockLeaveGame,
       });
@@ -563,8 +563,8 @@ describe('Dashboard Integration', () => {
     });
 
     it('allows buying reward when sufficient points', async () => {
-      const mockBuyReward = jest.fn().mockResolvedValue({ 
-        success: true, 
+      const mockBuyReward = jest.fn().mockResolvedValue({
+        success: true,
         code: 'COUPON123',
         newPoints: 900
       });
@@ -632,7 +632,7 @@ describe('Dashboard Integration', () => {
     it('shows not connected status', () => {
       render(
         <ToastProvider>
-          <Dashboard 
+          <Dashboard
             currentUser={userWithoutTable}
             onUpdateUser={mockOnUpdateUser}
           />
@@ -645,7 +645,7 @@ describe('Dashboard Integration', () => {
     it('disables game buttons when not connected', () => {
       render(
         <ToastProvider>
-          <Dashboard 
+          <Dashboard
             currentUser={userWithoutTable}
             onUpdateUser={mockOnUpdateUser}
           />
@@ -665,7 +665,7 @@ describe('Dashboard Integration', () => {
       });
 
       // Mock alert
-      const mockAlert = jest.spyOn(window, 'alert').mockImplementation(() => {});
+      const mockAlert = jest.spyOn(window, 'alert').mockImplementation(() => { });
 
       renderDashboard();
 
@@ -689,7 +689,7 @@ describe('Dashboard Integration', () => {
       });
 
       // Mock alert
-      const mockAlert = jest.spyOn(window, 'alert').mockImplementation(() => {});
+      const mockAlert = jest.spyOn(window, 'alert').mockImplementation(() => { });
 
       renderDashboard();
 

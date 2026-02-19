@@ -87,12 +87,12 @@ const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'] as const;
 
 const PIECE_SYMBOL: Record<'w' | 'b', Record<'p' | 'n' | 'b' | 'r' | 'q' | 'k', string>> = {
   w: {
-    p: '♟',
-    n: '♞',
-    b: '♝',
-    r: '♜',
-    q: '♛',
-    k: '♚',
+    p: '♙',
+    n: '♘',
+    b: '♗',
+    r: '♖',
+    q: '♕',
+    k: '♔',
   },
   b: {
     p: '♟',
@@ -250,8 +250,8 @@ export const RetroChess: React.FC<RetroChessProps> = ({
   const pendingDrawOffer = drawOffer && drawOffer.status === 'pending' ? drawOffer : null;
   const isPendingOfferByActor = Boolean(
     pendingDrawOffer &&
-      actorKey &&
-      pendingDrawOffer.offeredBy.trim().toLowerCase() === actorKey
+    actorKey &&
+    pendingDrawOffer.offeredBy.trim().toLowerCase() === actorKey
   );
   const isPendingOfferByOpponent = Boolean(pendingDrawOffer) && !isPendingOfferByActor;
   const canUseChessMatchActions =
@@ -818,21 +818,20 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                   {piece && (
                     <span
                       aria-label={`${piece.color === 'w' ? 'Beyaz' : 'Siyah'} ${PIECE_LABEL[piece.type]}`}
-                      className={`pointer-events-none absolute inset-0 flex items-center justify-center select-none ${
-                        piece.color === 'w' ? 'text-slate-50' : 'text-[#071327]'
-                      }`}
+                      className={`pointer-events-none absolute inset-0 flex items-center justify-center select-none ${piece.color === 'w' ? 'text-white' : 'text-[#1a1a2e]'
+                        }`}
                       style={{
-                        fontSize: 'clamp(1.2rem, 4.7vw, 2.05rem)',
-                        fontFamily: '"Noto Sans", "Exo 2", sans-serif',
+                        fontSize: 'clamp(1.4rem, 5.2vw, 2.3rem)',
+                        fontFamily: 'serif',
                         lineHeight: 1,
-                        textShadow:
+                        filter:
                           piece.color === 'w'
-                            ? '0 1px 0 rgba(4,19,42,0.95), 0 0 16px rgba(165,243,252,0.45)'
-                            : '0 1px 0 rgba(225,246,255,0.45), 0 0 12px rgba(34,211,238,0.22)',
+                            ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(0 0 6px rgba(165,243,252,0.35))'
+                            : 'drop-shadow(0 1px 1px rgba(200,230,255,0.6)) drop-shadow(0 0 4px rgba(34,211,238,0.2))',
                         WebkitTextStroke:
                           piece.color === 'w'
-                            ? '0.7px rgba(6,18,40,0.95)'
-                            : '0.85px rgba(170,230,255,0.72)',
+                            ? '0.8px rgba(6,18,40,0.9)'
+                            : '0.6px rgba(140,200,240,0.55)',
                       }}
                     >
                       {PIECE_SYMBOL[piece.color][piece.type]}

@@ -78,15 +78,31 @@ const C = {
     textDim: '#91a8c9',
 };
 
-// Simple terrain generation
-const generateTerrain = (): number[] => {
+// Seeded RNG for multiplayer sync (both clients produce same values from same gameId)
+const createSeededRng = (seed: number) => {
+    let s = Math.abs(seed) || 1;
+    return () => {
+        s = (s * 1103515245 + 12345) & 0x7fffffff;
+        return s / 0x7fffffff;
+    };
+};
+
+// Terrain generation with seed
+const generateTerrain = (seed?: number): number[] => {
+    const rng = seed !== undefined ? createSeededRng(seed) : Math.random;
     const points: number[] = [];
     const base = CANVAS_H * 0.65;
+    // Use seed-derived offsets for variety
+    const o1 = 2.0 + rng() * 1.0;
+    const o2 = 0.8 + rng() * 0.8;
+    const o3 = 3.5 + rng() * 2.0;
+    const p1 = rng() * 3;
+    const p2 = rng() * 3;
     for (let i = 0; i <= TERRAIN_SEGMENTS; i++) {
         const x = i / TERRAIN_SEGMENTS;
-        const hill1 = Math.sin(x * Math.PI * 2.3) * 35;
-        const hill2 = Math.sin(x * Math.PI * 1.1 + 1.2) * 25;
-        const hill3 = Math.sin(x * Math.PI * 4.5 + 0.5) * 10;
+        const hill1 = Math.sin(x * Math.PI * o1 + p1) * 35;
+        const hill2 = Math.sin(x * Math.PI * o2 + 1.2) * 25;
+        const hill3 = Math.sin(x * Math.PI * o3 + p2) * 10;
         points.push(base + hill1 + hill2 + hill3);
     }
     return points;
@@ -133,10 +149,22 @@ export const TankBattle: React.FC<TankBattleProps> = ({
 
     const target = useMemo(() => (isBot ? 'BOT' : (opponentName || 'Rakip')), [isBot, opponentName]);
 
-    // Tank positions - randomised each round
+    // Tank positions - deterministic from gameId for multiplayer sync
+    const gameSeed = useMemo(() => {
+        if (!gameId) return 0;
+        // Simple hash from gameId string
+        const str = String(gameId);
+        let h = 0;
+        for (let i = 0; i < str.length; i++) {
+            h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+        }
+        return Math.abs(h);
+    }, [gameId]);
+
     const [tankPositions, setTankPositions] = useState(() => {
-        const px = 0.08 + Math.random() * 0.15;  // 0.08 - 0.23
-        const ox = 0.77 + Math.random() * 0.15;  // 0.77 - 0.92
+        const rng = createSeededRng(gameSeed || Date.now());
+        const px = 0.08 + rng() * 0.15;   // 0.08 - 0.23
+        const ox = 0.77 + rng() * 0.15;   // 0.77 - 0.92
         return { px, ox };
     });
     const playerTankX = tankPositions.px;
@@ -273,7 +301,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             playGameSfx('hit', 0.25);
 
             const angleRad = (180 - moveData.angle) * (Math.PI / 180);
-            const speed = moveData.power * 0.08;
+            const speed = moveData.power * SPEED_MULT;
             const startX = opponentTankX * CANVAS_W;
             const startY = opponentTankY - TANK_H + 4;
 
@@ -608,11 +636,13 @@ export const TankBattle: React.FC<TankBattleProps> = ({
         setAngle(45);
         setPower(60);
         setMessage('Açı ve güç ayarla, ateş et!');
-        // Regenerate terrain and tank positions for variety
-        terrainRef.current = generateTerrain();
+        // Regenerate terrain and tank positions using gameId seed for sync
+        const seed = gameSeed || Date.now();
+        terrainRef.current = generateTerrain(seed);
+        const rng = createSeededRng(seed);
         setTankPositions({
-            px: 0.08 + Math.random() * 0.15,
-            ox: 0.77 + Math.random() * 0.15,
+            px: 0.08 + rng() * 0.15,
+            ox: 0.77 + rng() * 0.15,
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [gameId]);
@@ -675,9 +705,11 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             if (!isBot && gameId) {
                 void syncLiveProgress(0, MAX_HP, true);
                 void finalizeMatch(target, 0);
-            } else {
-                setTimeout(() => onGameEnd(target, 0), 500);
             }
+            // Close game screen after brief delay
+            setTimeout(() => {
+                onGameEnd(target, 0);
+            }, 1200);
         } else {
             onLeave();
         }

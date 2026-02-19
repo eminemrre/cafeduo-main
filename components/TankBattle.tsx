@@ -610,8 +610,8 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             px: 0.08 + Math.random() * 0.15,
             ox: 0.77 + Math.random() * 0.15,
         });
-        draw();
-    }, [gameId, draw]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [gameId]);
 
     // Multiplayer setup
     useEffect(() => {

@@ -35,16 +35,22 @@ describe('TankBattle', () => {
         gamesPlayed: 0,
     };
 
+    let rafSpy: jest.SpyInstance;
+    let cafSpy: jest.SpyInstance;
+
     beforeEach(() => {
         jest.useFakeTimers();
-        jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
-            return 0;
-        });
+        // Prevent infinite RAF loops — never execute callback, just return incremental id
+        let id = 0;
+        rafSpy = jest.spyOn(window, 'requestAnimationFrame').mockImplementation(() => ++id);
+        cafSpy = jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => { });
     });
 
     afterEach(() => {
         jest.runOnlyPendingTimers();
         jest.useRealTimers();
+        rafSpy.mockRestore();
+        cafSpy.mockRestore();
         jest.restoreAllMocks();
     });
 

@@ -109,18 +109,18 @@ describe('CreateGameModal', () => {
       render(<CreateGameModal {...defaultProps} />);
 
       // Both Nişancı and Tank Düellosu require min 40
-      const min40Elements = screen.getAllByText('Min 40 Puan');
+      const min40Elements = screen.getAllByText('MIN 40 PUAN');
       expect(min40Elements.length).toBe(2);
 
       // Retro Satranç requires min 90
-      expect(screen.getByText('Min 90 Puan')).toBeInTheDocument();
+      expect(screen.getByText('MIN 90 PUAN')).toBeInTheDocument();
     });
 
     it('auto-adjusts points when switching to higher minimum game', () => {
       render(<CreateGameModal {...defaultProps} />);
 
       // Initially Refleks Avı (min 0)
-      expect(screen.getByDisplayValue('0')).toBeInTheDocument();
+      expect((screen.getByTestId('game-points-input') as HTMLInputElement).value).toBe('0');
 
       // Switch to Retro Satranç (min 90)
       fireEvent.click(screen.getByText('Retro Satranç'));
@@ -136,10 +136,10 @@ describe('CreateGameModal', () => {
     it('updates points when typing', () => {
       render(<CreateGameModal {...defaultProps} />);
 
-      const input = screen.getByDisplayValue('0');
+      const input = screen.getByTestId('game-points-input');
       fireEvent.change(input, { target: { value: '150' } });
 
-      expect(screen.getByDisplayValue('150')).toBeInTheDocument();
+      expect((screen.getByTestId('game-points-input') as HTMLInputElement).value).toBe('150');
     });
 
     it('sets points via preset buttons', () => {
@@ -147,13 +147,13 @@ describe('CreateGameModal', () => {
 
       fireEvent.click(screen.getByText('100'));
 
-      expect(screen.getByDisplayValue('100')).toBeInTheDocument();
+      expect((screen.getByTestId('game-points-input') as HTMLInputElement).value).toBe('100');
     });
 
     it('shows validation error for points above max', async () => {
       render(<CreateGameModal {...defaultProps} />);
 
-      const input = screen.getByDisplayValue('0');
+      const input = screen.getByTestId('game-points-input');
       fireEvent.change(input, { target: { value: '2000' } });
       fireEvent.blur(input);
 
@@ -174,8 +174,8 @@ describe('CreateGameModal', () => {
 
       // Wait for auto-adjust to 40
       await waitFor(() => {
-        const input = screen.queryByDisplayValue('40');
-        expect(input || screen.queryByDisplayValue('0')).toBeTruthy();
+        const input = screen.getByTestId('game-points-input') as HTMLInputElement;
+        expect(input.value === '40' || input.value === '0').toBeTruthy();
       }, { timeout: 1000 });
     });
   });
@@ -185,7 +185,7 @@ describe('CreateGameModal', () => {
       render(<CreateGameModal {...defaultProps} />);
 
       // Set points (game type already selected by default)
-      const input = screen.getByDisplayValue('0');
+      const input = screen.getByTestId('game-points-input');
       fireEvent.change(input, { target: { value: '100' } });
 
       // Submit form using form submit event
@@ -204,7 +204,7 @@ describe('CreateGameModal', () => {
     it('calls onClose after successful submission', async () => {
       render(<CreateGameModal {...defaultProps} />);
 
-      fireEvent.change(screen.getByDisplayValue('0'), { target: { value: '50' } });
+      fireEvent.change(screen.getByTestId('game-points-input'), { target: { value: '50' } });
       fireEvent.click(screen.getByText('LOBİYE GÖNDER'));
 
       await waitFor(() => {
@@ -216,7 +216,7 @@ describe('CreateGameModal', () => {
       render(<CreateGameModal {...defaultProps} />);
 
       // Set invalid points (above max)
-      const input = screen.getByDisplayValue('0');
+      const input = screen.getByTestId('game-points-input');
       fireEvent.change(input, { target: { value: '2000' } });
 
       // Submit form
@@ -238,7 +238,7 @@ describe('CreateGameModal', () => {
     it('disables submit button while submitting', async () => {
       render(<CreateGameModal {...defaultProps} />);
 
-      fireEvent.change(screen.getByDisplayValue('0'), { target: { value: '50' } });
+      fireEvent.change(screen.getByTestId('game-points-input'), { target: { value: '50' } });
 
       const submitButton = screen.getByText('LOBİYE GÖNDER');
       fireEvent.click(submitButton);
@@ -290,7 +290,7 @@ describe('CreateGameModal', () => {
     it('updates summary when points change', () => {
       render(<CreateGameModal {...defaultProps} />);
 
-      fireEvent.change(screen.getByDisplayValue('0'), { target: { value: '500' } });
+      fireEvent.change(screen.getByTestId('game-points-input'), { target: { value: '500' } });
 
       // Should show 500 points in summary (first occurrence)
       expect(screen.getAllByText('500 Puan')[0]).toBeInTheDocument();
@@ -299,7 +299,7 @@ describe('CreateGameModal', () => {
     it('calculates remaining points correctly', () => {
       render(<CreateGameModal {...defaultProps} maxPoints={1000} />);
 
-      fireEvent.change(screen.getByDisplayValue('0'), { target: { value: '300' } });
+      fireEvent.change(screen.getByTestId('game-points-input'), { target: { value: '300' } });
 
       // Should show 700 remaining (1000 - 300) in summary
       expect(screen.getByText('700 Puan')).toBeInTheDocument();
@@ -314,7 +314,7 @@ describe('CreateGameModal', () => {
       rerender(<CreateGameModal {...defaultProps} isOpen={true} />);
 
       // Should reset to default values
-      expect(screen.getByDisplayValue('0')).toBeInTheDocument();
+      expect((screen.getByTestId('game-points-input') as HTMLInputElement).value).toBe('0');
       expect(screen.getAllByText('Refleks Avı')[0]).toBeInTheDocument();
     });
 
@@ -327,7 +327,7 @@ describe('CreateGameModal', () => {
     it('prevents negative points input', () => {
       render(<CreateGameModal {...defaultProps} />);
 
-      const input = screen.getByDisplayValue('0');
+      const input = screen.getByTestId('game-points-input');
       fireEvent.change(input, { target: { value: '-50' } });
 
       // Should handle gracefully

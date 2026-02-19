@@ -82,6 +82,8 @@ module.exports = {
         float: "float 6s ease-in-out infinite",
         shimmer: "shimmer 2.5s linear infinite",
         "pulse-soft": "pulse-soft 4s ease-in-out infinite",
+        "grid-flow": "grid-flow 3s linear infinite",
+        "neon-pulse": "neon-pulse 2s ease-in-out infinite",
       },
       keyframes: {
         float: {
@@ -95,6 +97,14 @@ module.exports = {
         "pulse-soft": {
           "0%, 100%": { opacity: "0.6" },
           "50%": { opacity: "1" },
+        },
+        "grid-flow": {
+          "0%": { transform: "translateY(0)" },
+          "100%": { transform: "translateY(50px)" },
+        },
+        "neon-pulse": {
+          "0%, 100%": { textShadow: "0 0 7px #fff, 0 0 10px #fff, 0 0 21px #fff, 0 0 42px #0fa, 0 0 82px #0fa, 0 0 92px #0fa, 0 0 102px #0fa, 0 0 151px #0fa" },
+          "50%": { textShadow: "0 0 4px #fff, 0 0 7px #fff, 0 0 13px #fff, 0 0 25px #0fa, 0 0 54px #0fa, 0 0 62px #0fa, 0 0 71px #0fa, 0 0 100px #0fa" },
         },
       },
     },

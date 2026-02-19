@@ -6,6 +6,7 @@ export const GAME_ASSETS = {
     strategyChess: '/assets/games/retro-kit/strategy-hex.webp',
     knowledgeQuiz: '/assets/games/retro-kit/knowledge-board.webp',
     tankBattle: '/assets/games/retro-kit/war-tanks.webp',
+    memoryDuel: '/assets/games/retro-kit/cyber-board.webp',
   },
   hud: {
     coin: '/assets/games/kenney/hud/hudCoin.png',

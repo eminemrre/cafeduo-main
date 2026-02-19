@@ -10,6 +10,7 @@ const gameIcon = (gameType: string) => {
   if (gameType === 'Ritim Kopyala') return '🛡️';
   if (gameType === 'Retro Satranç') return '♟️';
   if (gameType === 'Çift Tek Sprint') return '🔢';
+  if (gameType === 'Neon Hafıza') return '🔮';
   if (gameType === 'Bilgi Yarışı') return '🧠';
   return '🎮';
 };

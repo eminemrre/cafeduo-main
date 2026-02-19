@@ -169,7 +169,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
 
       {/* Modal Content */}
       <div
-        className="relative bg-[linear-gradient(170deg,rgba(6,13,29,0.98),rgba(8,24,51,0.9))] border-2 border-cyan-400/35 rounded-2xl p-4 sm:p-6 w-full max-w-md shadow-[0_0_50px_rgba(10,215,255,0.2)] transform transition-all scale-100 opacity-100 max-h-[calc(100vh-1.5rem)] sm:max-h-[min(860px,calc(100vh-3rem))] overflow-y-auto rf-modal-scroll"
+        className="relative bg-[linear-gradient(170deg,rgba(6,13,29,0.98),rgba(8,24,51,0.9))] border-2 border-cyan-400/35 rounded-2xl p-4 sm:p-6 w-full max-w-xl shadow-[0_0_50px_rgba(10,215,255,0.2)] transform transition-all scale-100 opacity-100 max-h-[calc(100vh-1.5rem)] sm:max-h-[min(860px,calc(100vh-3rem))] overflow-y-auto rf-modal-scroll"
         data-testid="create-game-modal"
       >
 
@@ -195,33 +195,47 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
 
           {/* Game Type Selection */}
           <div>
-            <label className="block text-cyan-300 font-pixel text-xs mb-3 tracking-widest">OYUN TÜRÜ SEÇ</label>
-            <div className="space-y-2">
+            <label className="block text-cyan-300 font-pixel text-xs mb-3 tracking-widest">
+              OYUN TÜRÜ SEÇ
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {GAME_TYPES.map((game) => (
                 <button
                   key={game.id}
                   type="button"
                   onClick={() => handleGameTypeChange(game.name)}
                   data-testid={`game-type-${game.id}`}
-                  className={`w-full p-3 border-2 rounded transition-all text-left ${gameType === game.name
-                    ? 'border-cyan-500 bg-cyan-500/16'
-                    : 'border-cyan-400/20 hover:border-cyan-400/35 bg-black/30'
+                  className={`relative group w-full p-4 border-2 rounded-xl transition-all text-left overflow-hidden ${gameType === game.name
+                      ? 'border-cyan-400 bg-cyan-900/40 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
+                      : 'border-cyan-800/40 bg-black/40 hover:border-cyan-500/60 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]'
                     }`}
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="text-white font-retro text-base sm:text-lg leading-tight">{game.name}</div>
-                      <div className="text-cyan-300 text-[10px] font-pixel tracking-[0.12em] uppercase">{game.category}</div>
-                      <div className="text-[var(--rf-muted)] text-xs leading-snug">{game.description}</div>
+                  {/* Glow Effect */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-400/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                  <div className="relative z-10 flex flex-col h-full">
+                    <div className="flex justify-between items-start mb-2">
+                      <span className="text-cyan-300 text-[10px] font-pixel tracking-[0.1em] uppercase bg-cyan-950/50 px-2 py-1 rounded">
+                        {game.category}
+                      </span>
+                      {gameType === game.name && (
+                        <Check size={18} className="text-cyan-300 animate-pulse" />
+                      )}
                     </div>
-                    {game.minPoints > 0 ? (
-                      <div className="text-amber-300 text-xs font-pixel shrink-0 text-right leading-tight min-w-[68px]">
-                        Min {game.minPoints} Puan
+
+                    <div className="text-white font-retro text-lg sm:text-lg leading-tight mb-2">
+                      {game.name}
+                    </div>
+
+                    <div className="text-[var(--rf-muted)] text-xs leading-snug flex-1 mb-2">
+                      {game.description}
+                    </div>
+
+                    {game.minPoints > 0 && (
+                      <div className="text-amber-300/90 text-xs font-pixel mt-auto pt-2 border-t border-cyan-800/30">
+                        MIN {game.minPoints} PUAN
                       </div>
-                    ) : null}
-                    {gameType === game.name ? (
-                      <Check size={20} className="text-cyan-300" />
-                    ) : null}
+                    )}
                   </div>
                 </button>
               ))}
@@ -233,36 +247,51 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
             )}
           </div>
 
-          {/* Points Input */}
+          {/* Points Input (Energy Bar Style) */}
           <div>
-            <label className="block text-cyan-300 font-pixel text-xs mb-3 tracking-widest">KATILIM PUANI</label>
-            <div className="relative">
+            <label className="block text-cyan-300 font-pixel text-xs mb-3 tracking-widest flex justify-between">
+              <span>ENERJİ (PUAN) YATIRIMI</span>
+              <span className="text-amber-300">{points} / {maxPoints}</span>
+            </label>
+
+            <div className="relative p-4 rounded-xl border border-cyan-800/40 bg-[#040a16] shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
               <input
-                type="number"
-                value={points}
-                onChange={(e) => handlePointsChange(e.target.value)}
-                onBlur={() => setTouched(prev => ({ ...prev, points: true }))}
+                type="range"
                 min={minPoints}
                 max={maxPoints}
-                data-testid="game-points-input"
-                className={`w-full bg-black border-2 ${errors.points && touched.points ? 'border-red-500' : 'border-cyan-400/25'} text-white p-3 pr-20 font-retro text-xl sm:text-2xl text-center focus:border-cyan-300 outline-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                value={points}
+                onChange={(e) => handlePointsChange(e.target.value)}
+                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400 mb-4"
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--rf-muted)] text-sm">Puan</span>
+
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  value={points}
+                  onChange={(e) => handlePointsChange(e.target.value)}
+                  onBlur={() => setTouched(prev => ({ ...prev, points: true }))}
+                  min={minPoints}
+                  max={maxPoints}
+                  data-testid="game-points-input"
+                  className={`flex-1 bg-black/60 border-2 ${errors.points && touched.points ? 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'border-cyan-500/50 shadow-[0_0_15px_rgba(34,211,238,0.15)]'} text-white p-2 rounded-lg font-pixel text-xl text-center focus:border-cyan-300 focus:shadow-[0_0_15px_rgba(34,211,238,0.4)] outline-none transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                />
+                <div className="text-[var(--rf-muted)] text-sm font-pixel pt-1">PUAN</div>
+              </div>
             </div>
 
             {/* Preset Buttons */}
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-2 mt-3">
               {presetPoints.map((preset) => (
                 <button
                   key={preset.label}
                   type="button"
                   onClick={() => handlePointsChange(preset.value.toString())}
-                  className={`flex-1 min-h-[40px] py-1 px-2 text-xs border-2 rounded-md transition-colors ${points === preset.value
-                    ? 'border-cyan-500 bg-cyan-500/20 text-cyan-300'
-                    : 'border-cyan-400/20 hover:border-cyan-400/35 text-[var(--rf-muted)]'
+                  className={`flex-1 overflow-hidden relative group min-h-[36px] py-1 px-2 text-xs font-pixel tracking-wider border rounded-md transition-all ${points === preset.value
+                    ? 'border-cyan-400 bg-cyan-900/50 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)]'
+                    : 'border-cyan-800/50 hover:border-cyan-500/50 text-[var(--rf-muted)] bg-black/40'
                     }`}
                 >
-                  {preset.label}
+                  <span className="relative z-10">{preset.label}</span>
                 </button>
               ))}
             </div>

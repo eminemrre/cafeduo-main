@@ -236,6 +236,51 @@ export const TankBattle: React.FC<TankBattleProps> = ({
         }
     }, [currentUser.username, gameId, isBot, onGameEnd, target]);
 
+    const [wind, setWind] = useState(0); // -2.5 to 2.5
+
+    const generateWind = useCallback(() => {
+        if (isBot) {
+            setWind(Number((Math.random() * 5 - 2.5).toFixed(1)));
+            return;
+        }
+        // For multiplayer, sync wind via game state if possible or let host generate.
+        // Simplified: Generate locally for now, since it's just visual/fun
+        setWind(Number((Math.random() * 5 - 2.5).toFixed(1)));
+    }, [isBot]);
+
+    useEffect(() => {
+        const socket = socketService.getSocket();
+        const handleOpponentMove = (payload: any) => {
+            if (String(payload?.gameId) !== String(gameId)) return;
+
+            const moveData = payload?.move;
+            if (!moveData || typeof moveData.angle !== 'number' || typeof moveData.power !== 'number') return;
+
+            // Rakip ateş etti!
+            if (moveData.wind !== undefined) setWind(moveData.wind);
+
+            setMessage(`${target} ateş etti!`);
+            playGameSfx('hit', 0.25);
+
+            const angleRad = (180 - moveData.angle) * (Math.PI / 180);
+            const speed = moveData.power * 0.08;
+            const startX = opponentTankX * CANVAS_W;
+            const startY = opponentTankY - TANK_H + 4;
+
+            projectileRef.current = {
+                x: startX,
+                y: startY,
+                vx: Math.cos(angleRad) * speed,
+                vy: -Math.sin(angleRad) * speed,
+            };
+        };
+
+        socket.on('opponent_move', handleOpponentMove);
+        return () => {
+            socket.off('opponent_move', handleOpponentMove);
+        };
+    }, [gameId, opponentTankX, opponentTankY, target]);
+
     // ------- Draw -------
     const draw = useCallback(() => {
         const canvas = canvasRef.current;
@@ -361,8 +406,17 @@ export const TankBattle: React.FC<TankBattleProps> = ({
         ctx.fillStyle = C.textDim;
         ctx.font = '11px monospace';
         ctx.fillText(`Açı: ${angle}°  Güç: ${power}%`, 10, 20);
-        ctx.fillText(isPlayerTurn ? '» Senin sıran' : `» ${target} ateş ediyor...`, 10, 36);
-    }, [angle, isPlayerTurn, opponentHP, playerHP, power, target, isBot, playerTankX, playerTankY, opponentTankX, opponentTankY]);
+
+        // Draw Wind
+        let windStr = 'Yok';
+        if (wind < 0) windStr = '◄◄ ' + Math.abs(wind);
+        if (wind > 0) windStr = '►► ' + Math.abs(wind);
+        ctx.fillStyle = wind === 0 ? C.textDim : '#39d98a';
+        ctx.fillText(`Rüzgar: ${windStr}`, 10, 36);
+
+        ctx.fillStyle = C.textDim;
+        ctx.fillText(isPlayerTurn ? '» Senin sıran' : `» ${target} ateş ediyor...`, 10, 52);
+    }, [angle, isPlayerTurn, opponentHP, playerHP, power, target, isBot, playerTankX, playerTankY, opponentTankX, opponentTankY, wind]);
 
     // ------- Fire -------
     const fire = useCallback(() => {
@@ -375,13 +429,17 @@ export const TankBattle: React.FC<TankBattleProps> = ({
         const startX = playerTankX * CANVAS_W;
         const startY = playerTankY - TANK_H + 4;
 
+        if (!isBot && gameId) {
+            socketService.emitMove(String(gameId), { angle, power, wind });
+        }
+
         projectileRef.current = {
             x: startX,
             y: startY,
             vx: Math.cos(angleRad) * speed,
             vy: -Math.sin(angleRad) * speed,
         };
-    }, [angle, done, firing, isPlayerTurn, playerTankX, playerTankY, power, resolvingMatch]);
+    }, [angle, done, firing, isPlayerTurn, playerTankX, playerTankY, power, resolvingMatch, gameId, isBot, wind]);
 
     // ------- Projectile physics loop -------
     useEffect(() => {
@@ -394,6 +452,10 @@ export const TankBattle: React.FC<TankBattleProps> = ({
 
             if (proj) {
                 proj.vy += GRAVITY;
+
+                // Apply wind effect (only affects X velocity slightly)
+                proj.vx += (wind * 0.005);
+
                 proj.x += proj.vx;
                 proj.y += proj.vy;
 
@@ -405,7 +467,13 @@ export const TankBattle: React.FC<TankBattleProps> = ({
                         // Hit ground
                         const opX = opponentTankX * CANVAS_W;
                         const opY = opponentTankY;
-                        const dist = Math.sqrt((proj.x - opX) ** 2 + (proj.y - opY) ** 2);
+                        // Sadece rakip isabetlerini değil, oyuncu kendini de vurabilir veya kimin sırasındaysa tersini kontrol et
+                        const isPlayerShooting = isPlayerTurn;
+
+                        const targetX = isPlayerShooting ? opponentTankX * CANVAS_W : playerTankX * CANVAS_W;
+                        const targetY = isPlayerShooting ? opponentTankY : playerTankY;
+
+                        const dist = Math.sqrt((proj.x - targetX) ** 2 + (proj.y - targetY) ** 2);
 
                         explosionRef.current = { x: proj.x, y: proj.y, startTime: Date.now() };
                         projectileRef.current = null;
@@ -413,27 +481,40 @@ export const TankBattle: React.FC<TankBattleProps> = ({
 
                         if (dist <= HIT_RADIUS) {
                             // Hit!
-                            const newHP = Math.max(0, opponentHP - 1);
-                            setOpponentHP(newHP);
-                            setMessage('İsabet! Rakip tankı vurdun!');
+                            if (isPlayerShooting) {
+                                const newHP = Math.max(0, opponentHP - 1);
+                                setOpponentHP(newHP);
+                                setMessage('İsabet! Rakip tankı vurdun!');
 
-                            if (newHP <= 0) {
-                                void syncLiveProgress(MAX_HP - playerHP + 1, MAX_HP - newHP, true);
-                                void finalizeMatch(currentUser.username, MAX_HP);
-                                return;
+                                if (newHP <= 0) {
+                                    void syncLiveProgress(MAX_HP - playerHP + 1, MAX_HP - newHP, true);
+                                    void finalizeMatch(currentUser.username, MAX_HP);
+                                    return;
+                                }
+                            } else {
+                                const newHP = Math.max(0, playerHP - 1);
+                                setPlayerHP(newHP);
+                                setMessage('Tankın vuruldu!');
+
+                                if (newHP <= 0) {
+                                    void syncLiveProgress(MAX_HP - newHP, MAX_HP - opponentHP + 1, true);
+                                    void finalizeMatch(target, 0);
+                                    return;
+                                }
                             }
                         } else {
-                            setMessage('Iskaladın! Rakibin sırası.');
+                            setMessage(isPlayerShooting ? 'Iskaladın! Rakibin sırası.' : 'Rakip ıskaladı! Senin sıran.');
                         }
 
                         // Switch turn after explosion
                         setTimeout(() => {
                             explosionRef.current = null;
-                            setIsPlayerTurn(false);
+                            setIsPlayerTurn(!isPlayerShooting);
                             setFiring(false);
+                            generateWind();
 
                             // Bot fires back
-                            if (isBot) {
+                            if (isBot && isPlayerShooting) {
                                 setTimeout(() => {
                                     botFire();
                                 }, 800);
@@ -445,14 +526,20 @@ export const TankBattle: React.FC<TankBattleProps> = ({
 
                 // Went off screen
                 if (proj.x < -50 || proj.x > CANVAS_W + 50 || proj.y > CANVAS_H + 50) {
+                    const isPlayerShooting = isPlayerTurn;
                     projectileRef.current = null;
-                    setMessage('Mermi alanın dışına çıktı. Rakibin sırası.');
-                    setIsPlayerTurn(false);
+                    setMessage('Mermi alanın dışına çıktı. Sıra değişti.');
+                    setIsPlayerTurn(!isPlayerShooting);
                     setFiring(false);
+                    generateWind();
 
-                    if (isBot) {
-                        setTimeout(() => { botFire(); }, 800);
+                    // Bot fires back
+                    if (isBot && isPlayerShooting) {
+                        setTimeout(() => {
+                            botFire();
+                        }, 800);
                     }
+                    return;
                 }
             }
 
@@ -466,7 +553,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             cancelAnimationFrame(animFrameRef.current);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [draw, opponentHP, playerHP, isBot]);
+    }, [draw, opponentHP, playerHP, isBot, wind]);
 
     // ------- Bot AI -------
     const botFire = useCallback(() => {
@@ -666,7 +753,8 @@ export const TankBattle: React.FC<TankBattleProps> = ({
                                 value={angle}
                                 onChange={(e) => setAngle(Number(e.target.value))}
                                 disabled={!isPlayerTurn || firing || resolvingMatch}
-                                className="w-full accent-cyan-400"
+                                className="w-full accent-cyan-400 relative z-20 pointer-events-auto touch-auto"
+                                style={{ minHeight: '30px' }}
                                 data-testid="tank-angle-slider"
                             />
                         </div>
@@ -682,7 +770,8 @@ export const TankBattle: React.FC<TankBattleProps> = ({
                                 value={power}
                                 onChange={(e) => setPower(Number(e.target.value))}
                                 disabled={!isPlayerTurn || firing || resolvingMatch}
-                                className="w-full accent-amber-400"
+                                className="w-full accent-amber-400 relative z-20 pointer-events-auto touch-auto"
+                                style={{ minHeight: '30px' }}
                                 data-testid="tank-power-slider"
                             />
                         </div>

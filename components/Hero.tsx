@@ -82,6 +82,8 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
         transition={reduceMotion ? undefined : { duration: 19, repeat: Infinity, ease: 'easeInOut' }}
       />
       <motion.div className="absolute inset-0 rf-grid opacity-20 pointer-events-none" style={{ y: starsY }} />
+      {/* Synthwave animated grid overlay */}
+      <div className="absolute left-0 right-0 top-0 bottom-[-100px] rf-grid opacity-25 pointer-events-none animate-grid-flow" style={{ perspective: '800px', transform: 'rotateX(45deg) scale(2)' }} />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(8,197,255,0.2),transparent_35%),radial-gradient(circle_at_82%_14%,rgba(242,165,90,0.2),transparent_42%)] animate-aurora-pan pointer-events-none" />
       <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(3,14,32,0.75)_0%,rgba(3,14,32,0.2)_45%,rgba(36,86,142,0.22)_100%)] pointer-events-none" />
       <motion.div
@@ -137,7 +139,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
               className="font-display text-[2rem] max-[360px]:text-[1.75rem] sm:text-[2.95rem] md:text-[4.45rem] leading-[1.02] text-white tracking-tight drop-shadow-[0_10px_28px_rgba(0,0,0,0.45)]"
             >
               Bekleme süresini
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-teal-300">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-teal-300 animate-neon-pulse drop-shadow-[0_0_15px_rgba(34,211,238,0.6)]">
                 eşleşmeli mini oyunlarla
               </span>
               ödüllü ana dönüştür.
@@ -167,7 +169,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
               {isLoggedIn ? (
                 <RetroButton
                   onClick={handlePanelClick}
-                  className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base"
+                  className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base border-cyan-400 shadow-[0_0_15px_rgba(10,215,255,0.3)] hover:shadow-[0_0_30px_rgba(10,215,255,0.6)] transition-all z-10"
                   variant="primary"
                 >
                   PANELE GEÇ <ArrowRight className="ml-2" size={18} />
@@ -179,7 +181,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                     variantA={
                       <RetroButton
                         onClick={onRegister}
-                        className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base"
+                        className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base border-cyan-400 shadow-[0_0_15px_rgba(10,215,255,0.3)] hover:shadow-[0_0_30px_rgba(10,215,255,0.6)] transition-all z-10"
                         variant="primary"
                       >
                         KAYDOL VE EŞLEŞ <ArrowRight className="ml-2" size={18} />
@@ -188,7 +190,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                     variantB={
                       <RetroButton
                         onClick={onRegister}
-                        className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base"
+                        className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base border-cyan-400 shadow-[0_0_15px_rgba(10,215,255,0.3)] hover:shadow-[0_0_30px_rgba(10,215,255,0.6)] transition-all z-10"
                         variant="primary"
                       >
                         KAYDOL VE EŞLEŞ <Sparkles className="ml-2" size={18} />
@@ -199,7 +201,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                   <RetroButton
                     onClick={onLogin}
                     data-testid="hero-login-button"
-                    className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base"
+                    className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base border-slate-700 hover:border-cyan-800/60 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]"
                     variant="secondary"
                   >
                     OTURUM AÇ

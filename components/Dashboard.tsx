@@ -11,6 +11,7 @@ import { UserProfileModal } from './UserProfileModal';
 import { ReflexRush } from './ReflexRush';
 import { ArenaBattle } from './ArenaBattle';
 import { TankBattle } from './TankBattle';
+import { MemoryDuel } from './MemoryDuel';
 import { OddEvenSprint } from './OddEvenSprint';
 import { KnowledgeQuiz } from './KnowledgeQuiz';
 import { RetroChess } from './RetroChess';
@@ -384,6 +385,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
             />
           ) : activeGameType === 'Tank Düellosu' ? (
             <TankBattle
+              gameId={activeGameId}
+              currentUser={currentUser}
+              opponentName={opponentName || 'Rakip'}
+              isBot={isBot}
+              onGameEnd={handleGameFinish}
+              onLeave={handleLeaveGame}
+            />
+          ) : activeGameType === 'Neon Hafıza' ? (
+            <MemoryDuel
               gameId={activeGameId}
               currentUser={currentUser}
               opponentName={opponentName || 'Rakip'}

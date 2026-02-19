@@ -139,7 +139,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
               className="font-display text-[2rem] max-[360px]:text-[1.75rem] sm:text-[2.95rem] md:text-[4.45rem] leading-[1.02] text-white tracking-tight drop-shadow-[0_10px_28px_rgba(0,0,0,0.45)]"
             >
               Bekleme süresini
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-teal-300 animate-neon-pulse drop-shadow-[0_0_15px_rgba(34,211,238,0.6)]">
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-teal-300">
                 eşleşmeli mini oyunlarla
               </span>
               ödüllü ana dönüştür.
@@ -211,7 +211,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
             </div>
 
             <div className="mt-7 grid grid-cols-1 min-[520px]:grid-cols-3 gap-3 max-w-2xl">
-              <div className="rf-panel p-4 animate-neon-pulse rf-horizon">
+              <div className="rf-panel p-4 rf-horizon">
                 <p className="font-pixel text-[10px] tracking-[0.2em] text-cyan-300 uppercase">Tur Süresi</p>
                 <p className="text-3xl font-display text-white mt-1">45 sn</p>
                 <p className="text-sm text-slate-300 mt-1">Beklerken tek turda tamamlanır.</p>

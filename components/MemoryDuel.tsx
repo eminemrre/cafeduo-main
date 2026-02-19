@@ -39,6 +39,7 @@ export const MemoryDuel: React.FC<MemoryDuelProps> = ({
     const [message, setMessage] = useState('Kartları eşleştir!');
     const [resolvingMatch, setResolvingMatch] = useState(false);
     const [isReady, setIsReady] = useState(false);
+    const [isPlayerTurn, setIsPlayerTurn] = useState(true);
 
     const target = opponentName || 'Rakip';
     const finishHandledRef = useRef(false);
@@ -217,15 +218,34 @@ export const MemoryDuel: React.FC<MemoryDuelProps> = ({
             indices.forEach(idx => {
                 next[idx] = { ...next[idx], matchedBy: byPlayer, flippedBy: null };
             });
-
-            checkGameOver(next, byPlayer === currentUser.username ? playerScore + 1 : playerScore, byPlayer === target ? opponentScore + 1 : opponentScore);
             return next;
         });
         if (byPlayer === currentUser.username) {
-            setPlayerScore(s => s + 1);
+            setPlayerScore(prev => {
+                const newScore = prev + 1;
+                // Use functional update to get accurate scores
+                setCards(currentCards => {
+                    const allMatched = currentCards.every(c => c.matchedBy !== null);
+                    if (allMatched) {
+                        checkGameOver(currentCards, newScore, opponentScore);
+                    }
+                    return currentCards;
+                });
+                return newScore;
+            });
             setMessage('Eşleşme buldun!');
         } else {
-            setOpponentScore(s => s + 1);
+            setOpponentScore(prev => {
+                const newScore = prev + 1;
+                setCards(currentCards => {
+                    const allMatched = currentCards.every(c => c.matchedBy !== null);
+                    if (allMatched) {
+                        checkGameOver(currentCards, playerScore, newScore);
+                    }
+                    return currentCards;
+                });
+                return newScore;
+            });
             setMessage(`${target} eşleşme buldu!`);
         }
     };
@@ -271,10 +291,76 @@ export const MemoryDuel: React.FC<MemoryDuelProps> = ({
                         socketService.emitMove(String(gameId), { action: 'unflip', indices: activeFlipped });
                     }
                     lockRef.current = false;
+                    // In bot mode, let bot take a turn after player fails
+                    if (isBot) {
+                        setIsPlayerTurn(false);
+                        setTimeout(() => botTurn(), 600);
+                    }
                 }, 1000);
             }
         }
     };
+
+    // Bot AI: pick two random unmatched cards
+    const botTurn = useCallback(() => {
+        if (done || !isBot) return;
+        setMessage(`${target} düşünüyor...`);
+
+        setTimeout(() => {
+            setCards(currentCards => {
+                const unmatchedIndices = currentCards
+                    .map((c, i) => c.matchedBy === null ? i : -1)
+                    .filter(i => i !== -1);
+
+                if (unmatchedIndices.length < 2) return currentCards;
+
+                // Shuffle and pick two
+                const shuffled = [...unmatchedIndices].sort(() => Math.random() - 0.5);
+                const idx1 = shuffled[0];
+                const idx2 = shuffled[1];
+
+                // Flip first card
+                const next1 = [...currentCards];
+                next1[idx1] = { ...next1[idx1], flippedBy: target };
+
+                // Schedule second flip
+                setTimeout(() => {
+                    setCards(prev => {
+                        const next2 = [...prev];
+                        next2[idx2] = { ...next2[idx2], flippedBy: target };
+                        return next2;
+                    });
+
+                    // Check match
+                    setTimeout(() => {
+                        const card1 = currentCards[idx1];
+                        const card2 = currentCards[idx2];
+
+                        if (card1.emoji === card2.emoji) {
+                            matchCardsInternal([idx1, idx2], target, true);
+                            playGameSfx('fail', 0.2);
+                            setMessage(`${target} eşleşme buldu!`);
+                            // Bot gets another turn on match
+                            setCards(latest => {
+                                const still = latest.filter(c => c.matchedBy === null).length;
+                                if (still >= 2) {
+                                    setTimeout(() => botTurn(), 800);
+                                }
+                                return latest;
+                            });
+                        } else {
+                            unflipCardsInternal([idx1, idx2], true);
+                            setMessage('Rakip ıskaladı! Senin sıran.');
+                        }
+                        setIsPlayerTurn(true);
+                    }, 800);
+                }, 600);
+
+                return next1;
+            });
+        }, 500);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [done, isBot, target]);
 
     return (
         <div className="max-w-xl mx-auto rf-panel border-cyan-400/22 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden" data-testid="memory-duel">

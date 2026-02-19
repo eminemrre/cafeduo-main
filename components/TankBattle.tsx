@@ -574,72 +574,16 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             const startX = opponentTankX * CANVAS_W;
             const startY = opponentTankY - TANK_H + 4;
 
+            // Just launch the projectile — the main tick loop handles collision
             projectileRef.current = {
                 x: startX,
                 y: startY,
                 vx: Math.cos(angleRad) * speed,
                 vy: -Math.sin(angleRad) * speed,
             };
-
-            // Bot projectile physics is handled by same loop, but track bot hit separately
-            const checkBotHit = () => {
-                const proj = projectileRef.current;
-                if (!proj) {
-                    // Projectile already resolved
-                    return;
-                }
-
-                const terrain = terrainRef.current;
-                const xNorm = proj.x / CANVAS_W;
-                if (xNorm >= 0 && xNorm <= 1) {
-                    const groundY = terrainYAt(terrain, xNorm);
-                    if (proj.y >= groundY) {
-                        const plX = playerTankX * CANVAS_W;
-                        const plY = playerTankY;
-                        const dist = Math.sqrt((proj.x - plX) ** 2 + (proj.y - plY) ** 2);
-
-                        explosionRef.current = { x: proj.x, y: proj.y, startTime: Date.now() };
-                        projectileRef.current = null;
-                        playGameSfx(dist <= HIT_RADIUS ? 'fail' : 'select', 0.2);
-
-                        if (dist <= HIT_RADIUS) {
-                            const newHP = Math.max(0, playerHP - 1);
-                            setPlayerHP(newHP);
-                            setMessage('Tankın vuruldu!');
-
-                            if (newHP <= 0) {
-                                void syncLiveProgress(MAX_HP - newHP, MAX_HP - opponentHP + 1, true);
-                                void finalizeMatch(target, 0);
-                                return;
-                            }
-                        } else {
-                            setMessage('Rakip ıskaladı! Senin sıran.');
-                        }
-
-                        setTimeout(() => {
-                            explosionRef.current = null;
-                            setIsPlayerTurn(true);
-                            setFiring(false);
-                        }, EXPLOSION_DURATION);
-                        return;
-                    }
-                }
-
-                if (proj.x < -50 || proj.x > CANVAS_W + 50 || proj.y > CANVAS_H + 50) {
-                    projectileRef.current = null;
-                    setMessage('Rakip ıskaladı! Senin sıran.');
-                    setIsPlayerTurn(true);
-                    setFiring(false);
-                    return;
-                }
-
-                requestAnimationFrame(checkBotHit);
-            };
-
-            requestAnimationFrame(checkBotHit);
         }, 600);
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [done, target, playerHP, opponentHP, playerTankX, playerTankY, opponentTankX, opponentTankY, finalizeMatch, syncLiveProgress]);
+    }, [done, target, playerTankX, playerTankY, opponentTankX, opponentTankY]);
 
     // Init
     useEffect(() => {

@@ -2,6 +2,7 @@ const { pool, isDbConnected } = require('../db');
 const { cache, clearCache } = require('../middleware/cache');
 const { getDistanceFromLatLonInMeters } = require('../utils/geo');
 const memoryState = require('../store/memoryState');
+const logger = require('../utils/logger');
 
 const FALLBACK_CAFES = [
     {
@@ -182,7 +183,7 @@ const cafeController = {
             const result = await pool.query('SELECT * FROM cafes ORDER BY name');
             res.json(result.rows);
         } catch (err) {
-            console.error('getAllCafes DB error, returning fallback list:', err.message);
+            logger.error('getAllCafes DB error, returning fallback list:', err.message);
             // Fallback for demo mode and temporary DB outages
             res.json(
                 FALLBACK_CAFES.map(({ pin, daily_pin, ...publicCafe }) => publicCafe)
@@ -226,7 +227,7 @@ const cafeController = {
 
             res.json({ success: true, message: 'PIN güncellendi.' });
         } catch (err) {
-            console.error(err);
+            logger.error(err);
             res.status(500).json({ error: 'PIN güncellenemedi.' });
         }
     },
@@ -364,7 +365,7 @@ const cafeController = {
                 cafe: result.rows[0],
             });
         } catch (err) {
-            console.error('updateLocation error:', err);
+            logger.error('updateLocation error:', err);
             return res.status(500).json({ error: 'Kafe konumu güncellenemedi.' });
         }
     },
@@ -513,7 +514,7 @@ const cafeController = {
             });
 
         } catch (err) {
-            console.error(err);
+            logger.error(err);
             res.status(500).json({ error: 'Check-in başarısız.' });
         }
     }

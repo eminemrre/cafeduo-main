@@ -41,10 +41,10 @@ const buildPasswordResetUrl = (rawToken) => {
     const baseUrl =
         String(
             process.env.APP_BASE_URL ||
-                process.env.PUBLIC_APP_URL ||
-                process.env.FRONTEND_URL ||
-                corsOrigin ||
-                'http://localhost:5173'
+            process.env.PUBLIC_APP_URL ||
+            process.env.FRONTEND_URL ||
+            corsOrigin ||
+            'http://localhost:5173'
         )
             .trim()
             .replace(/\/+$/, '') || 'http://localhost:5173';
@@ -216,7 +216,7 @@ const verifyRecaptcha = async (token) => {
         const data = await response.json();
         return Boolean(data.success);
     } catch (error) {
-        console.error('reCAPTCHA Error:', error);
+        logger.error('reCAPTCHA Error:', error);
         // Secret key tanımlıysa ve doğrulama servisine erişilemediyse fail-closed davran.
         return false;
     }
@@ -301,7 +301,7 @@ const authController = {
             memoryState.users.unshift(memoryUser);
             return res.json(toPublicUser(memoryUser));
         } catch (err) {
-            console.error('Register error:', err);
+            logger.error('Register error:', err);
             if (err?.code === '23505') {
                 return res.status(400).json({ error: 'E-posta kullanımda.' });
             }
@@ -388,7 +388,7 @@ const authController = {
             const token = generateToken(memoryUser);
             return res.json({ user: toPublicUser(memoryUser), token });
         } catch (err) {
-            console.error('Login error:', err);
+            logger.error('Login error:', err);
             res.status(500).json({ error: 'Sunucu hatası.' });
         }
     },

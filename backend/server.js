@@ -69,13 +69,8 @@ const { createGameService } = require('./services/gameService');
 const { registerGameCleanupJobs } = require('./jobs/gameCleanupJobs');
 const { authenticateToken, requireOwnership } = require('./middleware/auth'); // Auth Middleware Imports
 
-// Simple Logger (can be replaced with Winston in production)
-const logger = {
-  info: (...args) => console.log(new Date().toISOString(), '[INFO]', ...args),
-  error: (...args) => console.error(new Date().toISOString(), '[ERROR]', ...args),
-  warn: (...args) => console.warn(new Date().toISOString(), '[WARN]', ...args),
-  debug: (...args) => process.env.NODE_ENV === 'development' && console.log(new Date().toISOString(), '[DEBUG]', ...args)
-};
+// Setup Logger
+const logger = require('./utils/logger');
 const handleApiError = createErrorHandler({ logger });
 
 const DEFAULT_ALLOWED_ORIGINS = [
@@ -247,7 +242,7 @@ const io = new Server(server, {
 });
 
 io.on('connection', (socket) => {
-  console.log(`⚡ Client connected: ${socket.id}`);
+  logger.info(`⚡ Client connected: ${socket.id}`);
 
   // Genel oyun odasına katılım
   socket.on('join_game', (gameId) => {
@@ -257,7 +252,7 @@ io.on('connection', (socket) => {
     }
 
     socket.join(normalizedGameId);
-    console.log(`Socket ${socket.id} joined game: ${normalizedGameId}`);
+    logger.info(`Socket ${socket.id} joined game: ${normalizedGameId}`);
   });
 
   socket.on('game_move', (data) => {
@@ -282,7 +277,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    console.log(`Client disconnected: ${socket.id}`);
+    logger.info(`Client disconnected: ${socket.id}`);
   });
 });
 
@@ -292,12 +287,13 @@ if (!JWT_SECRET) {
   throw new Error('JWT_SECRET is required. Refusing to start with an insecure fallback secret.');
 }
 
-console.log("🚀 Starting Server...");
-console.log(
+// 4) START SERVER / INIT DB
+logger.info("🚀 Starting Server...");
+logger.info(
   "🔑 Google Client ID:",
   process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID ? "Loaded ✅" : "MISSING ❌"
 );
-console.log("🗄️  Database URL:", process.env.DATABASE_URL ? "Loaded ✅" : "MISSING ❌");
+logger.info("🗄️  Database URL:", process.env.DATABASE_URL ? "Loaded ✅" : "MISSING ❌");
 
 // ==========================================
 // SECURITY MIDDLEWARE - Enhanced Authentication
@@ -338,7 +334,7 @@ app.use(cors({
     if (allowedOrigins.includes(origin) || !origin) {
       callback(null, true);
     } else {
-      console.warn(`Blocked CORS request from: ${origin}`);
+      logger.warn(`Blocked CORS request from: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -354,7 +350,7 @@ app.use(express.urlencoded({ extended: false, limit: '100kb', parameterLimit: 10
 const initDb = async () => {
   if (await isDbConnected()) {
     try {
-      console.log('🔄 Veritabanı şeması kontrol ediliyor...');
+      logger.info('🔄 Veritabanı şeması kontrol ediliyor...');
 
       // 1. Users Table
       await pool.query(`
@@ -447,14 +443,14 @@ const initDb = async () => {
         try {
           await pool.query(`ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS ${column} ${type}`);
         } catch (e) {
-          console.error(`⚠️ Sütun eklenemedi: ${table}.${column}`, e.message);
+          logger.warn(`⚠️ Sütun eklenemedi: ${table}.${column} - ${e.message}`);
         }
       };
       const createIndex = async (indexName, query) => {
         try {
           await pool.query(query);
         } catch (e) {
-          console.error(`⚠️ Index oluşturulamadı: ${indexName}`, e.message);
+          logger.warn(`⚠️ Index oluşturulamadı: ${indexName} - ${e.message}`);
         }
       };
 
@@ -567,7 +563,8 @@ const initDb = async () => {
             ('Yenilmez', '10 galibiyet al.', 'crown', 500, 'wins', 10),
             ('Zengin', '1000 puana ulaş.', 'coins', 300, 'points', 1000)
           `);
-        console.log('🏆 Başlangıç başarımları eklendi.');
+        logger.info('🏆 Başlangıç başarımları eklendi.');
+        clearCache('achievements:*');
       }
 
       // 8. Seed Initial Rewards (If there is no active reward left)
@@ -580,12 +577,13 @@ const initDb = async () => {
             ('Cheesecake İkramı', 400, 'Tatlı bir mola ver.', 'dessert', true),
             ('Oyun Jetonu x5', 100, 'Ekstra oyun hakkı.', 'game', true)
           `);
-        console.log('🎁 Başlangıç ödülleri eklendi.');
+        logger.info('🎁 Başlangıç ödülleri eklendi.');
+        clearCache('rewards:*');
       }
 
-      console.log('✅ Veritabanı şeması başarıyla güncellendi.');
+      logger.info('✅ Veritabanı şeması başarıyla güncellendi.');
     } catch (err) {
-      console.error('❌ Kritik Şema Hatası:', err);
+      logger.error('❌ Kritik Şema Hatası:', err);
     }
   }
 };
@@ -835,7 +833,7 @@ initDb().then(async () => {
 
   const startServer = (portToUse) => {
     server.listen(portToUse, () => {
-      console.log(`🚀 Server running on http://localhost:${portToUse}`);
+      logger.info(`🚀 Server running on http://localhost:${portToUse}`);
     });
   };
 
@@ -845,7 +843,7 @@ initDb().then(async () => {
       process.exit(1);
       return;
     }
-    console.error('Server error:', err);
+    logger.error('Server error:', err);
   });
 
   startServer(PORT);

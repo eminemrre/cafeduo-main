@@ -136,35 +136,41 @@ export const TankBattle: React.FC<TankBattleProps> = ({
     const [resolvingMatch, setResolvingMatch] = useState(false);
     const [turnTimer, setTurnTimer] = useState(TURN_TIME);
 
-    const terrainRef = useRef<number[]>(generateTerrain());
-    const projectileRef = useRef<{ x: number; y: number; vx: number; vy: number } | null>(null);
+    // Compute seed FIRST so terrain + positions use it
+    const gameSeed = useMemo(() => {
+        if (!gameId) return 0;
+        const str = String(gameId);
+        let h = 0;
+        for (let i = 0; i < str.length; i++) {
+            h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+        }
+        return Math.abs(h) || 1;
+    }, [gameId]);
+
+    // Terrain + positions initialized FROM seed (both clients produce identical results)
+    const terrainRef = useRef<number[]>(generateTerrain(gameSeed));
+    const projectileRef = useRef<{ x: number; y: number; vx: number; vy: number; firedBy: 'player' | 'opponent' } | null>(null);
     const explosionRef = useRef<{ x: number; y: number; startTime: number } | null>(null);
     const animFrameRef = useRef<number>(0);
     const finishHandledRef = useRef(false);
     const matchStartedAtRef = useRef(Date.now());
     const pollRef = useRef<number | null>(null);
     const turnTimerRef = useRef<number | null>(null);
+    const isHostRef = useRef<boolean>(true);
     const hostNameRef = useRef('');
     const guestNameRef = useRef('');
 
     const target = useMemo(() => (isBot ? 'BOT' : (opponentName || 'Rakip')), [isBot, opponentName]);
 
-    // Tank positions - deterministic from gameId for multiplayer sync
-    const gameSeed = useMemo(() => {
-        if (!gameId) return 0;
-        // Simple hash from gameId string
-        const str = String(gameId);
-        let h = 0;
-        for (let i = 0; i < str.length; i++) {
-            h = ((h << 5) - h + str.charCodeAt(i)) | 0;
-        }
-        return Math.abs(h);
-    }, [gameId]);
-
+    // Tank positions — deterministic from seed
     const [tankPositions, setTankPositions] = useState(() => {
-        const rng = createSeededRng(gameSeed || Date.now());
-        const px = 0.08 + rng() * 0.15;   // 0.08 - 0.23
-        const ox = 0.77 + rng() * 0.15;   // 0.77 - 0.92
+        const rng = createSeededRng(gameSeed);
+        // Consume same number of values as generateTerrain does internally
+        // (generateTerrain uses 5 rng calls for o1, o2, o3, p1, p2)
+        // We need a separate rng for positions
+        const posRng = createSeededRng(gameSeed + 9999);
+        const px = 0.08 + posRng() * 0.15;
+        const ox = 0.77 + posRng() * 0.15;
         return { px, ox };
     });
     const playerTankX = tankPositions.px;
@@ -290,13 +296,64 @@ export const TankBattle: React.FC<TankBattleProps> = ({
         const socket = socketService.getSocket();
         const handleOpponentMove = (payload: any) => {
             if (String(payload?.gameId) !== String(gameId)) return;
-
+            const player = payload?.player;
             const moveData = payload?.move;
-            if (!moveData || typeof moveData.angle !== 'number' || typeof moveData.power !== 'number') return;
+            if (!moveData) return;
 
-            // Rakip ateş etti!
+            // Handle shot result from opponent (HP sync)
+            if (moveData.action === 'shot_result') {
+                if (player !== currentUser.username) {
+                    if (moveData.hit) {
+                        if (moveData.targetIsShooter === false) {
+                            // Opponent hit US
+                            setPlayerHP(prev => Math.max(0, prev - 1));
+                            setMessage('Tankın vuruldu!');
+                            playGameSfx('fail', 0.3);
+                        }
+                    } else {
+                        setMessage('Rakip ıskaladı! Senin sıran.');
+                    }
+                    setIsPlayerTurn(true);
+                    setFiring(false);
+                    generateWind();
+                }
+                return;
+            }
+
+            // Handle game over from opponent
+            if (moveData.action === 'game_over') {
+                if (player !== currentUser.username) {
+                    const winner = moveData.winner;
+                    finishHandledRef.current = true;
+                    setDone(true);
+                    const iWon = winner === currentUser.username;
+                    setMessage(iWon ? 'Tebrikler, kazandın!' : 'Rakip kazandı!');
+                    setTimeout(() => onGameEnd(winner, iWon ? 10 : 0), 900);
+                }
+                return;
+            }
+
+            // Handle opponent leaving
+            if (moveData.action === 'player_left') {
+                if (player !== currentUser.username) {
+                    finishHandledRef.current = true;
+                    setDone(true);
+                    setMessage('Rakip oyundan ayrıldı! Kazanıyorsun!');
+                    setTimeout(() => onGameEnd(currentUser.username, 10), 900);
+                }
+                return;
+            }
+
+            // Handle fire from opponent (angle/power)
+            if (typeof moveData.angle !== 'number' || typeof moveData.power !== 'number') return;
+
+            // CRITICAL: skip our own echoed move from server
+            if (player === currentUser.username) return;
+
+            // Opponent fired!
             if (moveData.wind !== undefined) setWind(moveData.wind);
-
+            setIsPlayerTurn(false);
+            setFiring(true);
             setMessage(`${target} ateş etti!`);
             playGameSfx('hit', 0.25);
 
@@ -310,6 +367,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
                 y: startY,
                 vx: Math.cos(angleRad) * speed,
                 vy: -Math.sin(angleRad) * speed,
+                firedBy: 'opponent',
             };
         };
 
@@ -317,7 +375,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
         return () => {
             socket.off('opponent_move', handleOpponentMove);
         };
-    }, [gameId, opponentTankX, opponentTankY, target]);
+    }, [gameId, opponentTankX, opponentTankY, target, currentUser.username, onGameEnd, generateWind]);
 
     // ------- Draw -------
     const draw = useCallback(() => {
@@ -476,6 +534,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             y: startY,
             vx: Math.cos(angleRad) * speed,
             vy: -Math.sin(angleRad) * speed,
+            firedBy: 'player',
         };
     }, [angle, done, firing, isPlayerTurn, playerTankX, playerTankY, power, resolvingMatch, gameId, isBot, wind]);
 
@@ -502,14 +561,11 @@ export const TankBattle: React.FC<TankBattleProps> = ({
                 if (xNorm >= 0 && xNorm <= 1) {
                     const groundY = terrainYAt(terrain, xNorm);
                     if (proj.y >= groundY) {
-                        // Hit ground
-                        const opX = opponentTankX * CANVAS_W;
-                        const opY = opponentTankY;
-                        // Sadece rakip isabetlerini değil, oyuncu kendini de vurabilir veya kimin sırasındaysa tersini kontrol et
-                        const isPlayerShooting = isPlayerTurn;
+                        // Hit ground — use firedBy to determine who gets hit
+                        const shooterIsPlayer = proj.firedBy === 'player';
 
-                        const targetX = isPlayerShooting ? opponentTankX * CANVAS_W : playerTankX * CANVAS_W;
-                        const targetY = isPlayerShooting ? opponentTankY : playerTankY;
+                        const targetX = shooterIsPlayer ? opponentTankX * CANVAS_W : playerTankX * CANVAS_W;
+                        const targetY = shooterIsPlayer ? opponentTankY : playerTankY;
 
                         const dist = Math.sqrt((proj.x - targetX) ** 2 + (proj.y - targetY) ** 2);
 
@@ -517,65 +573,95 @@ export const TankBattle: React.FC<TankBattleProps> = ({
                         projectileRef.current = null;
                         playGameSfx(dist <= HIT_RADIUS ? 'success' : 'fail', 0.25);
 
-                        if (dist <= HIT_RADIUS) {
-                            // Hit!
-                            if (isPlayerShooting) {
+                        const isHit = dist <= HIT_RADIUS;
+
+                        if (shooterIsPlayer) {
+                            // Player fired — only player side handles damage + sync
+                            if (isHit) {
                                 const newHP = Math.max(0, opponentHP - 1);
                                 setOpponentHP(newHP);
                                 setMessage('İsabet! Rakip tankı vurdun!');
 
+                                // Notify opponent of hit
+                                if (!isBot && gameId) {
+                                    socketService.emitMove(String(gameId), { action: 'shot_result', hit: true, targetIsShooter: false });
+                                }
+
                                 if (newHP <= 0) {
+                                    setDone(true);
+                                    setMessage('Tebrikler, kazandın!');
+                                    // Notify opponent game is over
+                                    if (!isBot && gameId) {
+                                        socketService.emitMove(String(gameId), { action: 'game_over', winner: currentUser.username });
+                                    }
                                     void syncLiveProgress(MAX_HP - playerHP + 1, MAX_HP - newHP, true);
                                     void finalizeMatch(currentUser.username, MAX_HP);
                                     return;
                                 }
                             } else {
-                                const newHP = Math.max(0, playerHP - 1);
-                                setPlayerHP(newHP);
-                                setMessage('Tankın vuruldu!');
-
-                                if (newHP <= 0) {
-                                    void syncLiveProgress(MAX_HP - newHP, MAX_HP - opponentHP + 1, true);
-                                    void finalizeMatch(target, 0);
-                                    return;
+                                setMessage('Iskaladın! Rakibin sırası.');
+                                if (!isBot && gameId) {
+                                    socketService.emitMove(String(gameId), { action: 'shot_result', hit: false, targetIsShooter: false });
                                 }
                             }
+
+                            // Switch turn
+                            setTimeout(() => {
+                                explosionRef.current = null;
+                                setIsPlayerTurn(false);
+                                setFiring(false);
+                                generateWind();
+                                // Bot fires back
+                                if (isBot) {
+                                    setTimeout(() => botFire(), 800);
+                                }
+                            }, EXPLOSION_DURATION);
                         } else {
-                            setMessage(isPlayerShooting ? 'Iskaladın! Rakibin sırası.' : 'Rakip ıskaladı! Senin sıran.');
-                        }
-
-                        // Switch turn after explosion
-                        setTimeout(() => {
-                            explosionRef.current = null;
-                            setIsPlayerTurn(!isPlayerShooting);
-                            setFiring(false);
-                            generateWind();
-
-                            // Bot fires back
-                            if (isBot && isPlayerShooting) {
-                                setTimeout(() => {
-                                    botFire();
-                                }, 800);
+                            // Opponent fired — only show visual (HP sync comes via socket)
+                            if (isHit) {
+                                setMessage('Tankın vuruldu!');
+                            } else {
+                                setMessage('Rakip ıskaladı! Senin sıran.');
                             }
-                        }, EXPLOSION_DURATION);
+
+                            setTimeout(() => {
+                                explosionRef.current = null;
+                                // Turn handoff will be handled by shot_result socket event
+                                // For bot mode, switch here directly
+                                if (isBot) {
+                                    setIsPlayerTurn(true);
+                                    setFiring(false);
+                                    generateWind();
+                                }
+                            }, EXPLOSION_DURATION);
+                        }
                         return;
                     }
                 }
 
                 // Went off screen
                 if (proj.x < -50 || proj.x > CANVAS_W + 50 || proj.y > CANVAS_H + 50) {
-                    const isPlayerShooting = isPlayerTurn;
+                    const shooterIsPlayer = proj.firedBy === 'player';
                     projectileRef.current = null;
-                    setMessage('Mermi alanın dışına çıktı. Sıra değişti.');
-                    setIsPlayerTurn(!isPlayerShooting);
-                    setFiring(false);
-                    generateWind();
 
-                    // Bot fires back
-                    if (isBot && isPlayerShooting) {
-                        setTimeout(() => {
-                            botFire();
-                        }, 800);
+                    if (shooterIsPlayer) {
+                        setMessage('Mermi alanın dışına çıktı. Sıra değişti.');
+                        if (!isBot && gameId) {
+                            socketService.emitMove(String(gameId), { action: 'shot_result', hit: false, targetIsShooter: false });
+                        }
+                        setIsPlayerTurn(false);
+                        setFiring(false);
+                        generateWind();
+                        if (isBot) {
+                            setTimeout(() => botFire(), 800);
+                        }
+                    } else {
+                        setMessage('Rakip ıskaladı! Senin sıran.');
+                        if (isBot) {
+                            setIsPlayerTurn(true);
+                            setFiring(false);
+                            generateWind();
+                        }
                     }
                     return;
                 }
@@ -612,12 +698,12 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             const startX = opponentTankX * CANVAS_W;
             const startY = opponentTankY - TANK_H + 4;
 
-            // Just launch the projectile — the main tick loop handles collision
             projectileRef.current = {
                 x: startX,
                 y: startY,
                 vx: Math.cos(angleRad) * speed,
                 vy: -Math.sin(angleRad) * speed,
+                firedBy: 'opponent',
             };
         }, 600);
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -629,28 +715,46 @@ export const TankBattle: React.FC<TankBattleProps> = ({
         matchStartedAtRef.current = Date.now();
         setPlayerHP(MAX_HP);
         setOpponentHP(MAX_HP);
-        setIsPlayerTurn(true);
         setFiring(false);
         setDone(false);
         setResolvingMatch(false);
         setAngle(45);
         setPower(60);
-        setMessage('Açı ve güç ayarla, ateş et!');
         // Regenerate terrain and tank positions using gameId seed for sync
-        const seed = gameSeed || Date.now();
+        const seed = gameSeed || 1;
         terrainRef.current = generateTerrain(seed);
-        const rng = createSeededRng(seed);
+        const posRng = createSeededRng(seed + 9999);
         setTankPositions({
-            px: 0.08 + rng() * 0.15,
-            ox: 0.77 + rng() * 0.15,
+            px: 0.08 + posRng() * 0.15,
+            ox: 0.77 + posRng() * 0.15,
         });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [gameId]);
 
-    // Multiplayer setup
+    // Multiplayer setup — determine host/guest role
     useEffect(() => {
-        if (isBot || !gameId) return;
-        void fetchSnapshot();
+        if (isBot || !gameId) {
+            isHostRef.current = true;
+            setIsPlayerTurn(true);
+            setMessage('Açı ve güç ayarla, ateş et!');
+            return;
+        }
+        void (async () => {
+            try {
+                const snapshot = await api.games.get(gameId) as GameSnapshot;
+                applySnapshot(snapshot);
+                const hostName = snapshot.hostName || '';
+                isHostRef.current = hostName === currentUser.username;
+                // Host goes first
+                setIsPlayerTurn(isHostRef.current);
+                setMessage(isHostRef.current ? 'Sen başlıyorsun! Açı ve güç ayarla.' : 'Rakip başlıyor, sıranı bekle...');
+            } catch {
+                isHostRef.current = true;
+                setIsPlayerTurn(true);
+                setMessage('Açı ve güç ayarla, ateş et!');
+            }
+        })();
+
         const socket = socketService.getSocket();
         socketService.joinGame(String(gameId));
         const onRealtime = (payload: GameStateUpdatedPayload) => {
@@ -701,15 +805,14 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             finishHandledRef.current = true;
             setDone(true);
             setMessage('Oyundan ayrıldın. Rakip kazanıyor.');
-            // Award win to opponent
+            // Notify opponent
             if (!isBot && gameId) {
+                socketService.emitMove(String(gameId), { action: 'player_left' });
                 void syncLiveProgress(0, MAX_HP, true);
                 void finalizeMatch(target, 0);
             }
-            // Close game screen after brief delay
-            setTimeout(() => {
-                onGameEnd(target, 0);
-            }, 1200);
+            // Close game screen
+            setTimeout(() => onGameEnd(target, 0), 1200);
         } else {
             onLeave();
         }

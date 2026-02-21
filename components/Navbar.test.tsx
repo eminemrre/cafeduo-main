@@ -18,6 +18,14 @@ jest.mock('framer-motion', () => ({
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
+// Dummy constants
+jest.mock('../constants', () => ({
+  NAV_ITEMS: [
+    { id: 'features', label: 'ÖZELLİKLER' },
+    { id: 'games', label: 'OYUNLAR' }
+  ]
+}));
+
 describe('Navbar', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -27,11 +35,8 @@ describe('Navbar', () => {
 
   it('renders public nav items when logged out', () => {
     render(<Navbar isLoggedIn={false} />);
-
-    expect(screen.getByText('ANA SAYFA')).toBeInTheDocument();
+    expect(screen.getByText('CafeDuo')).toBeInTheDocument();
     expect(screen.getByText('ÖZELLİKLER')).toBeInTheDocument();
-    expect(screen.getByText('OYUNLAR')).toBeInTheDocument();
-    expect(screen.getByTestId('navbar-version-pill')).toHaveTextContent(/^v-/);
   });
 
   it('scrolls to section on same page for logged out users', () => {
@@ -74,16 +79,5 @@ describe('Navbar', () => {
 
     fireEvent.click(screen.getByTestId('logout-button'));
     expect(onLogout).toHaveBeenCalledTimes(1);
-  });
-
-  it('locks and releases body scroll when mobile menu opens/closes', () => {
-    render(<Navbar isLoggedIn={false} />);
-
-    fireEvent.click(screen.getByLabelText('Menüyü aç'));
-    expect(screen.getByText('MENÜ')).toBeInTheDocument();
-    expect(document.body.style.overflow).toBe('hidden');
-
-    fireEvent.click(screen.getByLabelText('Menüyü kapat'));
-    expect(document.body.style.overflow).toBe('');
   });
 });

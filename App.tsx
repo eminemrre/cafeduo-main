@@ -17,6 +17,7 @@ import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
+import { CustomCursor } from './components/CustomCursor';
 
 // Lazy Load Components
 const Games = lazyWithRetry(
@@ -83,13 +84,13 @@ const App: React.FC = () => {
   // Auth modal state
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  
+
   // User session state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [authHydrating, setAuthHydrating] = useState(true);
   const [hasSessionCheckIn, setHasSessionCheckIn] = useState(false);
-  
+
   // Toast hook
   const toast = useToast();
 
@@ -317,6 +318,7 @@ const App: React.FC = () => {
 
   return (
     <div className="rf-app-shell min-h-screen text-[var(--rf-ink)] font-sans selection:bg-cyan-300/30 selection:text-white">
+      <CustomCursor />
       <Navbar isLoggedIn={isLoggedIn} onLogout={handleLogout} />
 
       <main>

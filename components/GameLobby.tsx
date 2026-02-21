@@ -7,7 +7,7 @@ const gameIcon = (gameType: string) => {
   if (gameType === 'Refleks Avı') return '⚡';
   if (gameType === 'Nişancı Düellosu') return '🛡️';
   if (gameType === 'Tank Düellosu') return '🎯';
-  if (gameType === 'Ritim Kopyala') return '🛡️';
+  if (gameType === 'Ritim Kopyala') return '🎵';
   if (gameType === 'Retro Satranç') return '♟️';
   if (gameType === 'Çift Tek Sprint') return '🔢';
   if (gameType === 'Neon Hafıza') return '🔮';
@@ -41,156 +41,112 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
   const reduceMotion = useReducedMotion();
 
   return (
-    <div className="flex flex-col gap-4 md:gap-6 h-full" data-testid="game-lobby-container">
+    <div className="flex flex-col gap-8 h-full" data-testid="game-lobby-container">
 
-      {/* Action Buttons */}
-      <div className="grid grid-cols-2 gap-3 md:gap-4">
+      {/* Action Buttons Brutalist Style */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <motion.button
           onClick={onCreateGameClick}
-          className="group relative bg-[#0e3159] hover:bg-[#15487f] transition-all duration-200 h-24 md:h-32 rounded-xl border border-cyan-300/35 active:translate-y-[1px] overflow-hidden flex flex-col items-center justify-center gap-1.5 md:gap-2"
-          whileHover={reduceMotion ? {} : { scale: 1.02 }}
-          whileTap={reduceMotion ? {} : { scale: 0.98 }}
+          className="group relative bg-neon-blue font-sans font-bold uppercase tracking-widest text-cyber-dark h-24 md:h-32 border-2 border-neon-blue flex flex-col items-center justify-center gap-2 shadow-[8px_8px_0_rgba(255,0,234,0.4)] hover:shadow-none hover:translate-x-2 hover:translate-y-2 transition-all"
         >
-          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_1px_1px,rgba(186,230,253,0.18)_1px,transparent_0)] [background-size:11px_11px]" />
-          <motion.div
-            animate={reduceMotion ? undefined : { rotate: [0, -10, 10, 0] }}
-            transition={reduceMotion ? undefined : { repeat: Infinity, duration: 2, repeatDelay: 3 }}
-          >
-            <Gamepad2 size={28} className="md:w-10 md:h-10 text-white" />
-          </motion.div>
-          <span className="font-pixel text-sm md:text-xl text-white z-10">OYUN KUR</span>
+          <Gamepad2 size={32} />
+          <span className="text-lg md:text-xl">Oyun Kur</span>
         </motion.button>
 
         <motion.button
           onClick={onQuickJoin}
           disabled={quickJoinDisabled || quickJoinBusy}
-          className="group relative bg-[#1e2534] hover:bg-[#2a3448] transition-all duration-200 h-24 md:h-32 rounded-xl border border-slate-400/25 active:translate-y-[1px] overflow-hidden flex flex-col items-center justify-center gap-1.5 md:gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-          whileHover={reduceMotion || quickJoinDisabled || quickJoinBusy ? {} : { scale: 1.02 }}
-          whileTap={reduceMotion || quickJoinDisabled || quickJoinBusy ? {} : { scale: 0.98 }}
+          className="group relative bg-cyber-dark font-sans font-bold uppercase tracking-widest text-neon-pink h-24 md:h-32 border-2 border-neon-pink flex flex-col items-center justify-center gap-2 shadow-[8px_8px_0_rgba(0,243,255,0.4)] hover:shadow-none hover:translate-x-2 hover:translate-y-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           data-testid="quick-join-button"
         >
-          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_1px_1px,rgba(148,163,184,0.24)_1px,transparent_0)] [background-size:11px_11px]" />
-          <motion.div
-            animate={reduceMotion ? undefined : { scale: [1, 1.1, 1] }}
-            transition={reduceMotion ? undefined : { repeat: Infinity, duration: 2, repeatDelay: 2 }}
-          >
-            <Swords size={28} className="md:w-10 md:h-10 text-white" />
-          </motion.div>
-          <span className="font-pixel text-sm md:text-xl text-white z-10">
-            {quickJoinBusy ? 'EŞLEŞİYOR...' : 'RAKİP ARA'}
+          <Swords size={32} />
+          <span className="text-lg md:text-xl">
+            {quickJoinBusy ? 'BAĞLANILIYOR...' : 'HIZLI EŞLEŞ'}
           </span>
         </motion.button>
       </div>
 
       {/* Active Requests List */}
-      <div className="flex-1 rf-panel border-cyan-400/20 rounded-xl overflow-hidden flex flex-col min-h-[300px] md:min-h-[400px] shadow-inner">
-        <div className="p-3 md:p-4 bg-[#0a1732]/85 border-b border-cyan-400/20 flex justify-between items-center">
-          <h3 className="font-pixel text-white text-sm md:text-base flex items-center gap-2">
-            <Users size={16} className="md:w-[18px] md:h-[18px] text-green-400" />
-            <span className="hidden sm:inline">AKTİF İSTEKLER (LOBİ)</span>
-            <span className="sm:hidden">LOBİ</span>
-          </h3>
-          <div className="flex items-center gap-2">
-            <motion.span
-              className="w-2 h-2 bg-green-500 rounded-full"
-              animate={reduceMotion ? undefined : { scale: [1, 1.2, 1] }}
-              transition={reduceMotion ? undefined : { repeat: Infinity, duration: 1.5 }}
-            />
-            <span className="text-xs text-gray-400 font-mono hidden sm:inline">LIVE</span>
-          </div>
+      <div className="flex-1 flex flex-col relative w-full pt-4">
+        <div className="flex items-center gap-4 mb-8 border-b-2 border-cyber-border pb-2">
+          <h3 className="font-display text-4xl text-ink-50 uppercase tracking-widest text-shadow-glitch">AKTİF LOBİ</h3>
+          <div className="w-4 h-4 rounded-full bg-neon-green animate-pulse" />
         </div>
 
-        <div className="p-3 md:p-4 space-y-2 md:space-y-3 overflow-y-auto max-h-[300px] md:max-h-[400px] custom-scrollbar relative" data-testid="game-lobby-list">
-          {/* Scanline effect */}
-          <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-white/5 to-transparent opacity-5" style={{ backgroundSize: '100% 4px' }}></div>
-
+        <div className="relative w-full z-10 flex flex-col -space-y-4" data-testid="game-lobby-list">
           {requests.length === 0 ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="flex flex-col items-center justify-center py-8 md:py-12 opacity-50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex flex-col items-center justify-center py-16 opacity-40 border-2 border-dashed border-cyber-border my-8"
             >
-              <motion.div
-                animate={reduceMotion ? undefined : { y: [0, -5, 0] }}
-                transition={reduceMotion ? undefined : { repeat: Infinity, duration: 2 }}
-              >
-                <Gamepad2 size={36} className="md:w-12 md:h-12 mb-4 text-slate-500" />
-              </motion.div>
-              <span className="text-center font-pixel text-[var(--rf-muted)] text-xs md:text-sm">
-                ŞU AN AKTİF OYUN YOK...<br />
-                İLK OYUNU SEN KUR!
+              <Gamepad2 size={48} className="mb-6 text-cyber-border" />
+              <span className="text-center font-display text-3xl text-cyber-border tracking-widest uppercase">
+                RADAR TEMİZ.<br />İLK SİNYALİ GÖNDER!
               </span>
             </motion.div>
           ) : (
             requests.map((req, index) => (
               <motion.div
                 key={req.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
+                initial={{ opacity: 0, scale: 0.95, y: 30 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
-                whileHover={reduceMotion ? {} : { x: 4 }}
-                className="bg-[#0c1b38]/78 hover:bg-[#12274e]/82 p-3 md:p-4 rounded-lg border border-cyan-400/16 transition-colors group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 relative overflow-hidden"
+                className="group relative bg-cyber-card backdrop-blur-md p-6 border-l-4 border-neon-blue border-r border-y border-cyber-border transition-all hover:-translate-y-4 hover:z-20 shadow-[12px_12px_0_rgba(0,0,0,0.6)] hover:shadow-[16px_16px_0_rgba(0,243,255,0.2)] md:ml-[calc(var(--index)*1.5rem)]"
+                style={{ "--index": index % 3 } as React.CSSProperties}
               >
-                {/* Hover highlight */}
-                <motion.div
-                  className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"
-                  initial={{ opacity: 0 }}
-                  whileHover={{ opacity: 1 }}
-                />
+                <div className="absolute top-0 right-0 w-16 h-16 bg-neon-blue/5 skew-x-12 -translate-y-1/2 translate-x-1/4" />
 
-                <div className="flex items-center gap-3 w-full sm:w-auto pl-2">
-                  <motion.button
-                    onClick={() => onViewProfile(req.hostName)}
-                    className="w-9 h-9 md:w-10 md:h-10 bg-[#0a1732] rounded flex items-center justify-center font-pixel text-base md:text-lg relative hover:bg-[#102447] transition-colors cursor-pointer flex-shrink-0 border border-cyan-400/20"
-                    title="Profili Görüntüle"
-                    whileHover={reduceMotion ? {} : { scale: 1.1 }}
-                    whileTap={reduceMotion ? {} : { scale: 0.95 }}
-                  >
-                    {(req.hostName || '?').charAt(0).toUpperCase()}
-                    <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 border-2 border-gray-700 rounded-full"></div>
-                  </motion.button>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-white font-bold flex items-center gap-2 font-mono text-sm md:text-base min-w-0">
-                      <button
-                        onClick={() => onViewProfile(req.hostName || 'Unknown')}
-                        className="hover:underline hover:text-blue-300 truncate max-w-[11rem] sm:max-w-none"
-                      >
-                        {req.hostName || 'Unknown'}
-                      </button>
-                      <span className="text-[10px] bg-blue-900/50 text-blue-200 px-1.5 py-0.5 rounded border border-blue-700/50 flex-shrink-0">
-                        {req.table}
-                      </span>
-                    </div>
-                    <div className="text-xs md:text-sm text-[var(--rf-muted)] flex items-center gap-2 min-w-0">
-                      <span>{gameIcon(req.gameType)}</span>
-                      <span className="truncate">{req.gameType}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {req.hostName !== currentUser.username ? (
-                  <motion.button
-                    onClick={() => onJoinGame(Number(req.id))}
-                    className="w-full sm:w-auto px-4 md:px-6 py-2 bg-[#17663d] hover:bg-[#219354] text-white font-pixel text-xs tracking-wider rounded border border-emerald-300/35 active:translate-y-[1px] transition-all shadow-lg shadow-emerald-900/20 flex-shrink-0"
-                    whileHover={reduceMotion ? {} : { scale: 1.05 }}
-                    whileTap={reduceMotion ? {} : { scale: 0.95 }}
-                  >
-                    KATIL
-                  </motion.button>
-                ) : (
-                  <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto">
-                    <span className="text-[var(--rf-muted)] font-pixel text-xs px-3 py-2 border border-cyan-400/18 rounded flex-shrink-0">
-                      SENİN OYUNUN
-                    </span>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
+                  <div className="flex items-center gap-4">
                     <button
-                      onClick={() => onCancelGame(req.id)}
-                      className="px-3 py-2 text-xs border border-rose-400/35 text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 rounded transition-colors"
-                      data-testid={`cancel-game-${req.id}`}
+                      onClick={() => onViewProfile(req.hostName)}
+                      className="w-16 h-16 bg-cyber-dark text-neon-blue font-display text-3xl border-2 border-neon-blue flex items-center justify-center hover:bg-neon-blue hover:text-cyber-dark transition-colors"
+                      title="Profili Görüntüle"
                     >
-                      İPTAL ET
+                      {(req.hostName || '?').charAt(0).toUpperCase()}
                     </button>
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => onViewProfile(req.hostName || 'Unknown')}
+                          className="font-display text-3xl text-ink-50 uppercase tracking-widest hover:text-neon-pink transition-colors"
+                        >
+                          {req.hostName || 'Unknown'}
+                        </button>
+                        <span className="text-xs font-sans font-bold bg-neon-pink text-cyber-dark px-2 py-1 tracking-widest">
+                          Masa {req.table}
+                        </span>
+                      </div>
+                      <div className="text-sm font-sans font-bold uppercase tracking-widest text-ink-300 mt-1 flex items-center gap-2">
+                        <span>{gameIcon(req.gameType)}</span>
+                        <span>{req.gameType}</span>
+                      </div>
+                    </div>
                   </div>
-                )}
+
+                  {req.hostName !== currentUser.username ? (
+                    <button
+                      onClick={() => onJoinGame(Number(req.id))}
+                      className="w-full sm:w-auto px-8 py-4 bg-neon-blue text-cyber-dark font-sans font-bold uppercase tracking-widest text-lg hover:bg-transparent hover:text-neon-blue border-2 border-neon-blue transition-all"
+                    >
+                      SAVAŞA KATIL
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                      <span className="text-neon-pink font-sans text-xs uppercase font-bold tracking-widest border border-neon-pink px-4 py-2">
+                        SENİN LOBİN
+                      </span>
+                      <button
+                        onClick={() => onCancelGame(req.id)}
+                        className="px-6 py-4 text-cyber-border font-sans font-bold uppercase tracking-widest border-2 border-cyber-border hover:border-red-500 hover:text-red-500 transition-colors"
+                        data-testid={`cancel-game-${req.id}`}
+                      >
+                        İPTAL ET
+                      </button>
+                    </div>
+                  )}
+                </div>
               </motion.div>
             ))
           )}

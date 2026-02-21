@@ -61,12 +61,12 @@ describe('Hero', () => {
 
     render(<Hero onLogin={onLogin} onRegister={onRegister} isLoggedIn={false} />);
 
-    expect(screen.getByTestId('hero-main-heading')).toHaveTextContent(/Bekleme süresini/i);
-    expect(screen.getByRole('button', { name: /KAYDOL VE EŞLEŞ/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /OTURUM AÇ/i })).toBeInTheDocument();
+    expect(screen.getByText('BEKLEME')).toBeInTheDocument();
+    expect(screen.getByText('OYUNA GİR')).toBeInTheDocument();
+    expect(screen.getByText('OTURUM AÇ')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /KAYDOL VE EŞLEŞ/i }));
-    fireEvent.click(screen.getByRole('button', { name: /OTURUM AÇ/i }));
+    fireEvent.click(screen.getByText('OYUNA GİR'));
+    fireEvent.click(screen.getByText('OTURUM AÇ'));
 
     expect(onRegister).toHaveBeenCalledTimes(1);
     expect(onLogin).toHaveBeenCalledTimes(1);
@@ -75,14 +75,14 @@ describe('Hero', () => {
   it('routes logged-in standard user to dashboard panel', () => {
     render(<Hero onLogin={jest.fn()} onRegister={jest.fn()} isLoggedIn={true} userRole="user" />);
 
-    fireEvent.click(screen.getByRole('button', { name: /PANELE GEÇ/i }));
+    fireEvent.click(screen.getByText('Panele Geç'));
     expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
   });
 
   it('routes admin user to admin panel', () => {
     render(<Hero onLogin={jest.fn()} onRegister={jest.fn()} isLoggedIn={true} isAdmin={true} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /PANELE GEÇ/i }));
+    fireEvent.click(screen.getByText('Panele Geç'));
     expect(mockNavigate).toHaveBeenCalledWith('/admin');
   });
 
@@ -96,30 +96,7 @@ describe('Hero', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /PANELE GEÇ/i }));
+    fireEvent.click(screen.getByText('Panele Geç'));
     expect(mockNavigate).toHaveBeenCalledWith('/cafe-admin');
-  });
-
-  it('handles pointer move and leave events for parallax motion values', () => {
-    const { container } = render(<Hero onLogin={jest.fn()} onRegister={jest.fn()} isLoggedIn={false} />);
-    const heroSection = container.querySelector('#home') as HTMLElement;
-
-    heroSection.getBoundingClientRect = () =>
-      ({
-        x: 0,
-        y: 0,
-        width: 1000,
-        height: 700,
-        top: 0,
-        left: 0,
-        right: 1000,
-        bottom: 700,
-        toJSON: () => ({}),
-      }) as DOMRect;
-
-    fireEvent.mouseMove(heroSection, { clientX: 500, clientY: 280 });
-    fireEvent.mouseLeave(heroSection);
-
-    expect(heroSection).toBeInTheDocument();
   });
 });

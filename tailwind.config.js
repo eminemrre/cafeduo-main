@@ -4,29 +4,17 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        brand: {
-          50: "#f7f2ee",
-          100: "#efe5da",
-          200: "#dfc8b7",
-          300: "#cfa993",
-          400: "#b98369",
-          500: "#9e684f",
-          600: "#8a5a45",
-          700: "#71483a",
-          800: "#5b3b31",
-          900: "#4a312b",
+        cyber: {
+          bg: "#050a19",
+          dark: "#020713",
+          card: "rgba(11, 22, 44, 0.75)",
+          border: "rgba(0, 243, 255, 0.3)",
         },
-        accent: {
-          50: "#f4fbf7",
-          100: "#e6f6ed",
-          200: "#c8ecd8",
-          300: "#9edeb7",
-          400: "#6ecb92",
-          500: "#3fb06f",
-          600: "#2f8f59",
-          700: "#257246",
-          800: "#1f5a39",
-          900: "#1a4a30",
+        neon: {
+          blue: "#00f3ff",
+          pink: "#ff00ea",
+          green: "#39d98a",
+          yellow: "#f5c16c",
         },
         ink: {
           50: "#f4f5f7",
@@ -40,19 +28,11 @@ module.exports = {
           800: "#2f353b",
           900: "#1f2328",
         },
-        surface: {
-          base: "#0f1115",
-          elevated: "#171a20",
-          raised: "#1f232b",
-          card: "#262b35",
-        },
-        highlight: "#f5c16c",
       },
       fontFamily: {
-        sans: ['"Exo 2"', '"Noto Sans"', "sans-serif"],
-        display: ['"Exo 2"', '"Noto Sans"', "sans-serif"],
-        pixel: ['"JetBrains Mono"', '"Exo 2"', '"Noto Sans"', "sans-serif"],
-        retro: ['"JetBrains Mono"', '"Noto Sans"', "monospace"],
+        sans: ['"Chakra Petch"', "sans-serif"],
+        display: ['"Bebas Neue"', "sans-serif"],
+        body: ['"Chakra Petch"', "sans-serif"],
       },
       boxShadow: {
         soft: "0 10px 30px rgba(15, 17, 21, 0.35)",

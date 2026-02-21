@@ -9,27 +9,27 @@
 @source "./lib/**/*.{js,ts,jsx,tsx}";
 
 :root {
-  --rf-bg: #01040f;
-  --rf-bg-soft: #04112a;
+  --rf-bg: #050a19;
+  --rf-bg-soft: rgba(11, 22, 44, 0.8);
   --rf-bg-deep: #020713;
-  --rf-ink: #edf6ff;
-  --rf-muted: #91a8c9;
-  --rf-primary: #15d4ff;
-  --rf-secondary: #d88a47;
-  --rf-accent: #6cf2ff;
-  --rf-accent-strong: #00c7ff;
-  --rf-danger: #ff5c7c;
+  --rf-ink: #f4f5f7;
+  --rf-muted: #a7b0bd;
+  --rf-primary: #00f3ff;
+  --rf-secondary: #ff00ea;
+  --rf-accent: #39d98a;
+  --rf-accent-strong: #00ffaa;
+  --rf-danger: #f52960;
   --rf-success: #39d98a;
-  --rf-border: rgba(16, 220, 255, 0.34);
-  --rf-border-soft: rgba(117, 139, 173, 0.28);
-  --rf-card: rgba(7, 16, 35, 0.88);
-  --rf-card-strong: rgba(4, 10, 24, 0.95);
-  --rf-shadow: 0 24px 56px rgba(1, 5, 14, 0.64);
-  --rf-neon: 0 0 0 1px rgba(16, 220, 255, 0.34), 0 14px 36px rgba(16, 220, 255, 0.19);
-  --rf-radius-sm: 0.75rem;
-  --rf-radius-md: 1rem;
-  --rf-radius-lg: 1.5rem;
-  --rf-radius-xl: 1.75rem;
+  --rf-border: rgba(0, 243, 255, 0.4);
+  --rf-border-soft: rgba(0, 243, 255, 0.15);
+  --rf-card: rgba(6, 11, 25, 0.9);
+  --rf-card-strong: rgba(2, 7, 19, 0.95);
+  --rf-shadow: 12px 12px 0px rgba(0, 243, 255, 0.1);
+  --rf-neon: 0 0 0 1px rgba(0, 243, 255, 0.4), 0 14px 36px rgba(0, 243, 255, 0.2);
+  --rf-radius-sm: 0px;
+  --rf-radius-md: 0px;
+  --rf-radius-lg: 0px;
+  --rf-radius-xl: 0px;
   --rf-space-1: 0.25rem;
   --rf-space-2: 0.5rem;
   --rf-space-3: 0.75rem;
@@ -50,12 +50,8 @@ body,
 
 body {
   margin: 0;
-  font-family: "Exo 2", "Noto Sans", sans-serif;
-  background:
-    radial-gradient(circle at 12% 8%, rgba(20, 212, 255, 0.22), transparent 34%),
-    radial-gradient(circle at 88% 9%, rgba(216, 138, 71, 0.2), transparent 36%),
-    radial-gradient(circle at 48% 72%, rgba(16, 103, 203, 0.16), transparent 55%),
-    linear-gradient(180deg, #020714 0%, #03102a 46%, #020916 100%);
+  font-family: "Chakra Petch", sans-serif;
+  background-color: var(--rf-bg-deep);
   color: var(--rf-ink);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
@@ -64,40 +60,31 @@ body {
   overflow-x: hidden;
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(rgba(13, 214, 255, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(13, 214, 255, 0.07) 1px, transparent 1px);
-  background-size: 38px 38px;
-  mask-image: radial-gradient(circle at 50% 42%, rgba(0, 0, 0, 0.9), transparent 82%);
-  opacity: 0.28;
-  animation: grid-drift 30s linear infinite;
-  z-index: -2;
-}
-
 body::after {
   content: "";
   position: fixed;
-  inset: 0;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
   pointer-events: none;
-  background-image:
-    repeating-linear-gradient(
-      to bottom,
-      rgba(255, 255, 255, 0.02) 0px,
-      rgba(255, 255, 255, 0.02) 1px,
-      transparent 2px,
-      transparent 5px
-    ),
-    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.06) 1px, transparent 1.4px),
-    radial-gradient(circle at 68% 58%, rgba(255, 255, 255, 0.06) 1px, transparent 1.3px);
-  background-size: auto, 150px 150px, 188px 188px;
-  opacity: 0.2;
-  z-index: -1;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.05;
+  z-index: 50;
+  animation: cb-noise 0.2s steps(2) infinite;
 }
+
+@keyframes cb-noise {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(-2%, -2%); }
+}
+
+/* Base stagger utilities for brutalist reveal */
+.stagger-1 { animation-delay: 100ms; }
+.stagger-2 { animation-delay: 200ms; }
+.stagger-3 { animation-delay: 300ms; }
+.stagger-4 { animation-delay: 400ms; }
+.stagger-5 { animation-delay: 500ms; }
+
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {

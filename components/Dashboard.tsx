@@ -443,44 +443,35 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
         />
 
         {/* Main Navigation Tabs */}
-        <div className="relative rf-panel p-1.5 md:p-2 rounded-xl border-cyan-400/20">
-          <div className="flex items-center gap-1 md:gap-2">
+        <div className="relative bg-cyber-dark border-4 border-cyber-border p-2 md:p-3 shadow-[8px_8px_0_rgba(0,243,255,0.15)] flex flex-col">
+          <div className="flex items-center gap-2 md:gap-4">
             {[
-              { id: 'games', label: 'Oyunlar', mobileLabel: 'Oyun', icon: Gamepad2, color: 'cyan' },
-              { id: 'leaderboard', label: 'Sıralama', mobileLabel: 'Sıra', icon: Trophy, color: 'amber' },
-              { id: 'achievements', label: 'Başarımlar', mobileLabel: 'Başarı', icon: Gift, color: 'slate' }
+              { id: 'games', label: 'OYUNLAR', mobileLabel: 'OYUN', icon: Gamepad2, hoverColor: 'hover:border-neon-blue hover:text-neon-blue', activeColor: 'border-neon-blue text-cyber-dark bg-neon-blue' },
+              { id: 'leaderboard', label: 'SIRALAMA', mobileLabel: 'SIRA', icon: Trophy, hoverColor: 'hover:border-neon-pink hover:text-neon-pink', activeColor: 'border-neon-pink text-cyber-dark bg-neon-pink' },
+              { id: 'achievements', label: 'BAŞARI', mobileLabel: 'BAŞARI', icon: Gift, hoverColor: 'hover:border-neon-green hover:text-neon-green', activeColor: 'border-neon-green text-cyber-dark bg-neon-green' }
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = mainTab === tab.id;
 
               return (
-                <motion.button
+                <button
                   key={tab.id}
                   onClick={() => setMainTab(tab.id as typeof mainTab)}
                   data-testid={`dashboard-tab-${tab.id}`}
                   aria-label={tab.label}
-                  className={`rf-tab-button rf-control relative flex-1 min-w-0 flex items-center justify-center gap-1 md:gap-2 px-1.5 sm:px-2 md:px-6 py-2.5 md:py-3 rounded-lg font-medium text-[10px] sm:text-sm md:text-base ${isActive ? 'rf-tab-active' : ''
-                    }`}
-                  whileTap={{ scale: 0.98 }}
+                  className={`relative flex-1 flex items-center justify-center gap-2 md:gap-3 px-2 py-3 md:py-4 transition-all border-2 font-display uppercase tracking-widest text-lg md:text-xl
+                    ${isActive ? tab.activeColor : `border-transparent text-ink-300 ${tab.hoverColor} bg-cyber-bg/50`}`}
                 >
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeTab"
-                      className={`absolute inset-0 rounded-lg border ${tab.color === 'cyan'
-                        ? 'bg-[#0d2a4b] border-cyan-300/35'
-                        : tab.color === 'amber'
-                          ? 'bg-[#3a2e20] border-amber-300/35'
-                          : 'bg-[#232b3b] border-slate-300/20'
-                        }`}
-                      transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                    />
-                  )}
-                  <span className="relative z-10 flex items-center gap-1 md:gap-2 min-w-0">
-                    <Icon size={16} className="md:w-5 md:h-5 shrink-0" />
+                  <span className="relative z-10 flex items-center justify-center gap-2 min-w-0">
+                    <Icon size={24} className={isActive ? '' : 'opacity-70'} />
                     <span className="hidden sm:inline truncate">{tab.label}</span>
                     <span className="sm:hidden max-[380px]:hidden truncate whitespace-nowrap">{tab.mobileLabel}</span>
                   </span>
-                </motion.button>
+
+                  {isActive && (
+                    <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border border-cyber-dark" />
+                  )}
+                </button>
               );
             })}
           </div>

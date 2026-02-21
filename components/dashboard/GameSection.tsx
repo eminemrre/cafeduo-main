@@ -19,21 +19,21 @@ interface GameSectionProps {
   currentUser: User;
   tableCode: string;
   isMatched: boolean;
-  
+
   // Oyun listesi
   games: GameRequest[];
   gamesLoading: boolean;
   gameHistory?: GameHistoryEntry[];
   historyLoading?: boolean;
-  
+
   // Aktif oyun
   activeGameId: string | number | null;
   serverActiveGame: GameRequest | null;
-  
+
   // Modal state
   isCreateModalOpen: boolean;
   setIsCreateModalOpen: (open: boolean) => void;
-  
+
   // Handler'lar
   onCreateGame: (
     gameType: string,
@@ -60,7 +60,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
   setIsCreateModalOpen,
   onCreateGame,
   onJoinGame,
-  onCancelGame = async () => {},
+  onCancelGame = async () => { },
   onViewProfile,
   onRejoinGame
 }) => {
@@ -164,137 +164,111 @@ export const GameSection: React.FC<GameSectionProps> = ({
         : serverActiveGame.hostName;
 
     return (
-      <div className="rf-panel border-cyan-400/25 rounded-xl p-6 mb-6">
-        <div className="flex items-center justify-between">
+      <div className="bg-neon-pink text-cyber-dark p-6 mb-8 border-4 border-cyber-border shadow-[12px_12px_0_rgba(0,0,0,1)] hover:translate-x-1 hover:translate-y-1 hover:shadow-[8px_8px_0_rgba(0,0,0,1)] transition-all">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h3 className="text-lg font-bold text-white mb-1">
-              🎮 Aktif Oyunun Var!
+            <h3 className="font-display text-4xl uppercase tracking-widest mb-2 text-shadow-glitch">
+              DEVAM EDEN SAVAŞ!
             </h3>
-            <p className="text-[var(--rf-muted)] text-sm">
-              <span className="text-cyan-300 font-semibold">{opponentLabel}</span> ile 
-              <span className="text-amber-300 font-semibold"> {serverActiveGame.gameType}</span> oyunun devam ediyor.
+            <p className="font-sans font-bold text-lg">
+              Sistem uyarısı: <span className="text-white underline">{opponentLabel}</span> ile olan
+              <span className="text-white"> {serverActiveGame.gameType}</span> karşılaşması beklemede.
             </p>
           </div>
-          <RetroButton onClick={onRejoinGame} variant="primary">
-            Oyuna Dön
-          </RetroButton>
+          <button
+            onClick={onRejoinGame}
+            className="px-8 py-4 bg-cyber-dark text-neon-pink font-display text-2xl uppercase border-2 border-cyber-dark hover:bg-transparent hover:text-cyber-dark hover:border-cyber-dark transition-colors"
+          >
+            ARENAYA DÖN
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-black text-white flex items-center gap-3">
-            <Gamepad2 className="text-cyan-300" size={32} />
-            Oyun Lobisi
-          </h2>
-          <p className="text-[var(--rf-muted)] mt-1">
-            {isMatched 
-              ? `Masan: ${tableCode} - Rakiplerini bekle veya oyun kur!`
-              : 'Oyun oynamak için önce bir masaya bağlanmalısın!'
-            }
-          </p>
-        </div>
-        
-        <RetroButton
-          onClick={() => setIsCreateModalOpen(true)}
-          disabled={!isMatched}
-          variant="primary"
-          data-testid="create-game-button"
-          className="w-full sm:w-auto"
-        >
-          <Users size={18} />
-          Yeni Oyun Kur
-        </RetroButton>
+    <div className="space-y-12">
+      {/* Oyun Lobisi */}
+      <div>
+        {gamesLoading ? (
+          <div data-testid="game-lobby-empty">
+            <SkeletonGrid count={4} columns={2} />
+          </div>
+        ) : (
+          <div data-testid="game-lobby-list">
+            <GameLobby
+              requests={games}
+              currentUser={currentUser}
+              onJoinGame={onJoinGame}
+              onCancelGame={onCancelGame}
+              onCreateGameClick={() => setIsCreateModalOpen(true)}
+              onQuickJoin={handleQuickJoin}
+              quickJoinDisabled={!isMatched || !quickJoinCandidate || quickJoinBusy}
+              quickJoinBusy={quickJoinBusy}
+              onViewProfile={onViewProfile}
+            />
+          </div>
+        )}
       </div>
 
-      {/* Oyun Listesi */}
-      {gamesLoading ? (
-        <div data-testid="game-lobby-empty">
-          <SkeletonGrid count={4} columns={2} />
-        </div>
-      ) : (games?.length ?? 0) === 0 ? (
-        <div data-testid="game-lobby-empty">
-          <EmptyState
-            icon={GamepadIcon}
-            title="Henüz Oyun Yok"
-            description="Şu an lobide aktif bir oyun yok. İlk oyunu kuran sen ol!"
-            action={{
-              label: "Yeni Oyun Kur",
-              onClick: () => setIsCreateModalOpen(true),
-              icon: Users
-            }}
-          />
-        </div>
-      ) : (
-        <div data-testid="game-lobby-list">
-          <GameLobby
-            requests={games}
-            currentUser={currentUser}
-            onJoinGame={onJoinGame}
-            onCancelGame={onCancelGame}
-            onCreateGameClick={() => setIsCreateModalOpen(true)}
-            onQuickJoin={handleQuickJoin}
-            quickJoinDisabled={!isMatched || !quickJoinCandidate || quickJoinBusy}
-            quickJoinBusy={quickJoinBusy}
-            onViewProfile={onViewProfile}
-          />
-        </div>
-      )}
-
-      {/* Oyun Geçmişi */}
-      <div className="rf-panel border-cyan-400/20 rounded-xl overflow-hidden">
-        <div className="px-4 py-3 border-b border-cyan-400/20 bg-[#0a1732]/75">
-          <h3 className="font-pixel text-white text-sm md:text-base tracking-wide">GEÇMİŞ OYUNLAR</h3>
+      {/* Oyun Geçmişi (Brutalist) */}
+      <div className="bg-cyber-dark border-[3px] border-cyber-border p-6 shadow-[8px_8px_0_rgba(0,243,255,0.2)]">
+        <div className="border-b-[3px] border-cyber-border pb-4 mb-6 flex justify-between items-end">
+          <h3 className="font-display text-4xl text-neon-blue uppercase tracking-widest">SAVAŞ ARŞİVİ</h3>
+          <span className="text-neon-pink font-sans font-bold">// KAYITLAR</span>
         </div>
 
-        <div className="p-4">
+        <div>
           {historyLoading ? (
-            <p className="text-sm text-[var(--rf-muted)]">Geçmiş yükleniyor...</p>
+            <p className="text-lg font-sans text-ink-300 animate-pulse">Veri çekiliyor...</p>
           ) : (gameHistory?.length ?? 0) === 0 ? (
-            <p className="text-sm text-[var(--rf-muted)]">
-              Henüz tamamlanan oyunun yok. İlk oyunu bitirince burada görünecek.
-            </p>
+            <div className="border border-dashed border-cyber-border p-8 text-center text-ink-300 font-sans tracking-widest uppercase">
+              SAVAŞ GEÇMİŞİ BULUNAMADI. <br />KANITLAR OLUŞTURULMALI.
+            </div>
           ) : (
-            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
               {gameHistory.slice(0, 10).map((item) => (
                 <article
                   key={item.id}
-                  className="rounded-lg border border-cyan-400/15 bg-[#0a1631]/65 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                  className="bg-cyber-card border-l-4 border-y border-r border-cyber-border p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-transform hover:translate-x-2"
+                  style={{ borderLeftColor: item.didWin ? 'var(--color-neon-blue)' : 'var(--color-neon-pink)' }}
                 >
-                  <div className="min-w-0">
-                    <p className="text-white text-sm font-semibold truncate">{item.gameType}</p>
-                    <p className="text-xs text-[var(--rf-muted)]">
-                      Rakip: <span className="text-cyan-200">{item.opponentName}</span> · Masa {item.table}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-display text-2xl text-ink-50 uppercase tracking-widest truncate mb-1">
+                      {item.gameType}
+                    </p>
+                    <p className="font-sans text-sm text-ink-300 font-bold uppercase tracking-wide">
+                      Rakip: <span className="text-white">{item.opponentName}</span> // Masa {item.table}
                     </p>
                     {item.gameType === 'Retro Satranç' && (
-                      <p className="text-xs text-cyan-300/85">
-                        Tempo: {item.chessTempo || '-'} · Hamle: {item.moveCount ?? 0}
+                      <p className="text-xs text-neon-blue font-sans mt-2">
+                        Tempo: {item.chessTempo || '-'} | Hamle: {item.moveCount ?? 0}
                       </p>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className={`px-2 py-1 rounded border ${
-                      item.didWin
-                        ? 'border-emerald-400/35 bg-emerald-500/10 text-emerald-300'
-                        : 'border-rose-400/35 bg-rose-500/10 text-rose-300'
-                    }`}>
-                      {item.didWin ? 'Kazandın' : 'Kaybettin'}
-                    </span>
+
+                  <div className="flex flex-col md:items-end gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className={`px-4 py-1 text-xs font-bold uppercase tracking-widest border-2 ${item.didWin
+                          ? 'bg-neon-blue text-cyber-dark border-neon-blue'
+                          : 'bg-transparent text-neon-pink border-neon-pink'
+                        }`}>
+                        {item.didWin ? 'ZAFER' : 'MAĞLUBİYET'}
+                      </span>
+                      <span className="text-ink-300 font-sans text-xs border border-cyber-border px-2 py-1">
+                        {new Date(item.createdAt).toLocaleDateString('tr-TR')}
+                      </span>
+                    </div>
+
                     {item.gameType === 'Retro Satranç' && (
                       <button
                         type="button"
                         onClick={() => void openHistoryDetail(item)}
-                        className="px-2 py-1 rounded border border-cyan-400/30 bg-cyan-500/10 text-cyan-200 hover:bg-cyan-500/20"
+                        className="text-xs font-sans font-bold text-neon-blue hover:text-white transition-colors uppercase tracking-widest underline decoration-neon-blue decoration-2 underline-offset-4"
                       >
-                        Hamleleri Gör
+                        LOGLARI GÖSTER &rarr;
                       </button>
                     )}
-                    <span className="text-[var(--rf-muted)]">{new Date(item.createdAt).toLocaleDateString('tr-TR')}</span>
                   </div>
                 </article>
               ))}
@@ -311,46 +285,47 @@ export const GameSection: React.FC<GameSectionProps> = ({
         maxPoints={currentUser?.points ?? 0}
       />
 
+      {/* History Detail Modal (Brutalist) */}
       {selectedHistory && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-2xl max-h-[85vh] overflow-hidden rounded-xl border border-cyan-400/30 bg-[linear-gradient(165deg,rgba(3,16,40,0.96),rgba(4,28,56,0.92))]">
-            <div className="px-4 py-3 border-b border-cyan-400/20 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-cyber-dark/95 backdrop-blur-sm">
+          <div className="w-full max-w-2xl max-h-[85vh] overflow-hidden border-[3px] border-neon-blue bg-cyber-bg shadow-[16px_16px_0_rgba(0,243,255,0.2)]">
+            <div className="px-6 py-4 border-b-[3px] border-neon-blue bg-neon-blue/10 flex items-center justify-between">
               <div>
-                <h4 className="font-pixel text-white text-sm">SATRANÇ MAÇ KAYDI</h4>
-                <p className="text-xs text-[var(--rf-muted)]">
-                  {selectedHistory.opponentName} · {new Date(selectedHistory.createdAt).toLocaleString('tr-TR')} · Tempo {selectedHistory.chessTempo || '-'}
+                <h4 className="font-display text-2xl text-neon-blue uppercase tracking-widest">SİSTEM KAYDI #CHESS</h4>
+                <p className="font-sans text-xs text-ink-200 mt-1 uppercase font-bold tracking-wider">
+                  HEDEF: {selectedHistory.opponentName} // {new Date(selectedHistory.createdAt).toLocaleString('tr-TR')}
                 </p>
               </div>
               <button
                 type="button"
-                className="text-[var(--rf-muted)] hover:text-white"
+                className="text-cyber-dark bg-neon-blue font-bold px-4 py-2 hover:bg-transparent hover:text-neon-blue border-[2px] border-neon-blue transition-colors uppercase tracking-widest text-sm"
                 onClick={() => setSelectedHistory(null)}
               >
-                Kapat
+                KAPAT
               </button>
             </div>
 
-            <div className="p-4 max-h-[70vh] overflow-y-auto">
+            <div className="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
               {historyDetailLoading ? (
-                <p className="text-sm text-[var(--rf-muted)]">Hamle kaydı yükleniyor...</p>
+                <p className="font-sans text-white uppercase tracking-widest animate-pulse">Veri deşifre ediliyor...</p>
               ) : historyDetailError ? (
-                <p className="text-sm text-rose-300">{historyDetailError}</p>
+                <p className="font-sans text-neon-pink font-bold border-l-4 border-neon-pink pl-4 py-2 bg-neon-pink/10">{historyDetailError}</p>
               ) : selectedHistory.moves.length === 0 ? (
-                <p className="text-sm text-[var(--rf-muted)]">Bu maç için hamle kaydı bulunamadı.</p>
+                <p className="font-sans text-ink-300 border border-dashed border-cyber-border p-4 text-center">ANOMALİ: LOKASYON VERİSİ YOK.</p>
               ) : (
-                <ol className="space-y-2">
+                <ol className="space-y-1 font-mono text-sm max-w-md">
                   {selectedHistory.moves.map((move, index) => (
                     <li
                       key={`${move.ts || ''}-${index}`}
-                      className="rounded border border-cyan-400/15 bg-[#0b1d3c]/70 px-3 py-2 text-sm flex items-center justify-between gap-3"
+                      className="border-b border-cyber-border/50 py-2 flex justify-between"
                     >
-                      <span className="text-cyan-100">
-                        {index + 1}. {move.san} ({move.from}→{move.to})
+                      <span className="text-neon-blue font-bold">
+                        {(index + 1).toString().padStart(3, '0')}. <span className="text-ink-50">{move.san}</span> <span className="text-ink-300 text-xs">[{move.from}&rarr;{move.to}]</span>
                       </span>
-                      <span className="text-xs text-[var(--rf-muted)] whitespace-nowrap">
+                      <span className="text-ink-400">
                         {Number.isFinite(Number(move.spentMs))
-                          ? `${Math.round(Number(move.spentMs) / 1000)} sn`
-                          : ''}
+                          ? `${(Number(move.spentMs) / 1000).toFixed(1)}s`
+                          : '--'}
                       </span>
                     </li>
                   ))}

@@ -69,8 +69,8 @@ describe('GameLobby', () => {
     it('renders action buttons', () => {
       render(<GameLobby {...defaultProps} />);
 
-      expect(screen.getByText('OYUN KUR')).toBeInTheDocument();
-      expect(screen.getByText('RAKİP ARA')).toBeInTheDocument();
+      expect(screen.getByText('Oyun Kur')).toBeInTheDocument();
+      expect(screen.getByText('HIZLI EŞLEŞ')).toBeInTheDocument();
     });
 
     it('renders game list when games exist', () => {
@@ -78,15 +78,15 @@ describe('GameLobby', () => {
 
       expect(screen.getByText('host1')).toBeInTheDocument();
       expect(screen.getByText('host2')).toBeInTheDocument();
-      expect(screen.getByText('A1')).toBeInTheDocument();
-      expect(screen.getByText('B2')).toBeInTheDocument();
+      expect(screen.getByText(/Masa A1/i)).toBeInTheDocument();
+      expect(screen.getByText(/Masa B2/i)).toBeInTheDocument();
     });
 
     it('renders empty state when no games', () => {
       render(<GameLobby {...defaultProps} requests={[]} />);
 
-      expect(screen.getByText(/ŞU AN AKTİF OYUN YOK/i)).toBeInTheDocument();
-      expect(screen.getByText(/İLK OYUNU SEN KUR/i)).toBeInTheDocument();
+      expect(screen.getByText(/RADAR TEMİZ/i)).toBeInTheDocument();
+      expect(screen.getByText(/İLK SİNYALİ GÖNDER!/i)).toBeInTheDocument();
     });
 
     it('shows game types', () => {
@@ -101,7 +101,7 @@ describe('GameLobby', () => {
     it('calls onCreateGameClick when OYUN KUR button clicked', () => {
       render(<GameLobby {...defaultProps} />);
 
-      fireEvent.click(screen.getByText('OYUN KUR'));
+      fireEvent.click(screen.getByText('Oyun Kur'));
 
       expect(defaultProps.onCreateGameClick).toHaveBeenCalledTimes(1);
     });
@@ -109,7 +109,7 @@ describe('GameLobby', () => {
     it('calls onJoinGame with correct id when joining a game', () => {
       render(<GameLobby {...defaultProps} />);
 
-      const joinButtons = screen.getAllByText('KATIL');
+      const joinButtons = screen.getAllByText('SAVAŞA KATIL');
       fireEvent.click(joinButtons[0]);
 
       expect(defaultProps.onJoinGame).toHaveBeenCalledWith(1);
@@ -134,8 +134,8 @@ describe('GameLobby', () => {
 
       render(<GameLobby {...defaultProps} requests={[ownGame]} />);
 
-      expect(screen.getByText('SENİN OYUNUN')).toBeInTheDocument();
-      expect(screen.queryByText('KATIL')).not.toBeInTheDocument();
+      expect(screen.getByText('SENİN LOBİN')).toBeInTheDocument();
+      expect(screen.queryByText('SAVAŞA KATIL')).not.toBeInTheDocument();
     });
   });
 
@@ -143,20 +143,19 @@ describe('GameLobby', () => {
     it('shows lobby header', () => {
       render(<GameLobby {...defaultProps} />);
 
-      expect(screen.getByText('LOBİ')).toBeInTheDocument();
-      expect(screen.getByText('AKTİF İSTEKLER (LOBİ)')).toBeInTheDocument();
+      expect(screen.getByText('AKTİF LOBİ')).toBeInTheDocument();
     });
 
     it('shows table codes', () => {
       render(<GameLobby {...defaultProps} />);
 
-      expect(screen.getByText('A1')).toBeInTheDocument();
-      expect(screen.getByText('B2')).toBeInTheDocument();
+      expect(screen.getByText(/Masa A1/i)).toBeInTheDocument();
+      expect(screen.getByText(/Masa B2/i)).toBeInTheDocument();
     });
 
     it('renders game type emojis', () => {
       const { container } = render(<GameLobby {...defaultProps} />);
-      
+
       // Check for game types
       expect(container.textContent).toContain('Refleks Avı');
       expect(container.textContent).toContain('Çift Tek Sprint');
@@ -178,8 +177,8 @@ describe('GameLobby', () => {
     it('renders with empty requests array', () => {
       render(<GameLobby {...defaultProps} requests={[]} />);
 
-      expect(screen.getByText('OYUN KUR')).toBeInTheDocument();
-      expect(screen.getByText('RAKİP ARA')).toBeInTheDocument();
+      expect(screen.getByText('Oyun Kur')).toBeInTheDocument();
+      expect(screen.getByText('HIZLI EŞLEŞ')).toBeInTheDocument();
     });
   });
 });

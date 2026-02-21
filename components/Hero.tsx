@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { motion, useMotionValue, useSpring, useTransform, useScroll, useReducedMotion } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform, useReducedMotion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Sparkles, Coffee, ShieldCheck, Gamepad2, Zap } from 'lucide-react';
 import { RetroButton } from './RetroButton';
@@ -17,23 +17,6 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
   const navigate = useNavigate();
   const sectionRef = useRef<HTMLElement | null>(null);
   const reduceMotion = useReducedMotion();
-  const pointerX = useMotionValue(0);
-  const pointerY = useMotionValue(0);
-  const pointerPxX = useMotionValue(-120);
-  const pointerPxY = useMotionValue(-120);
-  const [reticleVisible, setReticleVisible] = useState(false);
-  const smoothX = useSpring(pointerX, { stiffness: 110, damping: 18 });
-  const smoothY = useSpring(pointerY, { stiffness: 110, damping: 18 });
-  const panelX = useTransform(smoothX, [-0.5, 0.5], [-20, 20]);
-  const panelY = useTransform(smoothY, [-0.5, 0.5], [-14, 14]);
-  const glowX = useTransform(smoothX, [-0.5, 0.5], ['20%', '80%']);
-  const glowY = useTransform(smoothY, [-0.5, 0.5], ['26%', '72%']);
-  const layerDriftX = useTransform(smoothX, [-0.5, 0.5], [-18, 18]);
-  const layerDriftY = useTransform(smoothY, [-0.5, 0.5], [-12, 12]);
-  const { scrollYProgress } = useScroll({ target: sectionRef, offset: ['start start', 'end start'] });
-  const starsY = useTransform(scrollYProgress, [0, 1], [0, -70]);
-  const farRidgeY = useTransform(scrollYProgress, [0, 1], [0, -42]);
-  const nearRidgeY = useTransform(scrollYProgress, [0, 1], [0, -18]);
 
   const handlePanelClick = () => {
     if (isAdmin) {
@@ -45,273 +28,202 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
     }
   };
 
-  const handlePointerMove = (event: React.MouseEvent<HTMLElement>) => {
-    if (reduceMotion) return;
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = (event.clientX - rect.left) / rect.width - 0.5;
-    const y = (event.clientY - rect.top) / rect.height - 0.5;
-    pointerX.set(x);
-    pointerY.set(y);
-    pointerPxX.set(event.clientX - rect.left);
-    pointerPxY.set(event.clientY - rect.top);
-    setReticleVisible(true);
-  };
-
   return (
     <section
       ref={sectionRef}
       id="home"
-      className="relative min-h-[calc(100vh-64px)] md:min-h-screen pt-[calc(5rem+env(safe-area-inset-top))] md:pt-32 overflow-hidden"
-      onMouseMove={handlePointerMove}
-      onMouseLeave={() => {
-        pointerX.set(0);
-        pointerY.set(0);
-        pointerPxX.set(-120);
-        pointerPxY.set(-120);
-        setReticleVisible(false);
-      }}
+      className="relative min-h-screen bg-cyber-bg flex items-center overflow-hidden"
     >
-      <motion.div
-        className="absolute -top-20 -left-16 h-72 w-72 rounded-full bg-cyan-400/20 blur-3xl pointer-events-none"
-        animate={reduceMotion ? undefined : { x: [0, 24, -12, 0], y: [0, -16, 10, 0] }}
-        transition={reduceMotion ? undefined : { duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.div
-        className="absolute -right-20 top-24 h-80 w-80 rounded-full bg-amber-400/22 blur-3xl pointer-events-none"
-        animate={reduceMotion ? undefined : { x: [0, -30, 12, 0], y: [0, 12, -18, 0] }}
-        transition={reduceMotion ? undefined : { duration: 19, repeat: Infinity, ease: 'easeInOut' }}
-      />
-      <motion.div className="absolute inset-0 rf-grid opacity-20 pointer-events-none" style={{ y: starsY }} />
-      {/* Synthwave animated grid overlay */}
-      <div className="absolute left-0 right-0 top-0 bottom-[-100px] rf-grid opacity-25 pointer-events-none animate-grid-flow" style={{ perspective: '800px', transform: 'rotateX(45deg) scale(2)' }} />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(8,197,255,0.2),transparent_35%),radial-gradient(circle_at_82%_14%,rgba(242,165,90,0.2),transparent_42%)] animate-aurora-pan pointer-events-none" />
-      <div className="absolute inset-0 bg-[linear-gradient(115deg,rgba(3,14,32,0.75)_0%,rgba(3,14,32,0.2)_45%,rgba(36,86,142,0.22)_100%)] pointer-events-none" />
-      <motion.div
-        className="absolute h-40 w-40 rounded-full pointer-events-none bg-cyan-400/20 blur-3xl"
-        style={{ left: glowX, top: glowY }}
-      />
-      <motion.div className="absolute inset-x-0 bottom-0 h-[32vh] opacity-70 pointer-events-none" style={{ y: farRidgeY, x: layerDriftX }}>
-        <div
-          className="absolute inset-0 bg-[#0a1730]/70"
-          style={{ clipPath: 'polygon(0 74%, 12% 62%, 22% 70%, 34% 58%, 49% 74%, 62% 60%, 76% 68%, 88% 54%, 100% 72%, 100% 100%, 0 100%)' }}
-        />
-      </motion.div>
-      <motion.div className="absolute inset-x-0 bottom-0 h-[28vh] opacity-90 pointer-events-none" style={{ y: nearRidgeY, x: layerDriftY }}>
-        <div
-          className="absolute inset-0 bg-[#050d1f]"
-          style={{ clipPath: 'polygon(0 84%, 8% 72%, 17% 80%, 28% 64%, 41% 84%, 52% 70%, 63% 82%, 74% 68%, 86% 78%, 94% 66%, 100% 74%, 100% 100%, 0 100%)' }}
-        />
-      </motion.div>
-      <motion.div
-        className="pointer-events-none absolute left-0 top-0 z-20 hidden lg:flex items-center justify-center h-16 w-16 rounded-full border border-cyan-300/45 bg-cyan-400/10 backdrop-blur-[2px] -translate-x-1/2 -translate-y-1/2"
-        style={{ x: pointerPxX, y: pointerPxY, opacity: !reduceMotion && reticleVisible ? 1 : 0 }}
-      >
-        <motion.div
-          className="absolute inset-2 rounded-full border border-cyan-300/55"
-          animate={reduceMotion ? undefined : { rotate: 360 }}
-          transition={reduceMotion ? undefined : { duration: 8, repeat: Infinity, ease: 'linear' }}
-        />
-        <motion.div
-          className="absolute w-8 h-[1px] bg-cyan-200/70"
-          animate={reduceMotion ? undefined : { opacity: [0.4, 0.8, 0.4] }}
-          transition={reduceMotion ? undefined : { duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute h-8 w-[1px] bg-cyan-200/70"
-          animate={reduceMotion ? undefined : { opacity: [0.4, 0.8, 0.4] }}
-          transition={reduceMotion ? undefined : { duration: 1.4, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
-        />
-        <div className="w-1.5 h-1.5 rounded-full bg-cyan-200 shadow-[0_0_12px_rgba(10,215,255,0.9)]" />
-      </motion.div>
+      {/* Brutalist Background Elements */}
+      <div className="absolute top-0 right-0 w-[50vw] h-full bg-neon-blue/5 skew-x-12 origin-top-right transform translate-x-32" />
+      <div className="absolute bottom-0 left-0 w-full h-[30vh] bg-cyber-dark clip-path-slant-up mix-blend-multiply" />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-center">
-          <motion.div
-            className="lg:col-span-7 min-w-0"
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
-          >
-            <span className="rf-kicker mb-5">KAFEDE BEKLERKEN OYUNA BAĞLAN</span>
+      {/* Glitch Decorative Texts */}
+      <div className="absolute top-20 -left-10 opacity-10 pointer-events-none select-none rotate-90 origin-left">
+        <span className="font-display text-[15rem] leading-none text-cyber-border whitespace-nowrap">CAFEDUO ENGINE</span>
+      </div>
 
-            <h1
-              data-testid="hero-main-heading"
-              className="font-display text-[2rem] max-[360px]:text-[1.75rem] sm:text-[2.95rem] md:text-[4.45rem] leading-[1.02] text-white tracking-tight drop-shadow-[0_10px_28px_rgba(0,0,0,0.45)]"
+      <div className="relative z-10 w-full px-6 max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center pt-24 pb-32">
+        {/* LEFT COLUMN: Maxiamlist Typography */}
+        <motion.div
+          className="lg:col-span-7 flex flex-col justify-center translate-y-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1 }}
+        >
+          <div className="overflow-hidden mb-4">
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              transition={{ delay: 0.1, duration: 0.6, ease: [0.76, 0, 0.24, 1] }}
+              className="inline-block bg-neon-pink text-cyber-dark font-sans text-xs uppercase tracking-[0.3em] font-bold px-4 py-1"
             >
-              Bekleme süresini
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-sky-400 to-teal-300">
-                eşleşmeli mini oyunlarla
-              </span>
-              ödüllü ana dönüştür.
-            </h1>
+              Kafede Beklerken Oyna
+            </motion.div>
+          </div>
 
-            <p className="mt-5 text-base sm:text-xl md:text-[1.45rem] text-slate-300 max-w-2xl leading-snug">
-              CafeDuo, kafede arkadaşını beklerken seni o an aktif oyuncularla eşleştirir.
-              Kısa maçlarda puan toplar, ödüle yaklaşır ve zamanı keyfe çevirirsin.
-            </p>
-
-            <div className="mt-7 grid grid-cols-1 min-[520px]:grid-cols-3 gap-3 max-w-2xl">
-              <div className="rf-panel p-4 rf-horizon">
-                <p className="font-pixel text-[10px] tracking-[0.2em] text-cyan-300 uppercase">🎮 Oyun Çeşitliliği</p>
-                <p className="text-3xl font-display text-white mt-1">7+</p>
-                <p className="text-sm text-slate-300 mt-1">Farklı mini oyun türü seni bekliyor.</p>
-              </div>
-              <div className="rf-panel p-4">
-                <p className="font-pixel text-[10px] tracking-[0.2em] text-cyan-300 uppercase">⚡ Hızlı Maç</p>
-                <p className="text-3xl font-display text-white mt-1">45 sn</p>
-                <p className="text-sm text-slate-300 mt-1">Beklerken tek turda tamamlanır.</p>
-              </div>
-              <div className="rf-panel p-4">
-                <p className="font-pixel text-[10px] tracking-[0.2em] text-cyan-300 uppercase">🏆 Anlık Ödül</p>
-                <p className="text-3xl font-display text-white mt-1">Canlı</p>
-                <p className="text-sm text-slate-300 mt-1">Her maç puanı hesabına direkt yansır.</p>
-              </div>
-            </div>
-
-            <div className="mt-7 flex flex-col sm:flex-row gap-3">
-              {isLoggedIn ? (
-                <RetroButton
-                  onClick={handlePanelClick}
-                  className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base"
-                  variant="primary"
-                >
-                  PANELE GEÇ <ArrowRight className="ml-2" size={18} />
-                </RetroButton>
-              ) : (
-                <>
-                  <ABTest
-                    testName="hero_cta_text"
-                    variantA={
-                      <RetroButton
-                        onClick={onRegister}
-                        className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base"
-                        variant="primary"
-                      >
-                        KAYDOL VE EŞLEŞ <ArrowRight className="ml-2" size={18} />
-                      </RetroButton>
-                    }
-                    variantB={
-                      <RetroButton
-                        onClick={onRegister}
-                        className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base"
-                        variant="primary"
-                      >
-                        KAYDOL VE EŞLEŞ <Sparkles className="ml-2" size={18} />
-                      </RetroButton>
-                    }
-                  />
-
-                  <RetroButton
-                    onClick={onLogin}
-                    data-testid="hero-login-button"
-                    className="w-full sm:w-auto min-w-0 sm:min-w-[220px] py-3.5 text-base"
-                    variant="secondary"
-                  >
-                    OTURUM AÇ
-                  </RetroButton>
-                </>
-              )}
-            </div>
-
-            <div className="mt-6 max-w-full overflow-hidden rounded-full border border-cyan-400/30 bg-[#06142b]/84 hidden sm:block">
-              <motion.div
-                className="flex items-center gap-8 sm:whitespace-nowrap px-5 py-2 text-[11px] uppercase tracking-[0.2em] font-pixel text-cyan-200/85"
-                animate={reduceMotion ? undefined : { x: ['0%', '-50%'] }}
-                transition={reduceMotion ? undefined : { duration: 15, repeat: Infinity, ease: 'linear' }}
+          <div className="font-display flex flex-col uppercase tracking-tighter mix-blend-screen text-shadow-glitch">
+            <div className="overflow-hidden relative">
+              <motion.span
+                className="block text-[6rem] sm:text-[9rem] lg:text-[11rem] leading-[0.8] text-ink-50 font-bold"
+                initial={{ y: "100%", skewY: 10 }}
+                animate={reduceMotion ? { y: 0, skewY: 0 } : { y: 0, skewY: 0 }}
+                transition={{ delay: 0.2, duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
               >
-                <span>Beklerken eşleş</span>
-                <span>Kısa tur, hızlı sonuç</span>
-                <span>Puanla ödüle yaklaş</span>
-                <span>Beklerken eşleş</span>
-                <span>Kısa tur, hızlı sonuç</span>
-                <span>Puanla ödüle yaklaş</span>
-              </motion.div>
+                BEKLEME
+              </motion.span>
             </div>
+            <div className="overflow-hidden relative -translate-y-4 lg:-translate-y-8">
+              <motion.span
+                className="block text-[5rem] sm:text-[8rem] lg:text-[10rem] leading-[0.85] text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-pink font-bold"
+                initial={{ y: "100%", skewY: -10 }}
+                animate={reduceMotion ? { y: 0, skewY: 0 } : { y: 0, skewY: 0 }}
+                transition={{ delay: 0.35, duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
+              >
+                SÜRENİ
+              </motion.span>
+            </div>
+            <div className="overflow-hidden relative -translate-y-8 lg:-translate-y-16 ml-4 lg:ml-12">
+              <motion.span
+                className="block text-[6rem] sm:text-[9.5rem] lg:text-[12rem] leading-[0.8] text-ink-50 font-bold"
+                initial={{ y: "100%", skewY: 5 }}
+                animate={reduceMotion ? { y: 0, skewY: 0 } : { y: 0, skewY: 0 }}
+                transition={{ delay: 0.5, duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
+              >
+                ÖDÜLE
+              </motion.span>
+              <div className="absolute right-0 bottom-12 text-sm font-sans tracking-[0.2em] text-neon-blue rotate-90 origin-bottom-right opacity-50 hidden sm:block">
+                // ODAK: SOSYAL MİNYATÜR
+              </div>
+            </div>
+          </div>
 
-            <div className="mt-6 sm:hidden grid grid-cols-1 gap-2 max-w-2xl">
-              <div className="rounded-full border border-cyan-400/25 bg-[#06142b]/78 px-4 py-2 text-[11px] uppercase tracking-[0.14em] font-pixel text-cyan-200/85">
-                Beklerken eşleş
-              </div>
-              <div className="rounded-full border border-cyan-400/25 bg-[#06142b]/78 px-4 py-2 text-[11px] uppercase tracking-[0.14em] font-pixel text-cyan-200/85">
-                Kısa tur, hızlı sonuç
-              </div>
-              <div className="rounded-full border border-cyan-400/25 bg-[#06142b]/78 px-4 py-2 text-[11px] uppercase tracking-[0.14em] font-pixel text-cyan-200/85">
-                Puanla ödüle yaklaş
-              </div>
-            </div>
-          </motion.div>
+          <motion.p
+            className="mt-2 text-lg md:text-2xl text-ink-200 font-sans max-w-xl leading-relaxed border-l-4 border-neon-blue pl-6 ml-1"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.7, duration: 0.6 }}
+          >
+            Seni mekandaki canlı oyuncularla <span className="text-neon-pink font-bold">45 saniyelik</span> asimetrik kapışmalara sokan sosyal puanlama motoru.
+          </motion.p>
 
           <motion.div
-            className="lg:col-span-5 min-w-0"
-            initial={{ opacity: 0, y: 28 }}
+            className="mt-12 flex flex-col sm:flex-row gap-6 w-full max-w-lg"
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.12 }}
-            style={{ x: panelX, y: panelY }}
+            transition={{ delay: 0.9, duration: 0.6 }}
           >
-            <div className="rf-panel rf-elevated p-6 md:p-8 relative overflow-hidden">
-              <div className="absolute inset-x-6 top-0 h-[2px] bg-gradient-to-r from-transparent via-cyan-300 to-transparent opacity-70" />
-              <div className="absolute right-6 top-6 h-20 w-20 rounded-full bg-cyan-400/20 blur-2xl animate-float-slow" />
-              <div className="absolute -left-14 bottom-8 h-36 w-36 rounded-full bg-amber-300/15 blur-2xl" />
+            {isLoggedIn ? (
+              <button
+                onClick={handlePanelClick}
+                className="group relative px-8 py-5 bg-neon-blue text-cyber-dark font-sans uppercase font-bold tracking-widest text-lg md:text-xl border-2 border-neon-blue hover:bg-transparent hover:text-neon-blue transition-colors flex items-center justify-center gap-4 shadow-[#00f3ff_4px_4px_0_0] transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
+              >
+                Panele Geç <ArrowRight className="group-hover:translate-x-1 transition-transform" />
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={onRegister}
+                  className="group relative px-8 py-5 bg-neon-pink text-cyber-dark font-sans uppercase font-bold tracking-widest text-lg md:text-xl border-2 border-neon-pink hover:bg-transparent hover:text-neon-pink transition-colors flex items-center justify-center gap-4 shadow-[#ff00ea_4px_4px_0_0] active:translate-x-1 active:translate-y-1 active:shadow-none"
+                >
+                  <Sparkles size={20} /> OYUNA GİR
+                </button>
 
-              <h3 className="font-display text-3xl text-white mb-6 tracking-wide">Canlı Bekleme Akışı</h3>
+                <button
+                  onClick={onLogin}
+                  data-testid="hero-login-button"
+                  className="px-8 py-5 text-ink-50 font-sans uppercase font-bold tracking-widest text-lg border-2 border-cyber-border hover:border-neon-blue hover:bg-neon-blue/10 transition-colors flex items-center gap-4"
+                >
+                  OTURUM AÇ
+                </button>
+              </>
+            )}
+          </motion.div>
+        </motion.div>
 
-              <div className="space-y-4">
-                <div className="rounded-xl border border-cyan-400/30 bg-[#0a1632]/76 p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-cyan-400/20 text-cyan-200 flex items-center justify-center">
-                      <Coffee size={18} />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-white">Güvenli giriş tamamlandı</p>
-                      <p className="text-sm text-slate-300">Masa doğrulaması bitti, eşleşme için hazırsın.</p>
-                    </div>
+        {/* RIGHT COLUMN: Asymmetric Dashboard Preview / Brutalist Card */}
+        <motion.div
+          className="lg:col-span-5 relative h-full flex items-center justify-center"
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.6, duration: 0.8 }}
+        >
+          {/* Decorative wireframe behind card */}
+          <div className="absolute inset-0 max-w-[500px] border border-neon-blue/20 rotate-6 translate-x-4 translate-y-4 pointer-events-none" />
+          <div className="absolute inset-0 max-w-[500px] border border-neon-pink/20 -rotate-3 -translate-x-2 -translate-y-2 pointer-events-none" />
+
+          <div className="relative w-full max-w-[500px] bg-cyber-dark/80 backdrop-blur-2xl border-t border-l border-neon-blue shadow-[16px_16px_0px_rgba(0,243,255,0.15)] p-8 md:p-10">
+            {/* Top Bar Pattern */}
+            <div className="flex justify-between items-center mb-8 border-b border-cyber-border pb-4">
+              <span className="font-display text-2xl text-ink-50 uppercase tracking-widest">Sistem TR-X</span>
+              <div className="flex gap-2">
+                <div className="w-3 h-3 bg-neon-pink animate-pulse" />
+                <div className="w-3 h-3 border border-neon-blue" />
+                <div className="w-3 h-3 border border-neon-blue" />
+              </div>
+            </div>
+
+            <div className="space-y-6 form-glitch">
+              <div className="group relative border border-cyber-border bg-cyber-bg p-5 transition-colors hover:border-neon-blue hover:-translate-y-1">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-neon-blue/20 text-neon-blue flex items-center justify-center">
+                    <Coffee size={24} />
+                  </div>
+                  <div>
+                    <p className="font-sans font-bold text-ink-50 uppercase tracking-wide">Güvenli Bağlantı</p>
+                    <p className="text-sm font-sans text-ink-300">Terminal A - Doğrulandı</p>
                   </div>
                 </div>
+              </div>
 
-                <div className="rounded-xl border border-orange-400/30 bg-[#25152b]/70 p-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-orange-400/20 text-orange-200 flex items-center justify-center">
-                      <Gamepad2 size={18} />
-                    </div>
-                    <div>
-                      <p className="font-semibold text-white">Eşleşme bulundu</p>
-                      <p className="text-sm text-slate-300">Aynı kafedeki oyuncuyla maç başladı.</p>
-                    </div>
+              <div className="group relative border border-cyber-border bg-cyber-bg p-5 transition-colors hover:border-neon-pink hover:-translate-y-1">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-neon-pink/20 text-neon-pink flex items-center justify-center">
+                    <Gamepad2 size={24} />
+                  </div>
+                  <div>
+                    <p className="font-sans font-bold text-ink-50 uppercase tracking-wide">Eşleşme Motoru</p>
+                    <p className="text-sm font-sans text-ink-300">Açık - Lobi Aranıyor</p>
                   </div>
                 </div>
+              </div>
 
-                <div className="rounded-xl bg-[#050a19] border border-cyan-400/20 p-4">
-                  <div className="flex items-center justify-between text-xs font-pixel uppercase tracking-[0.16em] text-slate-400 mb-2">
-                    <span>Sistem durumu</span>
-                    <span className="text-cyan-300">Aktif</span>
+              <div className="p-5 border-l-4 border-neon-blue bg-neon-blue/5">
+                <div className="flex items-center justify-between text-xs font-sans uppercase tracking-[0.2em] text-ink-200 mb-3">
+                  <span>Yükleme</span>
+                  <span className="text-neon-blue font-bold">100%</span>
+                </div>
+                <div className="h-1 bg-cyber-dark w-full">
+                  <motion.div
+                    className="h-full bg-neon-blue"
+                    initial={{ width: 0 }}
+                    animate={{ width: "100%" }}
+                    transition={{ duration: 2, delay: 1, ease: 'easeOut' }}
+                  />
+                </div>
+                <div className="mt-4 grid grid-cols-3 gap-2">
+                  <div className="text-center font-sans">
+                    <p className="text-[10px] text-ink-400 uppercase tracking-widest">Hız</p>
+                    <p className="text-sm font-bold text-neon-blue">042ms</p>
                   </div>
-                  <div className="h-2 rounded-full bg-slate-800 overflow-hidden">
-                    <motion.div
-                      className="h-full bg-gradient-to-r from-cyan-300 via-cyan-400 to-indigo-400"
-                      initial={{ width: '0%' }}
-                      animate={{ width: ['35%', '82%', '68%', '91%'] }}
-                      transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-                    />
+                  <div className="text-center font-sans border-l border-cyber-border">
+                    <p className="text-[10px] text-ink-400 uppercase tracking-widest">Tip</p>
+                    <p className="text-sm font-bold text-neon-pink">V-09</p>
                   </div>
-                  <div className="mt-3 grid grid-cols-3 gap-2 text-center">
-                    <div className="rounded-lg bg-slate-900/70 p-2">
-                      <ShieldCheck size={16} className="mx-auto text-cyan-300" />
-                      <p className="text-[11px] text-slate-300 mt-1">Eşleşme</p>
-                    </div>
-                    <div className="rounded-lg bg-slate-900/70 p-2">
-                      <Zap size={16} className="mx-auto text-indigo-300" />
-                      <p className="text-[11px] text-slate-300 mt-1">Hız</p>
-                    </div>
-                    <div className="rounded-lg bg-slate-900/70 p-2">
-                      <Sparkles size={16} className="mx-auto text-orange-300" />
-                      <p className="text-[11px] text-slate-300 mt-1">Ödül</p>
-                    </div>
+                  <div className="text-center font-sans border-l border-cyber-border">
+                    <p className="text-[10px] text-ink-400 uppercase tracking-widest">Ağ</p>
+                    <p className="text-sm font-bold text-ink-50">CANLI</p>
                   </div>
                 </div>
               </div>
             </div>
-          </motion.div>
-        </div>
+
+            {/* Absolute decor inside card */}
+            <div className="absolute -bottom-4 -right-4 text-[10rem] font-display text-cyber-border opacity-20 pointer-events-none leading-none select-none">
+              #1
+            </div>
+          </div>
+        </motion.div>
       </div>
     </section>
   );

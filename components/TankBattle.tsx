@@ -324,11 +324,8 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             if (moveData.action === 'game_over') {
                 if (player !== currentUser.username) {
                     const winner = moveData.winner;
-                    finishHandledRef.current = true;
-                    setDone(true);
-                    const iWon = winner === currentUser.username;
-                    setMessage(iWon ? 'Tebrikler, kazandın!' : 'Rakip kazandı!');
-                    setTimeout(() => onGameEnd(winner, iWon ? 10 : 0), 900);
+                    // We must submit our score (loser score = 0) to server so it can resolve the match
+                    void finalizeMatch(winner, 0);
                 }
                 return;
             }
@@ -375,7 +372,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
         return () => {
             socket.off('opponent_move', handleOpponentMove);
         };
-    }, [gameId, opponentTankX, opponentTankY, target, currentUser.username, onGameEnd, generateWind]);
+    }, [gameId, opponentTankX, opponentTankY, target, currentUser.username, onGameEnd, generateWind, finalizeMatch]);
 
     // ------- Draw -------
     const draw = useCallback(() => {

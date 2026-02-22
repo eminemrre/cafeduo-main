@@ -14,6 +14,15 @@
 
 ## Decisions
 
+### 2026-02-22 VDS-Only Deployment Policy
+- **🚀 VOLT**: Tek hedef ortami tutarak deploy akisini hizlandiralim.
+- **🛡️ AEGIS**: Ucuncu taraf staging deploy adimlari kapatilsin; gizli bilgi iceren gecici scriptler kaldirilsin.
+- **🎨 MUSE**: Dokumantasyon tek yol (VDS) ile sade kalsin.
+- **⚖️ VERDICT**: Approved and applied.
+  1. Render/Railway/Netlify staging deploy adimlari CI'dan kaldirildi.
+  2. `render.yaml` ve ad-hoc credential scriptleri temizlendi.
+  3. Deployment dokumanlari VDS-only akisa gore guncellendi.
+
 ### 2026-02-06 Production Deployment Track
 - **🚀 VOLT**: Otomatik deploy hatti kurulsun, release hizi dusmesin.
 - **🛡️ AEGIS**: Reverse proxy + TLS + trust proxy + CORS explicit origins zorunlu.

@@ -27,11 +27,9 @@ Last updated: 2026-02-07
    - `deploy/Caddyfile`
 3. Production env template:
    - `deploy/.env.production.example`
-4. Optional Render blueprint:
-   - `render.yaml`
-5. Optional GitHub auto-deploy:
+4. Optional GitHub auto-deploy:
    - `.github/workflows/deploy-vps.yml`
-6. Smoke and rollback scripts:
+5. Smoke and rollback scripts:
    - `scripts/smoke/prod-smoke.mjs`
    - `deploy/scripts/smoke-vps.sh`
    - `deploy/scripts/rollback.sh`

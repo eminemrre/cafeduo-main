@@ -9,7 +9,6 @@ Last updated: 2026-02-06
 - `gh-fix-ci`
 - `openai-docs`
 - `playwright`
-- `render-deploy`
 - `security-best-practices`
 - `security-ownership-map`
 - `security-threat-model`
@@ -61,7 +60,7 @@ Notes:
 - `cloudflare-deploy` for DNS/CDN/WAF and edge rollout.
 - `sentry` for production error tracking workflows.
 - `develop-web-game` for deeper game-loop iteration and balancing workflows.
-- `vercel-deploy` or `netlify-deploy` when static frontend hosting is preferred over VPS.
+- `linux-service-hardening` for production VDS service hardening and safer ops defaults.
 
 See also:
 - `docs/skills_mcp_research.md` for source-backed recommendation notes.

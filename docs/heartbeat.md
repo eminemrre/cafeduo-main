@@ -14,7 +14,7 @@
 - **Build**: `npm run build` passed on 2026-02-05.
 - **Tests**: `npm run test:ci` passed on 2026-02-06 (`261/261`).
 - **Coverage**: Global lines `%75.79`; oyun modulu + cafe paneli + socket `%85+`.
-- **Deploy Baseline**: `render.yaml`, `deploy/docker-compose.prod.yml`, `deploy/Caddyfile`, `deploy-vps.yml` hazir.
+- **Deploy Baseline**: `deploy/docker-compose.prod.yml`, `deploy/Caddyfile`, `deploy-vps.yml` hazir (VDS only).
 
 ## Next Checkup
 - Hedef: Global coverage `%85`.

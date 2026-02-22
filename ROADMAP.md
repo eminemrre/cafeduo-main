@@ -27,7 +27,7 @@ Faz 8: Production Ready       ███████░░░░░ 60% ⏳
 
 ### 2026-02-06 Production Baseline (In Progress) 🔄
 
-- `render.yaml` blueprint eklendi (API + static web + Postgres + Redis).
+- Render blueprint denemesi yapildi, sonrasinda VDS-only stratejiye gecisle kaldirildi.
 - `deploy/docker-compose.prod.yml` eklendi (VPS icin production stack).
 - `deploy/Caddyfile` eklendi (domain + TLS + reverse proxy + socket route).
 - `.github/workflows/deploy-vps.yml` eklendi (SSH + rsync + docker compose deploy).

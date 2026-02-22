@@ -24,8 +24,6 @@
   - `deploy/Caddyfile`
   - `deploy/.env.production.example`
   - `docs/deployment_runbook.md`
-- Render blueprint path:
-  - `render.yaml`
 - CI based VPS deploy path:
   - `.github/workflows/deploy-vps.yml`
 - Smoke and rollback scripts:

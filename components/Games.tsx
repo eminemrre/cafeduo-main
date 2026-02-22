@@ -15,6 +15,7 @@ interface FeaturedGame {
   badge: string;
   cta: string;
   disabled?: boolean;
+  onClick?: () => void;
 }
 
 const featuredGames: FeaturedGame[] = [
@@ -70,21 +71,34 @@ const featuredGames: FeaturedGame[] = [
     badge: 'Bilgi',
     cta: 'Sprinti aç',
   },
+  {
+    title: 'Neon Hafıza',
+    subtitle: 'Kartları rakibinden önce eşleştir, görseller aklından silinmeden serini kur.',
+    duration: '45-60 sn',
+    mode: 'Hafıza',
+    accent: 'from-rose-400/90 to-pink-500/90',
+    tone: 'radial-gradient(circle at 10% 20%, rgba(244, 63, 94, 0.2), transparent 40%), radial-gradient(circle at 90% 10%, rgba(236, 72, 153, 0.22), transparent 36%), linear-gradient(152deg, rgba(8, 24, 44, 0.96), rgba(63, 8, 30, 0.88))',
+    grid: 'rgba(244, 63, 94, 0.08)',
+    glow: 'rgba(236, 72, 153, 0.24)',
+    icon: <Sparkles size={26} />,
+    badge: 'Dikkat',
+    cta: 'Kartlara bak',
+  },
 ];
 
-const GameCard: React.FC<FeaturedGame> = ({ title, subtitle, duration, mode, accent, tone, grid, glow, icon, badge, cta, disabled }) => (
+const GameCard: React.FC<FeaturedGame> = ({ title, subtitle, duration, mode, accent, tone, grid, glow, icon, badge, cta, disabled, onClick }) => (
   <motion.article
     initial={{ opacity: 0, y: 14 }}
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true, margin: '-60px' }}
     transition={{ duration: 0.5 }}
     whileHover={disabled ? {} : { y: -8, rotateX: 2, rotateY: -2 }}
-    style={!disabled ? { backgroundImage: tone } : undefined}
-    className={`relative rounded-[1.6rem] border p-6 md:p-7 transition-all ${
-      disabled
+    onClick={onClick}
+    style={!disabled ? { backgroundImage: tone, cursor: onClick ? 'pointer' : 'default' } : undefined}
+    className={`relative rounded-[1.6rem] border p-6 md:p-7 transition-all ${disabled
         ? 'border-cyan-900/45 bg-[#090f22]/72'
         : 'group border-cyan-300/25 hover:shadow-[0_22px_56px_rgba(0,0,0,0.5)]'
-    }`}
+      }`}
   >
     {!disabled && (
       <>
@@ -136,7 +150,7 @@ const GameCard: React.FC<FeaturedGame> = ({ title, subtitle, duration, mode, acc
   </motion.article>
 );
 
-export const Games: React.FC = () => {
+export const Games: React.FC<{ onPlayClick?: () => void }> = ({ onPlayClick }) => {
   return (
     <section id="games" className="cd-section overflow-hidden">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -158,9 +172,9 @@ export const Games: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {featuredGames.map((game) => (
-            <GameCard key={game.title} {...game} />
+            <GameCard key={game.title} {...game} onClick={onPlayClick} />
           ))}
         </div>
 

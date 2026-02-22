@@ -18,6 +18,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider } from './contexts/AuthContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
 import { CustomCursor } from './components/CustomCursor';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // Lazy Load Components
 const Games = lazyWithRetry(
@@ -60,6 +61,19 @@ interface ProtectedRouteProps {
   isAdminRoute?: boolean;
   requiredRole?: string;
 }
+
+// Page Transition Wrapper
+const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <motion.div
+    initial={{ opacity: 0, filter: 'blur(8px)', y: 10 }}
+    animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
+    exit={{ opacity: 0, filter: 'blur(8px)', y: -10 }}
+    transition={{ duration: 0.3, ease: 'easeOut' }}
+    className="h-full w-full"
+  >
+    {children}
+  </motion.div>
+);
 
 // Protected Route Component
 const ProtectedRoute = ({
@@ -327,60 +341,68 @@ const App: React.FC = () => {
 
       <main>
         <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/" element={
-              <>
-                <Hero
-                  onLogin={openLogin}
-                  onRegister={openRegister}
-                  isLoggedIn={isLoggedIn}
-                  userRole={currentUser?.role}
-                  isAdmin={currentUser?.isAdmin}
-                />
-                <HowItWorks />
-                <Games />
-                <About />
-              </>
-            } />
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+              <Route path="/" element={
+                <PageTransition>
+                  <Hero
+                    onLogin={openLogin}
+                    onRegister={openRegister}
+                    isLoggedIn={isLoggedIn}
+                    userRole={currentUser?.role}
+                    isAdmin={currentUser?.isAdmin}
+                  />
+                  <HowItWorks />
+                  <Games onPlayClick={openRegister} />
+                  <About />
+                </PageTransition>
+              } />
 
-            <Route path="/dashboard" element={
-              <ProtectedRoute user={currentUser} authReady={!authHydrating}>
-                <ErrorBoundary>
-                  {requiresCheckIn(currentUser) ? (
-                    <CafeSelection currentUser={currentUser!} onCheckInSuccess={handleCheckInSuccess} />
-                  ) : (
-                    <Dashboard
-                      currentUser={currentUser!}
-                      onUpdateUser={handleUpdateUser}
-                      onRefreshUser={handleRefreshUser}
-                    />
-                  )}
-                </ErrorBoundary>
-              </ProtectedRoute>
-            } />
+              <Route path="/dashboard" element={
+                <ProtectedRoute user={currentUser} authReady={!authHydrating}>
+                  <PageTransition>
+                    <ErrorBoundary>
+                      {requiresCheckIn(currentUser) ? (
+                        <CafeSelection currentUser={currentUser!} onCheckInSuccess={handleCheckInSuccess} />
+                      ) : (
+                        <Dashboard
+                          currentUser={currentUser!}
+                          onUpdateUser={handleUpdateUser}
+                          onRefreshUser={handleRefreshUser}
+                        />
+                      )}
+                    </ErrorBoundary>
+                  </PageTransition>
+                </ProtectedRoute>
+              } />
 
-            <Route path="/admin" element={
-              <ProtectedRoute user={currentUser} authReady={!authHydrating} isAdminRoute={true}>
-                <ErrorBoundary>
-                  <AdminDashboard currentUser={currentUser!} />
-                </ErrorBoundary>
-              </ProtectedRoute>
-            } />
+              <Route path="/admin" element={
+                <ProtectedRoute user={currentUser} authReady={!authHydrating} isAdminRoute={true}>
+                  <PageTransition>
+                    <ErrorBoundary>
+                      <AdminDashboard currentUser={currentUser!} />
+                    </ErrorBoundary>
+                  </PageTransition>
+                </ProtectedRoute>
+              } />
 
-            <Route path="/cafe-admin" element={
-              <ProtectedRoute user={currentUser} authReady={!authHydrating} requiredRole="cafe_admin">
-                <ErrorBoundary>
-                  <CafeDashboard currentUser={currentUser!} />
-                </ErrorBoundary>
-              </ProtectedRoute>
-            } />
+              <Route path="/cafe-admin" element={
+                <ProtectedRoute user={currentUser} authReady={!authHydrating} requiredRole="cafe_admin">
+                  <PageTransition>
+                    <ErrorBoundary>
+                      <CafeDashboard currentUser={currentUser!} />
+                    </ErrorBoundary>
+                  </PageTransition>
+                </ProtectedRoute>
+              } />
 
-            <Route path="/gizlilik" element={<PrivacyPolicy />} />
-            <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route path="/store" element={<Store user={currentUser} setUser={setCurrentUser} onShowToast={toast} />} />
+              <Route path="/gizlilik" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
+              <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />
+              <Route path="/store" element={<PageTransition><Store user={currentUser} setUser={setCurrentUser} onShowToast={toast} /></PageTransition>} />
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </AnimatePresence>
         </Suspense>
       </main>
 

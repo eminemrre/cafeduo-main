@@ -117,7 +117,7 @@ export const Store: React.FC<StoreProps> = ({ user, setUser, onShowToast }) => {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-12 relative noise-bg min-h-screen">
+        <div className="max-w-7xl mx-auto px-4 pt-12 pb-32 relative noise-bg min-h-screen">
 
             {/* Cüzdan / Header Bölgesi */}
             <div className="flex flex-col md:flex-row justify-between items-end mb-12 border-b-2 border-cyan-900/50 pb-6">
@@ -159,8 +159,8 @@ export const Store: React.FC<StoreProps> = ({ user, setUser, onShowToast }) => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 }}
                             className={`relative bg-[#050a19] border-t-2 border-l-2 border-r-4 border-b-4 p-6 flex flex-col justify-between group overflow-hidden ${owned ? 'border-emerald-500 shadow-[6px_6px_0_rgba(16,185,129,0.2)]'
-                                    : afford ? 'border-cyan-400 shadow-[6px_6px_0_rgba(0,243,255,0.2)] hover:border-pink-500 hover:shadow-[8px_8px_0_rgba(255,0,234,0.3)]'
-                                        : 'border-cyan-900/45 shadow-[6px_6px_0_rgba(6,28,48,0.5)] opacity-80 cursor-not-allowed'
+                                : afford ? 'border-cyan-400 shadow-[6px_6px_0_rgba(0,243,255,0.2)] hover:border-pink-500 hover:shadow-[8px_8px_0_rgba(255,0,234,0.3)]'
+                                    : 'border-cyan-900/45 shadow-[6px_6px_0_rgba(6,28,48,0.5)] opacity-80 cursor-not-allowed'
                                 } transition-all duration-300`}
                         >
                             {/* Background Scanline Arka Plan Efekti */}
@@ -187,8 +187,8 @@ export const Store: React.FC<StoreProps> = ({ user, setUser, onShowToast }) => {
                                     onClick={() => handleBuy(item)}
                                     disabled={owned || !afford || buyingId === item.id}
                                     className={`w-full py-3 font-display text-lg tracking-widest uppercase transition-all flex items-center justify-center gap-2 skew-x-[-5deg] ${owned ? 'bg-emerald-950/30 text-emerald-500 border-2 border-emerald-900/50 cursor-not-allowed'
-                                            : afford ? 'bg-cyan-950/30 text-cyan-400 border-2 border-cyan-500/50 hover:bg-pink-950/30 hover:text-pink-400 hover:border-pink-500'
-                                                : 'bg-cyan-950/40 text-cyan-900/90 border-2 border-cyan-900/45 cursor-not-allowed'
+                                        : afford ? 'bg-cyan-950/30 text-cyan-400 border-2 border-cyan-500/50 hover:bg-pink-950/30 hover:text-pink-400 hover:border-pink-500'
+                                            : 'bg-cyan-950/40 text-cyan-900/90 border-2 border-cyan-900/45 cursor-not-allowed'
                                         }`}
                                 >
                                     <span className="skew-x-[5deg] flex items-center gap-2">

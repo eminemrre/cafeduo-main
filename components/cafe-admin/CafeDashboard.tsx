@@ -57,11 +57,10 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
       rewardCount: rewards.length,
       locationSummary:
         locationLatitude && locationLongitude
-          ? `${locationLatitude}, ${locationLongitude} (${locationRadius}m)${
-              locationSecondaryLatitude && locationSecondaryLongitude
-                ? ` + ${locationSecondaryLatitude}, ${locationSecondaryLongitude} (${locationSecondaryRadius}m)`
-                : ''
-            }`
+          ? `${locationLatitude}, ${locationLongitude} (${locationRadius}m)${locationSecondaryLatitude && locationSecondaryLongitude
+            ? ` + ${locationSecondaryLatitude}, ${locationSecondaryLongitude} (${locationSecondaryRadius}m)`
+            : ''
+          }`
           : 'Konum tanımlı değil',
       lastCouponCode: lastItem?.code || null,
     }),
@@ -100,13 +99,13 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
     icon: React.ComponentType<{ size?: number; className?: string }>;
     activeClassName: string;
   }> = [
-    { id: 'verification', label: 'Kupon İşlemleri', icon: QrCode, activeClassName: 'bg-cyan-400 text-[#041226] border-cyan-300 shadow-[4px_4px_0_rgba(255,0,234,0.35)]' },
-    { id: 'rewards', label: 'Ödül Yönetimi', icon: Gift, activeClassName: 'bg-pink-500 text-[#041226] border-pink-300 shadow-[4px_4px_0_rgba(0,243,255,0.3)]' },
-    { id: 'settings', label: 'Konum Ayarları', icon: MapPin, activeClassName: 'bg-emerald-400 text-[#041226] border-emerald-300 shadow-[4px_4px_0_rgba(0,243,255,0.3)]' },
-  ];
+      { id: 'verification', label: 'Kupon İşlemleri', icon: QrCode, activeClassName: 'bg-cyan-400 text-[#041226] border-cyan-300 shadow-[4px_4px_0_rgba(255,0,234,0.35)]' },
+      { id: 'rewards', label: 'Ödül Yönetimi', icon: Gift, activeClassName: 'bg-pink-500 text-[#041226] border-pink-300 shadow-[4px_4px_0_rgba(0,243,255,0.3)]' },
+      { id: 'settings', label: 'Konum Ayarları', icon: MapPin, activeClassName: 'bg-emerald-400 text-[#041226] border-emerald-300 shadow-[4px_4px_0_rgba(0,243,255,0.3)]' },
+    ];
 
   return (
-    <div className="min-h-screen rf-page-shell text-[var(--rf-ink)] pt-24 px-4 pb-[calc(3rem+env(safe-area-inset-bottom))] relative overflow-hidden noise-bg">
+    <div className="min-h-screen rf-page-shell text-[var(--rf-ink)] pt-24 px-4 pb-[calc(8rem+env(safe-area-inset-bottom))] relative overflow-hidden noise-bg">
       <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-4 mb-8 rf-screen-card p-5">
@@ -139,11 +138,10 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
                 aria-controls={`cafe-admin-panel-${tab.id}`}
                 id={`cafe-admin-tab-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-6 py-3 border-2 font-bold transition-all flex items-center gap-2 uppercase tracking-[0.1em] ${
-                  isActive
+                className={`px-6 py-3 border-2 font-bold transition-all flex items-center gap-2 uppercase tracking-[0.1em] ${isActive
                     ? tab.activeClassName
                     : 'bg-black/25 text-cyan-200/70 border-cyan-500/30 hover:bg-cyan-950/35 hover:text-cyan-100 hover:border-cyan-300/60'
-                }`}
+                  }`}
               >
                 <Icon size={20} />
                 {tab.label}

@@ -18,6 +18,7 @@ import { RetroChess } from './RetroChess';
 import { Leaderboard } from './Leaderboard';
 import { Achievements } from './Achievements';
 import { RetroButton } from './RetroButton';
+import { CyberGlitchScreen } from './CyberGlitchScreen';
 
 // Hooks
 import { useGames } from '../hooks/useGames';
@@ -64,6 +65,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
   const [isOwnProfile, setIsOwnProfile] = useState(false);
   const [gameResult, setGameResult] = useState<{ winner: string; earnedPoints: number } | null>(null);
   const [leavingGame, setLeavingGame] = useState(false);
+  const [showGlitchAnim, setShowGlitchAnim] = useState(false);
   const gameEndHandledRef = useRef(false);
 
   // ==========================================
@@ -297,6 +299,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
     gameEndHandledRef.current = true;
     const safeEarnedPoints = Number.isFinite(earnedPoints) ? earnedPoints : 0;
     setGameResult((prev) => prev ?? { winner, earnedPoints: safeEarnedPoints });
+    setShowGlitchAnim(true);
     void refetch();
     if (onRefreshUser) {
       void onRefreshUser();
@@ -319,7 +322,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
 
   if (activeGameId) {
     return (
-      <div className="min-h-screen rf-dashboard-shell text-[var(--rf-ink)] pt-[calc(6rem+env(safe-area-inset-top))] md:pt-24 pb-[calc(3rem+env(safe-area-inset-bottom))] px-4 relative overflow-hidden">
+      <div className="min-h-screen rf-dashboard-shell text-[var(--rf-ink)] pt-[calc(6rem+env(safe-area-inset-top))] md:pt-24 pb-[calc(8rem+env(safe-area-inset-bottom))] px-4 relative overflow-hidden">
+        {showGlitchAnim && gameResult && (
+          <CyberGlitchScreen
+            isWinner={gameResult.winner === currentUser.username}
+            earnedPoints={gameResult.earnedPoints}
+            onComplete={() => setShowGlitchAnim(false)}
+          />
+        )}
         <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
         <div className="max-w-6xl mx-auto">
           {/* Geri butonu */}

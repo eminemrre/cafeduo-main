@@ -69,7 +69,7 @@ export const About: React.FC = () => {
               </p>
               <div className="mt-6 grid grid-cols-3 gap-3 text-center">
                 <div className="rounded-xl border border-cyan-400/22 bg-[#0a1834]/70 p-3">
-                  <p className="font-display text-2xl text-white">4</p>
+                  <p className="font-display text-2xl text-white">5</p>
                   <p className="font-pixel text-[10px] text-cyan-300/80 uppercase">Oyun</p>
                 </div>
                 <div className="rounded-xl border border-cyan-400/22 bg-[#0a1834]/70 p-3">

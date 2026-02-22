@@ -9,6 +9,9 @@ jest.mock('../lib/api', () => ({
     users: {
       update: jest.fn(),
     },
+    store: {
+      inventory: jest.fn().mockResolvedValue({ success: true, inventory: [] }),
+    },
   },
 }));
 

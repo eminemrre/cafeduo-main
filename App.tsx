@@ -40,6 +40,10 @@ const ResetPasswordPage = lazyWithRetry(
   () => import('./components/ResetPasswordPage').then((module) => ({ default: module.ResetPasswordPage })),
   'ResetPasswordPage'
 );
+const Store = lazyWithRetry(
+  () => import('./components/Store').then((module) => ({ default: module.Store })),
+  'Store'
+);
 
 // Loading Component
 const PageLoader = () => (
@@ -319,7 +323,7 @@ const App: React.FC = () => {
   return (
     <div className="rf-app-shell min-h-screen text-[var(--rf-ink)] font-sans selection:bg-cyan-300/30 selection:text-white">
       <CustomCursor />
-      <Navbar isLoggedIn={isLoggedIn} onLogout={handleLogout} />
+      <Navbar isLoggedIn={isLoggedIn} user={currentUser} onLogout={handleLogout} />
 
       <main>
         <Suspense fallback={<PageLoader />}>
@@ -371,9 +375,9 @@ const App: React.FC = () => {
               </ProtectedRoute>
             } />
 
-            {/* KVKK Gizlilik Politikası */}
             <Route path="/gizlilik" element={<PrivacyPolicy />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route path="/store" element={<Store user={currentUser} setUser={setCurrentUser} onShowToast={toast} />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

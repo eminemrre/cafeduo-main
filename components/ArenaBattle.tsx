@@ -349,7 +349,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
 
   return (
     <div
-      className="max-w-2xl mx-auto rf-panel rf-elevated border-cyan-400/22 rounded-xl p-6 text-white relative overflow-hidden"
+      className="max-w-2xl mx-auto rf-screen-card noise-bg p-4 sm:p-6 text-white relative overflow-hidden"
       data-testid="arena-battle"
       style={{
         backgroundImage: `linear-gradient(165deg, rgba(4, 17, 41, 0.92), rgba(2, 28, 52, 0.9)), url('${GAME_ASSETS.backgrounds.rhythmCopy}')`,
@@ -357,67 +357,77 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
         backgroundPosition: 'center',
       }}
     >
-      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_96%,rgba(34,211,238,0.08)_100%)] [background-size:100%_4px] opacity-50" />
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-pixel text-lg">Nişancı Düellosu</h2>
-        <button onClick={onLeave} className="text-[var(--rf-muted)] hover:text-white text-sm">Oyundan Çık</button>
-      </div>
+      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_95%,rgba(34,211,238,0.09)_100%)] [background-size:100%_4px] opacity-60" />
+      <div className="relative z-10">
+        <div className="rf-terminal-strip mb-2">Sistem TR-X // Nişan Modu</div>
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-[0.08em] leading-none">
+            Nişancı Düellosu
+          </h2>
+          <button
+            onClick={onLeave}
+            className="shrink-0 px-3 py-2 border border-rose-400/45 bg-rose-500/12 text-rose-200 hover:bg-rose-500/24 transition-colors text-xs uppercase tracking-[0.16em]"
+          >
+            Oyundan Çık
+          </button>
+        </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-5 text-center">
-        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Tur</div>
-          <div className="font-bold">{Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}</div>
+        <div className="grid grid-cols-3 gap-2.5 mb-5 text-center">
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-xs text-[var(--rf-muted)]">Tur</div>
+            <div className="font-bold text-cyan-100">{Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}</div>
+          </div>
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-xs text-[var(--rf-muted)]">Sen</div>
+            <div className="font-bold text-cyan-100">{playerScore}</div>
+          </div>
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-xs text-[var(--rf-muted)]">Rakip</div>
+            <div className="font-bold text-cyan-100">{opponentScore}</div>
+          </div>
         </div>
-        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Sen</div>
-          <div className="font-bold">{playerScore}</div>
-        </div>
-        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Rakip</div>
-          <div className="font-bold">{opponentScore}</div>
-        </div>
-      </div>
 
-      <p className="text-sm text-[var(--rf-muted)] mb-4">{message}</p>
+        <p className="text-sm text-[var(--rf-muted)] mb-4 pl-3 border-l-2 border-cyan-400/55 min-h-[2rem] flex items-center">{message}</p>
 
-      <div className="rounded-xl border border-cyan-400/25 bg-[#08152f]/85 p-4 mb-4">
-        <div className="flex items-center justify-between text-xs text-[var(--rf-muted)] mb-2">
-          <span>Nişan Çubuğu</span>
-          <span>{Math.round(gauge)}%</span>
+        <div className="rf-screen-card-muted p-4 mb-4">
+          <div className="flex items-center justify-between text-xs text-[var(--rf-muted)] mb-2">
+            <span>Nişan Çubuğu</span>
+            <span>{Math.round(gauge)}%</span>
+          </div>
+          <div className="relative h-8 border border-cyan-400/24 bg-[#061329] overflow-hidden">
+            <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-7 bg-emerald-400/25 border-x border-emerald-300/45" />
+            <div className="absolute inset-y-0 left-[calc(50%-18px)] w-9 border-x border-cyan-300/30" />
+            <div
+              className="absolute top-0 h-full w-2 bg-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.7)]"
+              style={{ left: `calc(${gaugeMarkerLeft} - 4px)` }}
+            />
+          </div>
+          <div className="mt-2 text-xs text-[var(--rf-muted)]">
+            Merkez (50) çevresine ne kadar yakın vurursan o kadar fazla puan alırsın.
+          </div>
         </div>
-        <div className="relative h-8 rounded-full border border-cyan-400/20 bg-[#061329] overflow-hidden">
-          <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-7 bg-emerald-400/25 border-x border-emerald-300/45" />
-          <div className="absolute inset-y-0 left-[calc(50%-18px)] w-9 border-x border-cyan-300/30" />
-          <div
-            className="absolute top-0 h-full w-2 rounded-full bg-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.7)]"
-            style={{ left: `calc(${gaugeMarkerLeft} - 4px)` }}
-          />
-        </div>
-        <div className="mt-2 text-xs text-[var(--rf-muted)]">
-          Merkez (50) çevresine ne kadar yakın vurursan o kadar fazla puan alırsın.
-        </div>
-      </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
-        <div className="rounded-lg border border-cyan-400/20 bg-[#081733]/75 p-3">
-          <div className="text-[var(--rf-muted)] mb-1">Son Atışın</div>
-          <div className="font-semibold">{playerShot === null ? '-' : `${Math.round(playerShot)}%`}</div>
+        <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-[var(--rf-muted)] mb-1">Son Atışın</div>
+            <div className="font-semibold">{playerShot === null ? '-' : `${Math.round(playerShot)}%`}</div>
+          </div>
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-[var(--rf-muted)] mb-1">Rakip Atışı</div>
+            <div className="font-semibold">{opponentShot === null ? '-' : `${Math.round(opponentShot)}%`}</div>
+          </div>
         </div>
-        <div className="rounded-lg border border-cyan-400/20 bg-[#081733]/75 p-3">
-          <div className="text-[var(--rf-muted)] mb-1">Rakip Atışı</div>
-          <div className="font-semibold">{opponentShot === null ? '-' : `${Math.round(opponentShot)}%`}</div>
-        </div>
-      </div>
 
-      <div className="flex gap-3">
-        <RetroButton onClick={fire} disabled={!canFire} data-testid="tank-fire-button">
-          ATEŞ ET
-        </RetroButton>
-        {done && (
-          <RetroButton onClick={onLeave} variant="secondary">
-            Lobiye Dön
+        <div className="flex gap-3">
+          <RetroButton onClick={fire} disabled={!canFire} data-testid="tank-fire-button">
+            ATEŞ ET
           </RetroButton>
-        )}
+          {done && (
+            <RetroButton onClick={onLeave} variant="secondary">
+              Lobiye Dön
+            </RetroButton>
+          )}
+        </div>
       </div>
     </div>
   );

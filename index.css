@@ -36,6 +36,14 @@
   --rf-space-4: 1rem;
   --rf-space-5: 1.25rem;
   --rf-space-6: 1.5rem;
+  --rf-line-cyan: rgba(0, 243, 255, 0.4);
+  --rf-line-pink: rgba(255, 0, 234, 0.42);
+  --rf-surface-a: rgba(5, 10, 25, 0.94);
+  --rf-surface-b: rgba(3, 7, 18, 0.92);
+  --rf-surface-soft: rgba(5, 15, 35, 0.82);
+  --rf-card-shadow: 10px 10px 0 rgba(0, 0, 0, 0.72);
+  --rf-card-shadow-cyan: 6px 6px 0 rgba(0, 243, 255, 0.2);
+  --rf-card-shadow-pink: 6px 6px 0 rgba(255, 0, 234, 0.2);
 }
 
 html {
@@ -76,6 +84,188 @@ body::after {
 @keyframes cb-noise {
   0% { transform: translate(0, 0); }
   100% { transform: translate(-2%, -2%); }
+}
+
+.noise-bg {
+  position: relative;
+  isolation: isolate;
+}
+
+.noise-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.08;
+  mix-blend-mode: screen;
+  background-image: radial-gradient(circle at 20% 15%, rgba(0, 243, 255, 0.35), transparent 32%),
+    radial-gradient(circle at 84% 6%, rgba(255, 0, 234, 0.28), transparent 28%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.04) 0,
+      rgba(255, 255, 255, 0.04) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+}
+
+.noise-bg > * {
+  position: relative;
+  z-index: 1;
+}
+
+.glitch-text {
+  position: relative;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-shadow: 1px 0 0 rgba(0, 243, 255, 0.7), -1px 0 0 rgba(255, 0, 234, 0.65);
+}
+
+.glitch-text::before,
+.glitch-text::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.glitch-text::before {
+  color: rgba(0, 243, 255, 0.56);
+  transform: translate(1px, 0);
+  clip-path: polygon(0 0, 100% 0, 100% 38%, 0 44%);
+}
+
+.glitch-text::after {
+  color: rgba(255, 0, 234, 0.56);
+  transform: translate(-1px, 0);
+  clip-path: polygon(0 62%, 100% 54%, 100% 100%, 0 100%);
+}
+
+.text-shadow-glitch {
+  text-shadow: 1px 0 0 rgba(0, 243, 255, 0.7), -1px 0 0 rgba(255, 0, 234, 0.65);
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 243, 255, 0.48) rgba(2, 7, 19, 0.8);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 9px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(2, 7, 19, 0.8);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(0, 243, 255, 0.95), rgba(255, 0, 234, 0.72));
+  border-radius: 999px;
+}
+
+.rf-screen-card {
+  border: 2px solid var(--rf-line-cyan);
+  border-right-width: 4px;
+  border-bottom-width: 4px;
+  border-top-color: rgba(0, 243, 255, 0.6);
+  border-left-color: rgba(0, 243, 255, 0.6);
+  border-right-color: rgba(255, 0, 234, 0.62);
+  border-bottom-color: rgba(255, 0, 234, 0.62);
+  background: linear-gradient(160deg, var(--rf-surface-a), var(--rf-surface-b));
+  box-shadow: var(--rf-card-shadow), var(--rf-card-shadow-cyan);
+}
+
+.rf-screen-card-muted {
+  border: 1px solid rgba(0, 243, 255, 0.28);
+  background: linear-gradient(160deg, rgba(5, 14, 33, 0.86), rgba(3, 8, 20, 0.86));
+  box-shadow: 0 0 0 1px rgba(0, 243, 255, 0.12), 0 16px 34px rgba(0, 0, 0, 0.42);
+}
+
+.rf-terminal-strip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.7rem;
+  font-family: "Chakra Petch", sans-serif;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(0, 243, 255, 0.85);
+}
+
+.rf-terminal-strip::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  background: #ff00ea;
+  box-shadow: 12px 0 0 #00f3ff, 24px 0 0 rgba(0, 243, 255, 0.45);
+}
+
+.rf-inline-kicker {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.24rem 0.55rem;
+  border: 1px solid rgba(255, 0, 234, 0.55);
+  background: rgba(255, 0, 234, 0.14);
+  color: #ffd5fa;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.rf-admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid rgba(0, 243, 255, 0.24);
+  background: linear-gradient(160deg, rgba(3, 9, 21, 0.92), rgba(4, 12, 28, 0.9));
+}
+
+.rf-admin-table thead {
+  background: linear-gradient(180deg, rgba(0, 243, 255, 0.12), rgba(0, 243, 255, 0.05));
+}
+
+.rf-admin-table th {
+  font-size: 0.69rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #a8f4ff;
+  padding: 0.88rem 0.82rem;
+  border-bottom: 1px solid rgba(0, 243, 255, 0.16);
+}
+
+.rf-admin-table td {
+  padding: 0.85rem 0.82rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+  color: #d4dbe5;
+}
+
+.rf-admin-table tbody tr:hover {
+  background: rgba(14, 26, 53, 0.46);
+}
+
+.rf-page-shell input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+.rf-page-shell select,
+.rf-page-shell textarea {
+  border-radius: 0;
+  border: 2px solid rgba(0, 243, 255, 0.2);
+  background: rgba(2, 7, 18, 0.72);
+  color: #e6f8ff;
+  transition: all 0.2s ease;
+}
+
+.rf-page-shell input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]):focus-visible,
+.rf-page-shell select:focus-visible,
+.rf-page-shell textarea:focus-visible {
+  outline: none;
+  border-color: rgba(0, 243, 255, 0.58);
+  box-shadow: 4px 4px 0 rgba(0, 243, 255, 0.16);
+  transform: translate(-1px, -1px);
+}
+
+.rf-page-shell label {
+  letter-spacing: 0.06em;
 }
 
 /* Base stagger utilities for brutalist reveal */

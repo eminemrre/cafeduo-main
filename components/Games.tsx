@@ -82,7 +82,7 @@ const GameCard: React.FC<FeaturedGame> = ({ title, subtitle, duration, mode, acc
     style={!disabled ? { backgroundImage: tone } : undefined}
     className={`relative rounded-[1.6rem] border p-6 md:p-7 transition-all ${
       disabled
-        ? 'border-slate-700/75 bg-[#090f22]/72'
+        ? 'border-cyan-900/45 bg-[#090f22]/72'
         : 'group border-cyan-300/25 hover:shadow-[0_22px_56px_rgba(0,0,0,0.5)]'
     }`}
   >
@@ -118,7 +118,7 @@ const GameCard: React.FC<FeaturedGame> = ({ title, subtitle, duration, mode, acc
     <h3 className="relative z-10 mt-5 text-2xl font-display text-white tracking-wide">{title}</h3>
     <p className="relative z-10 mt-3 text-[var(--rf-muted)] leading-relaxed">{subtitle}</p>
 
-    <div className="relative z-10 mt-6 pt-5 border-t border-slate-700/75 flex items-center justify-between gap-3">
+    <div className="relative z-10 mt-6 pt-5 border-t border-cyan-900/45 flex items-center justify-between gap-3">
       <div className="space-y-1">
         <p className="text-xs uppercase tracking-[0.14em] font-pixel text-cyan-300/80">Ortalama süre</p>
         <p className="text-white font-semibold">{duration}</p>

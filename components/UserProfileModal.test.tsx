@@ -70,7 +70,7 @@ describe('UserProfileModal', () => {
     fireEvent.change(select, { target: { value: 'Bilgisayar Mühendisliği' } });
 
     const saveButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.className.includes('text-green-400')
+      btn.className.includes('text-emerald-400')
     );
     expect(saveButton).toBeTruthy();
     fireEvent.click(saveButton as HTMLButtonElement);
@@ -84,7 +84,7 @@ describe('UserProfileModal', () => {
   it('shows alert when save fails', async () => {
     const user = createUser();
     const onSaveProfile = jest.fn().mockRejectedValueOnce(new Error('db down'));
-    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {});
+    const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => { });
 
     const { container } = render(
       <UserProfileModal
@@ -100,7 +100,7 @@ describe('UserProfileModal', () => {
       target: { value: 'İşletme' },
     });
     const saveButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.className.includes('text-green-400')
+      btn.className.includes('text-emerald-400')
     );
     expect(saveButton).toBeTruthy();
     fireEvent.click(saveButton as HTMLButtonElement);

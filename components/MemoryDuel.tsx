@@ -363,75 +363,85 @@ export const MemoryDuel: React.FC<MemoryDuelProps> = ({
     }, [done, isBot, target]);
 
     return (
-        <div className="max-w-xl mx-auto rf-panel border-cyan-400/22 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden" data-testid="memory-duel">
-            <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(34,211,238,0.1)_0%,transparent_70%)] opacity-60" />
+        <div className="max-w-xl mx-auto rf-screen-card noise-bg p-4 sm:p-6 text-white relative overflow-hidden" data-testid="memory-duel">
+            <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_95%,rgba(34,211,238,0.09)_100%)] [background-size:100%_4px] opacity-60" />
 
-            <div className="flex items-center justify-between mb-4 relative z-10">
-                <h2 className="font-pixel text-lg text-cyan-300 drop-shadow-[0_0_10px_rgba(34,211,238,0.4)]">Neon Hafıza</h2>
-                <button onClick={onLeave} className="text-[var(--rf-muted)] hover:text-white text-sm">Oyundan Çık</button>
-            </div>
+            <div className="relative z-10">
+                <div className="rf-terminal-strip mb-2">Sistem TR-X // Hafıza Matrisi</div>
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-[0.08em] leading-none">
+                        Neon Hafıza
+                    </h2>
+                    <button
+                        onClick={onLeave}
+                        className="text-rose-200 hover:text-rose-100 text-xs px-3 py-2 border border-rose-400/45 bg-rose-500/12 hover:bg-rose-500/24 transition-colors uppercase tracking-[0.16em]"
+                    >
+                        Oyundan Çık
+                    </button>
+                </div>
 
-            {/* Scoreboard */}
-            <div className="grid grid-cols-2 gap-4 mb-6 text-center relative z-10">
-                <div className="bg-[#0a1732]/80 p-3 rounded-lg border border-cyan-400/20 shadow-[0_0_15px_rgba(34,211,238,0.1)]">
-                    <div className="text-xs text-[var(--rf-muted)] mb-1">Sen</div>
-                    <div className="font-pixel text-3xl text-cyan-300 group-hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.8)] transition-all">
-                        {playerScore}
+                {/* Scoreboard */}
+                <div className="grid grid-cols-2 gap-4 mb-6 text-center">
+                    <div className="rf-screen-card-muted p-3">
+                        <div className="text-xs text-[var(--rf-muted)] mb-1">Sen</div>
+                        <div className="font-pixel text-3xl text-cyan-300">
+                            {playerScore}
+                        </div>
+                    </div>
+                    <div className="rf-screen-card-muted p-3">
+                        <div className="text-xs text-[var(--rf-muted)] mb-1">{target}</div>
+                        <div className="font-pixel text-3xl text-pink-400">
+                            {opponentScore}
+                        </div>
                     </div>
                 </div>
-                <div className="bg-[#0a1732]/80 p-3 rounded-lg border border-pink-500/20 shadow-[0_0_15px_rgba(236,72,153,0.1)]">
-                    <div className="text-xs text-[var(--rf-muted)] mb-1">{target}</div>
-                    <div className="font-pixel text-3xl text-pink-400">
-                        {opponentScore}
+
+                <p className="text-sm text-center text-cyan-200/80 mb-6 min-h-[1.5rem] tracking-wider pl-3 border-l-2 border-cyan-400/55">{message}</p>
+
+                {/* Board */}
+                <div className="grid grid-cols-4 gap-2 sm:gap-3 perspective-1000 mb-6">
+                    {cards.map((card, idx) => {
+                        const myFlipped = card.flippedBy === currentUser.username;
+                        const opponentFlipped = card.flippedBy && card.flippedBy !== currentUser.username;
+                        const isMatched = card.matchedBy !== null;
+
+                        const isVisible = myFlipped || opponentFlipped || isMatched;
+                        const borderColor = isMatched
+                            ? (card.matchedBy === currentUser.username ? 'border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]' : 'border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.5)]')
+                            : (myFlipped ? 'border-cyan-300' : (opponentFlipped ? 'border-pink-400' : 'border-cyan-800/40 hover:border-cyan-500/50'));
+
+                        const opacity = isMatched ? 'opacity-50 scale-95' : 'opacity-100';
+
+                        return (
+                            <button
+                                key={idx}
+                                onClick={() => handleCardClick(idx)}
+                                disabled={!isReady || done}
+                                className={`relative aspect-square bg-[#040a16] border-2 ${borderColor} ${opacity} transition-all duration-300 transform-gpu preserve-3d cursor-pointer focus:outline-none`}
+                            >
+                                <div className={`absolute inset-0 backface-hidden flex items-center justify-center text-3xl sm:text-4xl transition-transform duration-500 ${isVisible ? '[transform:rotateY(180deg)]' : ''}`}>
+                                    {/* Back of card */}
+                                    <div className="w-full h-full bg-[linear-gradient(45deg,rgba(34,211,238,0.05)_25%,transparent_25%,transparent_50%,rgba(34,211,238,0.05)_50%,rgba(34,211,238,0.05)_75%,transparent_75%,transparent_100%)] [background-size:20px_20px]" />
+                                    <div className="absolute inset-0 flex items-center justify-center opacity-30 font-pixel text-cyan-800 text-xs">?</div>
+                                </div>
+
+                                <div className={`absolute inset-0 backface-hidden flex items-center justify-center text-4xl sm:text-5xl bg-[#0a1732] transition-transform duration-500 ${isVisible ? '' : '[transform:rotateY(-180deg)]'}`}>
+                                    {/* Front of card */}
+                                    <span className={isMatched ? 'drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] scale-110 transition-transform' : ''}>
+                                        {card.emoji}
+                                    </span>
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {done && (
+                    <div className="flex justify-center mt-4">
+                        <RetroButton onClick={onLeave}>Lobiye Dön</RetroButton>
                     </div>
-                </div>
+                )}
             </div>
-
-            <p className="text-sm text-center text-cyan-200/80 mb-6 font-retro relative z-10 min-h-[1.5rem] tracking-wider">{message}</p>
-
-            {/* Board */}
-            <div className="grid grid-cols-4 gap-2 sm:gap-3 perspective-1000 relative z-10 mb-6">
-                {cards.map((card, idx) => {
-                    const myFlipped = card.flippedBy === currentUser.username;
-                    const opponentFlipped = card.flippedBy && card.flippedBy !== currentUser.username;
-                    const isMatched = card.matchedBy !== null;
-
-                    const isVisible = myFlipped || opponentFlipped || isMatched;
-                    const borderColor = isMatched
-                        ? (card.matchedBy === currentUser.username ? 'border-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.5)]' : 'border-pink-500 shadow-[0_0_15px_rgba(236,72,153,0.5)]')
-                        : (myFlipped ? 'border-cyan-300' : (opponentFlipped ? 'border-pink-400' : 'border-cyan-800/40 hover:border-cyan-500/50'));
-
-                    const opacity = isMatched ? 'opacity-50 scale-95' : 'opacity-100';
-
-                    return (
-                        <button
-                            key={idx}
-                            onClick={() => handleCardClick(idx)}
-                            disabled={!isReady || done}
-                            className={`relative aspect-square rounded-xl bg-[#040a16] border-2 ${borderColor} ${opacity} transition-all duration-300 transform-gpu preserve-3d cursor-pointer focus:outline-none`}
-                        >
-                            <div className={`absolute inset-0 backface-hidden flex items-center justify-center text-3xl sm:text-4xl transition-transform duration-500 ${isVisible ? '[transform:rotateY(180deg)]' : ''}`}>
-                                {/* Back of card */}
-                                <div className="w-full h-full bg-[linear-gradient(45deg,rgba(34,211,238,0.05)_25%,transparent_25%,transparent_50%,rgba(34,211,238,0.05)_50%,rgba(34,211,238,0.05)_75%,transparent_75%,transparent_100%)] [background-size:20px_20px]" />
-                                <div className="absolute inset-0 flex items-center justify-center opacity-30 font-pixel text-cyan-800 text-xs">?</div>
-                            </div>
-
-                            <div className={`absolute inset-0 backface-hidden flex items-center justify-center text-4xl sm:text-5xl bg-[#0a1732] rounded-xl transition-transform duration-500 ${isVisible ? '' : '[transform:rotateY(-180deg)]'}`}>
-                                {/* Front of card */}
-                                <span className={isMatched ? 'drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] scale-110 transition-transform' : ''}>
-                                    {card.emoji}
-                                </span>
-                            </div>
-                        </button>
-                    );
-                })}
-            </div>
-
-            {done && (
-                <div className="flex justify-center mt-4">
-                    <RetroButton onClick={onLeave}>Lobiye Dön</RetroButton>
-                </div>
-            )}
         </div>
     );
 };

@@ -289,7 +289,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
 
   return (
     <div
-      className="max-w-2xl mx-auto rf-panel rf-elevated border-cyan-400/22 rounded-xl p-6 text-white relative overflow-hidden"
+      className="max-w-2xl mx-auto rf-screen-card noise-bg p-4 sm:p-6 text-white relative overflow-hidden"
       data-testid="knowledge-quiz"
       style={{
         backgroundImage: `linear-gradient(165deg, rgba(4, 17, 41, 0.92), rgba(2, 28, 52, 0.9)), url('${GAME_ASSETS.backgrounds.knowledgeQuiz}')`,
@@ -297,66 +297,76 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
         backgroundPosition: 'center',
       }}
     >
-      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_96%,rgba(34,211,238,0.08)_100%)] [background-size:100%_4px] opacity-50" />
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-pixel text-lg">Bilgi Yarışı</h2>
-        <button onClick={onLeave} className="text-[var(--rf-muted)] hover:text-white text-sm">Oyundan Çık</button>
+      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_95%,rgba(34,211,238,0.09)_100%)] [background-size:100%_4px] opacity-60" />
+      <div className="relative z-10">
+        <div className="rf-terminal-strip mb-2">Sistem TR-X // Bilgi Tarayıcı</div>
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-[0.08em] leading-none">
+            Bilgi Yarışı
+          </h2>
+          <button
+            onClick={onLeave}
+            className="shrink-0 px-3 py-2 border border-rose-400/45 bg-rose-500/12 text-rose-200 hover:bg-rose-500/24 transition-colors text-xs uppercase tracking-[0.16em]"
+          >
+            Oyundan Çık
+          </button>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2.5 mb-5 text-center">
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-xs text-[var(--rf-muted)]">Tur</div>
+            <div className="font-bold text-cyan-100">{Math.min(roundIndex + 1, maxRounds)} / {maxRounds}</div>
+          </div>
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-xs text-[var(--rf-muted)]">Sen</div>
+            <div className="font-bold text-cyan-100">{playerScore}</div>
+          </div>
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-xs text-[var(--rf-muted)]">Rakip</div>
+            <div className="font-bold text-cyan-100">{opponentScore}</div>
+          </div>
+        </div>
+
+        <p className="text-sm text-[var(--rf-muted)] mb-4 pl-3 border-l-2 border-cyan-400/55 min-h-[2rem] flex items-center">{message}</p>
+
+        <div className="rf-screen-card-muted p-4">
+          <p data-testid="knowledge-question" className="text-base md:text-lg font-semibold text-white leading-relaxed mb-4">
+            {currentQuestion.question}
+          </p>
+          <div className="grid grid-cols-1 gap-2.5">
+            {currentQuestion.options.map((option, idx) => {
+              const isPicked = selectedOption === idx;
+              const isCorrect = idx === currentQuestion.answerIndex;
+              const stateClass = selectedOption === null
+                ? 'border-cyan-400/25 hover:border-cyan-300/45 bg-[#102348]/70 hover:bg-[#15305f]/70'
+                : isPicked && isCorrect
+                  ? 'border-emerald-400/40 bg-emerald-500/20'
+                  : isPicked
+                    ? 'border-rose-400/40 bg-rose-500/20'
+                    : isCorrect
+                      ? 'border-emerald-400/30 bg-emerald-500/10'
+                      : 'border-cyan-400/20 bg-[#0d1f40]/55';
+              return (
+                <button
+                  key={`${roundIndex}-${idx}`}
+                  data-testid={`knowledge-option-${idx}`}
+                  onClick={() => handleAnswer(idx)}
+                  disabled={selectedOption !== null || done || resolvingMatch}
+                  className={`text-left border px-3.5 py-3 transition ${stateClass}`}
+                >
+                  {option}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {done && (
+          <div className="mt-4">
+            <RetroButton onClick={onLeave}>Lobiye Dön</RetroButton>
+          </div>
+        )}
       </div>
-
-      <div className="grid grid-cols-3 gap-3 mb-5 text-center">
-        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Tur</div>
-          <div className="font-bold">{Math.min(roundIndex + 1, maxRounds)} / {maxRounds}</div>
-        </div>
-        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Sen</div>
-          <div className="font-bold">{playerScore}</div>
-        </div>
-        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Rakip</div>
-          <div className="font-bold">{opponentScore}</div>
-        </div>
-      </div>
-
-      <p className="text-sm text-[var(--rf-muted)] mb-4">{message}</p>
-
-      <div className="rounded-xl border border-cyan-400/25 bg-[#08152f]/85 p-4">
-        <p data-testid="knowledge-question" className="text-base md:text-lg font-semibold text-white leading-relaxed mb-4">
-          {currentQuestion.question}
-        </p>
-        <div className="grid grid-cols-1 gap-2.5">
-          {currentQuestion.options.map((option, idx) => {
-            const isPicked = selectedOption === idx;
-            const isCorrect = idx === currentQuestion.answerIndex;
-            const stateClass = selectedOption === null
-              ? 'border-cyan-400/25 hover:border-cyan-300/45 bg-[#102348]/70 hover:bg-[#15305f]/70'
-              : isPicked && isCorrect
-                ? 'border-emerald-400/40 bg-emerald-500/20'
-                : isPicked
-                  ? 'border-rose-400/40 bg-rose-500/20'
-                  : isCorrect
-                    ? 'border-emerald-400/30 bg-emerald-500/10'
-                    : 'border-cyan-400/20 bg-[#0d1f40]/55';
-            return (
-              <button
-                key={`${roundIndex}-${idx}`}
-                data-testid={`knowledge-option-${idx}`}
-                onClick={() => handleAnswer(idx)}
-                disabled={selectedOption !== null || done || resolvingMatch}
-                className={`text-left rounded-lg border px-3.5 py-3 transition ${stateClass}`}
-              >
-                {option}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {done && (
-        <div className="mt-4">
-          <RetroButton onClick={onLeave}>Lobiye Dön</RetroButton>
-        </div>
-      )}
     </div>
   );
 };

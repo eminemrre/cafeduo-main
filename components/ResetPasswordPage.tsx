@@ -54,23 +54,25 @@ export const ResetPasswordPage: React.FC = () => {
   };
 
   return (
-    <section className="rf-section rf-page-shell min-h-[70vh] flex items-center justify-center px-4 py-16">
-      <div className="w-full max-w-md rounded-3xl border border-cyan-400/30 bg-[#060f24]/90 shadow-[0_24px_80px_rgba(0,0,0,0.55)] p-6 md:p-8 rf-elevated">
-        <p className="font-pixel text-[10px] tracking-[0.22em] text-cyan-200/80 uppercase">CafeDuo Güvenlik</p>
-        <h1 className="font-display text-2xl md:text-3xl text-white mt-2 mb-3">Şifreyi Yenile</h1>
-        <p className="text-slate-300 text-sm mb-5">
+    <section className="rf-section rf-page-shell noise-bg min-h-[70vh] flex items-center justify-center px-4 py-16">
+      <div className="w-full max-w-md rf-screen-card p-6 md:p-8 rf-elevated">
+        <p className="rf-terminal-strip">CafeDuo Güvenlik</p>
+        <h1 className="font-display text-4xl text-white mt-3 mb-3 tracking-[0.08em] glitch-text" data-text="ŞİFREYİ YENİLE">
+          Şifreyi Yenile
+        </h1>
+        <p className="text-[var(--rf-muted)] text-sm mb-5">
           Yeni bir şifre belirleyerek hesabınıza güvenli şekilde tekrar giriş yapabilirsiniz.
         </p>
 
         {error && (
-          <div className="mb-4 rounded-xl border border-red-400/45 bg-red-500/12 text-red-100 px-3 py-2.5 text-sm flex items-center gap-2">
+          <div className="mb-4 border border-red-400/45 bg-red-500/12 text-red-100 px-3 py-2.5 text-sm flex items-center gap-2">
             <AlertTriangle size={16} className="shrink-0" />
             {error}
           </div>
         )}
 
         {successMessage && (
-          <div className="mb-4 rounded-xl border border-emerald-400/45 bg-emerald-500/12 text-emerald-100 px-3 py-2.5 text-sm flex items-center gap-2">
+          <div className="mb-4 border border-emerald-400/45 bg-emerald-500/12 text-emerald-100 px-3 py-2.5 text-sm flex items-center gap-2">
             <CheckCircle2 size={16} className="shrink-0" />
             {successMessage}
           </div>
@@ -78,9 +80,9 @@ export const ResetPasswordPage: React.FC = () => {
 
         <form className="space-y-3.5" onSubmit={handleSubmit}>
           <label className="block">
-            <span className="text-xs uppercase tracking-[0.16em] text-slate-400 mb-2 block">Yeni Şifre</span>
+            <span className="text-xs uppercase tracking-[0.16em] text-[var(--rf-muted)] mb-2 block">Yeni Şifre</span>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={17} />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--rf-muted)]" size={17} />
               <input
                 type="password"
                 value={password}
@@ -93,9 +95,9 @@ export const ResetPasswordPage: React.FC = () => {
           </label>
 
           <label className="block">
-            <span className="text-xs uppercase tracking-[0.16em] text-slate-400 mb-2 block">Şifre Tekrar</span>
+            <span className="text-xs uppercase tracking-[0.16em] text-[var(--rf-muted)] mb-2 block">Şifre Tekrar</span>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={17} />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--rf-muted)]" size={17} />
               <input
                 type="password"
                 value={confirmPassword}

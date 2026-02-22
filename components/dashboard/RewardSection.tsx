@@ -109,7 +109,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                     className={`relative group bg-[#0b1834]/82 border rounded-xl p-4 sm:p-5 flex flex-col justify-between min-h-[205px] cursor-pointer ${
                       affordable
                         ? 'border-cyan-300/30'
-                        : 'border-slate-500/35 opacity-60'
+                        : 'border-cyan-900/45 opacity-60'
                     }`}
                     whileHover={affordable ? { 
                       y: -6, 
@@ -121,12 +121,12 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                     <div>
                       <div className="flex justify-between items-start mb-3">
                         <div className={`p-2 rounded-lg ${
-                          affordable ? 'bg-cyan-400/18 text-cyan-300' : 'bg-slate-700/45 text-slate-400'
+                          affordable ? 'bg-cyan-400/18 text-cyan-300' : 'bg-cyan-950/45 text-[var(--rf-muted)]'
                         }`}>
                           {getRewardIcon(reward.icon)}
                         </div>
                         <span className={`font-bold text-xl ${
-                          affordable ? 'text-white' : 'text-slate-300'
+                          affordable ? 'text-white' : 'text-[var(--rf-muted)]'
                         }`}>
                           {reward.cost}
                         </span>
@@ -214,7 +214,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                         )}
                         {isExpired && !isUsed && (
                           <div className="absolute inset-0 flex items-center justify-center z-10">
-                            <div className="bg-gray-600 text-white font-bold text-lg px-4 py-2 rotate-[-15deg] border-4 border-white shadow-xl">
+                            <div className="bg-cyan-950 text-cyan-100 font-bold text-lg px-4 py-2 rotate-[-15deg] border-4 border-cyan-400/30 shadow-xl">
                               SÜRESİ DOLDU
                             </div>
                           </div>

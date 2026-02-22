@@ -32,7 +32,7 @@ export const Footer: React.FC = () => {
             <p className="font-pixel text-[10px] tracking-[0.2em] uppercase text-cyan-300/75">Yasal</p>
             <Link
               to="/gizlilik"
-              className="inline-flex items-center gap-2 text-slate-200 hover:text-cyan-300 transition-colors"
+              className="inline-flex items-center gap-2 text-cyan-100 hover:text-cyan-300 transition-colors"
             >
               <Shield size={15} />
               Gizlilik Politikası & KVKK
@@ -46,21 +46,21 @@ export const Footer: React.FC = () => {
               <a
                 href="#"
                 aria-label="Instagram"
-                className="w-10 h-10 rounded-full border border-cyan-400/35 bg-[#0a1834]/85 flex items-center justify-center text-slate-200 hover:text-cyan-300 hover:border-cyan-300/58 transition-colors"
+                className="w-10 h-10 rounded-full border border-cyan-400/35 bg-[#0a1834]/85 flex items-center justify-center text-cyan-100 hover:text-cyan-300 hover:border-cyan-300/58 transition-colors"
               >
                 <Instagram size={18} />
               </a>
               <a
                 href="#"
                 aria-label="Twitter"
-                className="w-10 h-10 rounded-full border border-cyan-400/35 bg-[#0a1834]/85 flex items-center justify-center text-slate-200 hover:text-cyan-300 hover:border-cyan-300/58 transition-colors"
+                className="w-10 h-10 rounded-full border border-cyan-400/35 bg-[#0a1834]/85 flex items-center justify-center text-cyan-100 hover:text-cyan-300 hover:border-cyan-300/58 transition-colors"
               >
                 <Twitter size={18} />
               </a>
               <a
                 href="mailto:kvkk@cafeduo.com"
                 aria-label="E-posta"
-                className="w-10 h-10 rounded-full border border-cyan-400/35 bg-[#0a1834]/85 flex items-center justify-center text-slate-200 hover:text-cyan-300 hover:border-cyan-300/58 transition-colors"
+                className="w-10 h-10 rounded-full border border-cyan-400/35 bg-[#0a1834]/85 flex items-center justify-center text-cyan-100 hover:text-cyan-300 hover:border-cyan-300/58 transition-colors"
               >
                 <Mail size={18} />
               </a>

@@ -1,0 +1,47 @@
+#!/usr/bin/expect -f
+
+set timeout 300
+set ip "217.60.254.141"
+set user "root"
+set password "!lqt3dOLsbl9M"
+
+spawn ssh -o StrictHostKeyChecking=no $user@$ip
+expect {
+    "assword:" {
+        send "$password\r"
+    }
+    "yes/no" {
+        send "yes\r"
+        expect "assword:"
+        send "$password\r"
+    }
+}
+
+expect "# "
+send "find /home /opt /var/www -maxdepth 3 -type d -name '*cafeduo-main*' 2>/dev/null | head -n 1\r"
+expect "# "
+
+# We will just run commands assuming we find the path. To make it robust:
+send "export D_PATH=\$(find /home /opt /var/www -maxdepth 3 -type d -name '*cafeduo-main*' 2>/dev/null | head -n 1)\r"
+expect "# "
+
+send "echo \"PROJECT PATH IS: \$D_PATH\"\r"
+expect "# "
+
+send "cd \$D_PATH\r"
+expect "# "
+
+send "docker compose -f deploy/docker-compose.prod.yml --env-file .env build --no-cache web\r"
+expect "# "
+
+send "docker compose -f deploy/docker-compose.prod.yml --env-file .env up -d --force-recreate\r"
+expect "# "
+
+send "docker compose -f deploy/docker-compose.prod.yml restart caddy\r"
+expect "# "
+
+send "docker image prune -a -f\r"
+expect "# "
+
+send "exit\r"
+expect eof

@@ -110,7 +110,7 @@ export const OddEvenSprint: React.FC<OddEvenSprintProps> = ({
 
   return (
     <div
-      className="max-w-2xl mx-auto rf-panel border-cyan-400/22 rounded-xl p-6 text-white relative overflow-hidden"
+      className="max-w-2xl mx-auto rf-screen-card noise-bg p-4 sm:p-6 text-white relative overflow-hidden"
       data-testid="odd-even-sprint"
       style={{
         backgroundImage: `linear-gradient(165deg, rgba(4, 17, 41, 0.92), rgba(2, 28, 52, 0.9)), url('${GAME_ASSETS.backgrounds.oddEvenSprint}')`,
@@ -118,66 +118,76 @@ export const OddEvenSprint: React.FC<OddEvenSprintProps> = ({
         backgroundPosition: 'center',
       }}
     >
-      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_96%,rgba(34,211,238,0.08)_100%)] [background-size:100%_4px] opacity-50" />
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-pixel text-lg">Çift Tek Sprint</h2>
-        <button onClick={onLeave} className="text-[var(--rf-muted)] hover:text-white text-sm">Oyundan Çık</button>
-      </div>
+      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_95%,rgba(34,211,238,0.09)_100%)] [background-size:100%_4px] opacity-60" />
+      <div className="relative z-10">
+        <div className="rf-terminal-strip mb-2">Sistem TR-X // Parite Çatışması</div>
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-[0.08em] leading-none">
+            Çift Tek Sprint
+          </h2>
+          <button
+            onClick={onLeave}
+            className="shrink-0 px-3 py-2 border border-rose-400/45 bg-rose-500/12 text-rose-200 hover:bg-rose-500/24 transition-colors text-xs uppercase tracking-[0.16em]"
+          >
+            Oyundan Çık
+          </button>
+        </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-5 text-center">
-        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
-            <img src={GAME_ASSETS.hud.jewel} alt="" className="w-4 h-4" aria-hidden="true" />
-            Tur
+        <div className="grid grid-cols-3 gap-2.5 mb-5 text-center">
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
+              <img src={GAME_ASSETS.hud.jewel} alt="" className="w-4 h-4" aria-hidden="true" />
+              Tur
+            </div>
+            <div className="font-bold text-cyan-100">{Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}</div>
           </div>
-          <div className="font-bold">{Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}</div>
-        </div>
-        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
-            <img src={GAME_ASSETS.hud.heart} alt="" className="w-4 h-4" aria-hidden="true" />
-            Sen
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
+              <img src={GAME_ASSETS.hud.heart} alt="" className="w-4 h-4" aria-hidden="true" />
+              Sen
+            </div>
+            <div className="font-bold text-cyan-100">{playerScore}</div>
           </div>
-          <div className="font-bold">{playerScore}</div>
-        </div>
-        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
-            <img src={GAME_ASSETS.hud.coin} alt="" className="w-4 h-4" aria-hidden="true" />
-            Rakip
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
+              <img src={GAME_ASSETS.hud.coin} alt="" className="w-4 h-4" aria-hidden="true" />
+              Rakip
+            </div>
+            <div className="font-bold text-cyan-100">{opponentScore}</div>
           </div>
-          <div className="font-bold">{opponentScore}</div>
         </div>
-      </div>
 
-      <p className="text-sm text-[var(--rf-muted)] mb-4">{message}</p>
+        <p className="text-sm text-[var(--rf-muted)] mb-4 pl-3 border-l-2 border-cyan-400/55 min-h-[2rem] flex items-center">{message}</p>
 
-      <div className="flex gap-3">
-        <button
-          data-testid="guess-even"
-          onClick={() => handleGuess('cift')}
-          disabled={done || resolvingMatch}
-          className="flex-1 bg-[#0f3a67] hover:bg-[#145289] disabled:opacity-50 rounded-xl p-4 font-semibold border border-cyan-300/35"
-        >
-          ÇİFT
-        </button>
-        <button
-          data-testid="guess-odd"
-          onClick={() => handleGuess('tek')}
-          disabled={done || resolvingMatch}
-          className="flex-1 bg-[#273145] hover:bg-[#35435e] disabled:opacity-50 rounded-xl p-4 font-semibold border border-slate-300/30"
-        >
-          TEK
-        </button>
-      </div>
-
-      <div className="mt-4 text-sm text-[var(--rf-muted)]">
-        Açılan sayı: {lastNumber ?? '-'}
-      </div>
-
-      {done && (
-        <div className="mt-4">
-          <RetroButton onClick={onLeave}>Lobiye Dön</RetroButton>
+        <div className="flex gap-3">
+          <button
+            data-testid="guess-even"
+            onClick={() => handleGuess('cift')}
+            disabled={done || resolvingMatch}
+            className="flex-1 bg-[#0f3a67] hover:bg-[#145289] disabled:opacity-50 p-4 font-semibold border border-cyan-300/35 tracking-[0.18em]"
+          >
+            ÇİFT
+          </button>
+          <button
+            data-testid="guess-odd"
+            onClick={() => handleGuess('tek')}
+            disabled={done || resolvingMatch}
+            className="flex-1 bg-[#273145] hover:bg-[#35435e] disabled:opacity-50 p-4 font-semibold border border-cyan-400/28 tracking-[0.18em]"
+          >
+            TEK
+          </button>
         </div>
-      )}
+
+        <div className="mt-4 text-sm text-[var(--rf-muted)] rf-screen-card-muted p-3">
+          Açılan sayı: {lastNumber ?? '-'}
+        </div>
+
+        {done && (
+          <div className="mt-4">
+            <RetroButton onClick={onLeave}>Lobiye Dön</RetroButton>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

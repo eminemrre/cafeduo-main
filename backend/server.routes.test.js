@@ -7,6 +7,7 @@ const COMMERCE_ROUTES_PATH = path.join(__dirname, 'routes', 'commerceRoutes.js')
 const PROFILE_ROUTES_PATH = path.join(__dirname, 'routes', 'profileRoutes.js');
 const SYSTEM_ROUTES_PATH = path.join(__dirname, 'routes', 'systemRoutes.js');
 const GAME_ROUTES_PATH = path.join(__dirname, 'routes', 'gameRoutes.js');
+const STORE_ROUTES_PATH = path.join(__dirname, 'routes', 'storeRoutes.js');
 
 const extractAppRouteMap = (source) => {
   const routeRegex = /app\.(get|post|put|patch|delete)\(\s*['"]([^'"]+)['"]/g;
@@ -61,13 +62,15 @@ describe('backend/server.js route registry', () => {
   const profileRouteSource = fs.readFileSync(PROFILE_ROUTES_PATH, 'utf8');
   const systemRouteSource = fs.readFileSync(SYSTEM_ROUTES_PATH, 'utf8');
   const gameRouteSource = fs.readFileSync(GAME_ROUTES_PATH, 'utf8');
+  const storeRouteSource = fs.readFileSync(STORE_ROUTES_PATH, 'utf8');
   const routeMap = mergeRouteMaps(
     extractAppRouteMap(serverSource),
     extractRouterRouteMap(adminRouteSource, '/api/admin'),
     extractRouterRouteMap(commerceRouteSource, '/api'),
     extractRouterRouteMap(profileRouteSource, '/api'),
     extractRouterRouteMap(systemRouteSource, ''),
-    extractRouterRouteMap(gameRouteSource, '/api')
+    extractRouterRouteMap(gameRouteSource, '/api'),
+    extractRouterRouteMap(storeRouteSource, '/api/store')
   );
 
   it('does not include duplicate app.<method>(path) definitions', () => {
@@ -92,6 +95,9 @@ describe('backend/server.js route registry', () => {
       'DELETE /api/rewards/:id',
       'POST /api/shop/buy',
       'GET /api/shop/inventory/:userId',
+      'GET /api/store/items',
+      'GET /api/store/inventory',
+      'POST /api/store/buy',
       'GET /api/leaderboard',
       'GET /api/achievements/:userId',
       'PUT /api/users/:id',

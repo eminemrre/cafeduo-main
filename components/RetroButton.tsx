@@ -27,31 +27,40 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
   };
 
   const baseStyles = `
-    font-pixel tracking-wide transition-all relative group rounded-2xl
+    font-pixel tracking-[0.12em] transition-all relative group rounded-none
     select-none touch-manipulation
     focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[#050a19]
     uppercase
+    border-2
   `;
 
   const variants = {
     primary: `
-      bg-[linear-gradient(120deg,#12396e_0%,#115289_56%,#2b7ca8_100%)] text-cyan-50 border border-cyan-300/50
-      hover:brightness-110 hover:shadow-[0_0_32px_rgba(0,217,255,0.28)] hover:border-cyan-200/75
+      bg-[#00f3ff] text-[#041226] border-cyan-300
+      shadow-[6px_6px_0_rgba(255,0,234,0.35)]
+      hover:bg-[#17f8ff] hover:translate-x-[-1px] hover:translate-y-[-1px]
+      hover:shadow-[8px_8px_0_rgba(255,0,234,0.4)]
       focus:ring-cyan-300/55
     `,
     secondary: `
-      bg-[linear-gradient(120deg,rgba(7,20,44,0.95),rgba(15,39,82,0.9))] text-cyan-100 border border-cyan-400/40
-      hover:bg-[linear-gradient(120deg,rgba(10,25,56,0.97),rgba(16,44,94,0.9))] hover:shadow-[0_0_24px_rgba(0,217,255,0.22)] hover:border-cyan-300/65
+      bg-[linear-gradient(160deg,rgba(5,12,28,0.96),rgba(3,7,18,0.94))] text-cyan-100 border-cyan-400/42
+      shadow-[6px_6px_0_rgba(0,243,255,0.22)]
+      hover:border-cyan-300/72 hover:translate-x-[-1px] hover:translate-y-[-1px]
+      hover:shadow-[8px_8px_0_rgba(0,243,255,0.28)]
       focus:ring-cyan-300/45
     `,
     danger: `
-      bg-[#440e24] text-pink-100 border border-pink-400/45
-      hover:bg-[#5b1530] hover:shadow-[0_0_24px_rgba(255,77,141,0.36)]
+      bg-[linear-gradient(160deg,rgba(55,10,36,0.96),rgba(31,7,20,0.94))] text-pink-100 border-pink-400/48
+      shadow-[6px_6px_0_rgba(255,0,234,0.3)]
+      hover:border-pink-300/76 hover:translate-x-[-1px] hover:translate-y-[-1px]
+      hover:shadow-[8px_8px_0_rgba(255,0,234,0.34)]
       focus:ring-pink-300/55
     `,
     ghost: `
-      bg-transparent text-[#9eb4d3] border border-cyan-500/28
-      hover:text-cyan-100 hover:border-cyan-300/50 hover:bg-cyan-900/20
+      bg-black/20 text-[#9eb4d3] border-cyan-500/35
+      hover:text-cyan-100 hover:border-cyan-300/62 hover:bg-cyan-900/18
+      hover:translate-x-[-1px] hover:translate-y-[-1px]
+      hover:shadow-[6px_6px_0_rgba(0,243,255,0.2)]
       focus:ring-cyan-200/40
     `
   };
@@ -78,8 +87,7 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
         y: 1
       }}
       whileHover={disabled ? {} : {
-        y: -1,
-        scale: 1.01
+        y: -1
       }}
       transition={{ 
         type: 'spring', 
@@ -88,7 +96,8 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
       }}
     >
       {/* Shine effect overlay */}
-      <span className="absolute inset-0 bg-gradient-to-b from-cyan-200/15 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+      <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+      <span className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-100/70 to-transparent pointer-events-none" />
       
       {/* Content */}
       <span className="relative flex items-center justify-center gap-2">

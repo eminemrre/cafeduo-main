@@ -817,7 +817,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
 
     return (
         <div
-            className="max-w-3xl mx-auto rf-panel border-cyan-400/22 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden"
+            className="max-w-3xl mx-auto rf-screen-card noise-bg p-4 sm:p-6 text-white relative overflow-hidden"
             data-testid="tank-battle"
             style={{
                 backgroundImage: `linear-gradient(165deg, rgba(4, 17, 41, 0.92), rgba(2, 28, 52, 0.9)), url('${GAME_ASSETS.backgrounds.tankBattle}')`,
@@ -825,116 +825,125 @@ export const TankBattle: React.FC<TankBattleProps> = ({
                 backgroundPosition: 'center',
             }}
         >
-            <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_96%,rgba(34,211,238,0.08)_100%)] [background-size:100%_4px] opacity-50 z-0" />
+            <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_95%,rgba(34,211,238,0.09)_100%)] [background-size:100%_4px] opacity-60 z-0" />
 
-            <div className="flex items-center justify-between mb-4 relative z-10">
-                <h2 className="font-pixel text-lg">Tank Düellosu</h2>
-                <div className="flex items-center gap-3">
-                    {!done && (
-                        <span className={`font-pixel text-sm ${turnTimer <= 5 ? 'text-red-400 animate-pulse' : 'text-cyan-300'}`}>
-                            ⏱ {turnTimer}s
-                        </span>
-                    )}
-                    <button onClick={handleLeave} className="text-[var(--rf-muted)] hover:text-white text-sm px-3 py-1.5 border border-rose-500/30 rounded-lg bg-rose-500/10 hover:bg-rose-500/25 transition-colors">Oyundan Çık</button>
-                </div>
-            </div>
-
-            {/* Scoreboard */}
-            <div className="grid grid-cols-3 gap-3 mb-4 text-center relative z-10">
-                <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-                    <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
-                        <span className="text-cyan-300">⬥</span> Sen
-                    </div>
-                    <div className="font-bold flex items-center justify-center gap-1">
-                        {Array.from({ length: MAX_HP }, (_, i) => (
-                            <span key={i} className={i < playerHP ? 'text-emerald-400' : 'text-slate-600'}>♥</span>
-                        ))}
+            <div className="relative z-10">
+                <div className="rf-terminal-strip mb-2">Sistem TR-X // Zırhlı Çatışma</div>
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-[0.08em] leading-none">
+                        Tank Düellosu
+                    </h2>
+                    <div className="flex items-center gap-3">
+                        {!done && (
+                            <span className={`font-pixel text-sm px-2 py-1 border ${turnTimer <= 5 ? 'text-red-300 border-red-400/40 animate-pulse' : 'text-cyan-300 border-cyan-400/35'}`}>
+                                ⏱ {turnTimer}s
+                            </span>
+                        )}
+                        <button
+                            onClick={handleLeave}
+                            className="text-rose-200 hover:text-rose-100 text-xs px-3 py-2 border border-rose-400/45 bg-rose-500/12 hover:bg-rose-500/24 transition-colors uppercase tracking-[0.16em]"
+                        >
+                            Oyundan Çık
+                        </button>
                     </div>
                 </div>
-                <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-                    <div className="text-xs text-[var(--rf-muted)]">VS</div>
-                    <div className="font-pixel text-sm text-cyan-200">{isPlayerTurn ? 'SEN' : target.toUpperCase()}</div>
-                </div>
-                <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-                    <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
-                        <span className="text-red-400">⬥</span> {target}
-                    </div>
-                    <div className="font-bold flex items-center justify-center gap-1">
-                        {Array.from({ length: MAX_HP }, (_, i) => (
-                            <span key={i} className={i < opponentHP ? 'text-red-400' : 'text-slate-600'}>♥</span>
-                        ))}
-                    </div>
-                </div>
-            </div>
 
-            {/* Canvas */}
-            <div className="rounded-xl border border-cyan-400/25 overflow-hidden mb-4 bg-[#04112a] relative z-10">
-                <canvas
-                    ref={canvasRef}
-                    width={CANVAS_W}
-                    height={CANVAS_H}
-                    className="w-full h-auto block"
-                    style={{ imageRendering: 'auto' }}
-                />
-            </div>
-
-            <p className="text-sm text-[var(--rf-muted)] mb-4 relative z-10">{message}</p>
-
-            {/* Controls */}
-            {!done && (
-                <div className="space-y-3 relative z-10">
-                    <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-                            <label htmlFor="tank-angle" className="text-xs text-[var(--rf-muted)] block mb-1">
-                                Açı: {angle}°
-                            </label>
-                            <input
-                                id="tank-angle"
-                                type="range"
-                                min={5}
-                                max={85}
-                                value={angle}
-                                onChange={(e) => setAngle(Number(e.target.value))}
-                                disabled={!isPlayerTurn || firing || resolvingMatch}
-                                className="w-full accent-cyan-400 relative z-20 pointer-events-auto touch-auto"
-                                style={{ minHeight: '30px' }}
-                                data-testid="tank-angle-slider"
-                            />
+                {/* Scoreboard */}
+                <div className="grid grid-cols-3 gap-3 mb-4 text-center">
+                    <div className="rf-screen-card-muted p-3">
+                        <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
+                            <span className="text-cyan-300">⬥</span> Sen
                         </div>
-                        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-                            <label htmlFor="tank-power" className="text-xs text-[var(--rf-muted)] block mb-1">
-                                Güç: {power}%
-                            </label>
-                            <input
-                                id="tank-power"
-                                type="range"
-                                min={10}
-                                max={100}
-                                value={power}
-                                onChange={(e) => setPower(Number(e.target.value))}
-                                disabled={!isPlayerTurn || firing || resolvingMatch}
-                                className="w-full accent-amber-400 relative z-20 pointer-events-auto touch-auto"
-                                style={{ minHeight: '30px' }}
-                                data-testid="tank-power-slider"
-                            />
+                        <div className="font-bold flex items-center justify-center gap-1">
+                            {Array.from({ length: MAX_HP }, (_, i) => (
+                                <span key={i} className={i < playerHP ? 'text-emerald-400' : 'text-cyan-900/80'}>♥</span>
+                            ))}
                         </div>
                     </div>
-
-                    <RetroButton
-                        onClick={fire}
-                        disabled={!isPlayerTurn || firing || resolvingMatch || done}
-                        data-testid="tank-fire-button"
-                    >
-                        🔥 ATEŞ ET
-                    </RetroButton>
+                    <div className="rf-screen-card-muted p-3">
+                        <div className="text-xs text-[var(--rf-muted)]">VS</div>
+                        <div className="font-pixel text-sm text-cyan-200">{isPlayerTurn ? 'SEN' : target.toUpperCase()}</div>
+                    </div>
+                    <div className="rf-screen-card-muted p-3">
+                        <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
+                            <span className="text-red-400">⬥</span> {target}
+                        </div>
+                        <div className="font-bold flex items-center justify-center gap-1">
+                            {Array.from({ length: MAX_HP }, (_, i) => (
+                                <span key={i} className={i < opponentHP ? 'text-red-400' : 'text-cyan-900/80'}>♥</span>
+                            ))}
+                        </div>
+                    </div>
                 </div>
-            )}
 
-            {done && (
-                <div className="mt-4 relative z-10">
-                    <RetroButton onClick={onLeave}>Lobiye Dön</RetroButton>
+                {/* Canvas */}
+                <div className="rf-screen-card-muted p-2 mb-4">
+                    <canvas
+                        ref={canvasRef}
+                        width={CANVAS_W}
+                        height={CANVAS_H}
+                        className="w-full h-auto block border border-cyan-400/20 bg-[#04112a]"
+                        style={{ imageRendering: 'auto' }}
+                    />
                 </div>
-            )}
+
+                <p className="text-sm text-[var(--rf-muted)] mb-4 pl-3 border-l-2 border-cyan-400/55">{message}</p>
+
+                {/* Controls */}
+                {!done && (
+                    <div className="space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="rf-screen-card-muted p-3">
+                                <label htmlFor="tank-angle" className="text-xs text-[var(--rf-muted)] block mb-1 uppercase tracking-[0.12em]">
+                                    Açı: {angle}°
+                                </label>
+                                <input
+                                    id="tank-angle"
+                                    type="range"
+                                    min={5}
+                                    max={85}
+                                    value={angle}
+                                    onChange={(e) => setAngle(Number(e.target.value))}
+                                    disabled={!isPlayerTurn || firing || resolvingMatch}
+                                    className="w-full accent-cyan-400 relative z-20 pointer-events-auto touch-auto"
+                                    style={{ minHeight: '30px' }}
+                                    data-testid="tank-angle-slider"
+                                />
+                            </div>
+                            <div className="rf-screen-card-muted p-3">
+                                <label htmlFor="tank-power" className="text-xs text-[var(--rf-muted)] block mb-1 uppercase tracking-[0.12em]">
+                                    Güç: {power}%
+                                </label>
+                                <input
+                                    id="tank-power"
+                                    type="range"
+                                    min={10}
+                                    max={100}
+                                    value={power}
+                                    onChange={(e) => setPower(Number(e.target.value))}
+                                    disabled={!isPlayerTurn || firing || resolvingMatch}
+                                    className="w-full accent-amber-400 relative z-20 pointer-events-auto touch-auto"
+                                    style={{ minHeight: '30px' }}
+                                    data-testid="tank-power-slider"
+                                />
+                            </div>
+                        </div>
+                        <RetroButton
+                            onClick={fire}
+                            disabled={!isPlayerTurn || firing || resolvingMatch || done}
+                            data-testid="tank-fire-button"
+                        >
+                            🔥 ATEŞ ET
+                        </RetroButton>
+                    </div>
+                )}
+
+                {done && (
+                    <div className="mt-4">
+                        <RetroButton onClick={onLeave}>Lobiye Dön</RetroButton>
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

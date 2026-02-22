@@ -57,18 +57,19 @@ export const Toast: React.FC<ToastProps> = ({
 
   return (
     <motion.div
+      data-toast-id={id}
       layout
       initial={{ x: 100, opacity: 0, scale: 0.8 }}
       animate={{ x: 0, opacity: 1, scale: 1 }}
       exit={{ x: 100, opacity: 0, scale: 0.8 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-      className={`flex items-center gap-3 ${getBgColor()} border-l-4 ${getBorderColor()} text-white px-4 py-3 rounded-lg shadow-2xl min-w-[300px] max-w-[400px]`}
+      className={`rf-screen-card-muted noise-bg flex items-center gap-3 ${getBgColor()} border-l-4 ${getBorderColor()} text-white px-4 py-3 shadow-2xl min-w-[300px] max-w-[400px]`}
     >
       {getIcon()}
       <p className="font-medium text-sm flex-1">{message}</p>
       <motion.button 
         onClick={onClose} 
-        className="text-gray-400 hover:text-white p-1 rounded hover:bg-white/10 transition-colors"
+        className="text-[var(--rf-muted)] hover:text-white p-1 border border-transparent hover:border-cyan-500/35 hover:bg-cyan-900/20 transition-colors"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
       >

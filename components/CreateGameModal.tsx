@@ -261,7 +261,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                 max={maxPoints}
                 value={points}
                 onChange={(e) => handlePointsChange(e.target.value)}
-                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-400 mb-4"
+                className="w-full h-2 bg-cyan-950/70 rounded-lg appearance-none cursor-pointer accent-cyan-400 mb-4"
               />
 
               <div className="flex items-center gap-3">

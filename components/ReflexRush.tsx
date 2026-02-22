@@ -337,7 +337,7 @@ export const ReflexRush: React.FC<ReflexRushProps> = ({
 
   return (
     <div
-      className="max-w-2xl mx-auto rf-panel rf-elevated border-cyan-400/22 rounded-xl p-6 text-white relative overflow-hidden"
+      className="max-w-2xl mx-auto rf-screen-card noise-bg p-4 sm:p-6 text-white relative overflow-hidden"
       data-testid="reflex-rush"
       style={{
         backgroundImage: `linear-gradient(165deg, rgba(3, 18, 44, 0.92), rgba(4, 28, 56, 0.9)), url('${GAME_ASSETS.backgrounds.reflexRush}')`,
@@ -345,65 +345,75 @@ export const ReflexRush: React.FC<ReflexRushProps> = ({
         backgroundPosition: 'center',
       }}
     >
-      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_96%,rgba(34,211,238,0.08)_100%)] [background-size:100%_4px] opacity-50" />
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-pixel text-lg">Refleks Avı</h2>
-        <button onClick={onLeave} className="text-[var(--rf-muted)] hover:text-white text-sm">Oyundan Çık</button>
-      </div>
+      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_95%,rgba(34,211,238,0.09)_100%)] [background-size:100%_4px] opacity-60" />
+      <div className="relative z-10">
+        <div className="rf-terminal-strip mb-2">Sistem TR-X // Refleks Protokolü</div>
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-[0.08em] leading-none">
+            Refleks Avı
+          </h2>
+          <button
+            onClick={onLeave}
+            className="shrink-0 px-3 py-2 border border-rose-400/45 bg-rose-500/12 text-rose-200 hover:bg-rose-500/24 transition-colors text-xs uppercase tracking-[0.16em]"
+          >
+            Oyundan Çık
+          </button>
+        </div>
 
-      <div className="grid grid-cols-3 gap-3 mb-5 text-center">
-        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
-            <img src={GAME_ASSETS.hud.jewel} alt="" className="w-4 h-4" aria-hidden="true" />
-            Tur
+        <div className="grid grid-cols-3 gap-2.5 mb-5 text-center">
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
+              <img src={GAME_ASSETS.hud.jewel} alt="" className="w-4 h-4" aria-hidden="true" />
+              Tur
+            </div>
+            <div className="font-bold text-cyan-100">{Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}</div>
           </div>
-          <div className="font-bold">{Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}</div>
-        </div>
-        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
-            <img src={GAME_ASSETS.hud.heart} alt="" className="w-4 h-4" aria-hidden="true" />
-            Sen
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
+              <img src={GAME_ASSETS.hud.heart} alt="" className="w-4 h-4" aria-hidden="true" />
+              Sen
+            </div>
+            <div className="font-bold text-cyan-100">{playerWins}</div>
           </div>
-          <div className="font-bold">{playerWins}</div>
-        </div>
-        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
-            <img src={GAME_ASSETS.hud.coin} alt="" className="w-4 h-4" aria-hidden="true" />
-            Rakip
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
+              <img src={GAME_ASSETS.hud.coin} alt="" className="w-4 h-4" aria-hidden="true" />
+              Rakip
+            </div>
+            <div className="font-bold text-cyan-100">{opponentWins}</div>
           </div>
-          <div className="font-bold">{opponentWins}</div>
         </div>
-      </div>
 
-      <p className="text-sm text-[var(--rf-muted)] mb-4">{message}</p>
+        <p className="text-sm text-[var(--rf-muted)] mb-4 pl-3 border-l-2 border-cyan-400/55 min-h-[2rem] flex items-center">{message}</p>
 
-      <button
-        onClick={handleTap}
-        data-testid="reflex-target"
-        disabled={resolvingMatch}
-        className={`w-full h-40 rounded-xl border-2 transition ${
-          phase === 'go'
-            ? 'bg-green-500/30 border-green-400'
-            : phase === 'wait'
-              ? 'bg-amber-500/20 border-amber-400'
-              : 'bg-[#08152f] border-cyan-400/22'
-        }`}
-      >
-        {phase === 'go' ? 'TIKLA!' : phase === 'wait' ? 'BEKLE' : 'HEDEF'}
-      </button>
+        <button
+          onClick={handleTap}
+          data-testid="reflex-target"
+          disabled={resolvingMatch}
+          className={`w-full h-40 border-2 font-display text-xl tracking-[0.24em] uppercase transition ${
+            phase === 'go'
+              ? 'bg-emerald-500/25 border-emerald-300 text-emerald-100 shadow-[0_0_24px_rgba(16,185,129,0.35)]'
+              : phase === 'wait'
+                ? 'bg-amber-500/18 border-amber-300 text-amber-100'
+                : 'bg-[#08152f]/92 border-cyan-400/30 text-cyan-100 hover:border-cyan-300/55'
+          }`}
+        >
+          {phase === 'go' ? 'TIKLA!' : phase === 'wait' ? 'BEKLE' : 'HEDEF'}
+        </button>
 
-      {(lastPlayerMs !== null || lastOpponentMs !== null) && (
-        <div className="mt-4 text-sm text-[var(--rf-muted)]">
-          <div>Son tur süreleri:</div>
-          <div>Sen: {lastPlayerMs}ms</div>
-          <div>Rakip: {isBot ? `${lastOpponentMs}ms` : `${targetName} canlı turu bekleniyor`}</div>
+        {(lastPlayerMs !== null || lastOpponentMs !== null) && (
+          <div className="mt-4 text-sm text-[var(--rf-muted)] rf-screen-card-muted p-3 space-y-1">
+            <div className="rf-terminal-strip">Tur Teşhis</div>
+            <div>Sen: {lastPlayerMs}ms</div>
+            <div>Rakip: {isBot ? `${lastOpponentMs}ms` : `${targetName} canlı turu bekleniyor`}</div>
+          </div>
+        )}
+
+        <div className="mt-5 flex gap-2">
+          <RetroButton onClick={beginRound} disabled={phase === 'wait' || phase === 'go' || phase === 'done' || resolvingMatch}>
+            Yeni Tur
+          </RetroButton>
         </div>
-      )}
-
-      <div className="mt-5 flex gap-2">
-        <RetroButton onClick={beginRound} disabled={phase === 'wait' || phase === 'go' || phase === 'done' || resolvingMatch}>
-          Yeni Tur
-        </RetroButton>
       </div>
     </div>
   );

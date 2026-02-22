@@ -24,7 +24,7 @@ export default function OfflineFallback() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
-      className="min-h-screen bg-[#0f141a] flex items-center justify-center p-4"
+      className="min-h-screen rf-page-shell noise-bg flex items-center justify-center p-4"
     >
       <div className="max-w-md w-full text-center">
         {/* Icon */}
@@ -34,50 +34,51 @@ export default function OfflineFallback() {
           transition={{ delay: 0.1, type: 'spring', stiffness: 200 }}
           className="mb-6"
         >
-          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-amber-500/20 to-amber-600/10 rounded-2xl border-2 border-amber-500/30 flex items-center justify-center">
+          <div className="w-24 h-24 mx-auto bg-gradient-to-br from-amber-500/20 to-amber-600/10 border-2 border-amber-500/30 flex items-center justify-center">
             <WifiOff className="w-12 h-12 text-amber-400" />
           </div>
         </motion.div>
 
         {/* Title */}
-        <h1 className="text-2xl font-bold text-white mb-2 font-pixel">
+        <div className="rf-terminal-strip mb-2 justify-center">Sistem TR-X // Çevrimdışı</div>
+        <h1 className="text-2xl font-bold text-white mb-2 font-display uppercase tracking-[0.08em]">
           İnternet Bağlantısı Yok
         </h1>
 
         {/* Description */}
-        <p className="text-gray-400 mb-6 leading-relaxed">
+        <p className="text-[var(--rf-muted)] mb-6 leading-relaxed">
           Şu anda çevrimdışısınız. Daha önce ziyaret ettiğiniz sayfaları görüntüleyebilir veya bağlantıyı yeniden deneyebilirsiniz.
         </p>
 
         {/* Info Cards */}
         <div className="space-y-3 mb-8">
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-[#1a1a2e] border border-gray-800 rounded-xl p-4 flex items-center gap-3"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+          className="rf-screen-card-muted p-4 flex items-center gap-3"
           >
-            <div className="w-10 h-10 bg-emerald-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-400/35 flex items-center justify-center flex-shrink-0">
               <Gamepad2 className="w-5 h-5 text-emerald-400" />
             </div>
             <div className="text-left">
               <p className="text-sm font-medium text-white">Oyunlar Çevrimdışı</p>
-              <p className="text-xs text-gray-500">Önbelleğe alınan oyunları oynayabilirsiniz</p>
+              <p className="text-xs text-[var(--rf-muted)]">Önbelleğe alınan oyunları oynayabilirsiniz</p>
             </div>
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-[#1a1a2e] border border-gray-800 rounded-xl p-4 flex items-center gap-3"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+          className="rf-screen-card-muted p-4 flex items-center gap-3"
           >
-            <div className="w-10 h-10 bg-amber-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 bg-amber-500/10 border border-amber-400/35 flex items-center justify-center flex-shrink-0">
               <span className="text-lg">☕</span>
             </div>
             <div className="text-left">
               <p className="text-sm font-medium text-white">Kafe Bilgileri</p>
-              <p className="text-xs text-gray-500">Daha önce görüntülediğiniz kafeler</p>
+              <p className="text-xs text-[var(--rf-muted)]">Daha önce görüntülediğiniz kafeler</p>
             </div>
           </motion.div>
         </div>
@@ -107,7 +108,7 @@ export default function OfflineFallback() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="mt-6 text-xs text-gray-600"
+          className="mt-6 text-xs text-[var(--rf-muted)] uppercase tracking-[0.12em]"
         >
           Çevrimdışı mod aktif • CafeDuo PWA
         </motion.p>

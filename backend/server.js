@@ -44,6 +44,7 @@ const { buildRateLimiterOptions } = require('./middleware/rateLimit');
 const { notFoundHandler, createErrorHandler } = require('./middleware/errorContract');
 const authRoutes = require('./routes/authRoutes');
 const cafeRoutes = require('./routes/cafeRoutes'); // Cafe Routes Import
+const storeRoutes = require('./routes/storeRoutes'); // Store Routes Import
 const { createAdminRoutes } = require('./routes/adminRoutes');
 const { createCommerceRoutes } = require('./routes/commerceRoutes');
 const { createProfileRoutes } = require('./routes/profileRoutes');
@@ -743,6 +744,9 @@ app.use('/api/auth', authRoutes);
 
 // Cafe Routes (Modularized)
 app.use('/api/cafes', cafeRoutes);
+
+// Store Routes (Phase 3)
+app.use('/api/store', storeRoutes);
 
 // 3. CAFE ENDPOINTS (Moved to cafeController)
 

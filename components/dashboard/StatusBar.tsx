@@ -44,7 +44,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
             className={`inline-flex items-center gap-2 self-start sm:self-auto rounded-full px-3 py-1.5 border ${
               isMatched
                 ? 'border-emerald-400/35 bg-emerald-500/10 text-emerald-300'
-                : 'border-slate-400/30 bg-slate-600/10 text-[var(--rf-muted)]'
+                : 'border-cyan-500/28 bg-cyan-950/25 text-[var(--rf-muted)]'
             }`}
             data-testid="table-status"
           >
@@ -71,7 +71,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           </div>
 
           <div className="rf-card-quiet p-2.5 sm:p-3" data-testid="user-games">
-            <div className="flex items-center gap-1.5 text-slate-300 mb-1">
+            <div className="flex items-center gap-1.5 text-cyan-200 mb-1">
               <Gamepad2 size={15} />
               <span className="text-[10px] uppercase tracking-[0.1em]">Oyun</span>
             </div>

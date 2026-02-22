@@ -58,6 +58,26 @@ interface ShopRewardPayload {
   used_at: string | null;
 }
 
+interface StoreItemPayload {
+  id: number;
+  title: string;
+  code: string;
+  price: number;
+  type: 'rank' | 'frame' | 'title' | 'animation';
+  description: string;
+}
+
+interface StoreInventoryItemPayload {
+  id: number;
+  user_id: number;
+  item_id: number;
+  item_title: string;
+  code: string;
+  is_used: boolean;
+  redeemed_at?: string;
+  used_at?: string | null;
+}
+
 interface ShopBuyResponse {
   success: boolean;
   newPoints: number;
@@ -706,6 +726,22 @@ export const api = {
       return await fetchAPI('/coupons/use', {
         method: 'POST',
         body: JSON.stringify({ code }),
+      });
+    }
+  },
+
+  // STORE (Phase 3)
+  store: {
+    items: async (): Promise<{ success: boolean; items: StoreItemPayload[] }> => {
+      return await fetchAPI('/store/items', { method: 'GET' });
+    },
+    inventory: async (): Promise<{ success: boolean; inventory: StoreInventoryItemPayload[] }> => {
+      return await fetchAPI('/store/inventory', { method: 'GET' });
+    },
+    buy: async (itemId: number): Promise<{ success: boolean; message: string; inventoryItem: StoreInventoryItemPayload; remainingPoints: number }> => {
+      return await fetchAPI('/store/buy', {
+        method: 'POST',
+        body: JSON.stringify({ itemId }),
       });
     }
   }

@@ -61,7 +61,7 @@ describe('AuthModal', () => {
       />
     );
 
-    expect(screen.getByText('Giriş Merkezi')).toBeInTheDocument();
+    expect(screen.getByText('GİRİŞ MERKEZİ')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('E-posta')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Şifre')).toBeInTheDocument();
   });
@@ -76,7 +76,7 @@ describe('AuthModal', () => {
       />
     );
 
-    expect(screen.getByText('Kayıt Merkezi')).toBeInTheDocument();
+    expect(screen.getByText('KAYIT MERKEZİ')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Kullanıcı adı')).toBeInTheDocument();
   });
 

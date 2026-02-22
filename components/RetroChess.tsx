@@ -723,7 +723,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
 
   return (
     <div
-      className="max-w-4xl mx-auto rf-panel border-cyan-400/22 rounded-xl p-4 sm:p-6 text-white relative overflow-hidden"
+      className="max-w-4xl mx-auto rf-screen-card noise-bg p-4 sm:p-6 text-white relative overflow-hidden"
       data-testid="retro-chess"
       style={{
         backgroundImage: `linear-gradient(165deg, rgba(3, 16, 40, 0.94), rgba(4, 28, 56, 0.9)), url('${GAME_ASSETS.backgrounds.strategyChess}')`,
@@ -731,65 +731,72 @@ export const RetroChess: React.FC<RetroChessProps> = ({
         backgroundPosition: 'center',
       }}
     >
-      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_96%,rgba(34,211,238,0.08)_100%)] [background-size:100%_4px] opacity-50" />
+      <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_95%,rgba(34,211,238,0.09)_100%)] [background-size:100%_4px] opacity-60" />
 
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="font-pixel text-lg">Retro Satranç (Klasik)</h2>
-        <button onClick={handleLeave} className="text-[var(--rf-muted)] hover:text-white text-sm">
-          Oyundan Çık
-        </button>
-      </div>
+      <div className="relative z-10">
+        <div className="rf-terminal-strip mb-2">Sistem TR-X // Satranç Çekirdeği</div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display text-2xl sm:text-3xl uppercase tracking-[0.08em] leading-none">
+            Retro Satranç (Klasik)
+          </h2>
+          <button
+            onClick={handleLeave}
+            className="text-rose-200 hover:text-rose-100 text-xs px-3 py-2 border border-rose-400/45 bg-rose-500/12 hover:bg-rose-500/24 transition-colors uppercase tracking-[0.16em]"
+          >
+            Oyundan Çık
+          </button>
+        </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 text-center">
-        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Durum</div>
-          <div className="font-bold">{statusLabel}</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 text-center">
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-xs text-[var(--rf-muted)]">Durum</div>
+            <div className="font-bold text-cyan-100">{statusLabel}</div>
+          </div>
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-xs text-[var(--rf-muted)]">Sıra</div>
+            <div className="font-bold text-cyan-100">{turnLabel}</div>
+          </div>
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-xs text-[var(--rf-muted)]">Tempo</div>
+            <div className="font-bold text-cyan-100">{clockState.label}</div>
+          </div>
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-xs text-[var(--rf-muted)]">Rakip</div>
+            <div className="font-bold truncate text-cyan-100">{opponentLabel}</div>
+          </div>
         </div>
-        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Sıra</div>
-          <div className="font-bold">{turnLabel}</div>
-        </div>
-        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Tempo</div>
-          <div className="font-bold">{clockState.label}</div>
-        </div>
-        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Rakip</div>
-          <div className="font-bold truncate">{opponentLabel}</div>
-        </div>
-      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 text-center">
-        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Beyaz Süre</div>
-          <div className="font-bold text-cyan-100">{formatClock(displayClock.white)}</div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 text-center">
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-xs text-[var(--rf-muted)]">Beyaz Süre</div>
+            <div className="font-bold text-cyan-100">{formatClock(displayClock.white)}</div>
+          </div>
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-xs text-[var(--rf-muted)]">Hamle</div>
+            <div className="font-bold text-cyan-100">{moveCount}</div>
+          </div>
+          <div className="rf-screen-card-muted p-3">
+            <div className="text-xs text-[var(--rf-muted)]">Siyah Süre</div>
+            <div className="font-bold text-cyan-100">{formatClock(displayClock.black)}</div>
+          </div>
         </div>
-        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Hamle</div>
-          <div className="font-bold">{moveCount}</div>
-        </div>
-        <div className="bg-[#0a1732]/80 p-3 rounded border border-cyan-400/20">
-          <div className="text-xs text-[var(--rf-muted)]">Siyah Süre</div>
-          <div className="font-bold text-cyan-100">{formatClock(displayClock.black)}</div>
-        </div>
-      </div>
 
-      <p className="text-sm text-[var(--rf-muted)] mb-1">{message}</p>
-      {liveResultLabel && (
-        <p className="text-xs text-cyan-200 mb-3">{liveResultLabel}</p>
-      )}
-      {serverWinner && (
-        <p className="text-xs text-emerald-300 mb-3">Kazanan: {serverWinner}</p>
-      )}
-      {pendingDrawOffer && (
-        <p className="text-xs text-cyan-200 mb-3">
-          {isPendingOfferByActor
-            ? 'Gönderdiğin beraberlik teklifi için rakip yanıtı bekleniyor.'
-            : `${pendingDrawOffer.offeredBy} beraberlik teklifi gönderdi.`}
-        </p>
-      )}
+        <p className="text-sm text-[var(--rf-muted)] mb-1 pl-3 border-l-2 border-cyan-400/55">{message}</p>
+        {liveResultLabel && (
+          <p className="text-xs text-cyan-200 mb-3">{liveResultLabel}</p>
+        )}
+        {serverWinner && (
+          <p className="text-xs text-emerald-300 mb-3">Kazanan: {serverWinner}</p>
+        )}
+        {pendingDrawOffer && (
+          <p className="text-xs text-cyan-200 mb-3">
+            {isPendingOfferByActor
+              ? 'Gönderdiğin beraberlik teklifi için rakip yanıtı bekleniyor.'
+              : `${pendingDrawOffer.offeredBy} beraberlik teklifi gönderdi.`}
+          </p>
+        )}
 
-      <div className="w-full max-w-[620px] mx-auto rounded-2xl border border-cyan-300/22 p-2 sm:p-3 bg-[#06132b]/85 shadow-[0_12px_34px_rgba(0,0,0,0.35)]">
+        <div className="w-full max-w-[620px] mx-auto border border-cyan-300/22 p-2 sm:p-3 bg-[#06132b]/85 shadow-[0_12px_34px_rgba(0,0,0,0.35)]">
         <div className="grid grid-cols-8 gap-1.5 sm:gap-2" data-testid="retro-chess-board">
           {ranks.map((rank, rankIndex) =>
             files.map((file, fileIndex) => {
@@ -803,7 +810,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                 ? 'bg-[linear-gradient(145deg,#4d88bf,#2f679f)]'
                 : 'bg-[linear-gradient(145deg,#102b4f,#0a1f39)]';
               const selectedClass = isSelected ? 'border-cyan-100 ring-2 ring-cyan-200/85' : 'border-cyan-500/30';
-              const legalClass = isLegal ? 'before:absolute before:inset-0 before:m-auto before:w-3.5 before:h-3.5 before:rounded-full before:bg-cyan-200 before:shadow-[0_0_16px_rgba(165,243,252,0.95)]' : '';
+              const legalClass = isLegal ? 'before:absolute before:inset-0 before:m-auto before:w-3.5 before:h-3.5 before:bg-cyan-200 before:shadow-[0_0_16px_rgba(165,243,252,0.95)]' : '';
 
               return (
                 <button
@@ -813,7 +820,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                   aria-label={`Kare ${square}`}
                   onClick={() => handleSquareClick(square)}
                   disabled={loading || submitting || serverStatus === 'finished'}
-                  className={`relative aspect-square rounded border transition ${baseClass} ${selectedClass} ${legalClass} disabled:cursor-not-allowed`}
+                  className={`relative aspect-square border transition ${baseClass} ${selectedClass} ${legalClass} disabled:cursor-not-allowed`}
                 >
                   {piece && (
                     <span
@@ -842,81 +849,82 @@ export const RetroChess: React.FC<RetroChessProps> = ({
             })
           )}
         </div>
-      </div>
+        </div>
 
-      {canUseChessMatchActions && (
-        <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {!pendingDrawOffer && (
+        {canUseChessMatchActions && (
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {!pendingDrawOffer && (
+              <RetroButton
+                onClick={() => void submitDrawOffer('offer')}
+                disabled={submitting}
+              >
+                Beraberlik Teklif Et
+              </RetroButton>
+            )}
+            {isPendingOfferByActor && (
+              <RetroButton
+                onClick={() => void submitDrawOffer('cancel')}
+                disabled={submitting}
+                variant="secondary"
+              >
+                Teklifi Geri Çek
+              </RetroButton>
+            )}
+            {isPendingOfferByOpponent && (
+              <RetroButton
+                onClick={() => void submitDrawOffer('accept')}
+                disabled={submitting}
+              >
+                Beraberliği Kabul Et
+              </RetroButton>
+            )}
+            {isPendingOfferByOpponent && (
+              <RetroButton
+                onClick={() => void submitDrawOffer('reject')}
+                disabled={submitting}
+                variant="secondary"
+              >
+                Teklifi Reddet
+              </RetroButton>
+            )}
             <RetroButton
-              onClick={() => void submitDrawOffer('offer')}
+              onClick={() => void resignAndLeave(false)}
               disabled={submitting}
+              variant="danger"
             >
-              Beraberlik Teklif Et
+              Teslim Ol
             </RetroButton>
-          )}
-          {isPendingOfferByActor && (
-            <RetroButton
-              onClick={() => void submitDrawOffer('cancel')}
-              disabled={submitting}
-              variant="secondary"
-            >
-              Teklifi Geri Çek
-            </RetroButton>
-          )}
-          {isPendingOfferByOpponent && (
-            <RetroButton
-              onClick={() => void submitDrawOffer('accept')}
-              disabled={submitting}
-            >
-              Beraberliği Kabul Et
-            </RetroButton>
-          )}
-          {isPendingOfferByOpponent && (
-            <RetroButton
-              onClick={() => void submitDrawOffer('reject')}
-              disabled={submitting}
-              variant="secondary"
-            >
-              Teklifi Reddet
-            </RetroButton>
-          )}
-          <RetroButton
-            onClick={() => void resignAndLeave(false)}
-            disabled={submitting}
-            variant="danger"
-          >
-            Teslim Ol
+          </div>
+        )}
+
+        <div className="mt-5 flex flex-col sm:flex-row gap-2">
+          <RetroButton onClick={() => void fetchGameSnapshot()} disabled={loading || submitting || isBot}>
+            Senkronu Yenile
+          </RetroButton>
+          <RetroButton onClick={handleLeave} variant="secondary">
+            Lobiye Dön
           </RetroButton>
         </div>
-      )}
 
-      <div className="mt-5 flex flex-col sm:flex-row gap-2">
-        <RetroButton onClick={() => void fetchGameSnapshot()} disabled={loading || submitting || isBot}>
-          Senkronu Yenile
-        </RetroButton>
-        <RetroButton onClick={handleLeave} variant="secondary">
-          Lobiye Dön
-        </RetroButton>
-      </div>
-
-      <div className="mt-5 rf-panel border border-cyan-400/20 rounded-lg p-3 max-h-56 overflow-y-auto">
-        <h3 className="font-pixel text-sm text-white mb-2 tracking-wide">HAMLE GEÇMİŞİ</h3>
-        {moveLog.length === 0 ? (
-          <p className="text-xs text-[var(--rf-muted)]">Henüz hamle yapılmadı.</p>
-        ) : (
-          <ol className="space-y-1 text-xs">
-            {moveLog.map((entry, index) => (
-              <li key={`${entry.ts}-${index}`} className="flex items-center justify-between gap-2 border-b border-cyan-400/10 pb-1">
-                <span className="text-cyan-200">
-                  {index + 1}. {entry.san} ({entry.from}→{entry.to})
-                </span>
-                <span className="text-[var(--rf-muted)]">
-                  {Number.isFinite(Number(entry.spentMs)) ? `${Math.round(Number(entry.spentMs) / 1000)} sn` : ''}
-                </span>
-              </li>
-            ))}
-          </ol>
-        )}
+        <div className="mt-5 rf-screen-card-muted p-3 max-h-56 overflow-y-auto custom-scrollbar">
+          <h3 className="font-pixel text-sm text-white mb-2 tracking-wide">HAMLE GEÇMİŞİ</h3>
+          {moveLog.length === 0 ? (
+            <p className="text-xs text-[var(--rf-muted)]">Henüz hamle yapılmadı.</p>
+          ) : (
+            <ol className="space-y-1 text-xs">
+              {moveLog.map((entry, index) => (
+                <li key={`${entry.ts}-${index}`} className="flex items-center justify-between gap-2 border-b border-cyan-400/10 pb-1">
+                  <span className="text-cyan-200">
+                    {index + 1}. {entry.san} ({entry.from}→{entry.to})
+                  </span>
+                  <span className="text-[var(--rf-muted)]">
+                    {Number.isFinite(Number(entry.spentMs)) ? `${Math.round(Number(entry.spentMs) / 1000)} sn` : ''}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+        </div>
       </div>
     </div>
   );

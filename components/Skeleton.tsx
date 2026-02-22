@@ -15,7 +15,7 @@ interface SkeletonProps {
 
 export const Skeleton: React.FC<SkeletonProps> = ({ className = '' }) => {
   return (
-    <div className={`relative overflow-hidden bg-gray-700/50 rounded ${className}`}>
+    <div className={`relative overflow-hidden bg-[#07142b]/75 border border-cyan-900/45 ${className}`}>
       {/* Shimmer animation */}
       <motion.div
         className="absolute inset-0 -translate-x-full"
@@ -55,10 +55,10 @@ export const SkeletonText: React.FC<{ lines?: number; className?: string }> = ({
 // Kart skeleton'u (Oyun kartları için)
 export const SkeletonCard: React.FC = () => {
   return (
-    <div className="bg-[#151921] border border-gray-800 rounded-xl p-6 space-y-4">
+    <div className="rf-screen-card-muted border-gray-800 p-6 space-y-4">
       {/* Icon alanı */}
       <div className="flex items-center gap-4">
-        <Skeleton className="w-12 h-12 rounded-lg" />
+        <Skeleton className="w-12 h-12" />
         <div className="flex-1 space-y-2">
           <Skeleton className="h-5 w-2/3" />
           <Skeleton className="h-3 w-1/2" />
@@ -69,7 +69,7 @@ export const SkeletonCard: React.FC = () => {
       <SkeletonText lines={2} />
       
       {/* Button */}
-      <Skeleton className="h-10 w-full rounded-lg" />
+      <Skeleton className="h-10 w-full" />
     </div>
   );
 };
@@ -106,12 +106,12 @@ export const SkeletonStats: React.FC = () => {
   return (
     <div className="flex items-center gap-6">
       {/* Avatar */}
-      <Skeleton className="w-12 h-12 rounded-full" />
+      <Skeleton className="w-12 h-12" />
       
       {/* Stats */}
       <div className="flex gap-4">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="bg-gray-800/50 rounded-lg px-4 py-2 min-w-[80px]">
+          <div key={i} className="bg-[#07142b]/75 border border-cyan-900/35 px-4 py-2 min-w-[80px]">
             <Skeleton className="h-6 w-12 mb-1" />
             <Skeleton className="h-3 w-16" />
           </div>
@@ -124,7 +124,7 @@ export const SkeletonStats: React.FC = () => {
 // Button loading state
 export const ButtonSkeleton: React.FC<{ fullWidth?: boolean }> = ({ fullWidth = false }) => {
   return (
-    <Skeleton className={`h-10 rounded-lg ${fullWidth ? 'w-full' : 'w-32'}`} />
+    <Skeleton className={`h-10 ${fullWidth ? 'w-full' : 'w-32'}`} />
   );
 };
 
@@ -155,7 +155,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   return (
     <div className={`flex flex-col items-center justify-center gap-3 ${className}`}>
       <motion.div
-        className={`${sizeClasses[size]} border-gray-600 border-t-blue-500 rounded-full`}
+        className={`${sizeClasses[size]} border-cyan-900/60 border-t-blue-500 rounded-full`}
         animate={{ rotate: 360 }}
         transition={{
           duration: 1,
@@ -165,7 +165,7 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
       />
       {text && (
         <motion.p 
-          className={`${textSizes[size]} text-gray-400 font-pixel`}
+          className={`${textSizes[size]} text-[var(--rf-muted)] font-pixel uppercase tracking-[0.14em]`}
           animate={{ opacity: [0.5, 1, 0.5] }}
           transition={{ duration: 1.5, repeat: Infinity }}
         >
@@ -198,7 +198,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-[#0f141a]/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-xl"
+            className="absolute inset-0 bg-[#071020]/85 backdrop-blur-sm flex items-center justify-center z-10"
           >
             <LoadingSpinner size="lg" text={text} />
           </motion.div>

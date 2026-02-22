@@ -3,18 +3,21 @@ import { Shield, Lock, Eye, Trash2, Mail, Clock, Users, FileText } from 'lucide-
 
 export const PrivacyPolicy: React.FC = () => {
     return (
-        <div className="min-h-screen bg-[var(--rf-bg)] text-white py-20 px-4 relative overflow-hidden">
+        <div className="min-h-screen rf-page-shell noise-bg text-white py-20 px-4 relative overflow-hidden">
             <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
             <div className="max-w-4xl mx-auto">
-                <div className="text-center mb-12">
+                <div className="text-center mb-12 rf-screen-card p-8">
+                    <p className="rf-terminal-strip justify-center mb-3">Veri Güvenliği Protokolü</p>
                     <Shield className="w-16 h-16 text-cyan-300 mx-auto mb-4" />
-                    <h1 className="text-3xl font-bold mb-2">Gizlilik Politikası ve KVKK Aydınlatma Metni</h1>
+                    <h1 className="text-5xl font-display tracking-[0.08em] mb-2 glitch-text" data-text="GİZLİLİK & KVKK">
+                        Gizlilik Politikası ve KVKK Aydınlatma Metni
+                    </h1>
                     <p className="text-[var(--rf-muted)]">Son güncelleme: {new Date().toLocaleDateString('tr-TR')}</p>
                 </div>
 
-                <div className="space-y-8 text-gray-300 relative z-10">
+                <div className="space-y-8 text-[var(--rf-muted)] relative z-10">
                     {/* Veri Sorumlusu */}
-                    <section className="bg-[#0a1834]/80 rounded-xl p-6 border border-cyan-400/20">
+                    <section className="rf-screen-card-muted p-6">
                         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                             <Users size={20} className="text-blue-400" /> 1. Veri Sorumlusu
                         </h2>
@@ -25,7 +28,7 @@ export const PrivacyPolicy: React.FC = () => {
                     </section>
 
                     {/* Toplanan Veriler */}
-                    <section className="bg-[#0a1834]/80 rounded-xl p-6 border border-cyan-400/20">
+                    <section className="rf-screen-card-muted p-6">
                         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                             <FileText size={20} className="text-purple-400" /> 2. Toplanan Kişisel Veriler
                         </h2>
@@ -40,7 +43,7 @@ export const PrivacyPolicy: React.FC = () => {
                     </section>
 
                     {/* İşleme Amaçları */}
-                    <section className="bg-[#0a1834]/80 rounded-xl p-6 border border-cyan-400/20">
+                    <section className="rf-screen-card-muted p-6">
                         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                             <Eye size={20} className="text-yellow-400" /> 3. Verilerin İşlenme Amaçları
                         </h2>
@@ -54,7 +57,7 @@ export const PrivacyPolicy: React.FC = () => {
                     </section>
 
                     {/* Hukuki Dayanak */}
-                    <section className="bg-[#0a1834]/80 rounded-xl p-6 border border-cyan-400/20">
+                    <section className="rf-screen-card-muted p-6">
                         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                             <Lock size={20} className="text-green-400" /> 4. Kişisel Verilerin İşlenmesinin Hukuki Dayanağı
                         </h2>
@@ -68,7 +71,7 @@ export const PrivacyPolicy: React.FC = () => {
                     </section>
 
                     {/* Veri Saklama */}
-                    <section className="bg-[#0a1834]/80 rounded-xl p-6 border border-cyan-400/20">
+                    <section className="rf-screen-card-muted p-6">
                         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                             <Clock size={20} className="text-orange-400" /> 5. Verilerin Saklanma Süresi
                         </h2>
@@ -80,7 +83,7 @@ export const PrivacyPolicy: React.FC = () => {
                     </section>
 
                     {/* Kullanıcı Hakları */}
-                    <section className="bg-[#0a1834]/80 rounded-xl p-6 border border-cyan-400/20">
+                    <section className="rf-screen-card-muted p-6">
                         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                             <Trash2 size={20} className="text-red-400" /> 6. KVKK Kapsamındaki Haklarınız
                         </h2>
@@ -98,20 +101,20 @@ export const PrivacyPolicy: React.FC = () => {
                     </section>
 
                     {/* İletişim */}
-                    <section className="bg-[#0a1834]/80 rounded-xl p-6 border border-cyan-400/20">
+                    <section className="rf-screen-card-muted p-6">
                         <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
                             <Mail size={20} className="text-cyan-400" /> 7. İletişim
                         </h2>
                         <p>
                             KVKK kapsamındaki haklarınızı kullanmak için aşağıdaki kanallardan bizimle iletişime geçebilirsiniz:
                         </p>
-                        <div className="mt-4 bg-black/30 p-4 rounded-lg">
+                        <div className="mt-4 bg-black/30 p-4 border border-cyan-800/35">
                             <p><strong>E-posta:</strong> kvkk@cafeduo.com</p>
                         </div>
                     </section>
 
                     {/* Çerezler */}
-                    <section className="bg-[#0a1834]/80 rounded-xl p-6 border border-cyan-400/20">
+                    <section className="rf-screen-card-muted p-6">
                         <h2 className="text-xl font-bold text-white mb-4">8. Çerez Politikası</h2>
                         <p className="mb-4">
                             Web sitemiz, kullanıcı deneyimini iyileştirmek için çerezler kullanmaktadır.
@@ -121,7 +124,7 @@ export const PrivacyPolicy: React.FC = () => {
                             <li><strong>Zorunlu Çerezler:</strong> Oturum yönetimi için gerekli</li>
                             <li><strong>Tercih Çerezleri:</strong> Dil ve tema tercihlerinizi hatırlamak için</li>
                         </ul>
-                        <p className="mt-4 text-sm text-gray-400">
+                        <p className="mt-4 text-sm text-[var(--rf-muted)]">
                             Tarayıcı ayarlarınızdan çerezleri devre dışı bırakabilirsiniz, ancak bu durumda
                             bazı özellikler düzgün çalışmayabilir.
                         </p>
@@ -129,7 +132,7 @@ export const PrivacyPolicy: React.FC = () => {
                 </div>
 
                 <div className="mt-12 text-center">
-                    <a href="/" className="inline-block bg-cyan-500 hover:bg-cyan-400 text-[#041226] font-semibold px-6 py-3 rounded-lg transition-colors">
+                    <a href="/" className="inline-block bg-cyan-500 hover:bg-cyan-400 text-[#041226] font-semibold px-6 py-3 border-2 border-cyan-200 shadow-[4px_4px_0_rgba(255,0,234,0.3)] transition-colors">
                         Ana Sayfaya Dön
                     </a>
                 </div>

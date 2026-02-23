@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Timer, Zap, Swords, Brain, Crown, Sparkles, Gauge, ArrowUpRight } from 'lucide-react';
+import { Timer, Zap, Swords, Brain, Crown, Sparkles, Gauge, ArrowUpRight, Gamepad2 } from 'lucide-react';
 
 interface FeaturedGame {
   title: string;
@@ -83,6 +83,19 @@ const featuredGames: FeaturedGame[] = [
     icon: <Sparkles size={26} />,
     badge: 'Dikkat',
     cta: 'Kartlara bak',
+  },
+  {
+    title: 'Sosyal Masa Modu',
+    subtitle: 'UNO, 101 Okey ve Monopoly mini turlarını puan etkisi olmadan arkadaş grubunla oyna.',
+    duration: 'Serbest',
+    mode: 'Puan yok',
+    accent: 'from-sky-400/90 to-fuchsia-500/90',
+    tone: 'radial-gradient(circle at 16% 20%, rgba(56, 189, 248, 0.2), transparent 42%), radial-gradient(circle at 88% 10%, rgba(217, 70, 239, 0.2), transparent 40%), linear-gradient(152deg, rgba(10, 18, 42, 0.96), rgba(29, 16, 56, 0.88))',
+    grid: 'rgba(56, 189, 248, 0.08)',
+    glow: 'rgba(217, 70, 239, 0.24)',
+    icon: <Gamepad2 size={26} />,
+    badge: 'Sosyal',
+    cta: 'Masayı aç',
   },
 ];
 

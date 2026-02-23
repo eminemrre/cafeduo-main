@@ -42,6 +42,11 @@ interface GameStateUpdatedPayload {
     gameId?: string | number;
 }
 
+interface TankWindow extends Window {
+    render_game_to_text?: () => string;
+    advanceTime?: (ms: number) => Promise<void> | void;
+}
+
 // ------- Game constants -------
 const CANVAS_W = 800;
 const CANVAS_H = 400;
@@ -83,6 +88,7 @@ const parseFiniteNumber = (value: unknown): number | null => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : null;
 };
+const normalizeNameKey = (value: unknown): string => String(value || '').trim().toLowerCase();
 
 // Seeded RNG for multiplayer sync (both clients produce same values from same gameId)
 const createSeededRng = (seed: number) => {
@@ -141,6 +147,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
     const [message, setMessage] = useState('Açı ve güç ayarla, ateş et!');
     const [resolvingMatch, setResolvingMatch] = useState(false);
     const [turnTimer, setTurnTimer] = useState(TURN_TIME);
+    const [wind, setWind] = useState(0); // -2.5 to 2.5
     const playerHPRef = useRef(MAX_HP);
     const opponentHPRef = useRef(MAX_HP);
     const finalizingRef = useRef(false);
@@ -192,6 +199,80 @@ export const TankBattle: React.FC<TankBattleProps> = ({
     useEffect(() => {
         opponentHPRef.current = opponentHP;
     }, [opponentHP]);
+
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const tankWindow = window as TankWindow;
+        const previousAdvanceTime = tankWindow.advanceTime;
+        const renderGameToText = () =>
+            JSON.stringify({
+                mode: done ? 'finished' : 'playing',
+                gameType: 'Tank Düellosu',
+                turn: isPlayerTurn ? 'player' : 'opponent',
+                player: {
+                    name: currentUser.username,
+                    hp: playerHPRef.current,
+                    x: Number((playerTankX * CANVAS_W).toFixed(1)),
+                    y: Number(playerTankY.toFixed(1)),
+                    angle,
+                    power,
+                },
+                opponent: {
+                    name: target,
+                    hp: opponentHPRef.current,
+                    x: Number((opponentTankX * CANVAS_W).toFixed(1)),
+                    y: Number(opponentTankY.toFixed(1)),
+                },
+                projectile: projectileRef.current
+                    ? {
+                        x: Number(projectileRef.current.x.toFixed(1)),
+                        y: Number(projectileRef.current.y.toFixed(1)),
+                        vx: Number(projectileRef.current.vx.toFixed(2)),
+                        vy: Number(projectileRef.current.vy.toFixed(2)),
+                        firedBy: projectileRef.current.firedBy,
+                    }
+                    : null,
+                wind,
+                turnTimer,
+                message,
+            });
+
+        tankWindow.render_game_to_text = renderGameToText;
+        tankWindow.advanceTime = (ms: number) => {
+            if (typeof previousAdvanceTime === 'function') {
+                return previousAdvanceTime(ms);
+            }
+            return new Promise<void>((resolve) => {
+                window.setTimeout(resolve, Math.max(0, Math.floor(ms)));
+            });
+        };
+
+        return () => {
+            if (tankWindow.render_game_to_text === renderGameToText) {
+                delete tankWindow.render_game_to_text;
+            }
+            if (previousAdvanceTime) {
+                tankWindow.advanceTime = previousAdvanceTime;
+            } else if (tankWindow.advanceTime) {
+                delete tankWindow.advanceTime;
+            }
+        };
+    }, [
+        angle,
+        currentUser.username,
+        done,
+        isPlayerTurn,
+        message,
+        opponentTankX,
+        opponentTankY,
+        playerTankX,
+        playerTankY,
+        target,
+        turnTimer,
+        power,
+        wind,
+    ]);
 
     const finishFromServer = useCallback((winnerRaw: string | null) => {
         if (finishHandledRef.current) return;
@@ -249,10 +330,10 @@ export const TankBattle: React.FC<TankBattleProps> = ({
         if (finishHandledRef.current || finalizingRef.current) return;
         finalizingRef.current = true;
         if (isBot || !gameId) {
-            const points = localWinner === currentUser.username ? 10 : 0;
+            const points = normalizeNameKey(localWinner) === normalizeNameKey(currentUser.username) ? 10 : 0;
             finishHandledRef.current = true;
             setDone(true);
-            setMessage(localWinner === currentUser.username ? 'Tebrikler, kazandın!' : `${target} kazandı!`);
+            setMessage(points > 0 ? 'Tebrikler, kazandın!' : `${target} kazandı!`);
             setTimeout(() => onGameEnd(localWinner, points), 900);
             finalizingRef.current = false;
             return;
@@ -279,7 +360,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             }
 
             const resolvedWinner = winner || 'Berabere';
-            const points = winner && winner === currentUser.username ? 10 : 0;
+            const points = winner && normalizeNameKey(winner) === normalizeNameKey(currentUser.username) ? 10 : 0;
             setDone(true);
             setMessage(
                 !winner
@@ -299,8 +380,6 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             finalizingRef.current = false;
         }
     }, [currentUser.username, gameId, isBot, onGameEnd, target]);
-
-    const [wind, setWind] = useState(0); // -2.5 to 2.5
 
     const deterministicWindForTurn = useCallback((turn: number) => {
         const normalizedTurn = Math.max(0, Math.floor(turn));
@@ -797,7 +876,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
                 const snapshot = await api.games.get(gameId) as GameSnapshot;
                 applySnapshot(snapshot);
                 const hostName = snapshot.hostName || '';
-                isHostRef.current = hostName === currentUser.username;
+                isHostRef.current = normalizeNameKey(hostName) === normalizeNameKey(currentUser.username);
                 // Host goes first
                 setIsPlayerTurn(isHostRef.current);
                 setMessage(isHostRef.current ? 'Sen başlıyorsun! Açı ve güç ayarla.' : 'Rakip başlıyor, sıranı bekle...');

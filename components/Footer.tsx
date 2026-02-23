@@ -58,13 +58,19 @@ export const Footer: React.FC = () => {
                 <Twitter size={18} />
               </a>
               <a
-                href="mailto:kvkk@cafeduo.com"
+                href="mailto:cafeduotr@gmail.com"
                 aria-label="E-posta"
                 className="w-10 h-10 rounded-full border border-cyan-400/35 bg-[#0a1834]/85 flex items-center justify-center text-cyan-100 hover:text-cyan-300 hover:border-cyan-300/58 transition-colors"
               >
                 <Mail size={18} />
               </a>
             </div>
+            <a
+              href="mailto:cafeduotr@gmail.com"
+              className="inline-flex mt-3 text-sm text-cyan-200 hover:text-cyan-300 transition-colors"
+            >
+              cafeduotr@gmail.com
+            </a>
           </div>
         </div>
       </div>

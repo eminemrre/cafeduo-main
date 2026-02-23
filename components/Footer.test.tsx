@@ -27,7 +27,11 @@ describe('Footer', () => {
     expect(screen.getByRole('link', { name: 'Twitter' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'E-posta' })).toHaveAttribute(
       'href',
-      'mailto:kvkk@cafeduo.com'
+      'mailto:cafeduotr@gmail.com'
+    );
+    expect(screen.getByRole('link', { name: 'cafeduotr@gmail.com' })).toHaveAttribute(
+      'href',
+      'mailto:cafeduotr@gmail.com'
     );
   });
 });

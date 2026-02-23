@@ -310,7 +310,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   Güvenli Erişim
                   <span className="absolute -top-1 -right-2 w-1.5 h-1.5 bg-pink-500 animate-pulse"></span>
                 </p>
-                <h2 className="font-display text-white text-3xl md:text-3xl uppercase mt-1 tracking-wider glitch-text" data-text={mode === 'login' ? 'GİRİŞ MERKEZİ' : 'KAYIT MERKEZİ'}>
+                <h2 className="font-display-tr text-white text-3xl md:text-3xl uppercase mt-1 tracking-wider glitch-text-safe" data-text={mode === 'login' ? 'GİRİŞ MERKEZİ' : 'KAYIT MERKEZİ'}>
                   {mode === 'login' ? 'GİRİŞ MERKEZİ' : 'KAYIT MERKEZİ'}
                 </h2>
               </div>

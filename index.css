@@ -44,6 +44,7 @@
   --rf-card-shadow: 10px 10px 0 rgba(0, 0, 0, 0.72);
   --rf-card-shadow-cyan: 6px 6px 0 rgba(0, 243, 255, 0.2);
   --rf-card-shadow-pink: 6px 6px 0 rgba(255, 0, 234, 0.2);
+  --rf-bottom-nav-clearance: 7rem;
 }
 
 html {
@@ -120,8 +121,12 @@ body::after {
 
 .glitch-text {
   position: relative;
+  display: inline-block;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  line-height: 1.1;
+  padding-block: 0.06em;
+  overflow: visible;
   text-shadow: 1px 0 0 rgba(0, 243, 255, 0.7), -1px 0 0 rgba(255, 0, 234, 0.65);
 }
 
@@ -131,22 +136,77 @@ body::after {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  white-space: pre;
 }
 
 .glitch-text::before {
-  color: rgba(0, 243, 255, 0.56);
-  transform: translate(1px, 0);
-  clip-path: polygon(0 0, 100% 0, 100% 38%, 0 44%);
+  color: rgba(0, 243, 255, 0.45);
+  transform: translate(0.7px, 0);
+  clip-path: polygon(0 0, 100% 0, 100% 46%, 0 50%);
 }
 
 .glitch-text::after {
-  color: rgba(255, 0, 234, 0.56);
-  transform: translate(-1px, 0);
-  clip-path: polygon(0 62%, 100% 54%, 100% 100%, 0 100%);
+  color: rgba(255, 0, 234, 0.45);
+  transform: translate(-0.7px, 0);
+  clip-path: polygon(0 50%, 100% 46%, 100% 100%, 0 100%);
 }
 
 .text-shadow-glitch {
   text-shadow: 1px 0 0 rgba(0, 243, 255, 0.7), -1px 0 0 rgba(255, 0, 234, 0.65);
+}
+
+.glitch-text-safe {
+  position: relative;
+  display: inline-block;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1.1;
+  padding-block: 0.06em;
+  text-shadow: 0.6px 0 0 rgba(0, 243, 255, 0.38), -0.6px 0 0 rgba(255, 0, 234, 0.34);
+}
+
+.glitch-text-safe::before,
+.glitch-text-safe::after {
+  content: none !important;
+}
+
+.font-display-tr {
+  font-family: "Noto Sans Display", "Oswald", "Chakra Petch", "Teko", sans-serif;
+  font-weight: 700;
+  font-variant-ligatures: none;
+}
+
+.cookie-floating-anchor {
+  bottom: calc(var(--rf-bottom-nav-clearance, 7rem) + env(safe-area-inset-bottom));
+}
+
+.cookie-panel-anchor {
+  bottom: calc(var(--rf-bottom-nav-clearance, 7rem) + 4.25rem + env(safe-area-inset-bottom));
+}
+
+@media (max-width: 640px) {
+  .cookie-floating-anchor {
+    bottom: calc(var(--rf-bottom-nav-clearance, 7rem) + 0.35rem + env(safe-area-inset-bottom));
+  }
+
+  .cookie-panel-anchor {
+    bottom: calc(var(--rf-bottom-nav-clearance, 7rem) + 4.9rem + env(safe-area-inset-bottom));
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 220ms ease-out both;
 }
 
 .custom-scrollbar {

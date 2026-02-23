@@ -15,6 +15,9 @@ import { MemoryDuel } from './MemoryDuel';
 import { OddEvenSprint } from './OddEvenSprint';
 import { KnowledgeQuiz } from './KnowledgeQuiz';
 import { RetroChess } from './RetroChess';
+import { UnoSocial } from './UnoSocial';
+import { Okey101Social } from './Okey101Social';
+import { MonopolySocial } from './MonopolySocial';
 import { Leaderboard } from './Leaderboard';
 import { Achievements } from './Achievements';
 import { RetroButton } from './RetroButton';
@@ -298,6 +301,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
     if (gameEndHandledRef.current) return;
     gameEndHandledRef.current = true;
     const safeEarnedPoints = Number.isFinite(earnedPoints) ? earnedPoints : 0;
+    const nonCompetitiveGame = new Set(['UNO Sosyal', '101 Okey Sosyal', 'Monopoly Sosyal']).has(activeGameType);
     setGameResult((prev) => prev ?? { winner, earnedPoints: safeEarnedPoints });
     setShowGlitchAnim(true);
     void refetch();
@@ -311,7 +315,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
     onUpdateUser({
       ...currentUser,
       points: Math.max(0, (currentUser.points || 0) + safeEarnedPoints),
-      wins: (currentUser.wins || 0) + (didWin ? 1 : 0),
+      wins: (currentUser.wins || 0) + (didWin && !nonCompetitiveGame ? 1 : 0),
       gamesPlayed: (currentUser.gamesPlayed || 0) + 1,
     });
   };
@@ -416,6 +420,33 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
               gameId={activeGameId}
               currentUser={currentUser}
               opponentName={opponentName || 'Rakip'}
+              isBot={isBot}
+              onGameEnd={handleGameFinish}
+              onLeave={handleLeaveGame}
+            />
+          ) : activeGameType === 'UNO Sosyal' ? (
+            <UnoSocial
+              gameId={activeGameId}
+              currentUser={currentUser}
+              opponentName={opponentName || 'Arkadaşın'}
+              isBot={isBot}
+              onGameEnd={handleGameFinish}
+              onLeave={handleLeaveGame}
+            />
+          ) : activeGameType === '101 Okey Sosyal' ? (
+            <Okey101Social
+              gameId={activeGameId}
+              currentUser={currentUser}
+              opponentName={opponentName || 'Arkadaşın'}
+              isBot={isBot}
+              onGameEnd={handleGameFinish}
+              onLeave={handleLeaveGame}
+            />
+          ) : activeGameType === 'Monopoly Sosyal' ? (
+            <MonopolySocial
+              gameId={activeGameId}
+              currentUser={currentUser}
+              opponentName={opponentName || 'Arkadaşın'}
               isBot={isBot}
               onGameEnd={handleGameFinish}
               onLeave={handleLeaveGame}

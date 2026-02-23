@@ -26,6 +26,11 @@ const createGameHandlers = ({
 }) => {
   const isAdminActor = (user) => user?.role === 'admin' || user?.isAdmin === true;
   const CHESS_GAME_TYPE = 'Retro Satranç';
+  const NON_COMPETITIVE_GAME_TYPES = new Set([
+    'UNO Sosyal',
+    '101 Okey Sosyal',
+    'Monopoly Sosyal',
+  ]);
   const CHESS_SQUARE_RE = /^[a-h][1-8]$/;
   const DEFAULT_CHESS_CLOCK = Object.freeze({
     baseMs: 3 * 60 * 1000,
@@ -41,6 +46,8 @@ const createGameHandlers = ({
   const DRAW_OFFER_ACTIONS = new Set(['offer', 'accept', 'reject', 'cancel']);
 
   const isChessGameType = (gameType) => String(gameType || '').trim() === CHESS_GAME_TYPE;
+  const isNonCompetitiveGameType = (gameType) =>
+    NON_COMPETITIVE_GAME_TYPES.has(String(gameType || '').trim());
 
   const normalizeChessClockConfig = (rawClock) => {
     if (!rawClock || typeof rawClock !== 'object') {
@@ -357,6 +364,7 @@ const createGameHandlers = ({
     game,
     winnerName,
     isDraw,
+    gameType,
   }) => {
     const hostName = String(game.host_name || '').trim();
     const guestName = String(game.guest_name || '').trim();
@@ -386,6 +394,23 @@ const createGameHandlers = ({
     const canonicalWinner = String(winnerName || '').trim();
     const winnerKey = normalizeParticipantKey(canonicalWinner);
     const stake = Math.max(0, Math.floor(Number(game.points || 0)));
+    const nonCompetitive = isNonCompetitiveGameType(gameType || game.game_type);
+
+    if (nonCompetitive) {
+      for (const participantName of participants) {
+        const user = byUsername.get(normalizeParticipantKey(participantName));
+        if (!user) continue;
+        await client.query(
+          `
+            UPDATE users
+            SET games_played = games_played + 1
+            WHERE id = $1
+          `,
+          [user.id]
+        );
+      }
+      return { transferredPoints: 0 };
+    }
 
     if (!isDraw && canonicalWinner && participants.length === 2) {
       const loserName = participants.find(
@@ -450,6 +475,7 @@ const createGameHandlers = ({
     game,
     winnerName,
     isDraw,
+    gameType,
   }) => {
     const users = Array.isArray(getMemoryUsers?.()) ? getMemoryUsers() : [];
     const hostName = String(game.hostName || '').trim();
@@ -465,6 +491,16 @@ const createGameHandlers = ({
     const canonicalWinner = String(winnerName || '').trim();
     const winnerKey = normalizeParticipantKey(canonicalWinner);
     const stake = Math.max(0, Math.floor(Number(game.points || 0)));
+    const nonCompetitive = isNonCompetitiveGameType(gameType || game.gameType);
+
+    if (nonCompetitive) {
+      for (const participantName of participants) {
+        const user = findUser(participantName);
+        if (!user) continue;
+        user.gamesPlayed = Math.max(0, Math.floor(Number(user.gamesPlayed || 0))) + 1;
+      }
+      return { transferredPoints: 0 };
+    }
 
     if (!isDraw && canonicalWinner && participants.length === 2) {
       const loserName = participants.find((name) => normalizeParticipantKey(name) !== winnerKey);
@@ -1364,6 +1400,7 @@ const createGameHandlers = ({
           game,
           winnerName: null,
           isDraw: true,
+          gameType: game.game_type,
         });
         nextGameState.settlementApplied = true;
         nextGameState.stakeTransferred = settlement.transferredPoints;
@@ -1571,6 +1608,7 @@ const createGameHandlers = ({
       game,
       winnerName: null,
       isDraw: true,
+      gameType: game.gameType,
     });
     nextGameState.settlementApplied = true;
     nextGameState.stakeTransferred = settlement.transferredPoints;
@@ -1684,6 +1722,7 @@ const createGameHandlers = ({
           game,
           winnerName: winnerByResign,
           isDraw: false,
+          gameType: game.game_type,
         });
         nextGameState.settlementApplied = true;
         nextGameState.stakeTransferred = settlement.transferredPoints;
@@ -1792,6 +1831,7 @@ const createGameHandlers = ({
       game,
       winnerName: winnerByResign,
       isDraw: false,
+      gameType: game.gameType,
     });
     game.gameState.settlementApplied = true;
     game.gameState.stakeTransferred = settlement.transferredPoints;
@@ -1886,6 +1926,7 @@ const createGameHandlers = ({
                 game,
                 winnerName: null,
                 isDraw: true,
+                gameType: game.game_type,
               });
               const patchedState = {
                 ...currentGameState,
@@ -1918,6 +1959,7 @@ const createGameHandlers = ({
                 game,
                 winnerName: game.winner || finalWinner,
                 isDraw: false,
+                gameType: game.game_type,
               });
               const patchedState = {
                 ...currentGameState,
@@ -1968,6 +2010,7 @@ const createGameHandlers = ({
           game,
           winnerName: finalWinner,
           isDraw: Boolean(isChessDraw),
+          gameType: game.game_type,
         });
         nextGameState.settlementApplied = true;
         nextGameState.stakeTransferred = settlement.transferredPoints;
@@ -2066,6 +2109,7 @@ const createGameHandlers = ({
           game,
           winnerName: finalWinner,
           isDraw: Boolean(isChessDraw),
+          gameType: game.gameType,
         });
         game.gameState = {
           ...(game.gameState || {}),
@@ -2105,6 +2149,7 @@ const createGameHandlers = ({
         game,
         winnerName: finalWinner,
         isDraw: Boolean(isChessDraw),
+        gameType: game.gameType,
       });
       game.gameState.settlementApplied = true;
       game.gameState.stakeTransferred = settlement.transferredPoints;

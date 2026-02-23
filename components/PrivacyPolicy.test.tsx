@@ -10,7 +10,7 @@ describe('PrivacyPolicy', () => {
     expect(screen.getByText(/Son güncelleme:/i)).toBeInTheDocument();
     expect(screen.getByText(/1. Veri Sorumlusu/i)).toBeInTheDocument();
     expect(screen.getByText(/8. Çerez Politikası/i)).toBeInTheDocument();
-    expect(screen.getByText('kvkk@cafeduo.com')).toBeInTheDocument();
+    expect(screen.getByText('cafeduotr@gmail.com')).toBeInTheDocument();
 
     const backLink = screen.getByRole('link', { name: 'Ana Sayfaya Dön' });
     expect(backLink).toHaveAttribute('href', '/');

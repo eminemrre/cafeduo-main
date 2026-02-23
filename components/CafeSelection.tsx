@@ -50,7 +50,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
             <div className="w-16 h-16 bg-black flex items-center justify-center mx-auto mb-4 border-2 border-cyan-400/45 shadow-[4px_4px_0_rgba(255,0,234,0.3)]">
               <MapPin size={32} className="text-cyan-300" />
             </div>
-            <h1 className="text-4xl font-display text-white mb-2 tracking-[0.08em] glitch-text" data-text="KAFE GİRİŞ">
+            <h1 className="text-3xl sm:text-4xl leading-[1.05] font-display-tr text-white mb-2 tracking-[0.08em] glitch-text-safe break-words" data-text="KAFE GİRİŞ">
               Kafe Giriş
             </h1>
             <p className="text-[var(--rf-muted)] text-sm uppercase tracking-[0.11em]">Oyunlara katılmak için konum izniyle kafe doğrulaması yapın.</p>

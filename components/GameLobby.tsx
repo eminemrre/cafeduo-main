@@ -12,6 +12,9 @@ const gameIcon = (gameType: string) => {
   if (gameType === 'Çift Tek Sprint') return '🔢';
   if (gameType === 'Neon Hafıza') return '🔮';
   if (gameType === 'Bilgi Yarışı') return '🧠';
+  if (gameType === 'UNO Sosyal') return '🃏';
+  if (gameType === '101 Okey Sosyal') return '🀄';
+  if (gameType === 'Monopoly Sosyal') return '🏙️';
   return '🎮';
 };
 

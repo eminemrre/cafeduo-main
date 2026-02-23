@@ -9,7 +9,7 @@ export const PrivacyPolicy: React.FC = () => {
                 <div className="text-center mb-12 rf-screen-card p-8">
                     <p className="rf-terminal-strip justify-center mb-3">Veri Güvenliği Protokolü</p>
                     <Shield className="w-16 h-16 text-cyan-300 mx-auto mb-4" />
-                    <h1 className="text-5xl font-display tracking-[0.08em] mb-2 glitch-text" data-text="GİZLİLİK & KVKK">
+                    <h1 className="text-4xl md:text-5xl leading-[1.05] font-display-tr tracking-[0.08em] mb-2 glitch-text-safe break-words" data-text="GİZLİLİK & KVKK">
                         Gizlilik Politikası ve KVKK Aydınlatma Metni
                     </h1>
                     <p className="text-[var(--rf-muted)]">Son güncelleme: {new Date().toLocaleDateString('tr-TR')}</p>
@@ -109,7 +109,7 @@ export const PrivacyPolicy: React.FC = () => {
                             KVKK kapsamındaki haklarınızı kullanmak için aşağıdaki kanallardan bizimle iletişime geçebilirsiniz:
                         </p>
                         <div className="mt-4 bg-black/30 p-4 border border-cyan-800/35">
-                            <p><strong>E-posta:</strong> kvkk@cafeduo.com</p>
+                            <p><strong>E-posta:</strong> cafeduotr@gmail.com</p>
                         </div>
                     </section>
 

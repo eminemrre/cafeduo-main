@@ -4,7 +4,7 @@ const createSystemRoutes = ({ appVersion, appBuildTime, isDbConnected }) => {
   const router = express.Router();
 
   router.get('/', (req, res) => {
-    res.send('✅ CafeDuo API Sunucusu (Render) Aktif!');
+    res.send('✅ CafeDuo API Sunucusu Aktif!');
   });
 
   router.get('/api/meta/version', (req, res) => {

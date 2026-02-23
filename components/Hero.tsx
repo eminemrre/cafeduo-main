@@ -62,10 +62,10 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
             </motion.div>
           </div>
 
-          <div lang="tr" className="font-display-tr flex flex-col tracking-[-0.015em] mix-blend-screen">
-            <div className="overflow-visible relative">
+          <div lang="tr" className="font-display flex flex-col uppercase tracking-tighter mix-blend-screen text-shadow-glitch">
+            <div className="overflow-hidden relative">
               <motion.span
-                className="block text-[6rem] sm:text-[9rem] lg:text-[11rem] leading-[0.9] text-ink-50 font-bold glitch-text-safe"
+                className="block text-[6rem] sm:text-[9rem] lg:text-[11rem] leading-[0.8] text-ink-50 font-bold"
                 initial={{ y: "100%", skewY: 10 }}
                 animate={reduceMotion ? { y: 0, skewY: 0 } : { y: 0, skewY: 0 }}
                 transition={{ delay: 0.2, duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
@@ -73,9 +73,9 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                 BEKLEME
               </motion.span>
             </div>
-            <div className="overflow-visible relative -translate-y-1 lg:-translate-y-3">
+            <div className="overflow-visible relative -translate-y-4 lg:-translate-y-8">
               <motion.span
-                className="block text-[5rem] sm:text-[8rem] lg:text-[10rem] leading-[0.92] text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-pink font-bold"
+                className="hero-tr-diacritic block text-[5rem] sm:text-[8rem] lg:text-[10rem] leading-[0.89] text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-pink font-bold"
                 initial={{ y: "100%", skewY: -10 }}
                 animate={reduceMotion ? { y: 0, skewY: 0 } : { y: 0, skewY: 0 }}
                 transition={{ delay: 0.35, duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
@@ -83,9 +83,9 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                 SÜRENİ
               </motion.span>
             </div>
-            <div className="overflow-visible relative -translate-y-1 lg:-translate-y-3 ml-2 lg:ml-8">
+            <div className="overflow-visible relative -translate-y-8 lg:-translate-y-16 ml-4 lg:ml-12">
               <motion.span
-                className="block text-[6rem] sm:text-[9.5rem] lg:text-[12rem] leading-[0.9] text-ink-50 font-bold glitch-text-safe"
+                className="hero-tr-diacritic block text-[6rem] sm:text-[9.5rem] lg:text-[12rem] leading-[0.84] text-ink-50 font-bold"
                 initial={{ y: "100%", skewY: 5 }}
                 animate={reduceMotion ? { y: 0, skewY: 0 } : { y: 0, skewY: 0 }}
                 transition={{ delay: 0.5, duration: 0.8, ease: [0.76, 0, 0.24, 1] }}

@@ -176,12 +176,24 @@ body::after {
   font-variant-ligatures: none;
 }
 
+.hero-tr-diacritic {
+  font-family: "Chakra Petch", sans-serif !important;
+  font-weight: 700;
+  font-variant-ligatures: none;
+  text-transform: none;
+  text-shadow: none !important;
+}
+
 .cookie-floating-anchor {
   bottom: calc(var(--rf-bottom-nav-clearance, 7rem) + env(safe-area-inset-bottom));
 }
 
 .cookie-panel-anchor {
   bottom: calc(var(--rf-bottom-nav-clearance, 7rem) + 4.25rem + env(safe-area-inset-bottom));
+}
+
+.cookie-consent-panel {
+  position: fixed !important;
 }
 
 @media (max-width: 640px) {

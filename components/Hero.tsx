@@ -40,11 +40,11 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
 
       {/* Glitch Decorative Texts */}
       <div className="absolute top-20 -left-10 opacity-10 pointer-events-none select-none rotate-90 origin-left">
-        <span className="font-display text-[15rem] leading-none text-cyber-border whitespace-nowrap">CAFEDUO ENGINE</span>
+        <span className="font-display text-[15rem] leading-none text-cyber-border whitespace-nowrap">CAFEDUO MOTORU</span>
       </div>
 
       <div className="relative z-10 w-full px-6 max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center pt-24 pb-32">
-        {/* LEFT COLUMN: Maxiamlist Typography */}
+      {/* LEFT COLUMN: Maximalist Typography */}
         <motion.div
           className="lg:col-span-7 flex flex-col justify-center translate-y-4"
           initial={{ opacity: 0 }}
@@ -58,7 +58,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
               transition={{ delay: 0.1, duration: 0.6, ease: [0.76, 0, 0.24, 1] }}
               className="inline-block bg-neon-pink text-cyber-dark font-sans text-xs uppercase tracking-[0.3em] font-bold px-4 py-1"
             >
-              Kafede Beklerken Oyna
+              KAFEDE BEKLERKEN OYNA
             </motion.div>
           </div>
 
@@ -93,7 +93,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                 ÖDÜLE
               </motion.span>
               <div className="absolute right-0 bottom-12 text-sm font-sans tracking-[0.2em] text-neon-blue rotate-90 origin-bottom-right opacity-50 hidden sm:block">
-                // ODAK: SOSYAL MİNYATÜR
+                // ODAK: SOSYAL EŞLEŞME
               </div>
             </div>
           </div>
@@ -104,7 +104,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.7, duration: 0.6 }}
           >
-            Seni mekandaki canlı oyuncularla <span className="text-neon-pink font-bold">45 saniyelik</span> asimetrik kapışmalara sokan sosyal puanlama motoru.
+            Seni mekandaki aktif oyuncularla <span className="text-neon-pink font-bold">45-60 saniyelik</span> rekabetçi mini oyunlarda eşleştiren sosyal oyun motoru.
           </motion.p>
 
           <motion.div
@@ -155,7 +155,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
           <div className="relative w-full max-w-[500px] bg-cyber-dark/80 backdrop-blur-2xl border-t border-l border-neon-blue shadow-[16px_16px_0px_rgba(0,243,255,0.15)] p-8 md:p-10">
             {/* Top Bar Pattern */}
             <div className="flex justify-between items-center mb-8 border-b border-cyber-border pb-4">
-              <span className="font-display text-2xl text-ink-50 uppercase tracking-widest">Sistem TR-X</span>
+              <span className="font-display text-2xl text-ink-50 uppercase tracking-widest">SİSTEM TR-X</span>
               <div className="flex gap-2">
                 <div className="w-3 h-3 bg-neon-pink animate-pulse" />
                 <div className="w-3 h-3 border border-neon-blue" />

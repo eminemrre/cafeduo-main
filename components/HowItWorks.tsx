@@ -13,7 +13,7 @@ const steps = [
     id: '02',
     icon: <Coffee size={24} className="text-fuchsia-300" />,
     title: 'Kafeye bağlan',
-    description: 'Kafeni seç, güvenli girişi tamamla ve lobiye düş.',
+    description: 'Kafeni seç, güvenli girişi tamamla ve lobiye gir.',
     hint: '15 sn',
   },
   {

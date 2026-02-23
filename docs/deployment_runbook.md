@@ -86,6 +86,10 @@ Last updated: 2026-02-07
    - `.github/workflows/deploy-vps.yml`
 3. Trigger:
    - push `main` or `workflow_dispatch`
+4. Local tek komut tetikleme (VDS workflow):
+   - `npm run deploy:vds`
+   - opsiyonel ref:
+     - `DEPLOY_REF=main npm run deploy:vds`
 
 ## 7) Rollback plan
 

@@ -141,6 +141,9 @@ export const TankBattle: React.FC<TankBattleProps> = ({
     const [message, setMessage] = useState('Açı ve güç ayarla, ateş et!');
     const [resolvingMatch, setResolvingMatch] = useState(false);
     const [turnTimer, setTurnTimer] = useState(TURN_TIME);
+    const playerHPRef = useRef(MAX_HP);
+    const opponentHPRef = useRef(MAX_HP);
+    const finalizingRef = useRef(false);
 
     // Compute seed FIRST so terrain + positions use it
     const gameSeed = useMemo(() => {
@@ -180,6 +183,15 @@ export const TankBattle: React.FC<TankBattleProps> = ({
     const opponentTankX = tankPositions.ox;
     const playerTankY = terrainYAt(terrainRef.current, playerTankX);
     const opponentTankY = terrainYAt(terrainRef.current, opponentTankX);
+    const getPlayerScore = useCallback(() => Math.max(0, MAX_HP - opponentHPRef.current), []);
+
+    useEffect(() => {
+        playerHPRef.current = playerHP;
+    }, [playerHP]);
+
+    useEffect(() => {
+        opponentHPRef.current = opponentHP;
+    }, [opponentHP]);
 
     const finishFromServer = useCallback((winnerRaw: string | null) => {
         if (finishHandledRef.current) return;
@@ -216,14 +228,16 @@ export const TankBattle: React.FC<TankBattleProps> = ({
     const syncLiveProgress = useCallback(async (score: number, currentRound: number, isDone: boolean) => {
         if (isBot || !gameId) return;
         try {
+            const safeScore = Math.max(0, Math.floor(score));
+            const safeRound = Math.max(0, Math.floor(currentRound));
             await api.games.move(gameId, {
                 liveSubmission: {
                     mode: 'Tank Düellosu',
-                    score,
-                    roundsWon: score,
-                    round: currentRound,
+                    score: safeScore,
+                    roundsWon: safeScore,
+                    round: safeRound,
                     done: isDone,
-                    submissionKey: `tank|${String(gameId)}|${currentUser.username}|${currentRound}|${score}|${isDone ? 1 : 0}`,
+                    submissionKey: `tank|${String(gameId)}|${currentUser.username}|${safeRound}|${safeScore}|${isDone ? 1 : 0}`,
                 },
             });
         } catch (err) {
@@ -232,13 +246,15 @@ export const TankBattle: React.FC<TankBattleProps> = ({
     }, [currentUser.username, gameId, isBot]);
 
     const finalizeMatch = useCallback(async (localWinner: string, playerScoreValue: number) => {
-        if (finishHandledRef.current) return;
+        if (finishHandledRef.current || finalizingRef.current) return;
+        finalizingRef.current = true;
         if (isBot || !gameId) {
             const points = localWinner === currentUser.username ? 10 : 0;
             finishHandledRef.current = true;
             setDone(true);
             setMessage(localWinner === currentUser.username ? 'Tebrikler, kazandın!' : `${target} kazandı!`);
             setTimeout(() => onGameEnd(localWinner, points), 900);
+            finalizingRef.current = false;
             return;
         }
 
@@ -280,6 +296,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             setTimeout(() => onGameEnd('Sonuç Bekleniyor', 0), 900);
         } finally {
             setResolvingMatch(false);
+            finalizingRef.current = false;
         }
     }, [currentUser.username, gameId, isBot, onGameEnd, target]);
 
@@ -315,9 +332,17 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             // Handle shot result from opponent (HP sync)
             if (moveData.action === 'shot_result') {
                 if (moveData.hit && moveData.targetIsShooter === false) {
-                    setPlayerHP(prev => Math.max(0, prev - 1));
-                    setMessage('Tankın vuruldu!');
+                    const nextPlayerHP = Math.max(0, playerHPRef.current - 1);
+                    playerHPRef.current = nextPlayerHP;
+                    setPlayerHP(nextPlayerHP);
+                    setMessage(nextPlayerHP <= 0 ? 'Tankın yok edildi!' : 'Tankın vuruldu!');
                     playGameSfx('fail', 0.3);
+                    if (nextPlayerHP <= 0) {
+                        const playerScore = getPlayerScore();
+                        void syncLiveProgress(playerScore, turnIndexRef.current + 1, true);
+                        void finalizeMatch(target, playerScore);
+                        return;
+                    }
                 } else {
                     setMessage('Rakip ıskaladı! Senin sıran.');
                 }
@@ -339,17 +364,14 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             // Handle game over from opponent
             if (moveData.action === 'game_over') {
                 const winner = moveData.winner;
-                // We must submit our score (loser score = 0) to server so it can resolve the match
-                void finalizeMatch(winner, 0);
+                void finalizeMatch(winner, getPlayerScore());
                 return;
             }
 
             // Handle opponent leaving
             if (moveData.action === 'player_left') {
-                finishHandledRef.current = true;
-                setDone(true);
-                setMessage('Rakip oyundan ayrıldı! Kazanıyorsun!');
-                setTimeout(() => onGameEnd(currentUser.username, 10), 900);
+                setMessage('Rakip oyundan ayrıldı. Sonuç doğrulanıyor...');
+                void fetchSnapshot(true);
                 return;
             }
 
@@ -391,7 +413,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
         return () => {
             socket.off('opponent_move', handleOpponentMove);
         };
-    }, [advanceTurnState, deterministicWindForTurn, finalizeMatch, gameId, isBot, onGameEnd, opponentTankX, opponentTankY, target, currentUser.username]);
+    }, [advanceTurnState, deterministicWindForTurn, fetchSnapshot, finalizeMatch, gameId, getPlayerScore, isBot, opponentTankX, opponentTankY, syncLiveProgress, target]);
 
     // ------- Draw -------
     const draw = useCallback(() => {
@@ -594,11 +616,12 @@ export const TankBattle: React.FC<TankBattleProps> = ({
                         if (shooterIsPlayer) {
                             // Player fired — only player side handles damage + sync
                             if (isHit) {
-                                const newHP = Math.max(0, opponentHP - 1);
+                                const newHP = Math.max(0, opponentHPRef.current - 1);
+                                opponentHPRef.current = newHP;
                                 setOpponentHP(newHP);
                                 setMessage('İsabet! Rakip tankı vurdun!');
                                 const score = MAX_HP - newHP;
-                                void syncLiveProgress(score, score, newHP <= 0);
+                                void syncLiveProgress(score, turnIndexRef.current + 1, newHP <= 0);
 
                                 if (newHP <= 0) {
                                     setDone(true);
@@ -607,7 +630,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
                                     if (!isBot && gameId) {
                                         socketService.emitMove(String(gameId), { action: 'game_over', winner: currentUser.username });
                                     }
-                                    void finalizeMatch(currentUser.username, MAX_HP);
+                                    void finalizeMatch(currentUser.username, score);
                                     return;
                                 }
                             } else {
@@ -740,9 +763,12 @@ export const TankBattle: React.FC<TankBattleProps> = ({
         matchStartedAtRef.current = Date.now();
         setPlayerHP(MAX_HP);
         setOpponentHP(MAX_HP);
+        playerHPRef.current = MAX_HP;
+        opponentHPRef.current = MAX_HP;
         setFiring(false);
         setDone(false);
         setResolvingMatch(false);
+        finalizingRef.current = false;
         setAngle(45);
         setPower(60);
         // Regenerate terrain and tank positions using gameId seed for sync
@@ -852,21 +878,32 @@ export const TankBattle: React.FC<TankBattleProps> = ({
     // ------- Leave = Forfeit -------
     const handleLeave = useCallback(() => {
         if (!done && !finishHandledRef.current) {
-            finishHandledRef.current = true;
             setDone(true);
-            setMessage('Oyundan ayrıldın. Rakip kazanıyor.');
-            // Notify opponent
+            setMessage('Oyundan ayrılıyorsun. Sonuç kaydediliyor...');
+            const finalizeLeave = async () => {
+                if (isBot || !gameId) {
+                    finishHandledRef.current = true;
+                    onGameEnd(target, 0);
+                    return;
+                }
+                try {
+                    await api.games.resign(gameId);
+                } catch (err) {
+                    console.error('TankBattle resign failed, falling back to live sync', err);
+                    await syncLiveProgress(0, turnIndexRef.current + 1, true);
+                } finally {
+                    finishHandledRef.current = true;
+                    onGameEnd(target, 0);
+                }
+            };
             if (!isBot && gameId) {
                 socketService.emitMove(String(gameId), { action: 'player_left' });
-                void syncLiveProgress(0, 0, true);
-                void finalizeMatch(target, 0);
             }
-            // Close game screen
-            setTimeout(() => onGameEnd(target, 0), 1200);
+            void finalizeLeave();
         } else {
             onLeave();
         }
-    }, [done, isBot, gameId, target, onLeave, onGameEnd, syncLiveProgress, finalizeMatch]);
+    }, [done, gameId, isBot, onGameEnd, onLeave, syncLiveProgress, target]);
 
     return (
         <div

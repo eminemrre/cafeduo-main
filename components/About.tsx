@@ -31,7 +31,7 @@ export const About: React.FC = () => {
         <div className="grid lg:grid-cols-12 gap-8 items-stretch">
           <div className="lg:col-span-7 cd-panel rf-elevated p-7 md:p-9 border-cyan-400/26 relative overflow-hidden">
             <div className="absolute -left-16 -top-16 h-44 w-44 rounded-full bg-cyan-300/10 blur-3xl pointer-events-none" />
-            <span className="cd-kicker">NEDEN CAFE DUO?</span>
+            <span className="cd-kicker">NEDEN CAFEDUO?</span>
             <h2
               data-testid="about-main-heading"
               className="mt-4 text-3xl md:text-5xl font-display text-white leading-tight"

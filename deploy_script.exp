@@ -1,9 +1,19 @@
 #!/usr/bin/expect -f
 
 set timeout 300
-set ip "217.60.254.141"
-set user "root"
-set password "!lqt3dOLsbl9M"
+
+if {![info exists env(DEPLOY_HOST)] || ![info exists env(DEPLOY_USER)] || ![info exists env(DEPLOY_PASSWORD)]} {
+    puts "Missing required env vars: DEPLOY_HOST, DEPLOY_USER, DEPLOY_PASSWORD"
+    exit 1
+}
+
+set ip $env(DEPLOY_HOST)
+set user $env(DEPLOY_USER)
+set password $env(DEPLOY_PASSWORD)
+set deploy_path "/opt/cafeduo-main"
+if {[info exists env(DEPLOY_PATH)] && $env(DEPLOY_PATH) ne ""} {
+    set deploy_path $env(DEPLOY_PATH)
+}
 
 spawn ssh -o StrictHostKeyChecking=no $user@$ip
 expect {
@@ -18,30 +28,15 @@ expect {
 }
 
 expect "# "
-send "find /home /opt /var/www -maxdepth 3 -type d -name '*cafeduo-main*' 2>/dev/null | head -n 1\r"
+send "mkdir -p $deploy_path\r"
 expect "# "
-
-# We will just run commands assuming we find the path. To make it robust:
-send "export D_PATH=\$(find /home /opt /var/www -maxdepth 3 -type d -name '*cafeduo-main*' 2>/dev/null | head -n 1)\r"
+send "cd $deploy_path\r"
 expect "# "
-
-send "echo \"PROJECT PATH IS: \$D_PATH\"\r"
+send "docker compose -f deploy/docker-compose.prod.yml --env-file .env up -d --build --remove-orphans\r"
 expect "# "
-
-send "cd \$D_PATH\r"
+send "docker image prune -f\r"
 expect "# "
-
-send "docker compose -f deploy/docker-compose.prod.yml --env-file .env build --no-cache web\r"
+send "bash deploy/scripts/smoke-vps.sh http://127.0.0.1\r"
 expect "# "
-
-send "docker compose -f deploy/docker-compose.prod.yml --env-file .env up -d --force-recreate\r"
-expect "# "
-
-send "docker compose -f deploy/docker-compose.prod.yml restart caddy\r"
-expect "# "
-
-send "docker image prune -a -f\r"
-expect "# "
-
 send "exit\r"
 expect eof

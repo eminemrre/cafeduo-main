@@ -140,7 +140,7 @@ jobs:
             mv .env.tmp .env
 
             try_compose_up() {
-              run_compose -f deploy/docker-compose.prod.yml --env-file .env up -d --build --remove-orphans
+              run_compose -f deploy/docker-compose.prod.yml --env-file .env up -d --build --force-recreate --remove-orphans
             }
 
             recover_container_runtime() {

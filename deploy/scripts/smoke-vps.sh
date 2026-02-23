@@ -42,6 +42,25 @@ if ! echo "${INDEX_HEADERS}" | grep -qi "cache-control: .*no-cache"; then
 fi
 echo "[smoke-vps] index cache-control check passed"
 
+if [[ -n "${SMOKE_EXPECT_COMMIT:-}" ]]; then
+  INDEX_HTML="$(curl -fsS "${curl_flags[@]}" "${BASE_URL}/")"
+  FRONT_COMMIT="$(
+    printf '%s' "${INDEX_HTML}" \
+      | grep -oE '<meta name="cafeduo:app-version" content="[^"]+"' \
+      | sed -E 's/.*content="([^"]+)"/\1/' \
+      | head -n1 || true
+  )"
+  if [[ -z "${FRONT_COMMIT}" ]]; then
+    echo "[smoke-vps] frontend commit marker missing in index.html"
+    exit 1
+  fi
+  if [[ "${FRONT_COMMIT}" != "${SMOKE_EXPECT_COMMIT}" ]]; then
+    echo "[smoke-vps] frontend commit mismatch. expected=${SMOKE_EXPECT_COMMIT} actual=${FRONT_COMMIT}"
+    exit 1
+  fi
+  echo "[smoke-vps] frontend commit check passed (${FRONT_COMMIT})"
+fi
+
 STATUS_CODE="$(
   curl "${curl_flags[@]}" -o /tmp/cafeduo-smoke-login.json -w "%{http_code}" \
     -X POST "${BASE_URL}/api/auth/login" \

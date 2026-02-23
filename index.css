@@ -82,8 +82,13 @@ body::after {
 }
 
 @keyframes cb-noise {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(-2%, -2%); }
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(-2%, -2%);
+  }
 }
 
 .noise-bg {
@@ -101,16 +106,14 @@ body::after {
   mix-blend-mode: screen;
   background-image: radial-gradient(circle at 20% 15%, rgba(0, 243, 255, 0.35), transparent 32%),
     radial-gradient(circle at 84% 6%, rgba(255, 0, 234, 0.28), transparent 28%),
-    repeating-linear-gradient(
-      0deg,
+    repeating-linear-gradient(0deg,
       rgba(255, 255, 255, 0.04) 0,
       rgba(255, 255, 255, 0.04) 1px,
       transparent 1px,
-      transparent 3px
-    );
+      transparent 3px);
 }
 
-.noise-bg > * {
+.noise-bg>* {
   position: relative;
   z-index: 1;
 }
@@ -269,11 +272,25 @@ body::after {
 }
 
 /* Base stagger utilities for brutalist reveal */
-.stagger-1 { animation-delay: 100ms; }
-.stagger-2 { animation-delay: 200ms; }
-.stagger-3 { animation-delay: 300ms; }
-.stagger-4 { animation-delay: 400ms; }
-.stagger-5 { animation-delay: 500ms; }
+.stagger-1 {
+  animation-delay: 100ms;
+}
+
+.stagger-2 {
+  animation-delay: 200ms;
+}
+
+.stagger-3 {
+  animation-delay: 300ms;
+}
+
+.stagger-4 {
+  animation-delay: 400ms;
+}
+
+.stagger-5 {
+  animation-delay: 500ms;
+}
 
 
 /* Custom Scrollbar */
@@ -463,6 +480,7 @@ body::after {
 
 .rf-number-clean[type="number"] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .google-login-shell {
@@ -474,14 +492,14 @@ body::after {
   width: 100%;
 }
 
-.google-login-shell > div {
+.google-login-shell>div {
   width: 100% !important;
   display: flex !important;
   align-items: center;
   justify-content: center;
 }
 
-.google-login-shell > *:not(:first-child) {
+.google-login-shell>*:not(:first-child) {
   display: none !important;
 }
 
@@ -530,10 +548,12 @@ body::after {
 }
 
 @keyframes pulse-soft {
+
   0%,
   100% {
     opacity: 0.58;
   }
+
   50% {
     opacity: 1;
   }
@@ -543,26 +563,31 @@ body::after {
   from {
     transform: translate3d(0, 0, 0);
   }
+
   to {
     transform: translate3d(0, 44px, 0);
   }
 }
 
 @keyframes float-slow {
+
   0%,
   100% {
     transform: translateY(0px);
   }
+
   50% {
     transform: translateY(-9px);
   }
 }
 
 @keyframes neon-pulse {
+
   0%,
   100% {
     box-shadow: 0 0 0 1px rgba(0, 217, 255, 0.25), 0 0 26px rgba(0, 217, 255, 0.25);
   }
+
   50% {
     box-shadow: 0 0 0 1px rgba(0, 217, 255, 0.55), 0 0 36px rgba(0, 217, 255, 0.55);
   }
@@ -572,9 +597,11 @@ body::after {
   0% {
     transform: translate3d(-8%, 0, 0) scale(1);
   }
+
   50% {
     transform: translate3d(8%, -2%, 0) scale(1.06);
   }
+
   100% {
     transform: translate3d(-8%, 0, 0) scale(1);
   }
@@ -585,12 +612,15 @@ body::after {
     transform: translateX(-120%);
     opacity: 0;
   }
+
   20% {
     opacity: 0.75;
   }
+
   80% {
     opacity: 0.75;
   }
+
   100% {
     transform: translateX(120%);
     opacity: 0;
@@ -598,18 +628,24 @@ body::after {
 }
 
 @keyframes shake {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateX(0);
   }
+
   20% {
     transform: translateX(-4px);
   }
+
   40% {
     transform: translateX(4px);
   }
+
   60% {
     transform: translateX(-3px);
   }
+
   80% {
     transform: translateX(3px);
   }
@@ -650,6 +686,7 @@ body::after {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -661,6 +698,7 @@ body::after {
 }
 
 @media (min-width: 768px) {
+
   .rf-section,
   .cd-section {
     padding: 5.5rem 0;
@@ -668,6 +706,7 @@ body::after {
 }
 
 @media (max-width: 640px) {
+
   .rf-section,
   .cd-section {
     padding: 3.2rem 0;

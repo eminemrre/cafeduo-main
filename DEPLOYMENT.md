@@ -26,6 +26,7 @@
   - `docs/deployment_runbook.md`
 - CI based VPS deploy path:
   - `.github/workflows/deploy-vps.yml`
+  - `scripts/deploy/vds-deploy.sh` (`npm run deploy:vds`)
 - Smoke and rollback scripts:
   - `scripts/smoke/prod-smoke.mjs`
   - `deploy/scripts/smoke-vps.sh`

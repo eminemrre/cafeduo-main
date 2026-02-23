@@ -31,7 +31,7 @@ module.exports = {
       },
       fontFamily: {
         sans: ['"Chakra Petch"', "sans-serif"],
-        display: ['"Bebas Neue"', "sans-serif"],
+        display: ['"Teko"', "sans-serif"],
         body: ['"Chakra Petch"', "sans-serif"],
       },
       boxShadow: {

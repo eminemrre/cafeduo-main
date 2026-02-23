@@ -43,6 +43,7 @@ fi
 echo "[smoke-vps] index cache-control check passed"
 
 if [[ -n "${SMOKE_EXPECT_COMMIT:-}" ]]; then
+  EXPECTED_FRONT_COMMIT="${SMOKE_EXPECT_COMMIT:0:12}"
   INDEX_HTML="$(curl -fsS "${curl_flags[@]}" "${BASE_URL}/")"
   FRONT_COMMIT="$(
     printf '%s' "${INDEX_HTML}" \
@@ -54,8 +55,8 @@ if [[ -n "${SMOKE_EXPECT_COMMIT:-}" ]]; then
     echo "[smoke-vps] frontend commit marker missing in index.html"
     exit 1
   fi
-  if [[ "${FRONT_COMMIT}" != "${SMOKE_EXPECT_COMMIT}" ]]; then
-    echo "[smoke-vps] frontend commit mismatch. expected=${SMOKE_EXPECT_COMMIT} actual=${FRONT_COMMIT}"
+  if [[ "${FRONT_COMMIT}" != "${EXPECTED_FRONT_COMMIT}" ]]; then
+    echo "[smoke-vps] frontend commit mismatch. expected=${EXPECTED_FRONT_COMMIT} actual=${FRONT_COMMIT}"
     exit 1
   fi
   echo "[smoke-vps] frontend commit check passed (${FRONT_COMMIT})"

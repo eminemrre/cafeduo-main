@@ -46,6 +46,18 @@ jobs:
       - name: Run unit tests with coverage
         run: npm run test:ci
 
+      - name: Check for pending migrations
+        run: |
+          echo "⚠️ MIGRATION REMINDER ⚠️"
+          echo "Before deploying, ensure migrations are run on the target environment."
+          echo "Run: npm run migrate:status"
+          echo "Then: npm run migrate:up"
+          echo ""
+          if [ -d "migrations" ] && ls migrations/*.js 1> /dev/null 2>&1; then
+            echo "📋 Migration files found:"
+            ls -1 migrations/*.js | tail -5
+          fi
+
       - name: Build frontend
         run: npm run build
 

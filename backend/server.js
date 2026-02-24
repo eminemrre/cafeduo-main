@@ -40,6 +40,7 @@ const { Server } = require("socket.io");
 // Local modules
 const { pool, isDbConnected } = require('./db');
 const { cache, clearCache } = require('./middleware/cache'); // Redis Cache Import
+const redisClient = require('./config/redis'); // Redis client
 const { buildRateLimiterOptions } = require('./middleware/rateLimit');
 const { notFoundHandler, createErrorHandler } = require('./middleware/errorContract');
 const authRoutes = require('./routes/authRoutes');
@@ -67,8 +68,10 @@ const { createGameHandlers } = require('./handlers/gameHandlers');
 const { createProfileHandlers } = require('./handlers/profileHandlers');
 const { createGameRepository } = require('./repositories/gameRepository');
 const { createGameService } = require('./services/gameService');
+const { createLobbyCacheService } = require('./services/lobbyCacheService');
 const { registerGameCleanupJobs } = require('./jobs/gameCleanupJobs');
 const { authenticateToken, requireOwnership } = require('./middleware/auth'); // Auth Middleware Imports
+const { socketAuthMiddleware } = require('./middleware/socketAuth'); // Socket.IO Auth Middleware
 
 // Setup Logger
 const logger = require('./utils/logger');
@@ -161,7 +164,13 @@ const parseAllowedOrigins = (originsValue) => {
     .filter(Boolean);
 
   const baseOrigins = parsed.length > 0 ? parsed : DEFAULT_ALLOWED_ORIGINS;
-  // Localhost UI (dev, e2e, smoke) her zaman güvenli şekilde erişebilsin.
+
+  // SECURITY: Only add localhost origins in non-production environments
+  if (process.env.NODE_ENV === 'production') {
+    return baseOrigins;
+  }
+
+  // Localhost UI (dev, e2e, smoke) sadece geliştirme ortamında izin verilir.
   return Array.from(new Set([...baseOrigins, ...LOCAL_ALLOWED_ORIGINS]));
 };
 
@@ -252,8 +261,11 @@ const io = new Server(server, {
   }
 });
 
+// Apply Socket.IO authentication middleware
+io.use(socketAuthMiddleware);
+
 io.on('connection', (socket) => {
-  logger.info(`⚡ Client connected: ${socket.id}`);
+  logger.info(`⚡ Client connected: ${socket.id} (User: ${socket.username})`);
 
   // Genel oyun odasına katılım
   socket.on('join_game', (gameId) => {
@@ -263,7 +275,7 @@ io.on('connection', (socket) => {
     }
 
     socket.join(normalizedGameId);
-    logger.info(`Socket ${socket.id} joined game: ${normalizedGameId}`);
+    logger.info(`Socket ${socket.id} (${socket.username}) joined game: ${normalizedGameId}`);
   });
 
   socket.on('game_move', (data) => {
@@ -273,7 +285,7 @@ io.on('connection', (socket) => {
     const sanitizedMove = {
       gameId: normalizedGameId,
       move: data?.move ?? null,
-      player: typeof data?.player === 'string' ? data.player.slice(0, 64) : undefined,
+      player: socket.username, // Use authenticated username instead of client-provided player
       ts: Date.now(),
     };
 
@@ -288,7 +300,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
-    logger.info(`Client disconnected: ${socket.id}`);
+    logger.info(`Client disconnected: ${socket.id} (User: ${socket.username})`);
   });
 });
 
@@ -638,9 +650,14 @@ const gameRepository = createGameRepository({
   supportedGameTypes: SUPPORTED_GAME_TYPES,
 });
 
+const lobbyCacheService = createLobbyCacheService({
+  redisClient,
+});
+
 const gameService = createGameService({
   isDbConnected,
   gameRepository,
+  lobbyCacheService,
   getMemoryGames: () => MEMORY_GAMES,
   getMemoryUsers: () => MEMORY_USERS,
   supportedGameTypes: SUPPORTED_GAME_TYPES,
@@ -659,6 +676,7 @@ const gameHandlers = createGameHandlers({
   sanitizeScoreSubmission,
   pickWinnerFromResults,
   gameService,
+  lobbyCacheService,
   getMemoryGames: () => MEMORY_GAMES,
   setMemoryGames: (nextGames) => {
     MEMORY_GAMES = nextGames;

@@ -57,7 +57,7 @@ export const ResetPasswordPage: React.FC = () => {
     <section className="rf-section rf-page-shell noise-bg min-h-[70vh] flex items-center justify-center px-4 py-16">
       <div className="w-full max-w-md rf-screen-card p-6 md:p-8 rf-elevated">
         <p className="rf-terminal-strip">CafeDuo Güvenlik</p>
-        <h1 className="font-display-tr text-4xl leading-[1.05] text-white mt-3 mb-3 tracking-[0.08em] glitch-text-safe" data-text="ŞİFREYİ YENİLE">
+        <h1 className="font-display-tr text-4xl leading-[1.05] text-white mt-3 mb-3 tracking-[0.08em]">
           Şifreyi Yenile
         </h1>
         <p className="text-[var(--rf-muted)] text-sm mb-5">

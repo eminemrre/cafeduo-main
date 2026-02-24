@@ -305,6 +305,15 @@ export const api = {
     },
 
     logout: async (): Promise<void> => {
+      // Notify server to blacklist the token before clearing local state
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          await fetchAPI('/auth/logout', { method: 'POST' });
+        } catch {
+          // Server-side invalidation is best-effort; proceed with local cleanup regardless
+        }
+      }
       localStorage.removeItem('token');
       localStorage.removeItem('currentUser');
       localStorage.removeItem('cafe_user');

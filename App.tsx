@@ -15,7 +15,7 @@ import { CafeSelection } from './components/CafeSelection';
 import { CookieConsent } from './components/CookieConsent';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
 import { CustomCursor } from './components/CustomCursor';
 import { TankBattleHarness } from './components/dev/TankBattleHarness';
@@ -57,8 +57,6 @@ const PageLoader = () => (
 // Protected Route Component Props
 interface ProtectedRouteProps {
   children: React.ReactElement;
-  user: User | null;
-  authReady: boolean;
   isAdminRoute?: boolean;
   requiredRole?: string;
 }
@@ -79,12 +77,12 @@ const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) =
 // Protected Route Component
 const ProtectedRoute = ({
   children,
-  user,
-  authReady,
   isAdminRoute = false,
   requiredRole,
 }: ProtectedRouteProps) => {
-  if (!authReady) {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
     return <PageLoader />;
   }
   if (!user) {
@@ -99,16 +97,13 @@ const ProtectedRoute = ({
   return children;
 };
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   // Auth modal state
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
 
-  // User session state
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [authHydrating, setAuthHydrating] = useState(true);
-  const [hasSessionCheckIn, setHasSessionCheckIn] = useState(false);
+  // Auth context
+  const { user, isLoading, login, logout, updateUser, refreshUser, setHasSessionCheckIn, requiresCheckIn } = useAuth();
 
   // Toast hook
   const toast = useToast();
@@ -125,83 +120,32 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // Restore user session on load
+  // Handle auth query params
   useEffect(() => {
-    let isMounted = true;
+    const authQuery = new URLSearchParams(location.search).get('auth');
+    if (authQuery === 'login' || authQuery === 'register') {
+      setAuthMode(authQuery);
+      setIsAuthOpen(true);
+    }
+  }, [location.search]);
 
-    const restoreSession = async () => {
-      const token = localStorage.getItem('token');
-      const cachedUserRaw = localStorage.getItem('cafe_user');
-      const hasStoredCheckIn = () =>
-        typeof window !== 'undefined' &&
-        Boolean(token) &&
-        sessionStorage.getItem('cafeduo_checked_in_token') === token;
-      const syncSessionState = (user: User | null) => {
-        if (!isMounted) return;
-        setCurrentUser(user);
-        setIsLoggedIn(Boolean(user));
-        if (!user) {
-          setHasSessionCheckIn(false);
-          return;
-        }
-        if (user.isAdmin || user.role === 'cafe_admin') {
-          setHasSessionCheckIn(true);
-          return;
-        }
-        const table = String(user.table_number || '').trim().toUpperCase();
-        const hasTable = Boolean(table) && table !== 'NULL' && table !== 'UNDEFINED';
-        setHasSessionCheckIn(hasStoredCheckIn() && Boolean(user.cafe_id) && hasTable);
-      };
+  // Handle check-in state reset when leaving dashboard
+  useEffect(() => {
+    const previousPath = previousPathRef.current;
+    const currentPath = location.pathname;
 
-      if (!token) {
-        localStorage.removeItem('cafe_user');
-        syncSessionState(null);
-        if (isMounted) setAuthHydrating(false);
-        return;
-      }
+    if (
+      previousPath === '/dashboard' &&
+      currentPath !== '/dashboard' &&
+      user &&
+      !user.isAdmin &&
+      user.role !== 'cafe_admin'
+    ) {
+      setHasSessionCheckIn(false);
+    }
 
-      // Cache-first hydrate for snappy UI, then strict token verification.
-      if (cachedUserRaw) {
-        try {
-          const cachedUser = JSON.parse(cachedUserRaw) as User;
-          if (cachedUser?.id) {
-            syncSessionState(cachedUser);
-          } else {
-            localStorage.removeItem('cafe_user');
-          }
-        } catch (parseErr) {
-          console.warn('Cached user parse failed, clearing stale cache.', parseErr);
-          localStorage.removeItem('cafe_user');
-        }
-      }
-
-      try {
-        const verifiedUser = await api.auth.verifyToken();
-        if (verifiedUser?.id) {
-          console.log('Token verified, restoring session for:', verifiedUser.username);
-          syncSessionState(verifiedUser);
-          localStorage.setItem('cafe_user', JSON.stringify(verifiedUser));
-        } else {
-          localStorage.removeItem('token');
-          localStorage.removeItem('cafe_user');
-          syncSessionState(null);
-        }
-      } catch (e) {
-        console.error('Token verification failed', e);
-        localStorage.removeItem('token');
-        localStorage.removeItem('cafe_user');
-        syncSessionState(null);
-      } finally {
-        if (isMounted) setAuthHydrating(false);
-      }
-    };
-
-    void restoreSession();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    previousPathRef.current = currentPath;
+  }, [location.pathname, user, setHasSessionCheckIn]);
 
   const openLogin = () => {
     setAuthMode('login');
@@ -213,132 +157,88 @@ const App: React.FC = () => {
     setIsAuthOpen(true);
   };
 
-  useEffect(() => {
-    const authQuery = new URLSearchParams(location.search).get('auth');
-    if (authQuery === 'login' || authQuery === 'register') {
-      setAuthMode(authQuery);
-      setIsAuthOpen(true);
-    }
-  }, [location.search]);
+  const handleLoginSuccess = async (userData: User) => {
+    console.log("Login success:", userData);
 
-  const handleLoginSuccess = (user: User) => {
-    console.log("Login success:", user);
-
-    if (!user || !user.username) {
-      console.error("Invalid user data received:", user);
+    if (!userData || !userData.username) {
+      console.error("Invalid user data received:", userData);
       alert("Giriş başarısız: Geçersiz kullanıcı verisi.");
       return;
     }
 
-    setCurrentUser(user);
-    setIsLoggedIn(true);
-    setHasSessionCheckIn(user.isAdmin || user.role === 'cafe_admin');
+    // Prefer stored JWT if present; cookie-based auth may not provide a client token.
+    const token = localStorage.getItem('token');
+
+    // Use AuthContext login
+    login(userData, token);
     setIsAuthOpen(false);
-    localStorage.setItem('cafe_user', JSON.stringify(user));
 
     // Check for Daily Bonus
-    if (user.bonusReceived) {
+    if (userData.bonusReceived) {
       toast.success("🎉 Günlük giriş ödülü: 10 PUAN!");
     } else {
-      toast.success(`Hoş geldin, ${user.username}!`);
+      toast.success(`Hoş geldin, ${userData.username}!`);
     }
 
-    if (user.isAdmin) {
+    // Navigate based on role
+    if (userData.isAdmin) {
       navigate('/admin');
-    } else if (user.role === 'cafe_admin') {
+    } else if (userData.role === 'cafe_admin') {
       navigate('/cafe-admin');
     } else {
-      // Regular user logic handled in render (CafeSelection vs Dashboard)
       navigate('/dashboard');
     }
   };
 
   const handleLogout = async () => {
-    try {
-      await api.auth.logout();
-      toast.success('Çıkış yapıldı. Görüşmek üzere!');
-    } catch (err) {
-      console.error('Logout error:', err);
-    }
-    setIsLoggedIn(false);
-    setCurrentUser(null);
-    setHasSessionCheckIn(false);
-    sessionStorage.removeItem('cafeduo_checked_in_token');
-    localStorage.removeItem('cafe_user');
+    await logout();
+    toast.success('Çıkış yapıldı. Görüşmek üzere!');
     navigate('/');
   };
 
   const handleUpdateUser = async (updatedUser: User) => {
     try {
-      setCurrentUser(updatedUser);
-      localStorage.setItem('cafe_user', JSON.stringify(updatedUser));
+      // Optimistic update
+      updateUser(updatedUser);
+      // Server update
       const serverUser = await api.users.update(updatedUser);
-      setCurrentUser(serverUser);
-      localStorage.setItem('cafe_user', JSON.stringify(serverUser));
+      updateUser(serverUser);
     } catch (error) {
       console.error("Failed to update user", error);
+      toast.error('Kullanıcı güncellenirken hata oluştu');
     }
   };
 
   const handleRefreshUser = async () => {
     try {
-      const verifiedUser = await api.auth.verifyToken();
-      if (!verifiedUser) return;
-      setCurrentUser(verifiedUser);
-      localStorage.setItem('cafe_user', JSON.stringify(verifiedUser));
+      await refreshUser();
     } catch (error) {
       console.error('Failed to refresh user', error);
     }
   };
 
   const handleCheckInSuccess = (cafeName: string, tableNumber: string, cafeId: string | number) => {
-    if (currentUser) {
-      const updatedUser = { ...currentUser, cafe_name: cafeName, table_number: tableNumber, cafe_id: cafeId }; // Optimistic update
-      // Ideally we should fetch the full updated user from backend, but this is enough for UI
-      setCurrentUser(updatedUser);
+    if (user) {
+      const updatedUser = { 
+        ...user, 
+        cafe_name: cafeName, 
+        table_number: tableNumber, 
+        cafe_id: cafeId 
+      };
+      updateUser(updatedUser);
       setHasSessionCheckIn(true);
-      localStorage.setItem('cafe_user', JSON.stringify(updatedUser));
-      const token = localStorage.getItem('token');
-      if (token) {
-        sessionStorage.setItem('cafeduo_checked_in_token', token);
-      }
       navigate('/dashboard');
     }
-  };
-
-  useEffect(() => {
-    const previousPath = previousPathRef.current;
-    const currentPath = location.pathname;
-
-    if (
-      previousPath === '/dashboard' &&
-      currentPath !== '/dashboard' &&
-      currentUser &&
-      !currentUser.isAdmin &&
-      currentUser.role !== 'cafe_admin'
-    ) {
-      setHasSessionCheckIn(false);
-      sessionStorage.removeItem('cafeduo_checked_in_token');
-    }
-
-    previousPathRef.current = currentPath;
-  }, [location.pathname, currentUser]);
-
-  const requiresCheckIn = (user: User | null): boolean => {
-    if (!user) return false;
-    if (user.isAdmin || user.role === 'cafe_admin') return false;
-    if (!hasSessionCheckIn) return true;
-
-    const hasCafe = Boolean(user.cafe_id);
-    const table = String(user.table_number || '').trim().toUpperCase();
-    const hasTable = Boolean(table) && table !== 'NULL' && table !== 'UNDEFINED';
-    return !(hasCafe && hasTable);
   };
 
   return (
     <div className="rf-app-shell min-h-screen text-[var(--rf-ink)] font-sans selection:bg-cyan-300/30 selection:text-white">
       <CustomCursor />
-      <Navbar isLoggedIn={isLoggedIn} user={currentUser} onLogout={handleLogout} />
+      <Navbar 
+        isLoggedIn={!!user} 
+        user={user} 
+        onLogout={handleLogout} 
+      />
 
       <main>
         <Suspense fallback={<PageLoader />}>
@@ -349,9 +249,9 @@ const App: React.FC = () => {
                   <Hero
                     onLogin={openLogin}
                     onRegister={openRegister}
-                    isLoggedIn={isLoggedIn}
-                    userRole={currentUser?.role}
-                    isAdmin={currentUser?.isAdmin}
+                    isLoggedIn={!!user}
+                    userRole={user?.role}
+                    isAdmin={user?.isAdmin}
                   />
                   <HowItWorks />
                   <Games onPlayClick={openRegister} />
@@ -360,14 +260,17 @@ const App: React.FC = () => {
               } />
 
               <Route path="/dashboard" element={
-                <ProtectedRoute user={currentUser} authReady={!authHydrating}>
+                <ProtectedRoute>
                   <PageTransition>
                     <ErrorBoundary>
-                      {requiresCheckIn(currentUser) ? (
-                        <CafeSelection currentUser={currentUser!} onCheckInSuccess={handleCheckInSuccess} />
+                      {requiresCheckIn() ? (
+                        <CafeSelection 
+                          currentUser={user!} 
+                          onCheckInSuccess={handleCheckInSuccess} 
+                        />
                       ) : (
                         <Dashboard
-                          currentUser={currentUser!}
+                          currentUser={user!}
                           onUpdateUser={handleUpdateUser}
                           onRefreshUser={handleRefreshUser}
                         />
@@ -378,20 +281,20 @@ const App: React.FC = () => {
               } />
 
               <Route path="/admin" element={
-                <ProtectedRoute user={currentUser} authReady={!authHydrating} isAdminRoute={true}>
+                <ProtectedRoute isAdminRoute={true}>
                   <PageTransition>
                     <ErrorBoundary>
-                      <AdminDashboard currentUser={currentUser!} />
+                      <AdminDashboard currentUser={user!} />
                     </ErrorBoundary>
                   </PageTransition>
                 </ProtectedRoute>
               } />
 
               <Route path="/cafe-admin" element={
-                <ProtectedRoute user={currentUser} authReady={!authHydrating} requiredRole="cafe_admin">
+                <ProtectedRoute requiredRole="cafe_admin">
                   <PageTransition>
                     <ErrorBoundary>
-                      <CafeDashboard currentUser={currentUser!} />
+                      <CafeDashboard currentUser={user!} />
                     </ErrorBoundary>
                   </PageTransition>
                 </ProtectedRoute>
@@ -399,7 +302,7 @@ const App: React.FC = () => {
 
               <Route path="/gizlilik" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
               <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />
-              <Route path="/store" element={<PageTransition><Store user={currentUser} setUser={setCurrentUser} onShowToast={toast} /></PageTransition>} />
+              <Route path="/store" element={<PageTransition><Store user={user} updateUser={updateUser} onShowToast={toast} /></PageTransition>} />
               <Route path="/dev/tank-harness" element={<PageTransition><TankBattleHarness /></PageTransition>} />
 
               <Route path="*" element={<Navigate to="/" replace />} />
@@ -422,12 +325,12 @@ const App: React.FC = () => {
 };
 
 // AuthProvider + ToastProvider ile sarmalanmış App
-const AppWithProviders: React.FC = () => (
+const App: React.FC = () => (
   <AuthProvider>
     <ToastProvider>
-      <App />
+      <AppContent />
     </ToastProvider>
   </AuthProvider>
 );
 
-export default AppWithProviders;
+export default App;

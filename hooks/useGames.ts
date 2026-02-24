@@ -537,6 +537,9 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
       if (intervalRef.current !== null && typeof clearInterval === 'function') {
         clearInterval(intervalRef.current);
       }
+      gamesRequestInFlightRef.current = false;
+      activeGameRequestInFlightRef.current = false;
+      historyRequestInFlightRef.current = false;
     };
   }, [fetchGames, checkActiveGame, fetchGameHistory]);
 

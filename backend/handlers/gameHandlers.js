@@ -7,6 +7,36 @@ const {
 } = require('../utils/gameStateMachine');
 const { createGameMoveService } = require('../services/gameMoveService');
 
+// Import modular utilities (for gradual migration)
+const {
+  isChessGameType: importedIsChessGameType,
+  normalizeChessClockConfig: importedNormalizeChessClockConfig,
+  activateChessClockState: importedActivateChessClockState,
+  createInitialChessState: importedCreateInitialChessState,
+  resolveParticipantColor: importedResolveParticipantColor,
+  sanitizeChessMovePayload: importedSanitizeChessMovePayload,
+  buildChessStateFromEngine: importedBuildChessStateFromEngine,
+  normalizeRuntimeChessClock: importedNormalizeRuntimeChessClock,
+  buildChessTimeoutResolution: importedBuildChessTimeoutResolution,
+} = require('./game/chessUtils');
+
+const {
+  createEmissionUtils,
+} = require('./game/emissionUtils');
+
+const {
+  isNonCompetitiveGameType: importedIsNonCompetitiveGameType,
+  applyDbSettlement: importedApplyDbSettlement,
+  applyMemorySettlement: importedApplyMemorySettlement,
+  mapTransitionError: importedMapTransitionError,
+} = require('./game/settlementUtils');
+
+const {
+  normalizeDrawOfferAction: importedNormalizeDrawOfferAction,
+  normalizeDrawOffer: importedNormalizeDrawOffer,
+  createDrawOfferUtils,
+} = require('./game/drawOfferUtils');
+
 const createGameHandlers = ({
   pool,
   isDbConnected,
@@ -19,6 +49,7 @@ const createGameHandlers = ({
   sanitizeScoreSubmission,
   pickWinnerFromResults,
   gameService,
+  lobbyCacheService,
   getMemoryGames,
   setMemoryGames,
   getMemoryUsers,
@@ -651,6 +682,15 @@ const createGameHandlers = ({
         if (!createdGame) {
           throw new Error('Created game could not be returned');
         }
+        
+        // Cache invalidation - oyun oluşturuldu
+        lobbyCacheService?.onGameCreated({
+          tableCode: table,
+          cafeId: req.user?.cafe_id,
+        }).catch((err) => {
+          logger.warn(`Cache invalidation failed on game created: ${err.message}`);
+        });
+        
         emitLobbyUpdate({
           action: 'game_created',
           gameId: createdGame.id,
@@ -824,6 +864,14 @@ const createGameHandlers = ({
         }
 
         await client.query('COMMIT');
+        
+        // Cache invalidation - oyuna katılındı
+        lobbyCacheService?.onGameJoined({
+          tableCode: joinedGame.table,
+        }).catch((err) => {
+          logger.warn(`Cache invalidation failed on game joined: ${err.message}`);
+        });
+        
         emitRealtimeUpdate(joinedGame.id, {
           type: 'game_joined',
           gameId: joinedGame.id,
@@ -2186,6 +2234,14 @@ const createGameHandlers = ({
       if (result.rows.length === 0) {
         return res.status(404).json({ error: 'Oyun bulunamadı veya silme yetkiniz yok.' });
       }
+      
+      // Cache invalidation - oyun silindi
+      lobbyCacheService?.onGameDeleted({
+        tableCode: result.rows[0]?.table,
+      }).catch((err) => {
+        logger.warn(`Cache invalidation failed on game deleted: ${err.message}`);
+      });
+      
       emitLobbyUpdate({
         action: 'game_deleted',
         gameId: id,

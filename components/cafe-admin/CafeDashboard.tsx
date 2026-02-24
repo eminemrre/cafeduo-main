@@ -114,7 +114,7 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
           </div>
           <div>
             <p className="rf-terminal-strip">Cafe Control Net</p>
-            <h1 className="text-3xl md:text-4xl leading-[1.02] font-display-tr text-white tracking-[0.08em] mb-1 glitch-text-safe break-words" data-text="KAFE YÖNETİM PANELİ">
+            <h1 className="text-3xl md:text-4xl leading-[1.02] font-display-tr text-white tracking-[0.08em] mb-1 break-words">
               Kafe Yönetim Paneli
             </h1>
             <p className="text-[var(--rf-muted)] uppercase tracking-[0.12em] text-xs md:text-sm">

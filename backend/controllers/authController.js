@@ -6,6 +6,7 @@ const { pool, isDbConnected } = require('../db');
 const logger = require('../utils/logger');
 const memoryState = require('../store/memoryState');
 const { sendPasswordResetEmail } = require('../services/emailService');
+const redisClient = require('../config/redis');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
@@ -166,27 +167,17 @@ if (!JWT_SECRET) {
     throw new Error('JWT_SECRET is required. Refusing to start with an insecure fallback secret.');
 }
 
+/**
+ * Generate JWT token with minimal payload for security
+ * Only includes essential claims: id, role, isAdmin
+ * All other user data is fetched from database on each request
+ */
 const generateToken = (user) => {
-    const gamesPlayed = Number(user.gamesPlayed ?? user.games_played ?? 0);
-    const wins = Number(user.wins ?? 0);
-    const points = Number(user.points ?? 0);
-    const isAdmin = Boolean(user.isAdmin ?? user.is_admin ?? false);
-    const cafeId = user.cafe_id ?? null;
-    const tableNumber = user.table_number ?? null;
-
     return jwt.sign(
         {
             id: user.id,
-            email: user.email,
-            username: user.username,
             role: user.role || 'user',
-            isAdmin,
-            points,
-            wins,
-            gamesPlayed,
-            cafe_id: cafeId,
-            table_number: tableNumber,
-            department: user.department || '',
+            isAdmin: Boolean(user.isAdmin ?? user.is_admin ?? false),
         },
         JWT_SECRET,
         { expiresIn: '7d' }
@@ -371,9 +362,10 @@ const authController = {
                 return res.status(401).json({ error: 'Geçersiz e-posta veya şifre.' });
             }
 
+            // SECURITY: Never use plain-text password comparison
             const match = memoryUser.password_hash
                 ? await bcrypt.compare(normalizedPassword, memoryUser.password_hash)
-                : String(memoryUser.password || '') === normalizedPassword;
+                : false;
             if (!match) {
                 return res.status(401).json({ error: 'Geçersiz e-posta veya şifre.' });
             }
@@ -680,6 +672,62 @@ const authController = {
         } catch (error) {
             logger.error('resetPassword flow failed', error);
             return res.status(500).json({ error: 'Şifre sıfırlama işlemi tamamlanamadı.' });
+        }
+    },
+
+    // LOGOUT
+    async logout(req, res) {
+        const authHeader = req.headers['authorization'];
+        const isBearer = typeof authHeader === 'string' && authHeader.startsWith('Bearer ');
+        const token = isBearer ? authHeader.slice(7).trim() : null;
+
+        if (!token) {
+            return res.status(400).json({ error: 'Token required for logout.' });
+        }
+
+        try {
+            // Decode token to get expiry time (without verification, we just need the exp)
+            const decoded = jwt.decode(token);
+            
+            if (decoded && decoded.exp) {
+                const expiresIn = decoded.exp - Math.floor(Date.now() / 1000);
+                
+                // Only blacklist if token hasn't expired yet
+                if (expiresIn > 0) {
+                    if (redisClient && redisClient.status === 'ready') {
+                        // Add to Redis blacklist with TTL = token's remaining lifetime
+                        await redisClient.setex(`blacklist:token:${token}`, expiresIn, '1');
+                        logger.info('Token blacklisted', {
+                            userId: decoded.id,
+                            expiresIn,
+                            method: 'redis'
+                        });
+                    } else {
+                        // Fallback: in-memory blacklist (not recommended for production)
+                        if (!global.tokenBlacklist) {
+                            global.tokenBlacklist = new Map();
+                        }
+                        global.tokenBlacklist.set(token, decoded.exp);
+                        logger.info('Token blacklisted (in-memory)', {
+                            userId: decoded.id,
+                            expiresIn,
+                            method: 'memory'
+                        });
+                    }
+                }
+            }
+
+            return res.json({
+                success: true,
+                message: 'Logged out successfully.'
+            });
+        } catch (error) {
+            logger.error('Logout error:', error);
+            // Still return success - client should clear local token regardless
+            return res.json({
+                success: true,
+                message: 'Logged out successfully.'
+            });
         }
     },
 

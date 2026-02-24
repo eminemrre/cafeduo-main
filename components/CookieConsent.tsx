@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Cookie, Settings2, X } from 'lucide-react';
 
 const CONSENT_KEY = 'cookie_consent';
@@ -7,6 +8,7 @@ export const CookieConsent: React.FC = () => {
   const [hydrated, setHydrated] = useState(false);
   const [consentAccepted, setConsentAccepted] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
+  const portalRoot = useMemo(() => (typeof document !== 'undefined' ? document.body : null), []);
 
   useEffect(() => {
     const consent = localStorage.getItem(CONSENT_KEY) === 'true';
@@ -21,14 +23,14 @@ export const CookieConsent: React.FC = () => {
     setPanelOpen(false);
   };
 
-  if (!hydrated) return null;
+  if (!hydrated || !portalRoot) return null;
 
-  return (
+  return createPortal(
     <>
       <button
         type="button"
         onClick={() => setPanelOpen((prev) => !prev)}
-        className="fixed cookie-floating-anchor right-3 sm:right-4 z-[120] pointer-events-auto inline-flex items-center gap-2 px-3 py-2 bg-[#07152f]/95 border border-cyan-400/45 text-cyan-100 hover:text-cyan-300 hover:border-cyan-300/70 transition-colors uppercase tracking-[0.12em] text-[11px] font-semibold backdrop-blur-sm"
+        className="fixed cookie-floating-anchor left-auto right-3 sm:right-4 z-[220] pointer-events-auto inline-flex items-center gap-2 px-3 py-2 bg-[#07152f]/95 border border-cyan-400/45 text-cyan-100 hover:text-cyan-300 hover:border-cyan-300/70 transition-colors uppercase tracking-[0.12em] text-[11px] font-semibold backdrop-blur-sm"
         aria-label="Çerez Tercihleri"
         aria-expanded={panelOpen}
       >
@@ -37,7 +39,7 @@ export const CookieConsent: React.FC = () => {
       </button>
 
       {panelOpen && (
-        <div className="fixed cookie-consent-panel cookie-panel-anchor left-auto right-3 sm:right-4 w-[calc(100vw-1.5rem)] sm:w-[26rem] max-w-[26rem] pointer-events-auto rf-screen-card noise-bg p-4 sm:p-5 z-[121] animate-slide-up max-h-[min(22rem,calc(100vh-10rem))] overflow-y-auto">
+        <div className="fixed cookie-consent-panel cookie-panel-anchor left-auto right-3 sm:right-4 w-[calc(100vw-1.5rem)] sm:w-[26rem] max-w-[26rem] pointer-events-auto rf-screen-card noise-bg p-4 sm:p-5 z-[221] animate-slide-up max-h-[min(22rem,calc(100vh-10rem))] overflow-y-auto">
           <div className="flex items-start gap-4">
             <div className="p-3 bg-cyan-500/15 text-cyan-300 border border-cyan-400/30 shrink-0">
               <Cookie size={24} />
@@ -72,6 +74,7 @@ export const CookieConsent: React.FC = () => {
           </div>
         </div>
       )}
-    </>
+    </>,
+    portalRoot
   );
 };

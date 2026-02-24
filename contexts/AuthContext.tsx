@@ -13,10 +13,13 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (user: User, token: string) => void;
+  hasSessionCheckIn: boolean;
+  login: (user: User, token?: string | null) => void;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
   refreshUser: () => Promise<void>;
+  setHasSessionCheckIn: (value: boolean) => void;
+  requiresCheckIn: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,6 +31,7 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasSessionCheckIn, setHasSessionCheckInState] = useState(false);
 
   /**
    * Sayfa yenilendiğinde session'ı restore et
@@ -37,21 +41,65 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       try {
         const token = localStorage.getItem('token');
         
-        if (token) {
-          // Token'ı verify et
-          const userData = await api.auth.verifyToken();
-          if (userData) {
-            setUser(userData);
-          } else {
-            // Token geçersiz
-            localStorage.removeItem('token');
+        if (!token) {
+          localStorage.removeItem('cafe_user');
+          setIsLoading(false);
+          return;
+        }
+
+        // Cache-first hydrate for snappy UI
+        const cachedUserRaw = localStorage.getItem('cafe_user');
+        if (cachedUserRaw) {
+          try {
+            const cachedUser = JSON.parse(cachedUserRaw) as User;
+            if (cachedUser?.id) {
+              setUser(cachedUser);
+              // Restore check-in state
+              const hasStoredCheckIn = sessionStorage.getItem('cafeduo_checked_in_token') === token;
+              if (cachedUser.isAdmin || cachedUser.role === 'cafe_admin') {
+                setHasSessionCheckInState(true);
+              } else {
+                const table = String(cachedUser.table_number || '').trim().toUpperCase();
+                const hasTable = Boolean(table) && table !== 'NULL' && table !== 'UNDEFINED';
+                setHasSessionCheckInState(hasStoredCheckIn && Boolean(cachedUser.cafe_id) && hasTable);
+              }
+            }
+          } catch (parseErr) {
+            console.warn('Cached user parse failed, clearing stale cache.', parseErr);
             localStorage.removeItem('cafe_user');
           }
+        }
+        
+        // Verify token with backend
+        const userData = await api.auth.verifyToken();
+        if (userData) {
+          setUser(userData);
+          localStorage.setItem('cafe_user', JSON.stringify(userData));
+          
+          // Update check-in state
+          const hasStoredCheckIn = sessionStorage.getItem('cafeduo_checked_in_token') === token;
+          if (userData.isAdmin || userData.role === 'cafe_admin') {
+            setHasSessionCheckInState(true);
+          } else {
+            const table = String(userData.table_number || '').trim().toUpperCase();
+            const hasTable = Boolean(table) && table !== 'NULL' && table !== 'UNDEFINED';
+            setHasSessionCheckInState(hasStoredCheckIn && Boolean(userData.cafe_id) && hasTable);
+          }
+        } else {
+          // Token geçersiz
+          localStorage.removeItem('token');
+          localStorage.removeItem('cafe_user');
+          sessionStorage.removeItem('cafeduo_checked_in_token');
+          setUser(null);
+          setHasSessionCheckInState(false);
         }
       } catch (err) {
         console.error('Session restore failed:', err);
         localStorage.removeItem('token');
         localStorage.removeItem('cafe_user');
+        sessionStorage.removeItem('cafeduo_checked_in_token');
+        setUser(null);
+        setHasSessionCheckInState(false);
       } finally {
         setIsLoading(false);
       }
@@ -63,10 +111,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   /**
    * Login işlemi
    */
-  const login = useCallback((userData: User, token: string) => {
-    localStorage.setItem('token', token);
+  const login = useCallback((userData: User, token?: string | null) => {
+    if (token) {
+      localStorage.setItem('token', token);
+    }
     localStorage.setItem('cafe_user', JSON.stringify(userData));
     setUser(userData);
+    setHasSessionCheckInState(userData.isAdmin || userData.role === 'cafe_admin');
   }, []);
 
   /**
@@ -80,7 +131,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       localStorage.removeItem('token');
       localStorage.removeItem('cafe_user');
+      sessionStorage.removeItem('cafeduo_checked_in_token');
       setUser(null);
+      setHasSessionCheckInState(false);
     }
   }, []);
 
@@ -113,14 +166,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [user?.id]);
 
+  /**
+   * Check-in state setter
+   */
+  const setHasSessionCheckIn = useCallback((value: boolean) => {
+    setHasSessionCheckInState(value);
+    const token = localStorage.getItem('token');
+    if (value && token) {
+      sessionStorage.setItem('cafeduo_checked_in_token', token);
+    } else {
+      sessionStorage.removeItem('cafeduo_checked_in_token');
+    }
+  }, []);
+
+  /**
+   * Check if user requires check-in
+   */
+  const requiresCheckIn = useCallback((): boolean => {
+    if (!user) return false;
+    if (user.isAdmin || user.role === 'cafe_admin') return false;
+    if (!hasSessionCheckIn) return true;
+
+    const hasCafe = Boolean(user.cafe_id);
+    const table = String(user.table_number || '').trim().toUpperCase();
+    const hasTable = Boolean(table) && table !== 'NULL' && table !== 'UNDEFINED';
+    return !(hasCafe && hasTable);
+  }, [user, hasSessionCheckIn]);
+
   const value: AuthContextType = {
     user,
     isLoading,
     isAuthenticated: !!user,
+    hasSessionCheckIn,
     login,
     logout,
     updateUser,
-    refreshUser
+    refreshUser,
+    setHasSessionCheckIn,
+    requiresCheckIn,
   };
 
   return (

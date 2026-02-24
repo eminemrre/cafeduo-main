@@ -9,7 +9,7 @@ export const PrivacyPolicy: React.FC = () => {
                 <div className="text-center mb-12 rf-screen-card p-8">
                     <p className="rf-terminal-strip justify-center mb-3">Veri Güvenliği Protokolü</p>
                     <Shield className="w-16 h-16 text-cyan-300 mx-auto mb-4" />
-                    <h1 className="text-4xl md:text-5xl leading-[1.05] font-display-tr tracking-[0.08em] mb-2 glitch-text-safe break-words" data-text="GİZLİLİK & KVKK">
+                    <h1 className="text-4xl md:text-5xl leading-[1.05] font-display-tr tracking-[0.08em] mb-2 break-words">
                         Gizlilik Politikası ve KVKK Aydınlatma Metni
                     </h1>
                     <p className="text-[var(--rf-muted)]">Son güncelleme: {new Date().toLocaleDateString('tr-TR')}</p>

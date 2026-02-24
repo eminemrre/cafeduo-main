@@ -24,7 +24,7 @@ interface UserInventoryItem {
 
 interface StoreProps {
     user: User | null;
-    setUser: React.Dispatch<React.SetStateAction<User | null>>;
+    updateUser: (updates: Partial<User>) => void;
     onShowToast?: {
         success?: (message: string) => void;
         error?: (message: string) => void;
@@ -32,7 +32,7 @@ interface StoreProps {
     };
 }
 
-export const Store: React.FC<StoreProps> = ({ user, setUser, onShowToast }) => {
+export const Store: React.FC<StoreProps> = ({ user, updateUser, onShowToast }) => {
     const [items, setItems] = useState<StoreItem[]>([]);
     const [inventory, setInventory] = useState<UserInventoryItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -79,7 +79,7 @@ export const Store: React.FC<StoreProps> = ({ user, setUser, onShowToast }) => {
             if (data.success) {
                 onShowToast?.success(`${item.title} başarıyla satın alındı!`);
                 // update user points locally
-                setUser(prev => (prev ? { ...prev, points: data.remainingPoints } : prev));
+                updateUser({ points: data.remainingPoints });
                 // add to local inventory
                 setInventory(prev => [data.inventoryItem, ...prev]);
             } else {

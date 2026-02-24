@@ -454,7 +454,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                         </div>
                         <div>
                             <span className="rf-terminal-strip">Terminal TR-X</span>
-                            <h1 className="font-display-tr text-3xl md:text-5xl leading-[1.02] text-white tracking-[0.08em] mt-1 glitch-text-safe break-words" data-text="YÖNETİM PANELİ">
+                            <h1 className="font-display-tr text-3xl md:text-5xl leading-[1.02] text-white tracking-[0.08em] mt-1 break-words">
                                 YÖNETİM PANELİ
                             </h1>
                             <p className="text-cyan-200/80 font-mono text-sm uppercase tracking-[0.14em] mt-1">

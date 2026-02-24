@@ -50,3 +50,7 @@ temp_assets/
 # Deprecated/temporary
 *.sh.log
 antigravity/
+
+# Database migrations (keep migration files, ignore state)
+# pgmigrations table is created in database, not in filesystem
+# Migration files (*.js) should be tracked in git

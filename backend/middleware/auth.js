@@ -2,11 +2,15 @@ const jwt = require('jsonwebtoken');
 const { pool, isDbConnected } = require('../db');
 const memoryState = require('../store/memoryState');
 const { buildApiErrorPayload } = require('../utils/routeHelpers');
+const redisClient = require('../config/redis');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
+// SECURITY: Configure blacklist fail mode (default: closed = reject on Redis failure)
+const BLACKLIST_FAIL_MODE = process.env.BLACKLIST_FAIL_MODE || 'closed';
+
 if (!JWT_SECRET) {
-    throw new Error('JWT_SECRET is required. Refusing to start with an insecure fallback secret.');
+  throw new Error('JWT_SECRET is required. Refusing to start with an insecure fallback secret.');
 }
 
 const sendAuthError = (res, { status, code, message, details = null }) => {
@@ -40,6 +44,52 @@ const authenticateToken = async (req, res, next) => {
                 status: 401,
                 code: 'TOKEN_INVALID_FORMAT',
                 message: 'Invalid token format',
+            });
+        }
+
+        // Check token blacklist (Redis-based session invalidation)
+        let isBlacklisted = false;
+        let blacklistCheckFailed = false;
+        
+        // First check Redis blacklist
+        if (redisClient && redisClient.status === 'ready') {
+            try {
+                isBlacklisted = await redisClient.get(`blacklist:token:${token}`);
+            } catch (redisErr) {
+                blacklistCheckFailed = true;
+                console.error('Redis blacklist check failed:', redisErr.message);
+                
+                // SECURITY: Fail-closed behavior - reject request when blacklist check fails
+                if (BLACKLIST_FAIL_MODE === 'closed') {
+                    return sendAuthError(res, {
+                        status: 503,
+                        code: 'BLACKLIST_CHECK_FAILED',
+                        message: 'Authentication service temporarily unavailable. Please try again.',
+                    });
+                }
+                // If fail-open mode, continue to in-memory fallback
+            }
+        }
+        
+        // Fallback to in-memory blacklist if Redis not available or check failed (in fail-open mode)
+        if (!isBlacklisted && !blacklistCheckFailed && global.tokenBlacklist) {
+            const entry = global.tokenBlacklist.get(token);
+            if (entry) {
+                const now = Math.floor(Date.now() / 1000);
+                // Clean up expired entries
+                if (entry < now) {
+                    global.tokenBlacklist.delete(token);
+                } else {
+                    isBlacklisted = true;
+                }
+            }
+        }
+        
+        if (isBlacklisted) {
+            return sendAuthError(res, {
+                status: 401,
+                code: 'TOKEN_REVOKED',
+                message: 'Session has been revoked. Please log in again.',
             });
         }
 

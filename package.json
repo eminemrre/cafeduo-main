@@ -38,7 +38,12 @@
     "deploy:vds": "bash scripts/deploy/vds-deploy.sh",
     "perf:api-p95": "node scripts/perf/api-p95.mjs",
     "smoke:prod": "node scripts/smoke/prod-smoke.mjs",
-    "smoke:live": "SMOKE_BASE_URL=https://cafeduotr.com node scripts/smoke/prod-smoke.mjs"
+    "smoke:live": "SMOKE_BASE_URL=https://cafeduotr.com node scripts/smoke/prod-smoke.mjs",
+    "migrate:create": "node-pg-migrate create",
+    "migrate:up": "node-pg-migrate up",
+    "migrate:down": "node-pg-migrate down",
+    "migrate:redo": "node-pg-migrate redo",
+    "migrate:status": "node-pg-migrate status"
   },
   "dependencies": {
     "@openrouter/sdk": "^0.5.1",
@@ -100,6 +105,7 @@
     "concurrently": "^9.2.1",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
+    "node-pg-migrate": "^8.0.4",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.17",
     "ts-jest": "^29.4.6",

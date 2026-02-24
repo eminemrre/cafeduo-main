@@ -68,19 +68,11 @@ describe('useGames', () => {
       useGames({ currentUser: mockUser, tableCode: mockTableCode })
     );
 
-    // Wait for useEffect to run
-    await waitFor(() => {
-      expect(api.games.list).toHaveBeenCalled();
+    await act(async () => {
+      await result.current.refetch();
     });
 
-    // Fast-forward timers
-    act(() => {
-      jest.advanceTimersByTime(100);
-    });
-
-    await waitFor(() => {
-      expect(result.current.games).toEqual(mockGames);
-    });
+    expect(result.current.games).toEqual(mockGames);
   });
 
   it('requests all visible lobby games for checked-in users', async () => {
@@ -112,17 +104,11 @@ describe('useGames', () => {
       useGames({ currentUser: mockUser, tableCode: mockTableCode })
     );
 
-    await waitFor(() => {
-      expect(api.games.list).toHaveBeenCalled();
+    await act(async () => {
+      await result.current.refetch();
     });
 
-    act(() => {
-      jest.advanceTimersByTime(100);
-    });
-
-    await waitFor(() => {
-      expect(result.current.games).toEqual(mockGames);
-    });
+    expect(result.current.games).toEqual(mockGames);
   });
 
   it('deduplicates malformed duplicate lobby entries by game id', async () => {
@@ -145,9 +131,7 @@ describe('useGames', () => {
   });
 
   it('keeps stable state when API request fails', async () => {
-    (api.games.list as jest.Mock)
-      .mockRejectedValueOnce(new Error('Network error'))
-      .mockResolvedValueOnce([]);
+    (api.games.list as jest.Mock).mockResolvedValue([]);
     (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);
 
     const { result } = renderHook(() => 
@@ -156,6 +140,14 @@ describe('useGames', () => {
 
     await waitFor(() => {
       expect(api.games.list).toHaveBeenCalled();
+    });
+
+    (api.games.list as jest.Mock)
+      .mockRejectedValueOnce(new Error('Network error'))
+      .mockResolvedValue([]);
+
+    await act(async () => {
+      await result.current.refetch();
     });
 
     await waitFor(() => {

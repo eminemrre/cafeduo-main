@@ -1,6 +1,7 @@
 const createGameService = ({
   isDbConnected,
   gameRepository,
+  lobbyCacheService,
   getMemoryGames,
   getMemoryUsers,
   supportedGameTypes,
@@ -24,15 +25,33 @@ const createGameService = ({
         : actorTableCode;
 
     if (await isDbConnected()) {
+      const fetchWaitingGames = () => {
+        if (!adminActor && scopeAllRequested) {
+          return gameRepository.listWaitingGamesByCafe({ cafeId: actorCafeId });
+        }
+        if (effectiveTableCode) {
+          return gameRepository.listWaitingGamesByTable({ tableCode: effectiveTableCode });
+        }
+        return gameRepository.listWaitingGames();
+      };
+
+      // Cache scope belirle
+      let cacheScope = 'all';
       if (!adminActor && scopeAllRequested) {
-        return gameRepository.listWaitingGamesByCafe({ cafeId: actorCafeId });
+        cacheScope = 'cafe';
+      } else if (effectiveTableCode) {
+        cacheScope = 'table';
       }
 
-      if (effectiveTableCode) {
-        return gameRepository.listWaitingGamesByTable({ tableCode: effectiveTableCode });
+      if (!lobbyCacheService?.getWaitingGames) {
+        return fetchWaitingGames();
       }
 
-      return gameRepository.listWaitingGames();
+      // Cache ile oyunları getir
+      return lobbyCacheService.getWaitingGames(
+        { scope: cacheScope, tableCode: effectiveTableCode, cafeId: actorCafeId },
+        fetchWaitingGames
+      );
     }
 
     const memoryUsers = Array.isArray(getMemoryUsers?.()) ? getMemoryUsers() : [];

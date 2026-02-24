@@ -9,6 +9,19 @@ Object.defineProperty(global, 'TextDecoder', {
   value: TextDecoder,
 });
 
+if (typeof global.setImmediate === 'undefined') {
+  (global as typeof globalThis & { setImmediate: (fn: (...args: any[]) => void, ...args: any[]) => any }).setImmediate =
+    ((fn: (...args: any[]) => void, ...args: any[]) => {
+      const invoke = () => fn(...args);
+      if (typeof queueMicrotask === 'function') {
+        queueMicrotask(invoke);
+      } else {
+        Promise.resolve().then(invoke);
+      }
+      return 0;
+    }) as any;
+}
+
 // Mock matchMedia
 if (typeof window !== 'undefined') {
   Object.defineProperty(window, 'matchMedia', {

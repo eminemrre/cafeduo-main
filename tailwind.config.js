@@ -30,9 +30,9 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['"Chakra Petch"', "sans-serif"],
-        display: ['"Teko"', "sans-serif"],
-        body: ['"Chakra Petch"', "sans-serif"],
+        sans: ['"Chakra Petch"', '"Noto Sans"', "sans-serif"],
+        display: ['"Teko"', '"Noto Sans Display"', "sans-serif"],
+        body: ['"Chakra Petch"', '"Noto Sans"', "sans-serif"],
       },
       boxShadow: {
         soft: "0 10px 30px rgba(15, 17, 21, 0.35)",

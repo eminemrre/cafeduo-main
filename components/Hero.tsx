@@ -1,9 +1,7 @@
-import React, { useRef, useState } from 'react';
-import { motion, useMotionValue, useSpring, useTransform, useReducedMotion } from 'framer-motion';
+import React, { useRef } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Sparkles, Coffee, ShieldCheck, Gamepad2, Zap } from 'lucide-react';
-import { RetroButton } from './RetroButton';
-import { ABTest } from './ABTest';
+import { ArrowRight, Sparkles, Coffee, Gamepad2 } from 'lucide-react';
 
 interface HeroProps {
   onLogin: () => void;
@@ -62,7 +60,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
             </motion.div>
           </div>
 
-          <div lang="tr" className="font-display flex flex-col uppercase tracking-tighter mix-blend-screen text-shadow-glitch">
+          <div lang="tr" className="font-display-tr flex flex-col uppercase tracking-tight mix-blend-screen">
             <div className="overflow-hidden relative">
               <motion.span
                 className="block text-[6rem] sm:text-[9rem] lg:text-[11rem] leading-[0.8] text-ink-50 font-bold"
@@ -70,39 +68,32 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                 animate={reduceMotion ? { y: 0, skewY: 0 } : { y: 0, skewY: 0 }}
                 transition={{ delay: 0.2, duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
               >
-                BEKLEME
+                OYNA
               </motion.span>
             </div>
-            <div className="overflow-visible relative -translate-y-4 lg:-translate-y-8">
+            <div className="overflow-visible relative -translate-y-1 lg:-translate-y-2">
               <motion.span
-                className="hero-tr-diacritic hero-manual-diacritic hero-word-sureni block text-[5rem] sm:text-[8rem] lg:text-[10rem] leading-[1.02] text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-pink font-bold"
+                className="hero-tr-diacritic block text-[5rem] sm:text-[8rem] lg:text-[10rem] leading-[1.02] text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-pink font-bold"
                 initial={{ y: "100%", skewY: -10 }}
                 animate={reduceMotion ? { y: 0, skewY: 0 } : { y: 0, skewY: 0 }}
                 transition={{ delay: 0.35, duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
-                aria-label="SÜRENİ"
+                aria-label="KAZAN"
               >
-                SURENI
-                <span aria-hidden className="hero-dot dot-u-left" />
-                <span aria-hidden className="hero-dot dot-u-right" />
-                <span aria-hidden className="hero-dot dot-i" />
+                KAZAN
               </motion.span>
             </div>
-            <div className="overflow-visible relative -translate-y-8 lg:-translate-y-16 ml-4 lg:ml-12">
+            <div className="overflow-visible relative -translate-y-2 lg:-translate-y-4 ml-2 lg:ml-6">
               <motion.span
-                className="hero-tr-diacritic hero-manual-diacritic hero-word-module block text-[6rem] sm:text-[9.5rem] lg:text-[12rem] leading-[0.98] text-ink-50 font-bold"
+                className="hero-tr-diacritic normal-case tracking-normal block text-[6rem] sm:text-[9.5rem] lg:text-[12rem] leading-[1.04] text-ink-50 font-bold"
                 initial={{ y: "100%", skewY: 5 }}
                 animate={reduceMotion ? { y: 0, skewY: 0 } : { y: 0, skewY: 0 }}
                 transition={{ delay: 0.5, duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
-                aria-label="ÖDÜLE"
+                aria-label="ÖDÜL"
               >
-                ODULE
-                <span aria-hidden className="hero-dot dot-o-left" />
-                <span aria-hidden className="hero-dot dot-o-right" />
-                <span aria-hidden className="hero-dot dot-u-left" />
-                <span aria-hidden className="hero-dot dot-u-right" />
+                Ödül
               </motion.span>
               <div className="absolute right-0 bottom-12 text-sm font-sans tracking-[0.2em] text-neon-blue rotate-90 origin-bottom-right opacity-50 hidden sm:block">
-                // ODAK: SOSYAL EŞLEŞME
+                // OYUN OYNA, ÖDÜL KAZAN
               </div>
             </div>
           </div>
@@ -113,7 +104,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.7, duration: 0.6 }}
           >
-            Seni mekandaki aktif oyuncularla <span className="text-neon-pink font-bold">45-60 saniyelik</span> rekabetçi mini oyunlarda eşleştiren sosyal oyun motoru.
+            Kafede beklerken seni mekandaki aktif oyuncularla <span className="text-neon-pink font-bold">45-60 saniyelik</span> rekabetçi mini oyunlarda eşleştiren sosyal oyun platformu.
           </motion.p>
 
           <motion.div

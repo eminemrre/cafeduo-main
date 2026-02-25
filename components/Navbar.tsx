@@ -43,7 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
 
   return (
     <>
-      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] w-[92%] md:w-auto transition-transform duration-300">
+      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] w-[92%] md:w-auto transition-transform duration-300" role="navigation" aria-label="Ana navigasyon">
         <div className="bg-cyber-dark/80 backdrop-blur-xl border border-neon-blue/40 shadow-[8px_8px_0px_rgba(255,0,234,0.3)] md:px-6 px-4 py-3 flex items-center justify-between gap-6">
 
           <motion.div

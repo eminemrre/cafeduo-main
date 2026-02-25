@@ -59,13 +59,15 @@ body,
 
 body {
   margin: 0;
-  font-family: "Chakra Petch", sans-serif;
+  font-family: "Chakra Petch", "Noto Sans", sans-serif;
   background-color: var(--rf-bg-deep);
   color: var(--rf-ink);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   text-rendering: optimizeLegibility;
   font-feature-settings: "calt" 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
 }
 
@@ -177,83 +179,11 @@ body::after {
 }
 
 .hero-tr-diacritic {
-  font-family: "Teko", "Chakra Petch", sans-serif !important;
-  font-weight: 700;
+  font-family: "Noto Sans", "Noto Sans Display", "Oswald", "Chakra Petch", sans-serif !important;
+  font-weight: 800;
   font-variant-ligatures: none;
   text-transform: none;
   text-shadow: none !important;
-}
-
-.hero-manual-diacritic {
-  position: relative;
-  display: inline-block;
-}
-
-.hero-manual-diacritic .hero-dot {
-  position: absolute;
-  width: 0.09em;
-  height: 0.09em;
-  border-radius: 999px;
-  background: rgba(239, 244, 255, 0.96);
-  pointer-events: none;
-  top: 0.18em;
-  transform: translate(-50%, -100%);
-}
-
-.hero-word-sureni .dot-u-left {
-  left: 22.5%;
-}
-
-.hero-word-sureni .dot-u-right {
-  left: 29%;
-}
-
-.hero-word-sureni .dot-i {
-  left: 92.5%;
-}
-
-.hero-word-module .dot-o-left {
-  left: 7.8%;
-}
-
-.hero-word-module .dot-o-right {
-  left: 16.2%;
-}
-
-.hero-word-module .dot-u-left {
-  left: 49.2%;
-}
-
-.hero-word-module .dot-u-right {
-  left: 56.4%;
-}
-
-.cookie-floating-anchor {
-  left: auto !important;
-  right: 1rem !important;
-  bottom: calc(var(--rf-bottom-nav-clearance, 7rem) + env(safe-area-inset-bottom));
-}
-
-.cookie-panel-anchor {
-  left: auto !important;
-  right: 1rem !important;
-  bottom: calc(var(--rf-bottom-nav-clearance, 7rem) + 4.25rem + env(safe-area-inset-bottom));
-}
-
-.cookie-consent-panel {
-  position: fixed !important;
-}
-
-@media (max-width: 640px) {
-  .cookie-floating-anchor {
-    right: 0.75rem !important;
-    bottom: calc(var(--rf-bottom-nav-clearance, 7rem) + 0.35rem + env(safe-area-inset-bottom));
-  }
-
-  .cookie-panel-anchor {
-    right: 0.75rem !important;
-    bottom: calc(var(--rf-bottom-nav-clearance, 7rem) + 4.9rem + env(safe-area-inset-bottom));
-  }
 }
 
 @keyframes slide-up {

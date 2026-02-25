@@ -7,7 +7,7 @@ export const Footer: React.FC = () => {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative mt-8 border-t border-cyan-400/24 bg-[linear-gradient(180deg,#040b1a,#040915)]">
+    <footer className="relative mt-8 border-t border-cyan-400/24 bg-[linear-gradient(180deg,#040b1a,#040915)]" role="contentinfo">
       <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-cyan-500/12 to-transparent pointer-events-none" />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
         <div className="grid md:grid-cols-3 gap-7 items-start">

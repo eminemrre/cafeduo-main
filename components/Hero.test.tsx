@@ -61,7 +61,7 @@ describe('Hero', () => {
 
     render(<Hero onLogin={onLogin} onRegister={onRegister} isLoggedIn={false} />);
 
-    expect(screen.getByText('BEKLEME')).toBeInTheDocument();
+    expect(screen.getByText('OYNA')).toBeInTheDocument();
     expect(screen.getByText('OYUNA GİR')).toBeInTheDocument();
     expect(screen.getByText('OTURUM AÇ')).toBeInTheDocument();
 

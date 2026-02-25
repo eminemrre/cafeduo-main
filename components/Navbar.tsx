@@ -118,6 +118,9 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
 
           <motion.button
             onClick={() => setIsOpen(!isOpen)}
+            aria-expanded={isOpen}
+            aria-controls="mobile-menu"
+            aria-label={isOpen ? 'Menüyü kapat' : 'Menüyü aç'}
             className="md:hidden w-10 h-10 border border-neon-blue bg-cyber-card text-neon-blue flex items-center justify-center"
             whileTap={{ scale: 0.9 }}
           >
@@ -140,6 +143,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            id="mobile-menu"
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}

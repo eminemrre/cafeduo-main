@@ -28,8 +28,10 @@ export const ABTest: React.FC<ABTestProps> = ({ testName, variantA, variantB }) 
             localStorage.setItem(`ab_test_${testName}`, newVariant);
             setVariant(newVariant);
 
-            // Log exposure (In real app, send to analytics)
-            console.log(`📊 A/B Test Exposure: ${testName} -> Variant ${newVariant}`);
+            // In production, send to analytics service instead of console.log
+            if (process.env.NODE_ENV === 'development') {
+                console.log(`📊 A/B Test Exposure: ${testName} -> Variant ${newVariant}`);
+            }
         }
     }, [testName]);
 

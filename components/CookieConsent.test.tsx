@@ -15,7 +15,7 @@ describe('CookieConsent', () => {
     expect(screen.queryByText('Çerez Kullanımı')).not.toBeInTheDocument();
   });
 
-  it('auto-accepts and shows informational banner on first visit', async () => {
+  it('shows banner on first visit without auto-accepting', async () => {
     (window.localStorage.getItem as jest.Mock).mockReturnValue(null);
 
     render(<CookieConsent />);
@@ -25,18 +25,23 @@ describe('CookieConsent', () => {
       expect(screen.getByText(/çerezleri kullanıyoruz/i)).toBeInTheDocument();
     });
 
-    expect(window.localStorage.setItem).toHaveBeenCalledWith('cookie_consent', 'true');
+    // Should NOT auto-accept - user must click button
+    expect(window.localStorage.setItem).not.toHaveBeenCalled();
   });
 
-  it('allows dismissing the informational banner', async () => {
+  it('stores consent only after user clicks accept button', async () => {
     (window.localStorage.getItem as jest.Mock).mockReturnValue(null);
 
     render(<CookieConsent />);
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Anladım' }));
+    const acceptButton = await screen.findByRole('button', { name: 'Anladım' });
+    fireEvent.click(acceptButton);
 
     await waitFor(() => {
       expect(screen.queryByText('Çerez Kullanımı')).not.toBeInTheDocument();
     });
+
+    // Verify consent was stored after user clicked
+    expect(window.localStorage.setItem).toHaveBeenCalledWith('cookie_consent', 'true');
   });
 });

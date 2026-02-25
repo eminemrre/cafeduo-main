@@ -114,6 +114,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
             {isLoggedIn ? (
               <button
                 onClick={handlePanelClick}
+                aria-label="Kontrol paneline git"
                 className="group relative px-8 py-5 bg-neon-blue text-cyber-dark font-sans uppercase font-bold tracking-widest text-lg md:text-xl border-2 border-neon-blue hover:bg-transparent hover:text-neon-blue transition-colors flex items-center justify-center gap-4 shadow-[#00f3ff_4px_4px_0_0] transform hover:translate-x-1 hover:translate-y-1 hover:shadow-none"
               >
                 Panele Geç <ArrowRight className="group-hover:translate-x-1 transition-transform" />
@@ -122,6 +123,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
               <>
                 <button
                   onClick={onRegister}
+                  aria-label="Kayıt ol ve oyuna başla"
                   className="group relative px-8 py-5 bg-neon-pink text-cyber-dark font-sans uppercase font-bold tracking-widest text-lg md:text-xl border-2 border-neon-pink hover:bg-transparent hover:text-neon-pink transition-colors flex items-center justify-center gap-4 shadow-[#ff00ea_4px_4px_0_0] active:translate-x-1 active:translate-y-1 active:shadow-none"
                 >
                   <Sparkles size={20} /> OYUNA GİR
@@ -130,6 +132,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                 <button
                   onClick={onLogin}
                   data-testid="hero-login-button"
+                  aria-label="Oturum aç"
                   className="px-8 py-5 text-ink-50 font-sans uppercase font-bold tracking-widest text-lg border-2 border-cyber-border hover:border-neon-blue hover:bg-neon-blue/10 transition-colors flex items-center gap-4"
                 >
                   OTURUM AÇ

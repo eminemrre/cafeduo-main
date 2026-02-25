@@ -44,14 +44,18 @@ export const Footer: React.FC = () => {
             <p className="font-pixel text-[10px] tracking-[0.2em] uppercase text-cyan-300/75 mb-3">İletişim</p>
             <div className="flex items-center gap-3">
               <a
-                href="#"
+                href="https://instagram.com/cafeduotr"
+                target="_blank"
+                rel="noopener noreferrer"
                 aria-label="Instagram"
                 className="w-10 h-10 rounded-full border border-cyan-400/35 bg-[#0a1834]/85 flex items-center justify-center text-cyan-100 hover:text-cyan-300 hover:border-cyan-300/58 transition-colors"
               >
                 <Instagram size={18} />
               </a>
               <a
-                href="#"
+                href="https://x.com/cafeduotr"
+                target="_blank"
+                rel="noopener noreferrer"
                 aria-label="Twitter"
                 className="w-10 h-10 rounded-full border border-cyan-400/35 bg-[#0a1834]/85 flex items-center justify-center text-cyan-100 hover:text-cyan-300 hover:border-cyan-300/58 transition-colors"
               >

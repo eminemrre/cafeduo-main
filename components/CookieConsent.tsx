@@ -12,19 +12,15 @@ export const CookieConsent: React.FC = () => {
   useEffect(() => {
     setHydrated(true);
     const consent = localStorage.getItem(CONSENT_KEY);
+    // Only show banner if user hasn't consented yet
     if (!consent) {
-      // Auto-accept cookies on first visit
-      localStorage.setItem(CONSENT_KEY, 'true');
       setShowBanner(true);
-      // Auto-hide banner after 5 seconds
-      const timer = setTimeout(() => {
-        setShowBanner(false);
-      }, 5000);
-      return () => clearTimeout(timer);
     }
   }, []);
 
-  const handleDismiss = () => {
+  const handleAccept = () => {
+    // Store consent only after user explicitly clicks
+    localStorage.setItem(CONSENT_KEY, 'true');
     setShowBanner(false);
   };
 
@@ -45,7 +41,7 @@ export const CookieConsent: React.FC = () => {
             </p>
             <button
               type="button"
-              onClick={handleDismiss}
+              onClick={handleAccept}
               className="w-full bg-cyan-500 hover:bg-cyan-400 text-[#041226] py-2 text-sm font-bold transition-colors uppercase tracking-[0.08em]"
             >
               Anladım

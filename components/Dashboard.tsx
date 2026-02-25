@@ -304,6 +304,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
     const nonCompetitiveGame = new Set(['UNO Sosyal', '101 Okey Sosyal', 'Monopoly Sosyal']).has(activeGameType);
     setGameResult((prev) => prev ?? { winner, earnedPoints: safeEarnedPoints });
     setShowGlitchAnim(true);
+
+    // Finish game on backend for social games that don't use Socket.IO
+    if (nonCompetitiveGame && activeGameId) {
+      api.games.finish(activeGameId, winner || null).catch((err) => {
+        console.error('Social game finish request failed:', err);
+      });
+    }
+
     void refetch();
     if (onRefreshUser) {
       void onRefreshUser();

@@ -156,11 +156,11 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
           <div className="relative w-full max-w-[500px] bg-cyber-dark/80 backdrop-blur-2xl border-t border-l border-neon-blue shadow-[16px_16px_0px_rgba(0,243,255,0.15)] p-8 md:p-10">
             {/* Top Bar Pattern */}
             <div className="flex justify-between items-center mb-8 border-b border-cyber-border pb-4">
-              <span className="font-display text-2xl text-ink-50 uppercase tracking-widest">SİSTEM TR-X</span>
-              <div className="flex gap-2">
-                <div className="w-3 h-3 bg-neon-pink animate-pulse" />
-                <div className="w-3 h-3 border border-neon-blue" />
-                <div className="w-3 h-3 border border-neon-blue" />
+              <span className="font-display text-xl sm:text-2xl text-ink-50 uppercase tracking-widest">SİSTEM TR-X</span>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-neon-pink animate-pulse shrink-0" />
+                <div className="w-3 h-3 border border-neon-blue shrink-0" />
+                <div className="w-3 h-3 border border-neon-blue shrink-0" />
               </div>
             </div>
 

@@ -94,6 +94,7 @@ export const MonopolySocial: React.FC<MonopolySocialProps> = ({
   const opponentLabel = useMemo(() => (isBot ? 'MONOPOLY BOT' : (opponentName || 'Arkadaşın')), [isBot, opponentName]);
   const [state, setState] = useState<MonopolyState>(() => initState());
   const sentRef = useRef(false);
+  const leaveHandledRef = useRef(false);
 
   useEffect(() => {
     setState(initState());

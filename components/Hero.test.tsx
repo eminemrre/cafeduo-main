@@ -55,6 +55,14 @@ describe('Hero', () => {
     jest.clearAllMocks();
   });
 
+  it('renders the new slogan "KAFENİN OYUN PLATFORMU"', () => {
+    render(<Hero onLogin={jest.fn()} onRegister={jest.fn()} isLoggedIn={false} />);
+
+    expect(screen.getByText('KAFENİN')).toBeInTheDocument();
+    expect(screen.getByText('OYUN')).toBeInTheDocument();
+    expect(screen.getByText('PLATFORMU')).toBeInTheDocument();
+  });
+
   it('renders logged-out CTAs and triggers register/login callbacks', () => {
     const onLogin = jest.fn();
     const onRegister = jest.fn();

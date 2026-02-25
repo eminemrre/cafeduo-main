@@ -63,37 +63,35 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
           <div lang="tr" className="hero-title-wrapper flex flex-col uppercase tracking-tight mix-blend-screen">
             <div className="overflow-hidden relative">
               <motion.span
-                className="hero-title block text-[6rem] sm:text-[9rem] lg:text-[12rem] leading-[0.8] text-ink-50 font-black"
+                className="hero-title block text-[5rem] sm:text-[7rem] lg:text-[9rem] leading-[0.85] text-ink-50 font-black"
                 initial={{ y: "100%", skewY: 10 }}
                 animate={reduceMotion ? { y: 0, skewY: 0 } : { y: 0, skewY: 0 }}
                 transition={{ delay: 0.2, duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
               >
-                BEKLE
+                KAFENİN
               </motion.span>
             </div>
             <div className="overflow-visible relative -translate-y-2 lg:-translate-y-4">
               <motion.span
-                className="hero-title block text-[6rem] sm:text-[9rem] lg:text-[12rem] leading-[0.88] text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-pink font-black"
+                className="hero-title block text-[5rem] sm:text-[7rem] lg:text-[9rem] leading-[0.88] text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-pink font-black"
                 initial={{ y: "100%", skewY: -10 }}
                 animate={reduceMotion ? { y: 0, skewY: 0 } : { y: 0, skewY: 0 }}
                 transition={{ delay: 0.35, duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
-                aria-label="EĞLEN"
               >
-                EĞLEN
+                OYUN
               </motion.span>
             </div>
             <div className="overflow-visible relative -translate-y-4 lg:-translate-y-8 ml-2 lg:ml-6">
               <motion.span
-                className="hero-title block text-[6rem] sm:text-[9.5rem] lg:text-[13rem] leading-[0.9] text-ink-50 font-black"
+                className="hero-title block text-[5rem] sm:text-[7.5rem] lg:text-[10rem] leading-[0.9] text-ink-50 font-black"
                 initial={{ y: "100%", skewY: 5 }}
                 animate={reduceMotion ? { y: 0, skewY: 0 } : { y: 0, skewY: 0 }}
                 transition={{ delay: 0.5, duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
-                aria-label="KAZAN"
               >
-                KAZAN
+                PLATFORMU
               </motion.span>
               <div className="absolute right-0 bottom-12 text-sm font-sans tracking-[0.25em] text-neon-blue rotate-90 origin-bottom-right opacity-50 hidden sm:block">
-                // BEKLE, EĞLEN, KAZAN
+                // KAFENİN OYUN PLATFORMU
               </div>
             </div>
           </div>

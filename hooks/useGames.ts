@@ -508,7 +508,8 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
       document.addEventListener('visibilitychange', handleVisibilityChange);
     }
 
-    // Polling başlat (4 saniyede bir)
+    // Fallback polling (15 saniyede bir) - Socket.IO primary
+    // Socket.IO lobby_updated event'i çalışmazsa fallback olarak kullanılır
     if (typeof setInterval === 'function') {
       intervalRef.current = setInterval(() => {
         if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
@@ -526,7 +527,7 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
         if (pollTickRef.current % 4 === 0) {
           void fetchGameHistory({ silent: true });
         }
-      }, 4000);
+      }, 15000); // 4s yerine 15s - Socket.IO primary olduğu için daha az sıklık
     }
 
     // Cleanup

@@ -50,18 +50,6 @@ class SocketService {
     private socket: Socket | null = null;
 
     /**
-     * Get JWT token from localStorage
-     */
-    private getToken(): string | undefined {
-        try {
-            const token = localStorage.getItem('token');
-            return token || undefined;
-        } catch {
-            return undefined;
-        }
-    }
-
-    /**
      * Establish socket connection with authentication
      */
     connect() {
@@ -74,9 +62,6 @@ class SocketService {
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
             reconnectionAttempts: 5,
-            auth: {
-                token: this.getToken(),
-            },
         });
 
         this.socket.on('connect', () => {
@@ -97,17 +82,7 @@ class SocketService {
             console.log('❌ Socket disconnected:', reason);
             // If server disconnected, try to reconnect with fresh token
             if (reason === 'io server disconnect') {
-                // Reconnect with fresh token
                 this.socket?.connect();
-            }
-        });
-
-        // Update auth token before each reconnection attempt
-        this.socket.io?.on('reconnect_attempt', () => {
-            const freshToken = this.getToken();
-            if (freshToken && this.socket) {
-                this.socket.auth = { token: freshToken };
-                console.log('🔄 Reconnecting with fresh token...');
             }
         });
     }
@@ -119,34 +94,6 @@ class SocketService {
         if (this.socket) {
             this.socket.disconnect();
             this.socket = null;
-        }
-    }
-
-    /**
-     * Update authentication token and reconnect if needed
-     * Call this after login/logout to update socket auth
-     */
-    updateToken(token: string | null) {
-        if (token) {
-            try {
-                localStorage.setItem('token', token);
-            } catch {
-                console.error('Failed to save token to localStorage');
-            }
-        } else {
-            try {
-                localStorage.removeItem('token');
-            } catch {
-                console.error('Failed to remove token from localStorage');
-            }
-        }
-
-        // If socket is connected, disconnect and reconnect with new token
-        if (this.socket) {
-            this.disconnect();
-            if (token) {
-                this.connect();
-            }
         }
     }
 

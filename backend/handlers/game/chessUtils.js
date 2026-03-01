@@ -4,6 +4,7 @@
  */
 
 const { Chess } = require('chess.js');
+const { nextChessResult, parseIsoTimestampMs } = require('./utils/helperUtils');
 
 const CHESS_GAME_TYPE = 'Retro Satranç';
 const CHESS_SQUARE_RE = /^[a-h][1-8]$/;
@@ -81,9 +82,12 @@ const activateChessClockState = (state) => {
       baseMs: config.baseMs,
       incrementMs: config.incrementMs,
       label: sourceClock.label || config.label,
-      activeAt: nowIso,
+      whiteMs: Number.isFinite(Number(sourceClock.whiteMs)) ? Number(sourceClock.whiteMs) : config.baseMs,
+      blackMs: Number.isFinite(Number(sourceClock.blackMs)) ? Number(sourceClock.blackMs) : config.baseMs,
       lastTickAt: nowIso,
     },
+    startedAt: source.startedAt || nowIso,
+    updatedAt: nowIso,
   };
 };
 
@@ -91,149 +95,108 @@ const activateChessClockState = (state) => {
  * Create initial chess state with clock configuration
  */
 const createInitialChessState = (rawClockConfig) => {
-  const config = normalizeChessClockConfig(rawClockConfig);
-  const nowIso = new Date().toISOString();
-
+  const chess = new Chess();
+  const clockConfig = normalizeChessClockConfig(rawClockConfig);
   return {
-    fen: 'startpos',
+    version: 1,
+    fen: chess.fen(),
+    turn: chess.turn(),
+    inCheck: false,
+    isGameOver: false,
+    result: null,
     moveHistory: [],
     clock: {
-      baseMs: config.baseMs,
-      incrementMs: config.incrementMs,
-      label: config.label,
-      activeAt: nowIso,
-      lastTickAt: nowIso,
-      whiteRemainingMs: config.baseMs,
-      blackRemainingMs: config.baseMs,
+      baseMs: clockConfig.baseMs,
+      incrementMs: clockConfig.incrementMs,
+      label: clockConfig.label,
+      whiteMs: clockConfig.baseMs,
+      blackMs: clockConfig.baseMs,
+      lastTickAt: null,
     },
+    startedAt: null,
+    updatedAt: new Date().toISOString(),
   };
 };
 
 /**
  * Resolve participant color (white or black) for a chess game
+ * Returns 'w' for white, 'b' for black, or null if not a participant
  */
 const resolveParticipantColor = (participant, game) => {
-  if (!game || !game.gameState || !game.gameState.chess) {
-    return null;
-  }
-
-  const { player1, player2 } = game;
-  const moveHistory = game.gameState.chess.moveHistory || [];
-
-  // First player is white, second is black
-  if (participant === player1) return 'white';
-  if (participant === player2) return 'black';
-
-  // For guest names, check move history
-  const hasMovedAsWhite = moveHistory.some(m => m.player === participant && m.color === 'white');
-  const hasMovedAsBlack = moveHistory.some(m => m.player === participant && m.color === 'black');
-
-  if (hasMovedAsWhite) return 'white';
-  if (hasMovedAsBlack) return 'black';
-
-  // Default: if odd number of moves, next is black; if even, next is white
-  return moveHistory.length % 2 === 0 ? 'white' : 'black';
+  const host = String(game?.host_name || game?.hostName || '').trim();
+  const guest = String(game?.guest_name || game?.guestName || '').trim();
+  if (!participant) return null;
+  if (participant.toLowerCase() === host.toLowerCase()) return 'w';
+  if (participant.toLowerCase() === guest.toLowerCase()) return 'b';
+  return null;
 };
 
 /**
  * Sanitize chess move payload
  */
 const sanitizeChessMovePayload = (payload) => {
-  if (!payload || typeof payload !== 'object') {
+  const from = String(payload?.from || '').trim().toLowerCase();
+  const to = String(payload?.to || '').trim().toLowerCase();
+  const promotionRaw = String(payload?.promotion || '').trim().toLowerCase();
+  const promotion = ['q', 'r', 'b', 'n'].includes(promotionRaw) ? promotionRaw : undefined;
+  if (!CHESS_SQUARE_RE.test(from) || !CHESS_SQUARE_RE.test(to)) {
     return null;
   }
-
-  const { from, to, promotion } = payload;
-
-  if (typeof from !== 'string' || !CHESS_SQUARE_RE.test(from)) {
-    return null;
-  }
-
-  if (typeof to !== 'string' || !CHESS_SQUARE_RE.test(to)) {
-    return null;
-  }
-
-  const validPromotions = new Set(['q', 'r', 'b', 'n', 'queen', 'rook', 'bishop', 'knight']);
-  const sanitizedPromotion =
-    promotion && validPromotions.has(String(promotion).toLowerCase())
-      ? String(promotion).toLowerCase().charAt(0)
-      : undefined;
-
-  return {
-    from,
-    to,
-    promotion: sanitizedPromotion,
-  };
-};
-
-/**
- * Get the next chess result (checkmate, draw, etc.)
- */
-const nextChessResult = (chess) => {
-  if (chess.isCheckmate()) return 'checkmate';
-  if (chess.isDraw()) return 'draw';
-  if (chess.isStalemate()) return 'stalemate';
-  if (chess.isInsufficientMaterial()) return 'insufficient_material';
-  if (chess.isThreefoldRepetition()) return 'threefold_repetition';
-  return null;
+  return { from, to, ...(promotion ? { promotion } : {}) };
 };
 
 /**
  * Build chess state from chess.js engine state
  */
 const buildChessStateFromEngine = (chess, previousState, lastMove) => {
-  const entry = lastMove && typeof lastMove === 'object' ? lastMove : null;
+  const moveHistory = Array.isArray(previousState?.moveHistory)
+    ? previousState.moveHistory.slice(-300)
+    : [];
+  const entry = lastMove
+    ? {
+        from: lastMove.from,
+        to: lastMove.to,
+        san: lastMove.san,
+        lan: lastMove.lan,
+        color: lastMove.color,
+        piece: lastMove.piece,
+        captured: lastMove.captured || null,
+        promotion: lastMove.promotion || null,
+        ts: new Date().toISOString(),
+      }
+    : null;
 
+  const nextHistory = entry ? [...moveHistory, entry] : moveHistory;
   return {
+    version: 1,
     fen: chess.fen(),
-    moveHistory: chess.history({ verbose: true }).map((move, idx) => ({
-      color: move.color,
-      from: move.from,
-      to: move.to,
-      piece: move.piece,
-      captured: move.captured || undefined,
-      promotion: move.promotion || undefined,
-      san: move.san,
-      before: idx === 0 ? undefined : chess.history({ verbose: true })[idx - 1].before,
-      after: move.after,
-      player: entry?.player || (move.color === 'w' ? previousState?.player1 : previousState?.player2),
-      timestamp: entry?.timestamp || new Date().toISOString(),
-    })),
+    turn: chess.turn(),
+    inCheck: chess.inCheck(),
+    isGameOver: chess.isGameOver(),
+    result: nextChessResult(chess),
+    moveHistory: nextHistory,
+    lastMove: entry,
+    updatedAt: new Date().toISOString(),
   };
-};
-
-/**
- * Parse ISO timestamp to milliseconds
- */
-const parseIsoTimestampMs = (value) => {
-  if (!value) return Date.now();
-  const date = new Date(value);
-  return Number.isFinite(date.getTime()) ? date.getTime() : Date.now();
 };
 
 /**
  * Normalize runtime chess clock state
  */
 const normalizeRuntimeChessClock = (rawClock) => {
-  if (!rawClock || typeof rawClock !== 'object') {
-    return null;
-  }
-
-  const baseMs = Number(rawClock.baseMs) || DEFAULT_CHESS_CLOCK.baseMs;
-  const incrementMs = Number(rawClock.incrementMs) || DEFAULT_CHESS_CLOCK.incrementMs;
-  const whiteRemainingMs = Number(rawClock.whiteRemainingMs) ?? baseMs;
-  const blackRemainingMs = Number(rawClock.blackRemainingMs) ?? baseMs;
-  const activeAt = rawClock.activeAt || new Date().toISOString();
-  const lastTickAt = rawClock.lastTickAt || activeAt;
+  const source = rawClock && typeof rawClock === 'object' ? rawClock : {};
+  const config = normalizeChessClockConfig(source);
+  const whiteRaw = Number(source.whiteMs);
+  const blackRaw = Number(source.blackMs);
+  const parsedTick = parseIsoTimestampMs(source.lastTickAt);
 
   return {
-    baseMs,
-    incrementMs,
-    whiteRemainingMs: Math.max(0, whiteRemainingMs),
-    blackRemainingMs: Math.max(0, blackRemainingMs),
-    activeAt,
-    lastTickAt,
-    label: rawClock.label || `${baseMs / 60000}+${incrementMs / 1000}`,
+    baseMs: config.baseMs,
+    incrementMs: config.incrementMs,
+    label: source.label ? String(source.label).slice(0, 32) : config.label,
+    whiteMs: Number.isFinite(whiteRaw) ? Math.max(0, Math.floor(whiteRaw)) : config.baseMs,
+    blackMs: Number.isFinite(blackRaw) ? Math.max(0, Math.floor(blackRaw)) : config.baseMs,
+    lastTickAt: parsedTick ? new Date(parsedTick).toISOString() : null,
   };
 };
 
@@ -241,79 +204,75 @@ const normalizeRuntimeChessClock = (rawClock) => {
  * Build chess timeout resolution for when a player runs out of time
  */
 const buildChessTimeoutResolution = ({
-  game,
-  nowMs = Date.now(),
-  logger = console,
+  gameType,
+  status,
+  hostName,
+  guestName,
+  gameState,
 }) => {
-  const chessState = game?.gameState?.chess;
-  if (!chessState) {
-    return null;
+  if (!isChessGameType(gameType)) return null;
+  
+  const { normalizeGameStatus, GAME_STATUS } = require('../../utils/gameStateMachine');
+  
+  if (normalizeGameStatus(status) !== GAME_STATUS.ACTIVE) return null;
+
+  const currentState = gameState && typeof gameState === 'object' ? gameState : {};
+  const currentChessState =
+    currentState.chess && typeof currentState.chess === 'object'
+      ? currentState.chess
+      : null;
+  if (!currentChessState) return null;
+
+  const normalizedClock = normalizeRuntimeChessClock(currentChessState.clock);
+  const lastTickAtMs = parseIsoTimestampMs(normalizedClock.lastTickAt);
+  if (!lastTickAtMs) return null;
+
+  let chess;
+  try {
+    chess = new Chess(String(currentChessState.fen || ''));
+  } catch {
+    chess = new Chess();
   }
 
-  const clock = normalizeRuntimeChessClock(chessState.clock);
-  if (!clock) {
-    return null;
-  }
+  const activeColor = chess.turn() === 'b' ? 'b' : 'w';
+  const activeClockKey = activeColor === 'w' ? 'whiteMs' : 'blackMs';
+  const elapsedMs = Math.max(0, Date.now() - lastTickAtMs);
+  const remainingMs = Math.max(0, Number(normalizedClock[activeClockKey] || 0) - elapsedMs);
+  if (remainingMs > 0) return null;
 
-  const lastTickMs = parseIsoTimestampMs(clock.lastTickAt);
-  const elapsedMs = nowMs - lastTickMs;
+  const host = String(hostName || '').trim();
+  const guest = String(guestName || '').trim();
+  const timeoutWinner = activeColor === 'w' ? guest : host;
+  const nowIso = new Date().toISOString();
 
-  const { player1, player2 } = game;
-  const moveHistory = chessState.moveHistory || [];
-  const nextToMoveColor = moveHistory.length % 2 === 0 ? 'white' : 'black';
-
-  let nextWhiteRemainingMs = clock.whiteRemainingMs;
-  let nextBlackRemainingMs = clock.blackRemainingMs;
-  let timedOutColor = null;
-
-  if (nextToMoveColor === 'white') {
-    nextWhiteRemainingMs = Math.max(0, clock.whiteRemainingMs - elapsedMs);
-    if (nextWhiteRemainingMs === 0) {
-      timedOutColor = 'white';
-    }
-  } else {
-    nextBlackRemainingMs = Math.max(0, clock.blackRemainingMs - elapsedMs);
-    if (nextBlackRemainingMs === 0) {
-      timedOutColor = 'black';
-    }
-  }
-
-  const nextClock = {
-    ...clock,
-    whiteRemainingMs: nextWhiteRemainingMs,
-    blackRemainingMs: nextBlackRemainingMs,
-    lastTickAt: new Date(nowMs).toISOString(),
+  const nextChessState = {
+    ...buildChessStateFromEngine(chess, currentChessState, null),
+    winner: timeoutWinner || null,
+    result: 'timeout',
+    isGameOver: true,
+    timedOutColor: activeColor,
+    clock: {
+      ...normalizedClock,
+      [activeClockKey]: 0,
+      lastTickAt: null,
+    },
+    updatedAt: nowIso,
   };
 
-  if (timedOutColor) {
-    const winnerColor = timedOutColor === 'white' ? 'black' : 'white';
-    const winner = winnerColor === 'white' ? player1 : player2;
-
-    return {
-      timedOut: true,
-      timedOutColor,
-      winnerColor,
-      winner,
-      reason: 'timeout',
-      nextChessState: {
-        ...chessState,
-        clock: nextClock,
-      },
-      nextGameState: {
-        status: 'finished',
-        finishedAt: new Date(nowMs).toISOString(),
-        finishedBy: 'timeout',
-        winner,
-      },
-    };
+  const nextGameState = {
+    ...currentState,
+    chess: nextChessState,
+  };
+  if (timeoutWinner) {
+    nextGameState.resolvedWinner = timeoutWinner;
+  } else if (nextGameState.resolvedWinner) {
+    delete nextGameState.resolvedWinner;
   }
 
   return {
-    timedOut: false,
-    nextChessState: {
-      ...chessState,
-      clock: nextClock,
-    },
+    winner: timeoutWinner || null,
+    nextGameState,
+    nextChessState,
   };
 };
 
@@ -328,9 +287,7 @@ module.exports = {
   createInitialChessState,
   resolveParticipantColor,
   sanitizeChessMovePayload,
-  nextChessResult,
   buildChessStateFromEngine,
-  parseIsoTimestampMs,
   normalizeRuntimeChessClock,
   buildChessTimeoutResolution,
 };

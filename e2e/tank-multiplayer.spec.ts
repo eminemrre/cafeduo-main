@@ -6,7 +6,7 @@ import {
   waitForApiReady,
 } from './helpers/session';
 
-const authHeader = (token: string) => ({ Authorization: `Bearer ${token}` });
+const authHeader = (token: string) => ({ Authorization: `Bearer ${token}`, Cookie: '' });
 
 test.describe('Tank Multiplayer Sync & Settlement', () => {
   test('resolves tank winner from server-side scores despite spoofed finish payload', async ({
@@ -28,9 +28,9 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
     const createRes = await request.post(`${apiRoot}/api/games`, {
       headers: authHeader(host.token),
       data: {
-        hostName: host.user.username,
+        hostName: host.credentials.username,
         gameType: 'Tank Düellosu',
-        points: 40,
+        points: 0,
         table: 'MASA09',
       },
     });
@@ -41,7 +41,7 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
 
     const joinRes = await request.post(`${apiRoot}/api/games/${gameId}/join`, {
       headers: authHeader(guest.token),
-      data: { guestName: guest.user.username },
+      data: { guestName: guest.credentials.username },
     });
     expect(joinRes.ok()).toBeTruthy();
 
@@ -69,7 +69,7 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
           roundsWon: 2,
           round: 2,
           done: false,
-          submissionKey: `tank|${gameId}|${host.user.username}|2|2|0`,
+          submissionKey: `tank|${gameId}|${host.credentials.username}|2|2|0`,
         },
       },
     });
@@ -84,7 +84,7 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
           roundsWon: 1,
           round: 2,
           done: false,
-          submissionKey: `tank|${gameId}|${guest.user.username}|2|1|0`,
+          submissionKey: `tank|${gameId}|${guest.credentials.username}|2|1|0`,
         },
       },
     });
@@ -94,7 +94,7 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
       headers: authHeader(host.token),
       data: {
         scoreSubmission: {
-          username: host.user.username,
+          username: host.credentials.username,
           score: 3,
           roundsWon: 3,
           durationMs: 7200,
@@ -107,7 +107,7 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
       headers: authHeader(guest.token),
       data: {
         scoreSubmission: {
-          username: guest.user.username,
+          username: guest.credentials.username,
           score: 1,
           roundsWon: 1,
           durationMs: 6900,
@@ -119,7 +119,7 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
     const spoofedFinishRes = await request.post(`${apiRoot}/api/games/${gameId}/finish`, {
       headers: authHeader(guest.token),
       data: {
-        winner: intruder.user.username,
+        winner: intruder.credentials.username,
       },
     });
     expect(spoofedFinishRes.ok()).toBeTruthy();
@@ -153,9 +153,9 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
     const createRes = await request.post(`${apiRoot}/api/games`, {
       headers: authHeader(host.token),
       data: {
-        hostName: host.user.username,
+        hostName: host.credentials.username,
         gameType: 'Tank Düellosu',
-        points: 35,
+        points: 0,
         table: 'MASA10',
       },
     });
@@ -165,7 +165,7 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
 
     const joinRes = await request.post(`${apiRoot}/api/games/${gameId}/join`, {
       headers: authHeader(guest.token),
-      data: { guestName: guest.user.username },
+      data: { guestName: guest.credentials.username },
     });
     expect(joinRes.ok()).toBeTruthy();
 
@@ -181,7 +181,7 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
       headers: authHeader(guest.token),
       data: {
         scoreSubmission: {
-          username: guest.user.username,
+          username: guest.credentials.username,
           score: 9,
           roundsWon: 9,
           durationMs: 1000,

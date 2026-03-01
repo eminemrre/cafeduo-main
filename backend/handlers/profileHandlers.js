@@ -11,35 +11,48 @@ const createProfileHandlers = ({
     if (!(await isDbConnected())) return;
 
     try {
-      const userRes = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
-      if (userRes.rows.length === 0) return;
-      const user = userRes.rows[0];
+      // Single query with CTE to compute eligible achievements and unlock them
+      // This replaces the N+1 pattern (1 + N*2 queries) with just 2 queries
+      const result = await pool.query(`
+        WITH user_stats AS (
+          SELECT id, username, points, wins, games_played
+          FROM users WHERE id = $1
+        ),
+        eligible AS (
+          SELECT a.id, a.title, a.points_reward
+          FROM achievements a, user_stats u
+          WHERE (
+            (a.condition_type = 'points' AND u.points >= a.condition_value) OR
+            (a.condition_type = 'wins' AND u.wins >= a.condition_value) OR
+            (a.condition_type = 'games_played' AND u.games_played >= a.condition_value)
+          )
+          AND NOT EXISTS (
+            SELECT 1 FROM user_achievements ua
+            WHERE ua.user_id = u.id AND ua.achievement_id = a.id
+          )
+        )
+        INSERT INTO user_achievements (user_id, achievement_id)
+        SELECT $1, id FROM eligible
+        ON CONFLICT DO NOTHING
+        RETURNING (SELECT json_agg(json_build_object('id', id, 'title', title, 'points_reward', points_reward)) FROM eligible)
+      `, [userId]);
 
-      const achievementsRes = await pool.query('SELECT * FROM achievements');
-      const achievements = achievementsRes.rows;
-
-      for (const achievement of achievements) {
-        let qualified = false;
-        if (achievement.condition_type === 'points' && user.points >= achievement.condition_value) qualified = true;
-        if (achievement.condition_type === 'wins' && user.wins >= achievement.condition_value) qualified = true;
-        if (achievement.condition_type === 'games_played' && user.games_played >= achievement.condition_value) qualified = true;
-
-        if (!qualified) continue;
-
-        const insertRes = await pool.query(
-          'INSERT INTO user_achievements (user_id, achievement_id) VALUES ($1, $2) ON CONFLICT DO NOTHING RETURNING *',
-          [userId, achievement.id]
-        );
-
-        if (insertRes.rows.length > 0) {
-          await pool.query('UPDATE users SET points = points + $1 WHERE id = $2', [achievement.points_reward, userId]);
+      if (result.rows.length > 0 && result.rows[0].json_agg) {
+        const unlockedAchievements = result.rows[0].json_agg;
+        const totalPoints = unlockedAchievements.reduce((sum, a) => sum + (a.points_reward || 0), 0);
+        
+        if (totalPoints > 0) {
+          await pool.query('UPDATE users SET points = points + $1 WHERE id = $2', [totalPoints, userId]);
           logger.info(
-            `Achievement unlocked: ${user.username} - ${achievement.title} (+${achievement.points_reward} pts)`
+            `Achievements unlocked for user ${userId}: +${totalPoints} points ` +
+            `(${unlockedAchievements.map(a => a.title).join(', ')})`
           );
         }
       }
     } catch (err) {
       logger.error('Achievement check error:', err);
+      // Re-throw for monitoring/alerting (but don't break user flow)
+      // throw err; // Uncomment for stricter error handling
     }
   };
 
@@ -81,7 +94,9 @@ const createProfileHandlers = ({
     return executeDataMode(isDbConnected, {
       db: async () => {
         try {
-          const allAchievements = await pool.query('SELECT * FROM achievements ORDER BY points_reward ASC');
+          const allAchievements = await pool.query(
+            'SELECT id, title, description, condition_type, condition_value, points_reward FROM achievements ORDER BY points_reward ASC'
+          );
           const userUnlocked = await pool.query(
             'SELECT achievement_id, unlocked_at FROM user_achievements WHERE user_id = $1',
             [userId]

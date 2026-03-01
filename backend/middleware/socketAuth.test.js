@@ -41,6 +41,9 @@ describe('Socket Auth Middleware', () => {
         // Create mock socket
         mockSocket = {
             id: 'test-socket-id',
+            request: {
+                cookies: {},
+            },
             handshake: {
                 auth: {},
                 address: '127.0.0.1',
@@ -146,6 +149,57 @@ describe('Socket Auth Middleware', () => {
             expect(mockSocket.user).toEqual(mockUser);
             expect(mockSocket.userId).toBe(1);
             expect(mockSocket.username).toBe('testuser');
+            expect(mockSocket.tokenSource).toBe('handshake');
+        });
+
+        it('should authenticate using cookie token when provided', async () => {
+            const validToken = jwt.sign(
+                { id: 2, username: 'cookieuser' },
+                ***REMOVED***,
+                { expiresIn: '1h' }
+            );
+            mockSocket.request.cookies.auth_token = validToken;
+
+            const mockUser = {
+                id: 2,
+                username: 'cookieuser',
+                email: 'cookie@example.com',
+                role: 'user',
+                isAdmin: false,
+            };
+
+            pool.query.mockResolvedValue({ rows: [mockUser] });
+
+            await socketAuthMiddleware(mockSocket, mockNext);
+
+            expect(mockNext).toHaveBeenCalledWith();
+            expect(mockSocket.userId).toBe(2);
+            expect(mockSocket.tokenSource).toBe('cookie');
+        });
+
+        it('should prioritize cookie token over handshake token', async () => {
+            const cookieToken = jwt.sign(
+                { id: 3, username: 'cookie-priority' },
+                ***REMOVED***,
+                { expiresIn: '1h' }
+            );
+            const handshakeToken = jwt.sign(
+                { id: 99, username: 'handshake-user' },
+                ***REMOVED***,
+                { expiresIn: '1h' }
+            );
+            mockSocket.request.cookies.auth_token = cookieToken;
+            mockSocket.handshake.auth.token = handshakeToken;
+
+            pool.query.mockResolvedValue({
+                rows: [{ id: 3, username: 'cookie-priority', role: 'user', isAdmin: false }],
+            });
+
+            await socketAuthMiddleware(mockSocket, mockNext);
+
+            expect(mockSocket.userId).toBe(3);
+            expect(mockSocket.tokenSource).toBe('cookie');
+            expect(mockNext).toHaveBeenCalledWith();
         });
 
         it('should reject connection when user not found in database', async () => {

@@ -50,9 +50,9 @@ const createCommerceHandlers = ({
       db: async () => {
         try {
           const result = await pool.query(
-            `INSERT INTO rewards (title, cost, description, icon, cafe_id) 
-             VALUES ($1, $2, $3, $4, $5) 
-             RETURNING *`,
+            `INSERT INTO rewards (title, cost, description, icon, cafe_id)
+             VALUES ($1, $2, $3, $4, $5)
+             RETURNING id, title, cost, description, icon, cafe_id, is_active, created_at`,
             [title, cost, description || '', icon || 'coffee', cafeId || null]
           );
           return res.json({ success: true, reward: result.rows[0] });
@@ -77,14 +77,14 @@ const createCommerceHandlers = ({
         try {
           await ensureActiveRewardsDb();
 
-          let query = 'SELECT * FROM rewards WHERE is_active = true';
+          let query = 'SELECT id, title, description, cost, icon, cafe_id, is_active, created_at FROM rewards WHERE is_active = true';
           const params = [];
 
           if (cafeId) {
             query += ' AND (cafe_id = $1 OR cafe_id IS NULL)';
             params.push(cafeId);
           }
-          query += ' ORDER BY cost ASC';
+          query += ' ORDER BY cost ASC LIMIT 100';
 
           const result = await pool.query(query, params);
           return res.json(result.rows);
@@ -108,7 +108,7 @@ const createCommerceHandlers = ({
       db: async () => {
         try {
           const result = await pool.query(
-            'UPDATE rewards SET is_active = false WHERE id = $1 RETURNING *',
+            'UPDATE rewards SET is_active = false WHERE id = $1 RETURNING id, title, is_active',
             [id]
           );
 
@@ -258,7 +258,7 @@ const createCommerceHandlers = ({
 
       const code = `CD-${crypto.randomBytes(2).toString('hex').toUpperCase()}-${crypto.randomBytes(2).toString('hex').toUpperCase()}`;
       const redeemRes = await client.query(
-        'INSERT INTO user_items (user_id, item_id, item_title, code) VALUES ($1, $2, $3, $4) RETURNING *',
+        'INSERT INTO user_items (user_id, item_id, item_title, code) VALUES ($1, $2, $3, $4) RETURNING id, user_id, item_id, item_title, code, is_used, redeemed_at, used_at',
         [userId, reward.id, reward.title, code]
       );
 
@@ -319,10 +319,10 @@ const createCommerceHandlers = ({
       db: async () => {
         try {
           const result = await pool.query(
-            `UPDATE user_items 
-             SET is_used = TRUE, used_at = NOW() 
+            `UPDATE user_items
+             SET is_used = TRUE, used_at = NOW()
              WHERE code = $1 AND is_used = FALSE AND redeemed_at > NOW() - INTERVAL '5 days'
-             RETURNING *`,
+             RETURNING id, user_id, item_id, item_title, code, is_used, redeemed_at, used_at`,
             [code]
           );
 
@@ -369,7 +369,11 @@ const createCommerceHandlers = ({
       db: async () => {
         try {
           const result = await pool.query(
-            "SELECT * FROM user_items WHERE user_id = $1 AND redeemed_at > NOW() - INTERVAL '5 days' ORDER BY redeemed_at DESC",
+            `SELECT id, user_id, item_id, item_title, code, is_used, redeemed_at, used_at
+             FROM user_items
+             WHERE user_id = $1 AND redeemed_at > NOW() - INTERVAL '5 days'
+             ORDER BY redeemed_at DESC
+             LIMIT 50`,
             [userId]
           );
           return res.json(

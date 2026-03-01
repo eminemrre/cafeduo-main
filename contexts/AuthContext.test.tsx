@@ -37,7 +37,7 @@ const AuthConsumer = () => {
       <p data-testid="loading">{String(isLoading)}</p>
       <p data-testid="auth">{String(isAuthenticated)}</p>
       <p data-testid="username">{user?.username ?? 'none'}</p>
-      <button onClick={() => login(baseUser, 'token-123')}>login</button>
+      <button onClick={() => login(baseUser)}>login</button>
       <button onClick={() => updateUser({ username: 'updated-emin' })}>update</button>
       <button onClick={() => refreshUser()}>refresh</button>
       <button onClick={() => logout()}>logout</button>
@@ -62,9 +62,6 @@ describe('AuthContext', () => {
   });
 
   it('restores session with a valid token', async () => {
-    (window.localStorage.getItem as jest.Mock).mockImplementation((key: string) =>
-      key === 'token' ? 'persisted-token' : null
-    );
     mockVerifyToken.mockResolvedValue(baseUser);
 
     renderWithProvider();
@@ -78,10 +75,7 @@ describe('AuthContext', () => {
     expect(screen.getByTestId('username')).toHaveTextContent('emin');
   });
 
-  it('cleans token and session when token is invalid', async () => {
-    (window.localStorage.getItem as jest.Mock).mockImplementation((key: string) =>
-      key === 'token' ? 'stale-token' : null
-    );
+  it('cleans session when server verification fails', async () => {
     mockVerifyToken.mockResolvedValue(null);
 
     renderWithProvider();
@@ -90,7 +84,6 @@ describe('AuthContext', () => {
       expect(screen.getByTestId('loading')).toHaveTextContent('false');
     });
 
-    expect(window.localStorage.removeItem).toHaveBeenCalledWith('token');
     expect(window.localStorage.removeItem).toHaveBeenCalledWith('cafe_user');
     expect(screen.getByTestId('auth')).toHaveTextContent('false');
   });
@@ -104,7 +97,6 @@ describe('AuthContext', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'login' }));
 
-    expect(window.localStorage.setItem).toHaveBeenCalledWith('token', 'token-123');
     expect(window.localStorage.setItem).toHaveBeenCalledWith('cafe_user', JSON.stringify(baseUser));
     expect(screen.getByTestId('auth')).toHaveTextContent('true');
     expect(screen.getByTestId('username')).toHaveTextContent('emin');
@@ -156,7 +148,6 @@ describe('AuthContext', () => {
       expect(screen.getByTestId('auth')).toHaveTextContent('false');
       expect(screen.getByTestId('username')).toHaveTextContent('none');
     });
-    expect(window.localStorage.removeItem).toHaveBeenCalledWith('token');
     expect(window.localStorage.removeItem).toHaveBeenCalledWith('cafe_user');
   });
 

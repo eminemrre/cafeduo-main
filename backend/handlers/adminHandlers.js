@@ -148,12 +148,12 @@ const createAdminHandlers = ({
 
           if (payload.role === 'cafe_admin') {
             result = await pool.query(
-              'UPDATE users SET role = $1, is_admin = false, cafe_id = $2 WHERE id = $3 RETURNING *',
+              'UPDATE users SET role = $1, is_admin = false, cafe_id = $2 WHERE id = $3 RETURNING id, username, email, role, is_admin, cafe_id, points, wins, games_played, department',
               [payload.role, payload.cafeId, id]
             );
           } else {
             result = await pool.query(
-              'UPDATE users SET role = $1, is_admin = $2, cafe_id = NULL WHERE id = $3 RETURNING *',
+              'UPDATE users SET role = $1, is_admin = $2, cafe_id = NULL WHERE id = $3 RETURNING id, username, email, role, is_admin, cafe_id, points, wins, games_played, department',
               [payload.role, payload.role === 'admin', id]
             );
           }
@@ -311,7 +311,7 @@ const createAdminHandlers = ({
           }
 
           values.push(id);
-          const query = `UPDATE cafes SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING *`;
+          const query = `UPDATE cafes SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING id, name, address, total_tables, pin, latitude, longitude, table_count, radius, secondary_latitude, secondary_longitude, secondary_radius`;
           const result = await pool.query(query, values);
 
           if (result.rows.length === 0) {
@@ -363,9 +363,9 @@ const createAdminHandlers = ({
               secondary_latitude,
               secondary_longitude,
               secondary_radius
-            ) 
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
-             RETURNING *`,
+            )
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+             RETURNING id, name, address, total_tables, pin, latitude, longitude, table_count, radius, secondary_latitude, secondary_longitude, secondary_radius`,
             [
               cafe.name,
               cafe.address,

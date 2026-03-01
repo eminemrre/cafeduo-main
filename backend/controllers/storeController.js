@@ -27,7 +27,11 @@ const storeController = {
             const userId = req.user.id;
 
             const result = await db.query(
-                'SELECT * FROM user_items WHERE user_id = $1 ORDER BY redeemed_at DESC',
+                `SELECT id, user_id, item_id, item_title, code, is_used, redeemed_at, used_at
+                 FROM user_items
+                 WHERE user_id = $1
+                 ORDER BY redeemed_at DESC
+                 LIMIT 100`,
                 [userId]
             );
 
@@ -81,8 +85,8 @@ const storeController = {
 
             // 4. Eşyayı envantere ekle
             const insertResult = await client.query(
-                `INSERT INTO user_items (user_id, item_id, item_title, code) 
-                 VALUES ($1, $2, $3, $4) RETURNING *`,
+                `INSERT INTO user_items (user_id, item_id, item_title, code)
+                 VALUES ($1, $2, $3, $4) RETURNING id, user_id, item_id, item_title, code, is_used, redeemed_at, used_at`,
                 [userId, itemToBuy.id, itemToBuy.title, itemToBuy.code]
             );
 

@@ -5,6 +5,7 @@ jest.mock('bcrypt', () => ({
 
 jest.mock('jsonwebtoken', () => ({
   sign: jest.fn(() => 'signed-jwt-token'),
+  decode: jest.fn(() => ({ id: 1, exp: Math.floor(Date.now() / 1000) + 300 })),
 }));
 
 const mockVerifyIdToken = jest.fn();
@@ -46,6 +47,8 @@ const buildRes = () => {
   const res = {};
   res.status = jest.fn().mockReturnValue(res);
   res.json = jest.fn().mockReturnValue(res);
+  res.cookie = jest.fn().mockReturnValue(res);
+  res.clearCookie = jest.fn().mockReturnValue(res);
   return res;
 };
 
@@ -244,6 +247,15 @@ describe('authController security-critical auth flows', () => {
     expect(logger.info).toHaveBeenCalledWith('Bootstrap admin promoted on login', {
       email: 'emin3619@gmail.com',
     });
+    expect(res.cookie).toHaveBeenCalledWith(
+      'auth_token',
+      'signed-jwt-token',
+      expect.objectContaining({
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+      })
+    );
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
         token: 'signed-jwt-token',
@@ -441,5 +453,27 @@ describe('authController security-critical auth flows', () => {
       success: true,
       message: 'Şifreniz güncellendi. Yeni şifrenizle giriş yapabilirsiniz.',
     });
+  });
+
+  it('logout clears auth cookie and returns success', async () => {
+    const req = {
+      headers: {},
+      cookies: { auth_token: 'signed-jwt-token' },
+    };
+    const res = buildRes();
+
+    await authController.logout(req, res);
+
+    expect(res.clearCookie).toHaveBeenCalledWith(
+      'auth_token',
+      expect.objectContaining({
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+      })
+    );
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ success: true })
+    );
   });
 });

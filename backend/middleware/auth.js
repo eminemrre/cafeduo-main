@@ -28,9 +28,12 @@ const sendAuthError = (res, { status, code, message, details = null }) => {
  */
 const authenticateToken = async (req, res, next) => {
     try {
+        const cookieToken = req.cookies?.auth_token;
         const authHeader = req.headers['authorization'];
         const isBearer = typeof authHeader === 'string' && authHeader.startsWith('Bearer ');
-        const token = isBearer ? authHeader.slice(7).trim() : null;
+        const headerToken = isBearer ? authHeader.slice(7).trim() : null;
+        const token = cookieToken || headerToken;
+        const tokenSource = cookieToken ? 'cookie' : 'header';
 
         if (!token) {
             return sendAuthError(res, {
@@ -135,6 +138,9 @@ const authenticateToken = async (req, res, next) => {
                 req.user = decoded;
             }
         }
+
+        req.authToken = token;
+        req.tokenSource = tokenSource;
 
         next();
     } catch (err) {

@@ -166,11 +166,8 @@ const AppContent: React.FC = () => {
       return;
     }
 
-    // Prefer stored JWT if present; cookie-based auth may not provide a client token.
-    const token = localStorage.getItem('token');
-
     // Use AuthContext login
-    login(userData, token);
+    login(userData);
     setIsAuthOpen(false);
 
     // Check for Daily Bonus

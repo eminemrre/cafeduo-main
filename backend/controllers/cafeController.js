@@ -180,7 +180,12 @@ const cafeController = {
     // GET ALL CAFES
     async getAllCafes(req, res) {
         try {
-            const result = await pool.query('SELECT * FROM cafes ORDER BY name');
+            const result = await pool.query(
+                `SELECT id, name, latitude, longitude, radius, table_count,
+                        secondary_latitude, secondary_longitude, secondary_radius
+                 FROM cafes
+                 ORDER BY name`
+            );
             res.json(result.rows);
         } catch (err) {
             logger.error('getAllCafes DB error, returning fallback list:', err.message);
@@ -195,7 +200,13 @@ const cafeController = {
     async getCafeById(req, res) {
         const { id } = req.params;
         try {
-            const result = await pool.query('SELECT * FROM cafes WHERE id = $1', [id]);
+            const result = await pool.query(
+                `SELECT id, name, latitude, longitude, radius, table_count,
+                        secondary_latitude, secondary_longitude, secondary_radius
+                 FROM cafes
+                 WHERE id = $1`,
+                [id]
+            );
             if (result.rows.length === 0) return res.status(404).json({ error: 'Kafe bulunamadı.' });
             res.json(result.rows[0]);
         } catch (err) {
@@ -452,7 +463,13 @@ const cafeController = {
 
         try {
             // 1. Get Cafe Details
-            const cafeResult = await pool.query('SELECT * FROM cafes WHERE id = $1', [id]);
+            const cafeResult = await pool.query(
+                `SELECT id, name, pin, daily_pin, latitude, longitude, radius, table_count,
+                        secondary_latitude, secondary_longitude, secondary_radius
+                 FROM cafes
+                 WHERE id = $1`,
+                [id]
+            );
             if (cafeResult.rows.length === 0) return res.status(404).json({ error: 'Kafe bulunamadı.' });
 
             const cafe = cafeResult.rows[0];

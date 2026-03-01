@@ -5,7 +5,7 @@ const hasRedisClient = Boolean(
     redis &&
     typeof redis.get === 'function' &&
     typeof redis.setex === 'function' &&
-    typeof redis.keys === 'function' &&
+    typeof redis.scan === 'function' &&
     typeof redis.del === 'function'
 );
 
@@ -51,7 +51,7 @@ const cache = (duration = 300) => {
 };
 
 /**
- * Clear cache by key pattern
+ * Clear cache by key pattern (non-blocking SCAN-based)
  * @param {string} pattern - Redis key pattern (e.g. "cache:/api/cafes*")
  */
 const clearCache = async (pattern) => {
@@ -59,10 +59,35 @@ const clearCache = async (pattern) => {
         return;
     }
     try {
-        const keys = await redis.keys(pattern);
-        if (keys.length > 0) {
-            await redis.del(keys);
-            logger.info(`🧹 Cleared cache keys: ${keys.join(', ')}`);
+        let cursor = '0';
+        let totalDeleted = 0;
+        const batch = [];
+
+        do {
+            const [nextCursor, keys] = await redis.scan(
+                cursor,
+                'MATCH', pattern,
+                'COUNT', 100
+            );
+            cursor = nextCursor;
+
+            if (keys.length > 0) {
+                batch.push(...keys);
+                if (batch.length >= 100) {
+                    await redis.del(...batch);
+                    totalDeleted += batch.length;
+                    batch.length = 0;
+                }
+            }
+        } while (cursor !== '0');
+
+        if (batch.length > 0) {
+            await redis.del(...batch);
+            totalDeleted += batch.length;
+        }
+
+        if (totalDeleted > 0) {
+            logger.info(`🧹 Cleared ${totalDeleted} cache keys matching: ${pattern}`);
         }
     } catch (err) {
         logger.error(`Redis clear cache error: ${err.message}`);

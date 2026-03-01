@@ -32,6 +32,8 @@ loadEnvFile();
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
+const cookie = require('cookie');
+const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcrypt');
@@ -261,6 +263,13 @@ const io = new Server(server, {
   }
 });
 
+// Parse auth cookie from Socket.IO handshake headers for cookie-based auth.
+io.use((socket, next) => {
+  const cookieHeader = socket.handshake?.headers?.cookie;
+  socket.request.cookies = cookieHeader ? cookie.parse(cookieHeader) : {};
+  next();
+});
+
 // Apply Socket.IO authentication middleware
 io.use(socketAuthMiddleware);
 
@@ -351,6 +360,8 @@ const apiLimiter = rateLimit(
   })
 );
 app.use('/api', apiLimiter);
+
+app.use(cookieParser());
 
 app.use(cors({
   origin: (origin, callback) => {

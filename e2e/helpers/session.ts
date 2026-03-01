@@ -156,6 +156,7 @@ export const fetchCurrentUser = async (
   const meRes = await request.get(`${apiRoot}/api/auth/me`, {
     headers: {
       Authorization: `Bearer ${token}`,
+      Cookie: '',
     },
   });
   expect(meRes.ok()).toBeTruthy();
@@ -192,6 +193,7 @@ export const checkInUser = async (
   const checkInRes = await request.post(`${apiRoot}/api/cafes/${selectedCafe.id}/check-in`, {
     headers: {
       Authorization: `Bearer ${token}`,
+      Cookie: '',
     },
     data: {
       latitude,
@@ -220,29 +222,45 @@ export const bootstrapAuthenticatedPage = async (
       }
     : baseUser;
   const root = normalizeBaseUrl(baseURL);
+  const rootUrl = new URL(root);
   await page.goto(root);
+
+  await page.context().addCookies([
+    {
+      name: 'auth_token',
+      value: session.token,
+      domain: rootUrl.hostname,
+      httpOnly: true,
+      sameSite: 'Lax',
+      secure: root.startsWith('https://'),
+      path: '/',
+    },
+  ]);
+
   await page.evaluate(
-    ({ token, userData, checkedIn }) => {
-      localStorage.setItem('token', token);
+    ({ userData, checkedIn }) => {
       localStorage.setItem('cafe_user', JSON.stringify(userData));
       localStorage.setItem('cookie_consent', 'true');
       if (checkedIn) {
-        sessionStorage.setItem('cafeduo_checked_in_token', token);
+        sessionStorage.setItem('cafeduo_checked_in_user_id', String(userData.id));
       }
     },
     {
-      token: session.token,
       userData: user,
       checkedIn: Boolean(options.checkedIn),
     }
   );
-  // Session restore effect tokeni mount anında okuduğu için token yazımından sonra bir reload gerekir.
+  // Session restore effect'i cookie + local cache ile çalıştığı için reload gerekir.
   await page.reload();
   await page.goto(`${root}/dashboard`);
 
   // App initially redirects to "/" while async session restore runs.
   const dashboardTab = page.locator('[data-testid="dashboard-tab-games"]').first();
-  if (await dashboardTab.isVisible().catch(() => false)) {
+  const gamesButton = page.getByRole('button', { name: /OYUNLAR/i }).first();
+  const isDashboardReady =
+    (await dashboardTab.isVisible().catch(() => false)) ||
+    (await gamesButton.isVisible().catch(() => false));
+  if (isDashboardReady) {
     return;
   }
 

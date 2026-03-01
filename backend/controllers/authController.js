@@ -162,6 +162,8 @@ const BOOTSTRAP_ADMIN_EMAILS = parseAdminEmails(
     process.env.BOOTSTRAP_ADMIN_EMAILS || process.env.ADMIN_EMAILS,
     ['emin3619@gmail.com']
 );
+const AUTH_COOKIE_NAME = 'auth_token';
+const AUTH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
 if (!***REMOVED***) {
     throw new Error('***REMOVED*** is required. Refusing to start with an insecure fallback secret.');
@@ -182,6 +184,23 @@ const generateToken = (user) => {
         ***REMOVED***,
         { expiresIn: '7d' }
     );
+};
+
+const buildAuthCookieOptions = () => ({
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: AUTH_COOKIE_MAX_AGE_MS,
+    path: '/',
+    domain: process.env.COOKIE_DOMAIN || undefined,
+});
+
+const setAuthCookie = (res, token) => {
+    res.cookie(AUTH_COOKIE_NAME, token, buildAuthCookieOptions());
+};
+
+const clearAuthCookie = (res) => {
+    res.clearCookie(AUTH_COOKIE_NAME, buildAuthCookieOptions());
 };
 
 const toPublicUser = (user) => {
@@ -347,6 +366,7 @@ const authController = {
                         }
 
                         const token = generateToken(user);
+                        setAuthCookie(res, token);
                         return res.json({ user: toPublicUser(user), token });
                     }
                     return res.status(401).json({ error: 'Geçersiz e-posta veya şifre.' });
@@ -378,6 +398,7 @@ const authController = {
             }
 
             const token = generateToken(memoryUser);
+            setAuthCookie(res, token);
             return res.json({ user: toPublicUser(memoryUser), token });
         } catch (err) {
             logger.error('Login error:', err);
@@ -454,6 +475,7 @@ const authController = {
                 }
 
                 const token = generateToken(user);
+                setAuthCookie(res, token);
                 return res.json({ user: toPublicUser(user), token });
             }
 
@@ -488,6 +510,7 @@ const authController = {
             }
 
             const token = generateToken(user);
+            setAuthCookie(res, token);
             return res.json({ user: toPublicUser(user), token });
         } catch (error) {
             logger.error('Google auth failed', error);
@@ -677,9 +700,10 @@ const authController = {
 
     // LOGOUT
     async logout(req, res) {
+        const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
         const authHeader = req.headers['authorization'];
         const isBearer = typeof authHeader === 'string' && authHeader.startsWith('Bearer ');
-        const token = isBearer ? authHeader.slice(7).trim() : null;
+        const token = cookieToken || (isBearer ? authHeader.slice(7).trim() : null);
 
         if (!token) {
             return res.status(400).json({ error: 'Token required for logout.' });
@@ -717,12 +741,14 @@ const authController = {
                 }
             }
 
+            clearAuthCookie(res);
             return res.json({
                 success: true,
                 message: 'Logged out successfully.'
             });
         } catch (error) {
             logger.error('Logout error:', error);
+            clearAuthCookie(res);
             // Still return success - client should clear local token regardless
             return res.json({
                 success: true,

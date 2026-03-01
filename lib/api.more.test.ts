@@ -24,17 +24,25 @@ describe('API Layer additional coverage', () => {
     localStorageMock.getItem.mockReturnValue(null);
   });
 
-  it('verifyToken returns null when token is missing', async () => {
-    localStorageMock.getItem.mockReturnValue(null);
+  it('verifyToken calls /auth/me with cookie credentials', async () => {
+    const mockUser = { id: 2, email: 'cookie@example.com' };
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockUser,
+    });
 
     const result = await api.auth.verifyToken();
 
-    expect(result).toBeNull();
-    expect(fetch).not.toHaveBeenCalled();
+    expect(result).toEqual(mockUser);
+    expect(fetch).toHaveBeenCalledWith(
+      '/api/auth/me',
+      expect.objectContaining({
+        credentials: 'include',
+      })
+    );
   });
 
-  it('verifyToken removes token on fetch failure', async () => {
-    localStorageMock.getItem.mockReturnValue('bad-token');
+  it('verifyToken returns null on fetch failure', async () => {
     (fetch as jest.Mock).mockResolvedValueOnce({
       ok: false,
       status: 401,
@@ -44,7 +52,7 @@ describe('API Layer additional coverage', () => {
     const result = await api.auth.verifyToken();
 
     expect(result).toBeNull();
-    expect(localStorageMock.removeItem).toHaveBeenCalledWith('token');
+    expect(localStorageMock.removeItem).not.toHaveBeenCalledWith('token');
   });
 
   it('users.get returns null on request error', async () => {

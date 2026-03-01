@@ -8,7 +8,7 @@ import {
   waitForApiReady,
 } from './helpers/session';
 
-const authHeader = (token: string) => ({ Authorization: `Bearer ${token}` });
+const authHeader = (token: string) => ({ Authorization: `Bearer ${token}`, Cookie: '' });
 
 test.describe('Game Flow & Multiplayer Integrity', () => {
   test('blocks unauthenticated and non-checkin game creation attempts', async ({ request, baseURL }) => {
@@ -59,11 +59,11 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
       userOverride: user,
     });
 
-    await expect(page.locator('[data-testid="dashboard-tab-games"]')).toBeVisible();
-    await expect(page.locator('[data-testid="user-points"]')).toContainText(/\d+/);
-    await expect(page.locator('[data-testid="user-wins"]')).toContainText(/\d+/);
-    await expect(page.locator('[data-testid="user-games"]')).toContainText(/\d+/);
-    await expect(page.locator('[data-testid="create-game-button"]')).toBeEnabled();
+    await expect(page.getByRole('button', { name: /OYUNLAR/i })).toBeVisible();
+    await expect(page.getByTestId('user-points')).toBeVisible();
+    await expect(page.getByTestId('user-wins')).toBeVisible();
+    await expect(page.getByTestId('user-games')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Oyun Kur/i })).toBeEnabled();
   });
 
   test('enforces join race safely and keeps consistent winner resolution', async ({ request, baseURL }) => {
@@ -81,9 +81,9 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
     const createRes = await request.post(`${apiRoot}/api/games`, {
       headers: authHeader(host.token),
       data: {
-        hostName: host.user.username,
+        hostName: host.credentials.username,
         gameType: 'Refleks Avı',
-        points: 40,
+        points: 0,
         table: 'MASA05',
       },
     });
@@ -95,11 +95,11 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
     const [joinGuestRes, joinIntruderRes] = await Promise.all([
       request.post(`${apiRoot}/api/games/${gameId}/join`, {
         headers: authHeader(guest.token),
-        data: { guestName: guest.user.username },
+        data: { guestName: guest.credentials.username },
       }),
       request.post(`${apiRoot}/api/games/${gameId}/join`, {
         headers: authHeader(intruder.token),
-        data: { guestName: intruder.user.username },
+        data: { guestName: intruder.credentials.username },
       }),
     ]);
 

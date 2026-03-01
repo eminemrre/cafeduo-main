@@ -106,7 +106,6 @@ interface CouponUseItem {
 }
 
 interface AuthLoginResponse {
-  token?: string;
   user?: User;
   id?: string | number;
 }
@@ -199,16 +198,10 @@ const parseApiError = async (response: ApiErrorResponse): Promise<string> => {
  * @throws Error with message from server or network error
  */
 async function fetchAPI<TResponse = unknown>(endpoint: string, options: RequestInit = {}): Promise<TResponse> {
-  const token = localStorage.getItem('token');
-
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
     ...options.headers,
   };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
 
   let response: Response;
   const controller = new AbortController();
@@ -217,6 +210,7 @@ async function fetchAPI<TResponse = unknown>(endpoint: string, options: RequestI
     response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
       headers,
+      credentials: 'include',
       signal: controller.signal,
     });
   } catch (error) {
@@ -260,9 +254,6 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
-      if (data.token) {
-        localStorage.setItem('token', data.token);
-      }
       return (data.user || data) as User;
     },
 
@@ -284,9 +275,6 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ token }),
       });
-      if (data.token) {
-        localStorage.setItem('token', data.token);
-      }
       return (data.user || data) as User;
     },
 
@@ -305,29 +293,20 @@ export const api = {
     },
 
     logout: async (): Promise<void> => {
-      // Notify server to blacklist the token before clearing local state
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          await fetchAPI('/auth/logout', { method: 'POST' });
-        } catch {
-          // Server-side invalidation is best-effort; proceed with local cleanup regardless
-        }
+      try {
+        await fetchAPI('/auth/logout', { method: 'POST' });
+      } catch {
+        // Server-side invalidation is best-effort; proceed with local cleanup regardless
       }
-      localStorage.removeItem('token');
       localStorage.removeItem('currentUser');
       localStorage.removeItem('cafe_user');
     },
 
     verifyToken: async (): Promise<User | null> => {
-      const token = localStorage.getItem('token');
-      if (!token) return null;
-
       try {
         const user = await fetchAPI<User>('/auth/me');
         return user;
       } catch {
-        localStorage.removeItem('token');
         return null;
       }
     }

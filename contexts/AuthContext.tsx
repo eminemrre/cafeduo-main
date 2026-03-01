@@ -14,7 +14,7 @@ interface AuthContextType {
   isLoading: boolean;
   isAuthenticated: boolean;
   hasSessionCheckIn: boolean;
-  login: (user: User, token?: string | null) => void;
+  login: (user: User) => void;
   logout: () => void;
   updateUser: (updates: Partial<User>) => void;
   refreshUser: () => Promise<void>;
@@ -23,6 +23,7 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const CHECK_IN_SESSION_KEY = 'cafeduo_checked_in_user_id';
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -39,13 +40,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        const token = localStorage.getItem('token');
-        
-        if (!token) {
-          localStorage.removeItem('cafe_user');
-          setIsLoading(false);
-          return;
-        }
+        const storedCheckInUserId = sessionStorage.getItem(CHECK_IN_SESSION_KEY);
 
         // Cache-first hydrate for snappy UI
         const cachedUserRaw = localStorage.getItem('cafe_user');
@@ -55,7 +50,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             if (cachedUser?.id) {
               setUser(cachedUser);
               // Restore check-in state
-              const hasStoredCheckIn = sessionStorage.getItem('cafeduo_checked_in_token') === token;
+              const hasStoredCheckIn = storedCheckInUserId === String(cachedUser.id);
               if (cachedUser.isAdmin || cachedUser.role === 'cafe_admin') {
                 setHasSessionCheckInState(true);
               } else {
@@ -77,7 +72,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           localStorage.setItem('cafe_user', JSON.stringify(userData));
           
           // Update check-in state
-          const hasStoredCheckIn = sessionStorage.getItem('cafeduo_checked_in_token') === token;
+          const hasStoredCheckIn = storedCheckInUserId === String(userData.id);
           if (userData.isAdmin || userData.role === 'cafe_admin') {
             setHasSessionCheckInState(true);
           } else {
@@ -86,18 +81,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             setHasSessionCheckInState(hasStoredCheckIn && Boolean(userData.cafe_id) && hasTable);
           }
         } else {
-          // Token geçersiz
-          localStorage.removeItem('token');
+          // Session geçersiz
           localStorage.removeItem('cafe_user');
-          sessionStorage.removeItem('cafeduo_checked_in_token');
+          sessionStorage.removeItem(CHECK_IN_SESSION_KEY);
           setUser(null);
           setHasSessionCheckInState(false);
         }
       } catch (err) {
         console.error('Session restore failed:', err);
-        localStorage.removeItem('token');
         localStorage.removeItem('cafe_user');
-        sessionStorage.removeItem('cafeduo_checked_in_token');
+        sessionStorage.removeItem(CHECK_IN_SESSION_KEY);
         setUser(null);
         setHasSessionCheckInState(false);
       } finally {
@@ -111,10 +104,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   /**
    * Login işlemi
    */
-  const login = useCallback((userData: User, token?: string | null) => {
-    if (token) {
-      localStorage.setItem('token', token);
-    }
+  const login = useCallback((userData: User) => {
     localStorage.setItem('cafe_user', JSON.stringify(userData));
     setUser(userData);
     setHasSessionCheckInState(userData.isAdmin || userData.role === 'cafe_admin');
@@ -129,9 +119,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
-      localStorage.removeItem('token');
       localStorage.removeItem('cafe_user');
-      sessionStorage.removeItem('cafeduo_checked_in_token');
+      sessionStorage.removeItem(CHECK_IN_SESSION_KEY);
       setUser(null);
       setHasSessionCheckInState(false);
     }
@@ -171,13 +160,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    */
   const setHasSessionCheckIn = useCallback((value: boolean) => {
     setHasSessionCheckInState(value);
-    const token = localStorage.getItem('token');
-    if (value && token) {
-      sessionStorage.setItem('cafeduo_checked_in_token', token);
+    const currentUserId = user?.id ? String(user.id) : '';
+    if (value && currentUserId) {
+      sessionStorage.setItem(CHECK_IN_SESSION_KEY, currentUserId);
     } else {
-      sessionStorage.removeItem('cafeduo_checked_in_token');
+      sessionStorage.removeItem(CHECK_IN_SESSION_KEY);
     }
-  }, []);
+  }, [CHECK_IN_SESSION_KEY, user?.id]);
 
   /**
    * Check if user requires check-in

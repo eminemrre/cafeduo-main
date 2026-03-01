@@ -29,12 +29,42 @@ const sslRejectUnauthorized = parseBool(process.env.DB_SSL_REJECT_UNAUTHORIZED) 
 const pool = new Pool({
   connectionString: process.env.***REMOVED***,
   ssl: useSsl ? { rejectUnauthorized: sslRejectUnauthorized } : false,
+  
+  // Pool size configuration (OPTIMIZATIONS.md Finding 7)
+  max: Number(process.env.DB_POOL_MAX || 20), // Maximum connections
+  min: Number(process.env.DB_POOL_MIN || 2),  // Minimum idle connections
+  
+  // Connection lifecycle
+  idleTimeoutMillis: 30000,  // Release idle connections after 30s
+  connectionTimeoutMillis: 5000, // Max wait time for connection from pool
+  maxUses: 7500, // Retire connections after 7500 uses (prevent leaks)
+  
+  // Health checks
+  allowExitOnIdle: false, // Keep pool alive
+  
   // Fallback for local dev if ***REMOVED*** is not set
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'cafeduo',
   password: process.env.DB_PASSWORD || 'password',
   port: process.env.DB_PORT || 5432,
+});
+
+// Pool event monitoring
+pool.on('error', (err) => {
+  logger.error('Unexpected pool error', { error: err.message, stack: err.stack });
+});
+
+pool.on('connect', () => {
+  logger.debug('New database connection established');
+});
+
+pool.on('acquire', () => {
+  logger.debug('Connection acquired from pool', {
+    total: pool.totalCount,
+    idle: pool.idleCount,
+    waiting: pool.waitingCount,
+  });
 });
 
 const logger = require('./utils/logger');

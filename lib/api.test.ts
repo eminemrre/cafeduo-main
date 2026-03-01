@@ -31,8 +31,7 @@ describe('API Layer', () => {
   });
 
   describe('fetchAPI', () => {
-    it('makes authenticated request with token', async () => {
-      localStorageMock.getItem.mockReturnValue('test-token');
+    it('sends requests with credentials and without Authorization header', async () => {
       (fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
         json: async () => ({ data: 'test' }),
@@ -40,12 +39,16 @@ describe('API Layer', () => {
 
       await api.auth.verifyToken();
 
+      const [, options] = (fetch as jest.Mock).mock.calls[0];
       expect(fetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          headers: expect.objectContaining({
-            'Authorization': 'Bearer test-token',
-          }),
+          credentials: 'include',
+        })
+      );
+      expect((options as RequestInit).headers).not.toEqual(
+        expect.objectContaining({
+          Authorization: expect.any(String),
         })
       );
     });
@@ -70,9 +73,9 @@ describe('API Layer', () => {
           expect.objectContaining({
             method: 'POST',
             body: JSON.stringify({ email: 'test@example.com', password: 'password123' }),
+            credentials: 'include',
           })
         );
-        expect(localStorageMock.setItem).toHaveBeenCalledWith('token', 'jwt-token');
         expect(result).toEqual(mockUser);
       });
 
@@ -164,14 +167,13 @@ describe('API Layer', () => {
       it('clears localStorage', async () => {
         await api.auth.logout();
 
-        expect(localStorageMock.removeItem).toHaveBeenCalledWith('token');
         expect(localStorageMock.removeItem).toHaveBeenCalledWith('currentUser');
+        expect(localStorageMock.removeItem).toHaveBeenCalledWith('cafe_user');
       });
     });
 
     describe('verifyToken', () => {
       it('returns user when token is valid', async () => {
-        localStorageMock.getItem.mockReturnValue('valid-token');
         const mockUser = { id: 1, email: 'test@example.com' };
         (fetch as jest.Mock).mockResolvedValueOnce({
           ok: true,
@@ -201,9 +203,9 @@ describe('API Layer', () => {
           expect.objectContaining({
             method: 'POST',
             body: JSON.stringify({ token: 'google-credential-token' }),
+            credentials: 'include',
           })
         );
-        expect(localStorageMock.setItem).toHaveBeenCalledWith('token', 'google-jwt-token');
         expect(result).toEqual(mockUser);
       });
     });

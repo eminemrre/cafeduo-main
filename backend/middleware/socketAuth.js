@@ -33,8 +33,11 @@ if (!***REMOVED***) {
  */
 const socketAuthMiddleware = async (socket, next) => {
     try {
-        // Extract token from handshake auth
-        const token = socket.handshake.auth?.token;
+        // Try cookie first (new), fallback to handshake auth token (legacy).
+        const cookieToken = socket.request?.cookies?.auth_token;
+        const handshakeToken = socket.handshake.auth?.token;
+        const token = cookieToken || handshakeToken;
+        const tokenSource = cookieToken ? 'cookie' : 'handshake';
 
         if (!token) {
             logger.warn('Socket connection rejected: No token provided', {
@@ -160,12 +163,14 @@ const socketAuthMiddleware = async (socket, next) => {
         socket.user = user;
         socket.userId = user.id;
         socket.username = user.username;
+        socket.tokenSource = tokenSource;
 
         logger.info('Socket authenticated successfully', {
             socketId: socket.id,
             userId: user.id,
             username: user.username,
-            ip: socket.handshake.address
+            ip: socket.handshake.address,
+            tokenSource,
         });
 
         next();

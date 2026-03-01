@@ -50,10 +50,13 @@ describe('storeController', () => {
 
     await storeController.getInventory(req, res);
 
-    expect(db.query).toHaveBeenCalledWith(
-      'SELECT * FROM user_items WHERE user_id = $1 ORDER BY redeemed_at DESC',
-      [42]
-    );
+    expect(db.query).toHaveBeenCalledTimes(1);
+    const [queryStr, queryParams] = db.query.mock.calls[0];
+    expect(queryStr).toContain('FROM user_items');
+    expect(queryStr).toContain('WHERE user_id = $1');
+    expect(queryStr).toContain('LIMIT 100');
+    expect(queryStr).not.toContain('SELECT *');
+    expect(queryParams).toEqual([42]);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
       inventory: [{ id: 9, code: 'RANK_NEON_SWORD' }],

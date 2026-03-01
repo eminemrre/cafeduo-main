@@ -58,7 +58,7 @@ describe('auth middleware', () => {
 
   it('returns 401 when bearer token is missing', async () => {
     const { auth } = loadAuthModule();
-    const req = { headers: {} };
+    const req = { headers: {}, cookies: {} };
     const res = createRes();
     const next = jest.fn();
 
@@ -90,7 +90,7 @@ describe('auth middleware', () => {
       rows: [{ id: 42, username: 'emin', role: 'user', isAdmin: false }],
     });
 
-    const req = { headers: { authorization: 'Bearer token-123' } };
+    const req = { headers: { authorization: 'Bearer token-123' }, cookies: {} };
     const res = createRes();
     const next = jest.fn();
 
@@ -99,6 +99,50 @@ describe('auth middleware', () => {
     expect(verify).toHaveBeenCalledWith('token-123', 'unit-test-secret');
     expect(query).toHaveBeenCalledTimes(1);
     expect(req.user).toEqual(expect.objectContaining({ id: 42, username: 'emin' }));
+    expect(req.tokenSource).toBe('header');
+    expect(req.authToken).toBe('token-123');
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
+  it('accepts token from auth cookie', async () => {
+    const { auth, verify, isDbConnected, query } = loadAuthModule();
+    verify.mockReturnValue({ id: 21 });
+    isDbConnected.mockResolvedValue(true);
+    query.mockResolvedValue({
+      rows: [{ id: 21, username: 'cookie-user', role: 'user', isAdmin: false }],
+    });
+
+    const req = { headers: {}, cookies: { auth_token: 'cookie-token-1' } };
+    const res = createRes();
+    const next = jest.fn();
+
+    await auth.authenticateToken(req, res, next);
+
+    expect(verify).toHaveBeenCalledWith('cookie-token-1', 'unit-test-secret');
+    expect(req.tokenSource).toBe('cookie');
+    expect(req.authToken).toBe('cookie-token-1');
+    expect(next).toHaveBeenCalledTimes(1);
+  });
+
+  it('prioritizes cookie token over authorization header', async () => {
+    const { auth, verify, isDbConnected, query } = loadAuthModule();
+    verify.mockReturnValue({ id: 22 });
+    isDbConnected.mockResolvedValue(true);
+    query.mockResolvedValue({
+      rows: [{ id: 22, username: 'priority-user', role: 'user', isAdmin: false }],
+    });
+
+    const req = {
+      headers: { authorization: 'Bearer header-token-1' },
+      cookies: { auth_token: 'cookie-token-priority' },
+    };
+    const res = createRes();
+    const next = jest.fn();
+
+    await auth.authenticateToken(req, res, next);
+
+    expect(verify).toHaveBeenCalledWith('cookie-token-priority', 'unit-test-secret');
+    expect(req.tokenSource).toBe('cookie');
     expect(next).toHaveBeenCalledTimes(1);
   });
 
@@ -108,7 +152,7 @@ describe('auth middleware', () => {
     isDbConnected.mockResolvedValue(true);
     query.mockResolvedValue({ rows: [] });
 
-    const req = { headers: { authorization: 'Bearer token-unknown' } };
+    const req = { headers: { authorization: 'Bearer token-unknown' }, cookies: {} };
     const res = createRes();
     const next = jest.fn();
 
@@ -131,7 +175,7 @@ describe('auth middleware', () => {
       games_played: 4,
     });
 
-    const req = { headers: { authorization: 'Bearer token-memory' } };
+    const req = { headers: { authorization: 'Bearer token-memory' }, cookies: {} };
     const res = createRes();
     const next = jest.fn();
 
@@ -154,7 +198,7 @@ describe('auth middleware', () => {
       throw invalidError;
     });
 
-    const req = { headers: { authorization: 'Bearer broken' } };
+    const req = { headers: { authorization: 'Bearer broken' }, cookies: {} };
     const res = createRes();
     const next = jest.fn();
 

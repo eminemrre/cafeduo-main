@@ -156,7 +156,7 @@ describe('useGames', () => {
     });
 
     act(() => {
-      jest.advanceTimersByTime(5000);
+      jest.advanceTimersByTime(20000); // 20s to trigger polling retry (15s interval)
     });
 
     await waitFor(() => {
@@ -337,6 +337,7 @@ describe('useGames', () => {
   it('keeps polling healthy and clears interval on unmount', async () => {
     (api.games.list as jest.Mock).mockResolvedValue([]);
     (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);
+
     const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
 
     const { unmount } = renderHook(() =>
@@ -348,8 +349,9 @@ describe('useGames', () => {
       expect(api.users.getActiveGame).toHaveBeenCalledTimes(1);
     });
 
+    // Polling interval changed from 4s to 15s (Socket.IO is primary now)
     await act(async () => {
-      jest.advanceTimersByTime(10000);
+      jest.advanceTimersByTime(20000); // 20s to trigger at least 1 poll (15s interval)
       await Promise.resolve();
     });
 
@@ -360,7 +362,6 @@ describe('useGames', () => {
     expect(clearIntervalSpy).toHaveBeenCalled();
     clearIntervalSpy.mockRestore();
   });
-
   it('setActiveGame updates state', () => {
     (api.games.list as jest.Mock).mockResolvedValue([]);
     (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);

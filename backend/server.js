@@ -287,6 +287,17 @@ io.on('connection', (socket) => {
     logger.info(`Socket ${socket.id} (${socket.username}) joined game: ${normalizedGameId}`);
   });
 
+  // Oyun odasından ayrılma
+  socket.on('leave_game', (gameId) => {
+    const normalizedGameId = String(gameId || '').trim();
+    if (!normalizedGameId || normalizedGameId.length > 64) {
+      return;
+    }
+
+    socket.leave(normalizedGameId);
+    logger.info(`Socket ${socket.id} (${socket.username}) left game: ${normalizedGameId}`);
+  });
+
   socket.on('game_move', (data) => {
     const normalizedGameId = String(data?.gameId || '').trim();
     if (!normalizedGameId || normalizedGameId.length > 64) return;

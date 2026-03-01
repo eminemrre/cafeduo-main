@@ -63,6 +63,8 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
   const [message, setMessage] = useState('Soruları hızlı ve doğru yanıtla. En yüksek net kazanır.');
   const [hostName, setHostName] = useState('');
   const [guestName, setGuestName] = useState('');
+  const [feedbackAnimation, setFeedbackAnimation] = useState<'correct' | 'incorrect' | null>(null);
+  const [scoreAnimation, setScoreAnimation] = useState<'player' | 'opponent' | null>(null);
   const matchStartedAtRef = useRef<number>(Date.now());
   const advanceTimerRef = useRef<number | null>(null);
   const pollRef = useRef<number | null>(null);
@@ -257,6 +259,15 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
     const nextOpponentScore = opponentScore + (rivalCorrect ? 1 : 0);
 
     setSelectedOption(optionIndex);
+    
+    // Feedback animation
+    setFeedbackAnimation(isCorrect ? 'correct' : 'incorrect');
+    setTimeout(() => setFeedbackAnimation(null), 600);
+    
+    // Score animation
+    setScoreAnimation(isCorrect ? 'player' : 'opponent');
+    setTimeout(() => setScoreAnimation(null), 400);
+    
     setPlayerScore(nextPlayerScore);
     setOpponentScore(nextOpponentScore);
     setMessage(
@@ -314,14 +325,20 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
 
         <div className="grid grid-cols-3 gap-2.5 mb-5 text-center">
           <div className="rf-screen-card-muted p-3">
-            <div className="text-xs text-[var(--rf-muted)]">Tur</div>
+            <div className="text-xs text-[var(--rf-muted)] mb-1">Tur</div>
             <div className="font-bold text-cyan-100">{Math.min(roundIndex + 1, maxRounds)} / {maxRounds}</div>
+            <div className="mt-2 h-1.5 bg-[#0a1f3a] rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-cyan-400 to-cyan-300 transition-all duration-500 ease-out"
+                style={{ width: `${((roundIndex + 1) / maxRounds) * 100}%` }}
+              />
+            </div>
           </div>
-          <div className="rf-screen-card-muted p-3">
+          <div className={`rf-screen-card-muted p-3 transition-all duration-300 ${scoreAnimation === 'player' ? 'animate-score-pop' : ''}`}>
             <div className="text-xs text-[var(--rf-muted)]">Sen</div>
             <div className="font-bold text-cyan-100">{playerScore}</div>
           </div>
-          <div className="rf-screen-card-muted p-3">
+          <div className={`rf-screen-card-muted p-3 transition-all duration-300 ${scoreAnimation === 'opponent' ? 'animate-score-pop' : ''}`}>
             <div className="text-xs text-[var(--rf-muted)]">Rakip</div>
             <div className="font-bold text-cyan-100">{opponentScore}</div>
           </div>
@@ -329,7 +346,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
 
         <p className="text-sm text-[var(--rf-muted)] mb-4 pl-3 border-l-2 border-cyan-400/55 min-h-[2rem] flex items-center">{message}</p>
 
-        <div className="rf-screen-card-muted p-4">
+        <div className={`rf-screen-card-muted p-4 transition-all duration-300 ${feedbackAnimation === 'correct' ? 'animate-flash-green' : feedbackAnimation === 'incorrect' ? 'animate-flash-red' : ''}`}>
           <p data-testid="knowledge-question" className="text-base md:text-lg font-semibold text-white leading-relaxed mb-4">
             {currentQuestion.question}
           </p>
@@ -338,23 +355,41 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
               const isPicked = selectedOption === idx;
               const isCorrect = idx === currentQuestion.answerIndex;
               const stateClass = selectedOption === null
-                ? 'border-cyan-400/25 hover:border-cyan-300/45 bg-[#102348]/70 hover:bg-[#15305f]/70'
+                ? 'border-cyan-400/25 hover:border-cyan-300/45 bg-[#102348]/70 hover:bg-[#15305f]/70 hover:scale-[1.02] hover:shadow-[0_4px_12px_rgba(34,211,238,0.15)]'
                 : isPicked && isCorrect
-                  ? 'border-emerald-400/40 bg-emerald-500/20'
+                  ? 'border-emerald-400/60 bg-emerald-500/25 shadow-[0_0_20px_rgba(52,211,153,0.3)] scale-[1.02]'
                   : isPicked
-                    ? 'border-rose-400/40 bg-rose-500/20'
+                    ? 'border-rose-400/60 bg-rose-500/25 shadow-[0_0_20px_rgba(244,63,94,0.3)] scale-[1.02]'
                     : isCorrect
-                      ? 'border-emerald-400/30 bg-emerald-500/10'
-                      : 'border-cyan-400/20 bg-[#0d1f40]/55';
+                      ? 'border-emerald-400/40 bg-emerald-500/15'
+                      : 'border-cyan-400/20 bg-[#0d1f40]/55 opacity-60';
+              const leftBorderClass = selectedOption === null
+                ? 'hover:border-l-4'
+                : isPicked && isCorrect
+                  ? 'border-l-4 border-l-emerald-400'
+                  : isPicked
+                    ? 'border-l-4 border-l-rose-400'
+                    : isCorrect
+                      ? 'border-l-4 border-l-emerald-400/50'
+                      : '';
               return (
                 <button
                   key={`${roundIndex}-${idx}`}
                   data-testid={`knowledge-option-${idx}`}
                   onClick={() => handleAnswer(idx)}
                   disabled={selectedOption !== null || done || resolvingMatch}
-                  className={`text-left border px-3.5 py-3 transition ${stateClass}`}
+                  className={`text-left border px-3.5 py-3 transition-all duration-200 ${stateClass} ${leftBorderClass}`}
                 >
-                  {option}
+                  <span className="flex items-center gap-3">
+                    <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0
+                      ${selectedOption === null ? 'bg-cyan-400/20 text-cyan-300' :
+                        isPicked && isCorrect ? 'bg-emerald-400 text-white' :
+                        isPicked ? 'bg-rose-400 text-white' :
+                        isCorrect ? 'bg-emerald-400/30 text-emerald-300' : 'bg-cyan-400/10 text-cyan-300/50'}`}>
+                      {String.fromCharCode(65 + idx)}
+                    </span>
+                    <span>{option}</span>
+                  </span>
                 </button>
               );
             })}

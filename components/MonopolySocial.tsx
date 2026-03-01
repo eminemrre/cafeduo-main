@@ -106,6 +106,8 @@ export const MonopolySocial: React.FC<MonopolySocialProps> = ({
   const sentRef = useRef(false);
   const socketRef = useRef(socketService.getSocket());
   const [waitingForOpponent, setWaitingForOpponent] = useState(!isBot);
+  const [diceRolling, setDiceRolling] = useState(false);
+  const [diceValue, setDiceValue] = useState<number | null>(null);
 
   const isMyTurn = useMemo(() => state.turn === myRole, [state.turn, myRole]);
   const myName = currentUser.username;
@@ -334,41 +336,51 @@ export const MonopolySocial: React.FC<MonopolySocialProps> = ({
 
   // ======= Player Actions =======
   const takeTurn = () => {
-    setState((prev) => {
-      if (prev.finished || prev.turn !== myRole || prev.pendingPurchase) return prev;
+    if (diceRolling) return; // Prevent multiple clicks during animation
+    
+    setDiceRolling(true);
+    const dice = rollDice();
+    setDiceValue(dice);
+    
+    // Animate dice roll
+    setTimeout(() => {
+      setDiceRolling(false);
+      
+      setState((prev) => {
+        if (prev.finished || prev.turn !== myRole || prev.pendingPurchase) return prev;
 
-      const dice = rollDice();
-      const startPos = myRole === 'host' ? prev.hostPos : prev.guestPos;
-      const nextPos = (startPos + dice) % BOARD.length;
-      const bonus = passStartBonus(startPos, nextPos);
+        const startPos = myRole === 'host' ? prev.hostPos : prev.guestPos;
+        const nextPos = (startPos + dice) % BOARD.length;
+        const bonus = passStartBonus(startPos, nextPos);
 
-      const moved: MonopolyState = myRole === 'host'
-        ? { ...prev, hostPos: nextPos, hostCash: prev.hostCash + bonus, lastRoll: dice, turnCount: prev.turnCount + 1, pendingPurchase: null }
-        : { ...prev, guestPos: nextPos, guestCash: prev.guestCash + bonus, lastRoll: dice, turnCount: prev.turnCount + 1, pendingPurchase: null };
+        const moved: MonopolyState = myRole === 'host'
+          ? { ...prev, hostPos: nextPos, hostCash: prev.hostCash + bonus, lastRoll: dice, turnCount: prev.turnCount + 1, pendingPurchase: null }
+          : { ...prev, guestPos: nextPos, guestCash: prev.guestCash + bonus, lastRoll: dice, turnCount: prev.turnCount + 1, pendingPurchase: null };
 
-      const settled = settleLandingPure(moved, myRole, nextPos);
+        const settled = settleLandingPure(moved, myRole, nextPos);
 
-      // If there's a pending purchase for us, don't switch turn yet
-      if (settled.pendingPurchase?.owner === myRole) {
+        // If there's a pending purchase for us, don't switch turn yet
+        if (settled.pendingPurchase?.owner === myRole) {
+          // Emit move to opponent (PvP)
+          if (!isBot && gameId) {
+            socketService.emitMove(String(gameId), { type: 'roll', roller: myRole, dice });
+          }
+          return settled;
+        }
+
+        const nextTurn: TurnOwner = myRole === 'host' ? 'guest' : 'host';
+        const switched = { ...settled, turn: nextTurn };
+        const checked = maybeEndByStatePure(switched);
+
         // Emit move to opponent (PvP)
         if (!isBot && gameId) {
           socketService.emitMove(String(gameId), { type: 'roll', roller: myRole, dice });
         }
-        return settled;
-      }
 
-      const nextTurn: TurnOwner = myRole === 'host' ? 'guest' : 'host';
-      const switched = { ...settled, turn: nextTurn };
-      const checked = maybeEndByStatePure(switched);
-
-      // Emit move to opponent (PvP)
-      if (!isBot && gameId) {
-        socketService.emitMove(String(gameId), { type: 'roll', roller: myRole, dice });
-      }
-
-      // Bot auto-play after our turn
-      return botAutoAction(checked);
-    });
+        // Bot auto-play after our turn
+        return botAutoAction(checked);
+      });
+    }, 600); // Wait for dice animation
   };
 
   const resolvePurchase = (accept: boolean) => {
@@ -482,21 +494,45 @@ export const MonopolySocial: React.FC<MonopolySocialProps> = ({
             return (
               <div
                 key={cell.id}
-                className={`w-28 h-24 border p-2 text-xs ${
+                className={`relative w-28 h-24 border p-2 text-xs transition-all hover:scale-105 hover:shadow-lg ${
                   owner === myRole
-                    ? 'border-cyan-300 bg-cyan-500/12'
+                    ? 'border-cyan-300 bg-gradient-to-br from-cyan-500/20 to-cyan-600/10'
                     : owner
-                      ? 'border-fuchsia-300 bg-fuchsia-500/12'
-                      : 'border-cyan-500/30 bg-black/25'
+                      ? 'border-fuchsia-300 bg-gradient-to-br from-fuchsia-500/20 to-fuchsia-600/10'
+                      : 'border-cyan-500/30 bg-gradient-to-br from-black/30 to-black/20 hover:border-cyan-500/50'
                 }`}
               >
-                <p className="font-semibold truncate">{cell.name}</p>
-                {cell.id !== 0 && (
-                  <p className="text-[10px] text-[var(--rf-muted)] mt-1">Maliyet {cell.cost} / Kira {cell.rent}</p>
+                {/* Pattern overlay for unowned cells */}
+                {!owner && cell.id !== 0 && (
+                  <div className="absolute inset-0 opacity-10 bg-[linear-gradient(45deg,rgba(34,211,238,0.1)_25%,transparent_25%,transparent_50%,rgba(34,211,238,0.1)_50%,rgba(34,211,238,0.1)_75%,transparent_75%,transparent_100%)] [background-size:8px_8px] pointer-events-none" />
                 )}
-                <div className="mt-2 flex gap-1">
-                  {myPosHere && <span className="px-1 bg-cyan-400 text-[#021025] font-bold">S</span>}
-                  {oppPosHere && <span className="px-1 bg-fuchsia-400 text-[#021025] font-bold">R</span>}
+                
+                {/* Ownership badge */}
+                {owner && (
+                  <div className={`absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-[9px] font-bold rounded-sm animate-ownership-badge ${
+                    owner === myRole
+                      ? 'bg-cyan-400 text-[#021025] border border-cyan-300'
+                      : 'bg-fuchsia-400 text-[#021025] border border-fuchsia-300'
+                  }`}>
+                    {owner === myRole ? 'SENİN' : 'RAKİP'}
+                  </div>
+                )}
+                
+                <p className="font-semibold truncate relative z-10">{cell.name}</p>
+                {cell.id !== 0 && (
+                  <p className="text-[10px] text-[var(--rf-muted)] mt-1 relative z-10">Maliyet {cell.cost} / Kira {cell.rent}</p>
+                )}
+                <div className="mt-2 flex gap-1 relative z-10">
+                  {myPosHere && (
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-400 to-cyan-500 text-[#021025] font-bold flex items-center justify-center text-xs shadow-lg animate-avatar-pop border border-cyan-300">
+                      S
+                    </div>
+                  )}
+                  {oppPosHere && (
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-fuchsia-400 to-fuchsia-500 text-[#021025] font-bold flex items-center justify-center text-xs shadow-lg animate-avatar-pop border border-fuchsia-300">
+                      R
+                    </div>
+                  )}
                 </div>
               </div>
             );
@@ -525,10 +561,30 @@ export const MonopolySocial: React.FC<MonopolySocialProps> = ({
       )}
 
       {!state.finished && !state.pendingPurchase && (
-        <div className="mt-4">
-          <RetroButton onClick={takeTurn} disabled={!isMyTurn}>
-            {isMyTurn ? '🎲 Zar At' : `⏳ ${opponentLabel} oynuyor...`}
+        <div className="mt-4 flex items-center gap-4">
+          <RetroButton onClick={takeTurn} disabled={!isMyTurn || diceRolling}>
+            {diceRolling ? 'Zar Atılıyor...' : (isMyTurn ? '🎲 Zar At' : `⏳ ${opponentLabel} oynuyor...`)}
           </RetroButton>
+          
+          {/* Dice animation display */}
+          {diceRolling && (
+            <div className="flex items-center gap-2">
+              <div className="w-12 h-12 bg-gradient-to-br from-cyan-500/20 to-cyan-600/30 border-2 border-cyan-400 flex items-center justify-center text-2xl font-bold animate-dice-spin">
+                🎲
+              </div>
+              <span className="text-sm text-cyan-300 animate-pulse">Atılıyor...</span>
+            </div>
+          )}
+          
+          {/* Last dice result (when not rolling) */}
+          {!diceRolling && diceValue && (
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/20 to-emerald-600/30 border-2 border-emerald-400 flex items-center justify-center text-xl font-bold">
+                {diceValue}
+              </div>
+              <span className="text-xs text-[var(--rf-muted)]">Son Zar</span>
+            </div>
+          )}
         </div>
       )}
 

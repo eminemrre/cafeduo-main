@@ -29,7 +29,7 @@ const createDeleteGameHandler = (deps) => {
               OR LOWER(COALESCE(guest_name, '')) = LOWER($2)
               OR $3 = true
             )
-          RETURNING id
+          RETURNING id, table_code
         `,
         [id, req.user?.username || '', isAdminActor(req.user)]
       );
@@ -37,9 +37,11 @@ const createDeleteGameHandler = (deps) => {
         return res.status(404).json({ error: 'Oyun bulunamadı veya silme yetkiniz yok.' });
       }
       
+      const deletedGame = result.rows[0];
+      
       // Cache invalidation - oyun silindi
       lobbyCacheService?.onGameDeleted({
-        tableCode: result.rows[0]?.table,
+        tableCode: deletedGame.table_code,
       }).catch((err) => {
         logger.warn(`Cache invalidation failed on game deleted: ${err.message}`);
       });
@@ -47,13 +49,16 @@ const createDeleteGameHandler = (deps) => {
       emitLobbyUpdate({
         action: 'game_deleted',
         gameId: id,
+        tableCode: deletedGame.table_code,
       });
       return res.json({ success: true });
     }
 
     const currentGames = getMemoryGames();
+    let deletedTableCode = null;
     const nextGames = currentGames.filter((game) => {
       if (String(game.id) !== String(id)) return true;
+      deletedTableCode = game.table;
       if (isAdminActor(req.user)) return false;
       const actor = String(req.user?.username || '').toLowerCase();
       return String(game.hostName || '').toLowerCase() !== actor && String(game.guestName || '').toLowerCase() !== actor;
@@ -65,6 +70,7 @@ const createDeleteGameHandler = (deps) => {
     emitLobbyUpdate({
       action: 'game_deleted',
       gameId: id,
+      tableCode: deletedTableCode,
     });
     return res.json({ success: true });
   };

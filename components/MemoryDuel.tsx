@@ -40,6 +40,8 @@ export const MemoryDuel: React.FC<MemoryDuelProps> = ({
     const [resolvingMatch, setResolvingMatch] = useState(false);
     const [isReady, setIsReady] = useState(false);
     const [isPlayerTurn, setIsPlayerTurn] = useState(true);
+    const [scoreParticles, setScoreParticles] = useState<{ id: number; x: number; y: number }[]>([]);
+    const [matchedCards, setMatchedCards] = useState<Set<number>>(new Set());
 
     const target = opponentName || 'Rakip';
     const finishHandledRef = useRef(false);
@@ -213,6 +215,20 @@ export const MemoryDuel: React.FC<MemoryDuelProps> = ({
 
     const matchCardsInternal = (indices: number[], byPlayer: string, isSilent = false) => {
         if (!isSilent) playGameSfx('success', 0.3);
+        
+        // Add matched cards to set for animation
+        setMatchedCards(prev => new Set([...prev, ...indices]));
+        
+        // Create score particles for player matches
+        if (byPlayer === currentUser.username && indices.length > 0) {
+            const firstCardIdx = indices[0];
+            const particleId = Date.now();
+            setScoreParticles(prev => [...prev, { id: particleId, x: firstCardIdx % 4, y: Math.floor(firstCardIdx / 4) }]);
+            setTimeout(() => {
+                setScoreParticles(prev => prev.filter(p => p.id !== particleId));
+            }, 800);
+        }
+        
         setCards(prev => {
             const next = [...prev];
             indices.forEach(idx => {
@@ -363,7 +379,7 @@ export const MemoryDuel: React.FC<MemoryDuelProps> = ({
     }, [done, isBot, target]);
 
     return (
-        <div className="max-w-xl mx-auto rf-screen-card noise-bg p-4 sm:p-6 text-white relative overflow-hidden" data-testid="memory-duel">
+        <div className="max-w-xl mx-auto rf-screen-card noise-bg p-4 sm:p-6 text-white relative overflow-hidden animate-background-glow" data-testid="memory-duel">
             <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(transparent_95%,rgba(34,211,238,0.09)_100%)] [background-size:100%_4px] opacity-60" />
 
             <div className="relative z-10">
@@ -381,16 +397,32 @@ export const MemoryDuel: React.FC<MemoryDuelProps> = ({
                 </div>
 
                 {/* Scoreboard */}
-                <div className="grid grid-cols-2 gap-4 mb-6 text-center">
+                <div className="grid grid-cols-2 gap-4 mb-6 text-center relative">
+                    {scoreParticles.map(particle => (
+                        <div
+                            key={particle.id}
+                            className="absolute animate-score-particle pointer-events-none"
+                            style={{
+                                left: `${particle.x * 25 + 12.5}%`,
+                                top: '50%',
+                                color: '#34d399',
+                                fontSize: '1.5rem',
+                                fontWeight: 'bold',
+                                zIndex: 10,
+                            }}
+                        >
+                            +1
+                        </div>
+                    ))}
                     <div className="rf-screen-card-muted p-3">
                         <div className="text-xs text-[var(--rf-muted)] mb-1">Sen</div>
-                        <div className="font-pixel text-3xl text-cyan-300">
+                        <div className={`font-pixel text-3xl text-cyan-300 ${playerScore > 0 ? 'animate-score-pop' : ''}`}>
                             {playerScore}
                         </div>
                     </div>
                     <div className="rf-screen-card-muted p-3">
                         <div className="text-xs text-[var(--rf-muted)] mb-1">{target}</div>
-                        <div className="font-pixel text-3xl text-pink-400">
+                        <div className={`font-pixel text-3xl text-pink-400 ${opponentScore > 0 ? 'animate-score-pop' : ''}`}>
                             {opponentScore}
                         </div>
                     </div>
@@ -404,6 +436,7 @@ export const MemoryDuel: React.FC<MemoryDuelProps> = ({
                         const myFlipped = card.flippedBy === currentUser.username;
                         const opponentFlipped = card.flippedBy && card.flippedBy !== currentUser.username;
                         const isMatched = card.matchedBy !== null;
+                        const justMatched = matchedCards.has(idx);
 
                         const isVisible = myFlipped || opponentFlipped || isMatched;
                         const borderColor = isMatched
@@ -411,23 +444,43 @@ export const MemoryDuel: React.FC<MemoryDuelProps> = ({
                             : (myFlipped ? 'border-cyan-300' : (opponentFlipped ? 'border-pink-400' : 'border-cyan-800/40 hover:border-cyan-500/50'));
 
                         const opacity = isMatched ? 'opacity-50 scale-95' : 'opacity-100';
+                        const matchAnimation = justMatched ? 'animate-match-bounce' : '';
+                        const glowAnimation = isMatched && justMatched ? 'animate-match-glow' : '';
 
                         return (
                             <button
                                 key={idx}
                                 onClick={() => handleCardClick(idx)}
                                 disabled={!isReady || done}
-                                className={`relative aspect-square bg-[#040a16] border-2 ${borderColor} ${opacity} transition-all duration-300 transform-gpu preserve-3d cursor-pointer focus:outline-none`}
+                                className={`relative aspect-square bg-[#040a16] border-2 ${borderColor} ${opacity} ${matchAnimation} ${glowAnimation} transition-all duration-300 transform-gpu preserve-3d cursor-pointer focus:outline-none`}
+                                onAnimationEnd={() => {
+                                    if (justMatched) {
+                                        setMatchedCards(prev => {
+                                            const next = new Set(prev);
+                                            next.delete(idx);
+                                            return next;
+                                        });
+                                    }
+                                }}
                             >
                                 <div className={`absolute inset-0 backface-hidden flex items-center justify-center text-3xl sm:text-4xl transition-transform duration-500 ${isVisible ? '[transform:rotateY(180deg)]' : ''}`}>
-                                    {/* Back of card */}
-                                    <div className="w-full h-full bg-[linear-gradient(45deg,rgba(34,211,238,0.05)_25%,transparent_25%,transparent_50%,rgba(34,211,238,0.05)_50%,rgba(34,211,238,0.05)_75%,transparent_75%,transparent_100%)] [background-size:20px_20px]" />
-                                    <div className="absolute inset-0 flex items-center justify-center opacity-30 font-pixel text-cyan-800 text-xs">?</div>
+                                    {/* Back of card - Enhanced with gradient and border overlay */}
+                                    <div className="w-full h-full relative overflow-hidden">
+                                        <div className="absolute inset-0 bg-gradient-to-br from-cyan-900/30 via-blue-900/20 to-purple-900/30" />
+                                        <div className="absolute inset-0 bg-[linear-gradient(45deg,rgba(34,211,238,0.08)_25%,transparent_25%,transparent_50%,rgba(34,211,238,0.08)_50%,rgba(34,211,238,0.08)_75%,transparent_75%,transparent_100%)] [background-size:16px_16px]" />
+                                        <div className="absolute inset-0 border border-cyan-500/20 rounded-sm" />
+                                        <div className="absolute inset-0 flex items-center justify-center opacity-40 font-pixel text-cyan-700 text-xs">?</div>
+                                        {/* Corner accents */}
+                                        <div className="absolute top-1 left-1 w-2 h-2 border-t border-l border-cyan-500/40" />
+                                        <div className="absolute top-1 right-1 w-2 h-2 border-t border-r border-cyan-500/40" />
+                                        <div className="absolute bottom-1 left-1 w-2 h-2 border-b border-l border-cyan-500/40" />
+                                        <div className="absolute bottom-1 right-1 w-2 h-2 border-b border-r border-cyan-500/40" />
+                                    </div>
                                 </div>
 
-                                <div className={`absolute inset-0 backface-hidden flex items-center justify-center text-4xl sm:text-5xl bg-[#0a1732] transition-transform duration-500 ${isVisible ? '' : '[transform:rotateY(-180deg)]'}`}>
+                                <div className={`absolute inset-0 backface-hidden flex items-center justify-center text-4xl sm:text-5xl bg-gradient-to-br from-[#0a1732] to-[#0d1f3d] transition-transform duration-500 ${isVisible ? '' : '[transform:rotateY(-180deg)]'}`}>
                                     {/* Front of card */}
-                                    <span className={isMatched ? 'drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] scale-110 transition-transform' : ''}>
+                                    <span className={`${isMatched ? 'drop-shadow-[0_0_15px_rgba(255,255,255,0.9)] scale-110' : ''} transition-transform duration-300`}>
                                         {card.emoji}
                                     </span>
                                 </div>

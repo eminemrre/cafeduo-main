@@ -87,6 +87,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
   const [resolvingMatch, setResolvingMatch] = useState(false);
   const [hostName, setHostName] = useState('');
   const [guestName, setGuestName] = useState('');
+  const [showShotImpact, setShowShotImpact] = useState(false);
 
   const directionRef = useRef<1 | -1>(1);
   const nextRoundTimeoutRef = useRef<number | null>(null);
@@ -312,6 +313,8 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
 
     setPlayerShot(shot);
     setPlayerScore(nextPlayerScore);
+    setShowShotImpact(true);
+    setTimeout(() => setShowShotImpact(false), 500);
     playGameSfx(gainedPoints > 0 ? 'success' : 'fail', gainedPoints > 0 ? 0.24 : 0.2);
 
     if (isBot) {
@@ -389,18 +392,57 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
 
         <p className="text-sm text-[var(--rf-muted)] mb-4 pl-3 border-l-2 border-cyan-400/55 min-h-[2rem] flex items-center">{message}</p>
 
-        <div className="rf-screen-card-muted p-4 mb-4">
+        <div className="rf-screen-card-muted p-4 mb-4 relative">
           <div className="flex items-center justify-between text-xs text-[var(--rf-muted)] mb-2">
             <span>Nişan Çubuğu</span>
-            <span>{Math.round(gauge)}%</span>
+            <span className="font-mono">{Math.round(gauge)}%</span>
           </div>
-          <div className="relative h-8 border border-cyan-400/24 bg-[#061329] overflow-hidden">
-            <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-7 bg-emerald-400/25 border-x border-emerald-300/45" />
-            <div className="absolute inset-y-0 left-[calc(50%-18px)] w-9 border-x border-cyan-300/30" />
+          {/* Score zone labels */}
+          <div className="relative h-3 mb-1 text-[9px] text-[var(--rf-muted)] leading-none overflow-hidden">
+            <span className="absolute left-0">0 puan</span>
+            <span className="absolute" style={{ left: 'calc(32% - 12px)' }}>1 puan</span>
+            <span className="absolute" style={{ left: 'calc(40% - 10px)' }}>2 puan</span>
+            <span className="absolute left-1/2 -translate-x-1/2 text-emerald-300 font-bold">3 puan</span>
+            <span className="absolute" style={{ left: 'calc(60% - 10px)' }}>2 puan</span>
+            <span className="absolute" style={{ left: 'calc(68% - 12px)' }}>1 puan</span>
+            <span className="absolute right-0">0 puan</span>
+          </div>
+          <div className="relative h-10 border border-cyan-400/24 bg-[#061329] overflow-hidden">
+            {/* Score zone gradients */}
+            <div className="absolute inset-y-0 left-0 right-0 bg-gradient-to-r from-red-900/20 via-transparent to-red-900/20" />
+            <div className="absolute inset-y-0 bg-gradient-to-r from-yellow-800/15 to-yellow-800/15" style={{ left: '32%', right: '32%' }} />
+            <div className="absolute inset-y-0 bg-gradient-to-r from-emerald-800/20 to-emerald-800/20" style={{ left: '40%', right: '40%' }} />
+            {/* Center target zone (3 points) - enhanced with glow */}
+            <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[8%] bg-emerald-400/25 border-x border-emerald-300/50 animate-gauge-zone-glow" />
+            {/* Target zone lines */}
+            <div className="absolute inset-y-0 border-l border-yellow-400/30" style={{ left: '32%' }} />
+            <div className="absolute inset-y-0 border-l border-yellow-400/30" style={{ left: '68%' }} />
+            <div className="absolute inset-y-0 border-l border-emerald-400/40" style={{ left: '40%' }} />
+            <div className="absolute inset-y-0 border-l border-emerald-400/40" style={{ left: '60%' }} />
+            {/* Center crosshair - pulsing */}
+            <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[2px] bg-emerald-300/60 animate-target-pulse" />
+            {/* Gauge marker */}
             <div
-              className="absolute top-0 h-full w-2 bg-cyan-300 shadow-[0_0_12px_rgba(34,211,238,0.7)]"
-              style={{ left: `calc(${gaugeMarkerLeft} - 4px)` }}
+              className="absolute top-0 h-full w-2.5 bg-cyan-300 shadow-[0_0_16px_rgba(34,211,238,0.8)]"
+              style={{ left: `calc(${gaugeMarkerLeft} - 5px)`, transition: 'none' }}
             />
+            {/* Shot impact visualization */}
+            {playerShot !== null && showShotImpact && (
+              <div
+                className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-yellow-300 animate-shot-impact"
+                style={{ left: `calc(${playerShot}% - 6px)` }}
+              />
+            )}
+            {/* Last shot marker (persistent) */}
+            {playerShot !== null && !showShotImpact && (
+              <div
+                className="absolute top-0 h-full w-1 bg-yellow-400/60"
+                style={{ left: `calc(${playerShot}% - 2px)` }}
+              >
+                <div className="absolute -top-0.5 -left-1 w-3 h-1 bg-yellow-400/80" />
+                <div className="absolute -bottom-0.5 -left-1 w-3 h-1 bg-yellow-400/80" />
+              </div>
+            )}
           </div>
           <div className="mt-2 text-xs text-[var(--rf-muted)]">
             Merkez (50) çevresine ne kadar yakın vurursan o kadar fazla puan alırsın.
@@ -410,11 +452,23 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
         <div className="grid grid-cols-2 gap-3 mb-4 text-xs">
           <div className="rf-screen-card-muted p-3">
             <div className="text-[var(--rf-muted)] mb-1">Son Atışın</div>
-            <div className="font-semibold">{playerShot === null ? '-' : `${Math.round(playerShot)}%`}</div>
+            <div className="font-semibold">
+              {playerShot === null ? '-' : (
+                <span className={pointsFromShot(playerShot) === 3 ? 'text-emerald-300' : pointsFromShot(playerShot) === 2 ? 'text-yellow-300' : pointsFromShot(playerShot) === 1 ? 'text-orange-300' : 'text-red-300'}>
+                  {Math.round(playerShot)}% ({pointsFromShot(playerShot)} puan)
+                </span>
+              )}
+            </div>
           </div>
           <div className="rf-screen-card-muted p-3">
             <div className="text-[var(--rf-muted)] mb-1">Rakip Atışı</div>
-            <div className="font-semibold">{opponentShot === null ? '-' : `${Math.round(opponentShot)}%`}</div>
+            <div className="font-semibold">
+              {opponentShot === null ? '-' : (
+                <span className={pointsFromShot(opponentShot) === 3 ? 'text-emerald-300' : pointsFromShot(opponentShot) === 2 ? 'text-yellow-300' : pointsFromShot(opponentShot) === 1 ? 'text-orange-300' : 'text-red-300'}>
+                  {Math.round(opponentShot)}% ({pointsFromShot(opponentShot)} puan)
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

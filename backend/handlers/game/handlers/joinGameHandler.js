@@ -166,7 +166,7 @@ const createJoinGameHandler = (deps) => {
         emitLobbyUpdate({
           action: 'game_joined',
           gameId: joinedGame.id,
-          table: joinedGame.table,
+          tableCode: joinedGame.table,
           status: joinedGame.status,
         });
         return res.json({ success: true, game: joinedGame });
@@ -239,7 +239,7 @@ const createJoinGameHandler = (deps) => {
     emitLobbyUpdate({
       action: 'game_joined',
       gameId: game.id,
-      table: game.table,
+      tableCode: game.table,
       status: game.status,
     });
     return res.json({ success: true, game });

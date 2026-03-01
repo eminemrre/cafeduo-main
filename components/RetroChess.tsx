@@ -190,6 +190,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('Klasik satranç modu: taş seç, hedef kareye tıkla.');
   const [liveResultLabel, setLiveResultLabel] = useState<string | null>(null);
+  const [lastMove, setLastMove] = useState<{ from: Square; to: Square } | null>(null);
   const [moveLog, setMoveLog] = useState<Array<{
     from: string;
     to: string;
@@ -293,6 +294,12 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       ? snapshot.gameState?.chess?.moveHistory
       : [];
     setMoveLog(incomingMoves.slice(-200));
+    
+    // Track last move for highlighting
+    if (incomingMoves.length > 0) {
+      const lastMoveEntry = incomingMoves[incomingMoves.length - 1];
+      setLastMove({ from: lastMoveEntry.from as Square, to: lastMoveEntry.to as Square });
+    }
 
     const incomingClock = snapshot.gameState?.chess?.clock;
     if (incomingClock && typeof incomingClock === 'object') {
@@ -356,6 +363,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     setServerWinner(null);
     setLiveResultLabel(null);
     setMoveLog([]);
+    setLastMove(null);
     setClockState({
       whiteMs: 3 * 60 * 1000,
       blackMs: 3 * 60 * 1000,
@@ -433,6 +441,11 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       if (payload.chess?.fen) {
         if (Array.isArray(payload.chess.moveHistory)) {
           setMoveLog(payload.chess.moveHistory.slice(-200));
+          // Track last move for highlighting
+          if (payload.chess.moveHistory.length > 0) {
+            const lastMoveEntry = payload.chess.moveHistory[payload.chess.moveHistory.length - 1];
+            setLastMove({ from: lastMoveEntry.from as Square, to: lastMoveEntry.to as Square });
+          }
         }
         if (payload.chess.clock && typeof payload.chess.clock === 'object') {
           setClockState({
@@ -473,7 +486,14 @@ export const RetroChess: React.FC<RetroChessProps> = ({
   }, [actorKey, concludeGame, fetchGameSnapshot, gameId, isBot]);
 
   useEffect(() => {
+    // Önce eski interval'ı temizle
+    if (pollingRef.current) {
+      window.clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+    
     if (isBot || !gameId) return;
+    
     pollingRef.current = window.setInterval(() => {
       if (document.visibilityState === 'hidden') return;
       if (serverStatus === 'finished') return;
@@ -481,9 +501,11 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       if (Date.now() - lastRealtimeAtRef.current < 8000) return;
       void fetchGameSnapshot(true);
     }, 5000);
+    
     return () => {
       if (pollingRef.current) {
         window.clearInterval(pollingRef.current);
+        pollingRef.current = null;
       }
     };
   }, [fetchGameSnapshot, gameId, isBot, serverStatus]);
@@ -543,12 +565,16 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     if (!movingPiece) return;
     const promotion = movingPiece.type === 'p' && (to.endsWith('8') || to.endsWith('1')) ? 'q' : undefined;
 
+    // Track last move for highlighting
+    setLastMove({ from, to });
+
     if (isBot || !gameId) {
       const sandbox = loadChess(chess.fen());
       const applied = sandbox.move({ from, to, ...(promotion ? { promotion } : {}) });
       if (!applied) {
         playGameSfx('fail', 0.25);
         setMessage('Yasadışı hamle.');
+        setLastMove(null);
         return;
       }
       const cloned = loadChess(sandbox.fen());
@@ -579,6 +605,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       setChess(engine);
       if (Array.isArray(result?.gameState?.chess?.moveHistory)) {
         setMoveLog(result.gameState.chess.moveHistory.slice(-200));
+        // Last move is already set before the API call
       }
       if (result?.gameState?.chess?.clock && typeof result.gameState.chess.clock === 'object') {
         setClockState({
@@ -805,12 +832,23 @@ export const RetroChess: React.FC<RetroChessProps> = ({
               const isLight = (fileIndex + rankIndex) % 2 === 0;
               const isSelected = selectedSquare === square;
               const isLegal = legalTargets.includes(square);
+              const isLastMoveFrom = lastMove?.from === square;
+              const isLastMoveTo = lastMove?.to === square;
+              const isInCheck = chess.isCheck() && piece?.type === 'k' && piece.color === chess.turn();
 
               const baseClass = isLight
                 ? 'bg-[linear-gradient(145deg,#4d88bf,#2f679f)]'
                 : 'bg-[linear-gradient(145deg,#102b4f,#0a1f39)]';
+              
+              // Add pattern overlay to squares
+              const patternClass = isLight
+                ? 'before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.08),transparent_50%)] before:pointer-events-none'
+                : 'before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_70%_70%,rgba(0,0,0,0.15),transparent_50%)] before:pointer-events-none';
+              
               const selectedClass = isSelected ? 'border-cyan-100 ring-2 ring-cyan-200/85' : 'border-cyan-500/30';
-              const legalClass = isLegal ? 'before:absolute before:inset-0 before:m-auto before:w-3.5 before:h-3.5 before:bg-cyan-200 before:shadow-[0_0_16px_rgba(165,243,252,0.95)]' : '';
+              const legalClass = isLegal ? 'before:absolute before:inset-0 before:m-auto before:w-3.5 before:h-3.5 before:bg-cyan-200 before:shadow-[0_0_16px_rgba(165,243,252,0.95)] before:z-10' : '';
+              const lastMoveClass = (isLastMoveFrom || isLastMoveTo) ? 'last-move-highlight bg-[rgba(251,191,36,0.25)]' : '';
+              const checkClass = isInCheck ? 'animate-check-pulse bg-[rgba(239,68,68,0.35)]' : '';
 
               return (
                 <button
@@ -820,12 +858,12 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                   aria-label={`Kare ${square}`}
                   onClick={() => handleSquareClick(square)}
                   disabled={loading || submitting || serverStatus === 'finished'}
-                  className={`relative aspect-square border transition ${baseClass} ${selectedClass} ${legalClass} disabled:cursor-not-allowed`}
+                  className={`relative aspect-square border transition-all duration-200 ${baseClass} ${patternClass} ${selectedClass} ${legalClass} ${lastMoveClass} ${checkClass} disabled:cursor-not-allowed`}
                 >
                   {piece && (
                     <span
                       aria-label={`${piece.color === 'w' ? 'Beyaz' : 'Siyah'} ${PIECE_LABEL[piece.type]}`}
-                      className={`pointer-events-none absolute inset-0 flex items-center justify-center select-none ${piece.color === 'w' ? 'text-white' : 'text-[#1a1a2e]'
+                      className={`pointer-events-none absolute inset-0 flex items-center justify-center select-none transition-transform duration-200 ${piece.color === 'w' ? 'text-white' : 'text-[#1a1a2e]'
                         }`}
                       style={{
                         fontSize: 'clamp(1.4rem, 5.2vw, 2.3rem)',

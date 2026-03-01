@@ -38,13 +38,19 @@ describe('OddEvenSprint', () => {
 
     for (let i = 0; i < 5; i += 1) {
       fireEvent.click(screen.getByTestId('guess-even'));
+      // Advance through the number reveal animation (500ms) and round transition (1200ms)
+      act(() => {
+        jest.advanceTimersByTime(2000);
+      });
     }
 
+    // Advance through the finalizeMatch timeout (900ms for bot mode)
     act(() => {
       jest.advanceTimersByTime(1000);
     });
 
-    expect(screen.getByText('Açılan sayı: 2')).toBeInTheDocument();
+    expect(screen.getByText('Açılan Sayı')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
     expect(onGameEnd).toHaveBeenCalledWith('emin', 10);
   });
 

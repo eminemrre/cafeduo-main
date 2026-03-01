@@ -34,6 +34,9 @@ export const OddEvenSprint: React.FC<OddEvenSprintProps> = ({
   const [message, setMessage] = useState('Her tur çift veya tek seç. 5 tur sonunda skor belirlenir.');
   const [done, setDone] = useState(false);
   const [resolvingMatch, setResolvingMatch] = useState(false);
+  const [showNumberReveal, setShowNumberReveal] = useState(false);
+  const [lastGuess, setLastGuess] = useState<Guess | null>(null);
+  const [scoreAnimation, setScoreAnimation] = useState<'player' | 'opponent' | null>(null);
   const matchStartedAtRef = useRef<number>(Date.now());
 
   const target = isBot ? 'BOT' : (opponentName || 'Rakip');
@@ -85,27 +88,42 @@ export const OddEvenSprint: React.FC<OddEvenSprintProps> = ({
   const handleGuess = (guess: Guess) => {
     if (done || resolvingMatch) return;
     playGameSfx('select', 0.22);
+    setLastGuess(guess);
+    
+    // Number reveal animation
     const number = 1 + Math.floor(Math.random() * 20);
+    setShowNumberReveal(true);
     setLastNumber(number);
 
-    const parity: Guess = number % 2 === 0 ? 'cift' : 'tek';
-    const playerWon = guess === parity;
+    setTimeout(() => {
+      const parity: Guess = number % 2 === 0 ? 'cift' : 'tek';
+      const playerWon = guess === parity;
 
-    const nextPlayer = playerScore + (playerWon ? 1 : 0);
-    const nextOpponent = opponentScore + (playerWon ? 0 : 1);
-    setPlayerScore(nextPlayer);
-    setOpponentScore(nextOpponent);
-    setMessage(playerWon ? 'Doğru tahmin, tur sende.' : 'Yanlış tahmin, tur rakibe gitti.');
-    playGameSfx(playerWon ? 'success' : 'fail', playerWon ? 0.28 : 0.24);
+      const nextPlayer = playerScore + (playerWon ? 1 : 0);
+      const nextOpponent = opponentScore + (playerWon ? 0 : 1);
+      
+      // Score animation
+      setScoreAnimation(playerWon ? 'player' : 'opponent');
+      setTimeout(() => setScoreAnimation(null), 400);
+      
+      setPlayerScore(nextPlayer);
+      setOpponentScore(nextOpponent);
+      setMessage(playerWon ? 'Doğru tahmin, tur sende.' : 'Yanlış tahmin, tur rakibe gitti.');
+      playGameSfx(playerWon ? 'success' : 'fail', playerWon ? 0.28 : 0.24);
 
-    if (round >= MAX_ROUNDS) {
-      setDone(true);
-      const localWinner = nextPlayer >= nextOpponent ? currentUser.username : target;
-      void finalizeMatch(localWinner, nextPlayer);
-      return;
-    }
+      if (round >= MAX_ROUNDS) {
+        setDone(true);
+        const localWinner = nextPlayer >= nextOpponent ? currentUser.username : target;
+        void finalizeMatch(localWinner, nextPlayer);
+        return;
+      }
 
-    setRound(prev => prev + 1);
+      setTimeout(() => {
+        setRound(prev => prev + 1);
+        setShowNumberReveal(false);
+        setLastGuess(null);
+      }, 1200);
+    }, 500);
   };
 
   return (
@@ -134,21 +152,21 @@ export const OddEvenSprint: React.FC<OddEvenSprintProps> = ({
         </div>
 
         <div className="grid grid-cols-3 gap-2.5 mb-5 text-center">
-          <div className="rf-screen-card-muted p-3">
+          <div className="rf-screen-card-muted p-3 transition-all duration-300">
             <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
               <img src={GAME_ASSETS.hud.jewel} alt="" className="w-4 h-4" aria-hidden="true" />
               Tur
             </div>
             <div className="font-bold text-cyan-100">{Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}</div>
           </div>
-          <div className="rf-screen-card-muted p-3">
+          <div className={`rf-screen-card-muted p-3 transition-all duration-300 ${scoreAnimation === 'player' ? 'animate-score-pop' : ''}`}>
             <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
               <img src={GAME_ASSETS.hud.heart} alt="" className="w-4 h-4" aria-hidden="true" />
               Sen
             </div>
             <div className="font-bold text-cyan-100">{playerScore}</div>
           </div>
-          <div className="rf-screen-card-muted p-3">
+          <div className={`rf-screen-card-muted p-3 transition-all duration-300 ${scoreAnimation === 'opponent' ? 'animate-score-pop' : ''}`}>
             <div className="text-xs text-[var(--rf-muted)] flex items-center justify-center gap-1">
               <img src={GAME_ASSETS.hud.coin} alt="" className="w-4 h-4" aria-hidden="true" />
               Rakip
@@ -163,23 +181,38 @@ export const OddEvenSprint: React.FC<OddEvenSprintProps> = ({
           <button
             data-testid="guess-even"
             onClick={() => handleGuess('cift')}
-            disabled={done || resolvingMatch}
-            className="flex-1 bg-[#0f3a67] hover:bg-[#145289] disabled:opacity-50 p-4 font-semibold border border-cyan-300/35 tracking-[0.18em]"
+            disabled={done || resolvingMatch || showNumberReveal}
+            className={`flex-1 relative overflow-hidden p-4 font-semibold border-2 tracking-[0.18em] transition-all duration-200
+              ${lastGuess === 'cift' ? 'border-cyan-300 scale-105' : 'border-cyan-300/35'}
+              disabled:opacity-50 disabled:cursor-not-allowed
+              hover:scale-105 hover:border-cyan-300/60 hover:shadow-[0_0_20px_rgba(34,211,238,0.3)]
+              bg-gradient-to-br from-[#0f3a67] via-[#0d3159] to-[#0a2845]
+              before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_50%_120%,rgba(34,211,238,0.15),transparent_70%)]
+              after:absolute after:inset-0 after:bg-[repeating-linear-gradient(90deg,transparent,transparent_2px,rgba(34,211,238,0.03)_2px,rgba(34,211,238,0.03)_4px)]`}
           >
             ÇİFT
           </button>
           <button
             data-testid="guess-odd"
             onClick={() => handleGuess('tek')}
-            disabled={done || resolvingMatch}
-            className="flex-1 bg-[#273145] hover:bg-[#35435e] disabled:opacity-50 p-4 font-semibold border border-cyan-400/28 tracking-[0.18em]"
+            disabled={done || resolvingMatch || showNumberReveal}
+            className={`flex-1 relative overflow-hidden p-4 font-semibold border-2 tracking-[0.18em] transition-all duration-200
+              ${lastGuess === 'tek' ? 'border-fuchsia-300 scale-105' : 'border-fuchsia-400/35'}
+              disabled:opacity-50 disabled:cursor-not-allowed
+              hover:scale-105 hover:border-fuchsia-400/60 hover:shadow-[0_0_20px_rgba(217,70,239,0.3)]
+              bg-gradient-to-br from-[#273145] via-[#1f2838] to-[#181f2c]
+              before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_50%_120%,rgba(217,70,239,0.12),transparent_70%)]
+              after:absolute after:inset-0 after:bg-[repeating-linear-gradient(90deg,transparent,transparent_2px,rgba(217,70,239,0.03)_2px,rgba(217,70,239,0.03)_4px)]`}
           >
             TEK
           </button>
         </div>
 
-        <div className="mt-4 text-sm text-[var(--rf-muted)] rf-screen-card-muted p-3">
-          Açılan sayı: {lastNumber ?? '-'}
+        <div className={`mt-4 text-sm rf-screen-card-muted p-4 text-center transition-all duration-300 ${showNumberReveal ? 'animate-number-reveal' : ''}`}>
+          <div className="text-xs text-[var(--rf-muted)] mb-1">Açılan Sayı</div>
+          <div className={`text-3xl font-bold ${lastNumber ? (lastNumber % 2 === 0 ? 'text-cyan-300' : 'text-fuchsia-300') : 'text-[var(--rf-muted)]'}`}>
+            {lastNumber ?? '-'}
+          </div>
         </div>
 
         {done && (

@@ -428,6 +428,11 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
    * Oyundan ayrıl
    */
   const leaveGame = useCallback(() => {
+    // Socket.IO room'dan ayrıl
+    if (activeGameId) {
+      socketService.leaveGame(String(activeGameId));
+    }
+    
     autoJoinCooldownUntilRef.current = Date.now() + 5000;
 
     setActiveGameId(null);
@@ -438,7 +443,7 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
 
     // Oyundan çıkınca rejoin bilgisini anında tazele.
     void checkActiveGame({ ignoreLocalActive: true });
-  }, [checkActiveGame]);
+  }, [activeGameId, checkActiveGame]);
 
   /**
    * Aktif oyunu manuel olarak ayarla
@@ -552,7 +557,12 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
     if (process.env.NODE_ENV === 'test') return;
 
     const socket = socketService.getSocket();
-    const handleLobbyUpdated = () => {
+    const handleLobbyUpdated = (payload?: { tableCode?: string }) => {
+      // Eğer tableCode varsa ve bizim masamız değilse ignore et
+      if (payload?.tableCode && payload.tableCode !== resolvedTableCode) {
+        return;
+      }
+
       void fetchGames({ silent: true });
       void checkActiveGame({ ignoreLocalActive: true, preserveUntilConfirmedEmpty: true });
       void fetchGameHistory({ silent: true });

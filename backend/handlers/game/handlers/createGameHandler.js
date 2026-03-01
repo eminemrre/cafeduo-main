@@ -90,7 +90,7 @@ const createCreateGameHandler = (deps) => {
         emitLobbyUpdate({
           action: 'game_created',
           gameId: createdGame.id,
-          table: createdGame.table,
+          tableCode: createdGame.table,
           status: createdGame.status,
         });
         return res.status(201).json(createdGame);
@@ -132,7 +132,7 @@ const createCreateGameHandler = (deps) => {
     emitLobbyUpdate({
       action: 'game_created',
       gameId: newGame.id,
-      table: newGame.table,
+      tableCode: newGame.table,
       status: newGame.status,
     });
     return res.status(201).json(newGame);

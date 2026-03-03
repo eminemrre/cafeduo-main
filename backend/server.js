@@ -72,7 +72,6 @@ if (process.env.SENTRY_DSN) {
   console.log('⚠️  SENTRY_DSN not set - APM monitoring disabled');
 }
 
-
 // Core dependencies
 const express = require('express');
 const http = require('http');
@@ -398,10 +397,8 @@ logger.info("🗄️  Database URL:", process.env.***REMOVED*** ? "Loaded ✅" :
 app.use(helmet()); // Secure HTTP headers
 
 // Sentry Request and Tracing Handlers (must be before other middleware)
-if (isSentryInitialized) {
-  app.use(Sentry.Handlers.requestHandler());
-  app.use(Sentry.Handlers.tracingHandler());
-}
+// In Sentry v10+, request/tracing is automatic via instrumentation
+// No need for explicit requestHandler/tracingHandler
 
 // Apply a higher baseline limiter only to API routes.
 // Auth brute-force protection is handled separately in authRoutes.
@@ -902,7 +899,7 @@ app.get('/debug-sentry', (req, res) => {
 
 // Sentry Error Handler (must be before other error handlers)
 if (isSentryInitialized) {
-  app.use(Sentry.Handlers.errorHandler());
+  Sentry.setupExpressErrorHandler(app);
 }
 
 app.use(notFoundHandler);

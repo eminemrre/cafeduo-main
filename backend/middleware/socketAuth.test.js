@@ -2,7 +2,7 @@
  * Socket.IO Authentication Middleware Tests
  */
 
-process.env.***REMOVED*** = process.env.***REMOVED*** || 'test-secret-key-for-testing-only';
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-for-testing-only';
 
 // Mock dependencies
 jest.mock('../db', () => ({
@@ -32,7 +32,7 @@ describe('Socket Auth Middleware', () => {
     let mockNext;
     let mockError;
 
-    const ***REMOVED*** = process.env.***REMOVED*** || 'test-secret-key-for-testing-only';
+    const JWT_SECRET = process.env.JWT_SECRET || 'test-secret-key-for-testing-only';
 
     beforeEach(() => {
         // Reset mocks
@@ -91,7 +91,7 @@ describe('Socket Auth Middleware', () => {
         it('should reject connection when token is expired', async () => {
             const expiredToken = jwt.sign(
                 { id: 1, username: 'testuser' },
-                ***REMOVED***,
+                JWT_SECRET,
                 { expiresIn: '-1h' }
             );
             mockSocket.handshake.auth.token = expiredToken;
@@ -122,7 +122,7 @@ describe('Socket Auth Middleware', () => {
         it('should authenticate user with valid token', async () => {
             const validToken = jwt.sign(
                 { id: 1, username: 'testuser' },
-                ***REMOVED***,
+                JWT_SECRET,
                 { expiresIn: '1h' }
             );
             mockSocket.handshake.auth.token = validToken;
@@ -155,7 +155,7 @@ describe('Socket Auth Middleware', () => {
         it('should authenticate using cookie token when provided', async () => {
             const validToken = jwt.sign(
                 { id: 2, username: 'cookieuser' },
-                ***REMOVED***,
+                JWT_SECRET,
                 { expiresIn: '1h' }
             );
             mockSocket.request.cookies.auth_token = validToken;
@@ -180,12 +180,12 @@ describe('Socket Auth Middleware', () => {
         it('should prioritize cookie token over handshake token', async () => {
             const cookieToken = jwt.sign(
                 { id: 3, username: 'cookie-priority' },
-                ***REMOVED***,
+                JWT_SECRET,
                 { expiresIn: '1h' }
             );
             const handshakeToken = jwt.sign(
                 { id: 99, username: 'handshake-user' },
-                ***REMOVED***,
+                JWT_SECRET,
                 { expiresIn: '1h' }
             );
             mockSocket.request.cookies.auth_token = cookieToken;
@@ -205,7 +205,7 @@ describe('Socket Auth Middleware', () => {
         it('should reject connection when user not found in database', async () => {
             const validToken = jwt.sign(
                 { id: 999, username: 'nonexistent' },
-                ***REMOVED***,
+                JWT_SECRET,
                 { expiresIn: '1h' }
             );
             mockSocket.handshake.auth.token = validToken;
@@ -230,7 +230,7 @@ describe('Socket Auth Middleware', () => {
 
             const validToken = jwt.sign(
                 { id: 1, username: 'testuser' },
-                ***REMOVED***,
+                JWT_SECRET,
                 { expiresIn: '1h' }
             );
             mockSocket.handshake.auth.token = validToken;
@@ -258,7 +258,7 @@ describe('Socket Auth Middleware', () => {
 
             const validToken = jwt.sign(
                 { id: 999, username: 'nonexistent' },
-                ***REMOVED***,
+                JWT_SECRET,
                 { expiresIn: '1h' }
             );
             mockSocket.handshake.auth.token = validToken;

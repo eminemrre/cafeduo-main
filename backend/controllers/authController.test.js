@@ -38,7 +38,7 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const { pool, isDbConnected } = require('../db');
 const logger = require('../utils/logger');
-process.env.***REMOVED*** = 'test-secret';
+process.env.JWT_SECRET = 'test-secret';
 process.env.BOOTSTRAP_ADMIN_EMAILS = 'emin3619@gmail.com';
 process.env.GOOGLE_CLIENT_ID = 'google-client-id-test';
 const authController = require('./authController');
@@ -55,7 +55,7 @@ const buildRes = () => {
 describe('authController security-critical auth flows', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    process.env.***REMOVED*** = '';
+    process.env.JWT_SECRET = '';
     global.fetch = jest.fn();
     isDbConnected.mockResolvedValue(true);
     mockSendPasswordResetEmail.mockResolvedValue({ delivered: true });
@@ -66,7 +66,7 @@ describe('authController security-critical auth flows', () => {
   });
 
   afterEach(() => {
-    delete process.env.***REMOVED***;
+    delete process.env.JWT_SECRET;
     delete global.fetch;
   });
 
@@ -121,7 +121,7 @@ describe('authController security-critical auth flows', () => {
   });
 
   it('rejects login when recaptcha verification fails', async () => {
-    process.env.***REMOVED*** = 'captcha-secret';
+    process.env.RECAPTCHA_SECRET_KEY = 'captcha-secret';
     global.fetch.mockResolvedValue({
       json: async () => ({ success: false }),
     });
@@ -143,7 +143,7 @@ describe('authController security-critical auth flows', () => {
   });
 
   it('fails closed when recaptcha service errors out while secret is configured', async () => {
-    process.env.***REMOVED*** = 'captcha-secret';
+    process.env.RECAPTCHA_SECRET_KEY = 'captcha-secret';
     global.fetch.mockRejectedValue(new Error('network down'));
 
     const req = {

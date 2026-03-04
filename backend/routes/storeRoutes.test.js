@@ -1,11 +1,11 @@
 /** @jest-environment node */
 
 describe('storeRoutes', () => {
-  const originalSecret = process.env.***REMOVED***;
+  const originalSecret = process.env.JWT_SECRET;
 
   beforeEach(() => {
     jest.resetModules();
-    process.env.***REMOVED*** = 'store-routes-test-secret';
+    process.env.JWT_SECRET = 'store-routes-test-secret';
   });
 
   afterEach(() => {
@@ -16,9 +16,9 @@ describe('storeRoutes', () => {
 
   afterAll(() => {
     if (originalSecret === undefined) {
-      delete process.env.***REMOVED***;
+      delete process.env.JWT_SECRET;
     } else {
-      process.env.***REMOVED*** = originalSecret;
+      process.env.JWT_SECRET = originalSecret;
     }
   });
 

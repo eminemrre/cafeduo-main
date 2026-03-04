@@ -1,15 +1,15 @@
 /** @jest-environment node */
 
 describe('backend/config/redis', () => {
-  const originalRedisUrl = process.env.***REMOVED***;
+  const originalRedisUrl = process.env.REDIS_URL;
 
   const loadRedisConfig = ({ redisUrl, connectError = null } = {}) => {
     jest.resetModules();
 
     if (typeof redisUrl === 'string') {
-      process.env.***REMOVED*** = redisUrl;
+      process.env.REDIS_URL = redisUrl;
     } else {
-      delete process.env.***REMOVED***;
+      delete process.env.REDIS_URL;
     }
 
     const connect = connectError
@@ -41,9 +41,9 @@ describe('backend/config/redis', () => {
 
   afterAll(() => {
     if (originalRedisUrl === undefined) {
-      delete process.env.***REMOVED***;
+      delete process.env.REDIS_URL;
     } else {
-      process.env.***REMOVED*** = originalRedisUrl;
+      process.env.REDIS_URL = originalRedisUrl;
     }
   });
 

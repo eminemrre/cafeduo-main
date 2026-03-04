@@ -18,11 +18,11 @@ const createRes = () => {
 };
 
 describe('auth middleware', () => {
-  const originalSecret = process.env.***REMOVED***;
+  const originalSecret = process.env.JWT_SECRET;
 
   const loadAuthModule = () => {
     jest.resetModules();
-    process.env.***REMOVED*** = 'unit-test-secret';
+    process.env.JWT_SECRET = 'unit-test-secret';
 
     const verify = jest.fn();
     const query = jest.fn();
@@ -50,9 +50,9 @@ describe('auth middleware', () => {
 
   afterAll(() => {
     if (originalSecret === undefined) {
-      delete process.env.***REMOVED***;
+      delete process.env.JWT_SECRET;
     } else {
-      process.env.***REMOVED*** = originalSecret;
+      process.env.JWT_SECRET = originalSecret;
     }
   });
 

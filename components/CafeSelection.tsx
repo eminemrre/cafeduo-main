@@ -27,13 +27,14 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
     requestLocationAccess,
     checkIn,
   } = useCafeSelection({ currentUser, onCheckInSuccess });
+  const [hasSubmitted, setHasSubmitted] = React.useState(false);
 
   const fieldBaseClass =
-    'rf-input rf-control h-12 font-sans text-[1.02rem] leading-[1.1] text-white tracking-normal';
+    'rf-input rf-control h-12 font-sans text-[1.02rem] leading-[1.1] text-white tracking-normal cursor-text';
   const fieldIconClass =
     'absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--rf-muted)] pointer-events-none transition-colors group-focus-within:text-cyan-300';
 
-  const mascotMood: MascotMood = error ? 'angry' : (tableNumber.length > 0 ? 'typing' : 'neutral');
+  const mascotMood: MascotMood = (error && hasSubmitted) ? 'angry' : (tableNumber.length > 0 ? 'typing' : 'neutral');
 
   return (
     <div className="min-h-screen rf-page-shell text-[var(--rf-ink)] pt-24 pb-[calc(8rem+env(safe-area-bottom))] px-4 font-sans relative overflow-hidden noise-bg">
@@ -165,7 +166,10 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
 
             <button
               type="button"
-              onClick={() => void checkIn()}
+              onClick={() => {
+                setHasSubmitted(true);
+                void checkIn();
+              }}
               disabled={loading || !tableNumber}
               data-testid="checkin-submit-button"
               className={`w-full py-4 font-bold text-white flex items-center justify-center gap-2 transition-all rf-control border-2 ${loading || !tableNumber

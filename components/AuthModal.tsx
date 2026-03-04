@@ -60,6 +60,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   // Toast hook
   const toast = useToast();
@@ -81,6 +82,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setIsForgotPasswordMode(false);
     setFieldErrors({});
     setTouched({});
+    setHasSubmitted(false);
     setUsername('');
     setEmail('');
     setPassword('');
@@ -169,6 +171,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setHasSubmitted(true);
 
     // Validate all fields
     if (!validateForm()) {
@@ -223,6 +226,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setError('');
     setFieldErrors({});
     setTouched({});
+    setHasSubmitted(false);
   };
 
   const handleGoogleLogin = async (credentialResponse: CredentialResponse) => {
@@ -250,7 +254,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   const inputBaseClass =
-    'w-full h-12 bg-black/40 border-2 text-cyan-50 font-body text-base group-[.is-error]:text-red-100 outline-none transition-all duration-200 placeholder:text-cyan-800/60 pl-11 pr-4 skew-x-[-2deg]';
+    'w-full h-12 bg-black/40 border-2 text-cyan-50 font-body text-base group-[.is-error]:text-red-100 outline-none transition-all duration-200 placeholder:text-cyan-800/60 pl-11 pr-4 skew-x-[-2deg] cursor-text';
   const inputBorderClass =
     'border-cyan-900/40 focus:border-cyan-400 focus:shadow-[4px_4px_0_rgba(34,211,238,0.2)] focus:skew-x-0 focus:-translate-y-0.5 focus:-translate-x-0.5';
   const inputErrorClass =
@@ -262,7 +266,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       ? String((window as Window & { __CAFEDUO_GOOGLE_CLIENT_ID__?: string }).__CAFEDUO_GOOGLE_CLIENT_ID__ || '').trim()
       : '';
 
-  const mascotMood: MascotMood = error || Object.keys(fieldErrors).length > 0
+  const mascotMood: MascotMood = ((error || Object.keys(fieldErrors).length > 0) && hasSubmitted)
     ? 'angry'
     : (username.length > 0 || email.length > 0 || password.length > 0) ? 'typing' : 'neutral';
 

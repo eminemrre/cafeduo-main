@@ -19,7 +19,7 @@ const getHostFromDatabaseUrl = (databaseUrl) => {
 };
 
 const isLocalHost = (host) => ['localhost', '127.0.0.1', 'postgres', 'db'].includes(host || '');
-const dbHostFromUrl = getHostFromDatabaseUrl(process.env.***REMOVED***);
+const dbHostFromUrl = getHostFromDatabaseUrl(process.env.DATABASE_URL);
 const resolvedHost = process.env.DB_HOST || dbHostFromUrl || 'localhost';
 const explicitSsl = parseBool(process.env.DB_SSL);
 const useSslByDefault = process.env.NODE_ENV === 'production' && !isLocalHost(resolvedHost);
@@ -27,7 +27,7 @@ const useSsl = explicitSsl ?? useSslByDefault;
 const sslRejectUnauthorized = parseBool(process.env.DB_SSL_REJECT_UNAUTHORIZED) ?? false;
 
 const pool = new Pool({
-  connectionString: process.env.***REMOVED***,
+  connectionString: process.env.DATABASE_URL,
   ssl: useSsl ? { rejectUnauthorized: sslRejectUnauthorized } : false,
   
   // Pool size configuration (OPTIMIZATIONS.md Finding 7)
@@ -42,7 +42,7 @@ const pool = new Pool({
   // Health checks
   allowExitOnIdle: false, // Keep pool alive
   
-  // Fallback for local dev if ***REMOVED*** is not set
+  // Fallback for local dev if DATABASE_URL is not set
   user: process.env.DB_USER || 'postgres',
   host: process.env.DB_HOST || 'localhost',
   database: process.env.DB_NAME || 'cafeduo',

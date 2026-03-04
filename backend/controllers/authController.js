@@ -8,7 +8,7 @@ const memoryState = require('../store/memoryState');
 const { sendPasswordResetEmail } = require('../services/emailService');
 const redisClient = require('../config/redis');
 
-const ***REMOVED*** = process.env.***REMOVED***;
+const JWT_SECRET = process.env.JWT_SECRET;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
 const PASSWORD_RESET_TOKEN_TTL_MINUTES = Number(process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES || 30);
 const PASSWORD_RESET_TOKEN_TTL_MS = Math.max(5, PASSWORD_RESET_TOKEN_TTL_MINUTES) * 60 * 1000;
@@ -165,8 +165,8 @@ const BOOTSTRAP_ADMIN_EMAILS = parseAdminEmails(
 const AUTH_COOKIE_NAME = 'auth_token';
 const AUTH_COOKIE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
 
-if (!***REMOVED***) {
-    throw new Error('***REMOVED*** is required. Refusing to start with an insecure fallback secret.');
+if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET is required. Refusing to start with an insecure fallback secret.');
 }
 
 /**
@@ -181,7 +181,7 @@ const generateToken = (user) => {
             role: user.role || 'user',
             isAdmin: Boolean(user.isAdmin ?? user.is_admin ?? false),
         },
-        ***REMOVED***,
+        JWT_SECRET,
         { expiresIn: '7d' }
     );
 };
@@ -220,7 +220,7 @@ const toPublicUser = (user) => {
 const verifyRecaptcha = async (token) => {
     if (!token) return true;
     try {
-        const secretKey = process.env.***REMOVED***;
+        const secretKey = process.env.RECAPTCHA_SECRET_KEY;
         if (!secretKey) return true;
         const response = await fetch(`https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${token}`, { method: 'POST' });
         const data = await response.json();

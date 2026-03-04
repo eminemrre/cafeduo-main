@@ -20,10 +20,10 @@ const memoryState = require('../store/memoryState');
 const logger = require('../utils/logger');
 const redisClient = require('../config/redis');
 
-const ***REMOVED*** = process.env.***REMOVED***;
+const JWT_SECRET = process.env.JWT_SECRET;
 
-if (!***REMOVED***) {
-    throw new Error('***REMOVED*** is required. Refusing to start with an insecure fallback secret.');
+if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET is required. Refusing to start with an insecure fallback secret.');
 }
 
 /**
@@ -58,7 +58,7 @@ const socketAuthMiddleware = async (socket, next) => {
         // Verify JWT token
         let decoded;
         try {
-            decoded = jwt.verify(token, ***REMOVED***);
+            decoded = jwt.verify(token, JWT_SECRET);
         } catch (err) {
             if (err.name === 'TokenExpiredError') {
                 logger.warn('Socket connection rejected: Token expired', {

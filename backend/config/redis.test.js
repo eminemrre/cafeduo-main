@@ -47,17 +47,17 @@ describe('backend/config/redis', () => {
     }
   });
 
-  it('exports null and warns when ***REMOVED*** is missing', () => {
+  it('exports null and warns when REDIS_URL is missing', () => {
     const { redis, RedisCtor, logger } = loadRedisConfig();
 
     expect(redis).toBeNull();
     expect(RedisCtor).not.toHaveBeenCalled();
     expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('***REMOVED*** is not configured')
+      expect.stringContaining('REDIS_URL is not configured')
     );
   });
 
-  it('creates redis client with resilient defaults when ***REMOVED*** exists', () => {
+  it('creates redis client with resilient defaults when REDIS_URL exists', () => {
     const { redis, RedisCtor, connect, on } = loadRedisConfig({
       redisUrl: 'redis://127.0.0.1:6379',
     });

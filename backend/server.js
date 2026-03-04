@@ -369,9 +369,9 @@ io.on('connection', (socket) => {
 });
 
 // JWT Secret from .env (required)
-const ***REMOVED*** = process.env.***REMOVED***;
-if (!***REMOVED***) {
-  throw new Error('***REMOVED*** is required. Refusing to start with an insecure fallback secret.');
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is required. Refusing to start with an insecure fallback secret.');
 }
 
 // 4) START SERVER / INIT DB
@@ -380,7 +380,7 @@ logger.info(
   "🔑 Google Client ID:",
   process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID ? "Loaded ✅" : "MISSING ❌"
 );
-logger.info("🗄️  Database URL:", process.env.***REMOVED*** ? "Loaded ✅" : "MISSING ❌");
+logger.info("🗄️  Database URL:", process.env.DATABASE_URL ? "Loaded ✅" : "MISSING ❌");
 
 // ==========================================
 // SECURITY MIDDLEWARE - Enhanced Authentication

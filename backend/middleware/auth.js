@@ -4,13 +4,13 @@ const memoryState = require('../store/memoryState');
 const { buildApiErrorPayload } = require('../utils/routeHelpers');
 const redisClient = require('../config/redis');
 
-const ***REMOVED*** = process.env.***REMOVED***;
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // SECURITY: Configure blacklist fail mode (default: closed = reject on Redis failure)
 const BLACKLIST_FAIL_MODE = process.env.BLACKLIST_FAIL_MODE || 'closed';
 
-if (!***REMOVED***) {
-  throw new Error('***REMOVED*** is required. Refusing to start with an insecure fallback secret.');
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is required. Refusing to start with an insecure fallback secret.');
 }
 
 const sendAuthError = (res, { status, code, message, details = null }) => {
@@ -97,7 +97,7 @@ const authenticateToken = async (req, res, next) => {
         }
 
         // Verify token
-        const decoded = jwt.verify(token, ***REMOVED***);
+        const decoded = jwt.verify(token, JWT_SECRET);
 
         // Fetch fresh user data from database
         if (await isDbConnected()) {

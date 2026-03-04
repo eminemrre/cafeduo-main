@@ -197,7 +197,7 @@ body::after {
   font-weight: 900;
   font-variant-ligatures: none;
   letter-spacing: 0.05em;
-  text-transform: uppercase;
+  text-transform: none;
   line-height: 0.85;
   text-shadow: 2px 2px 0 rgba(0, 243, 255, 0.15), -1px -1px 0 rgba(255, 0, 234, 0.1);
 }

@@ -60,7 +60,7 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
             </motion.div>
           </div>
 
-          <div lang="tr" className="hero-title-wrapper flex flex-col uppercase tracking-tight mix-blend-screen">
+          <div lang="tr" className="hero-title-wrapper flex flex-col tracking-tight mix-blend-screen">
             <div className="overflow-hidden relative">
               <motion.span
                 className="hero-title block text-[5rem] sm:text-[7rem] lg:text-[9rem] leading-[0.85] text-ink-50 font-black"

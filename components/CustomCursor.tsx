@@ -33,10 +33,11 @@ export const CustomCursor: React.FC = () => {
     return (
         <>
             <motion.div
-                className="fixed top-0 left-0 w-8 h-8 pointer-events-none z-[100] mix-blend-difference"
+                className="fixed top-0 left-0 w-8 h-8 pointer-events-none z-[200]"
                 style={{
                     x: cursorXSpring,
                     y: cursorYSpring,
+                    filter: 'drop-shadow(0 0 3px rgba(0, 243, 255, 0.9)) drop-shadow(0 0 6px rgba(255, 0, 234, 0.6))',
                 }}
             >
                 <div className="relative w-full h-full flex items-center justify-center">
@@ -46,14 +47,6 @@ export const CustomCursor: React.FC = () => {
                     <div className="absolute w-2 h-2 border border-neon-blue bg-transparent" />
                 </div>
             </motion.div>
-            <style>{`
-        body {
-          cursor: none;
-        }
-        button, a, input, select, textarea {
-          cursor: none !important;
-        }
-      `}</style>
         </>
     );
 };

@@ -137,6 +137,19 @@ describe('GameLobby', () => {
       expect(screen.getByText('SENİN LOBİN')).toBeInTheDocument();
       expect(screen.queryByText('SAVAŞA KATIL')).not.toBeInTheDocument();
     });
+
+    it('matches own lobby case-insensitively and shows cancel action', () => {
+      const ownGameDifferentCase = {
+        ...mockGames[0],
+        hostName: 'TestUser',
+      };
+
+      render(<GameLobby {...defaultProps} requests={[ownGameDifferentCase]} />);
+
+      expect(screen.getByText('SENİN LOBİN')).toBeInTheDocument();
+      expect(screen.queryByText('SAVAŞA KATIL')).not.toBeInTheDocument();
+      expect(screen.getByText('İPTAL ET')).toBeInTheDocument();
+    });
   });
 
   describe('Game Display', () => {

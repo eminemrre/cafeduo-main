@@ -236,7 +236,7 @@ describe('API Layer additional coverage', () => {
     await flush();
 
     expect(callback).toHaveBeenCalledTimes(2);
-    expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 2000);
+    expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 15000);
 
     unsubscribe();
     expect(clearIntervalSpy).toHaveBeenCalledWith(123);
@@ -332,7 +332,7 @@ describe('API Layer additional coverage', () => {
     await flush();
 
     expect(callback).toHaveBeenCalledTimes(2);
-    expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 3000);
+    expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 15000);
 
     unsubscribe();
     expect(clearIntervalSpy).toHaveBeenCalledWith(456);

@@ -74,7 +74,7 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: {
     command:
-      'AUTH_RATE_LIMIT_WINDOW_MS=60000 AUTH_LOGIN_RATE_LIMIT_MAX_REQUESTS=500 AUTH_REGISTER_RATE_LIMIT_MAX_REQUESTS=500 API_RATE_LIMIT_MAX_REQUESTS=5000 RATE_LIMIT_MAX_REQUESTS=5000 npm run dev',
+      'NODE_ENV=development CORS_ORIGIN=http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173 COOKIE_DOMAIN= AUTH_RATE_LIMIT_WINDOW_MS=60000 AUTH_LOGIN_RATE_LIMIT_MAX_REQUESTS=500 AUTH_REGISTER_RATE_LIMIT_MAX_REQUESTS=500 API_RATE_LIMIT_MAX_REQUESTS=5000 RATE_LIMIT_MAX_REQUESTS=5000 npm run dev',
     url: 'http://localhost:3000',
     reuseExistingServer: false,
     timeout: 120 * 1000,

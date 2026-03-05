@@ -428,7 +428,11 @@ app.use(cors({
       callback(null, true);
     } else {
       logger.warn(`Blocked CORS request from: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
+      const corsError = new Error('Origin not allowed');
+      corsError.status = 403;
+      corsError.code = 'CORS_ORIGIN_BLOCKED';
+      corsError.details = { origin: String(origin || '') };
+      callback(corsError);
     }
   },
   credentials: true,

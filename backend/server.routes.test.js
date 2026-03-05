@@ -103,6 +103,7 @@ describe('backend/server.js route registry', () => {
       'PUT /api/users/:id',
       'GET /api/meta/version',
       'GET /health',
+      'GET /api/health',
     ];
 
     for (const routeKey of expectedSingleRoutes) {

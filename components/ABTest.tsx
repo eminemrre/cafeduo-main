@@ -7,33 +7,34 @@ interface ABTestProps {
 }
 
 export const ABTest: React.FC<ABTestProps> = ({ testName, variantA, variantB }) => {
-    const resolveInitialVariant = (): 'A' | 'B' => {
-        if (typeof window === 'undefined') return 'A';
-        const storedVariant = localStorage.getItem(`ab_test_${testName}`);
-        if (storedVariant === 'A' || storedVariant === 'B') return storedVariant;
-        return 'A';
-    };
-
-    const [variant, setVariant] = useState<'A' | 'B'>(resolveInitialVariant);
+    const [variant, setVariant] = useState<'A' | 'B' | null>(null);
 
     useEffect(() => {
-        // Check local storage
-        const storedVariant = localStorage.getItem(`ab_test_${testName}`);
+        if (typeof window === 'undefined') {
+            setVariant('A');
+            return;
+        }
 
-        if (storedVariant === 'A' || storedVariant === 'B') {
-            setVariant(storedVariant);
-        } else {
-            // Randomly assign
+        try {
+            const storedVariant = window.localStorage.getItem(`ab_test_${testName}`);
+            if (storedVariant === 'A' || storedVariant === 'B') {
+                setVariant(storedVariant);
+                return;
+            }
+
             const newVariant = Math.random() > 0.5 ? 'A' : 'B';
-            localStorage.setItem(`ab_test_${testName}`, newVariant);
+            window.localStorage.setItem(`ab_test_${testName}`, newVariant);
             setVariant(newVariant);
 
-            // In production, send to analytics service instead of console.log
             if (process.env.NODE_ENV === 'development') {
                 console.log(`📊 A/B Test Exposure: ${testName} -> Variant ${newVariant}`);
             }
+        } catch {
+            // Fallback to deterministic default when storage is unavailable.
+            setVariant('A');
         }
     }, [testName]);
 
+    if (variant === null) return null;
     return <>{variant === 'A' ? variantA : variantB}</>;
 };

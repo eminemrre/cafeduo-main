@@ -282,7 +282,8 @@ const createCommerceHandlers = ({
             `SELECT id, user_id, item_id, item_title, code, redeemed_at, is_used, used_at FROM user_items 
              WHERE user_id = $1 
              AND redeemed_at > NOW() - INTERVAL '5 days'
-             ORDER BY redeemed_at DESC`,
+             ORDER BY redeemed_at DESC
+             LIMIT 100`,
             [userId]
           );
 
@@ -303,7 +304,7 @@ const createCommerceHandlers = ({
           return item.user_id === userId && redeemedAt >= now - FIVE_DAYS_MS;
         });
         return res.json(
-          items.map((item) => ({
+          items.slice(0, 100).map((item) => ({
             ...item,
             status: item.is_used ? 'used' : 'active',
           }))

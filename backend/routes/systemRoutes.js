@@ -15,7 +15,7 @@ const createSystemRoutes = ({ appVersion, appBuildTime, isDbConnected }) => {
     });
   });
 
-  router.get('/health', async (req, res) => {
+  const healthHandler = async (req, res) => {
     const healthcheck = {
       uptime: process.uptime(),
       message: 'OK',
@@ -34,7 +34,10 @@ const createSystemRoutes = ({ appVersion, appBuildTime, isDbConnected }) => {
       healthcheck.message = err.message;
       return res.status(503).json(healthcheck);
     }
-  });
+  };
+
+  router.get('/health', healthHandler);
+  router.get('/api/health', healthHandler);
 
   return router;
 };

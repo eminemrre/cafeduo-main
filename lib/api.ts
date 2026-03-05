@@ -555,7 +555,7 @@ export const api = {
       };
 
       poll(); // Initial fetch
-      interval = setInterval(poll, 2000); // Poll every 2 seconds
+      interval = setInterval(poll, 15000); // Poll every 15 seconds
 
       return () => clearInterval(interval); // Unsubscribe function
     },
@@ -573,7 +573,7 @@ export const api = {
       };
 
       poll(); // Initial fetch
-      interval = setInterval(poll, 3000); // Poll every 3 seconds
+      interval = setInterval(poll, 15000); // Poll every 15 seconds
 
       return () => clearInterval(interval); // Unsubscribe function
     }

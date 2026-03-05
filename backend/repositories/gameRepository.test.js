@@ -21,6 +21,7 @@ describe('gameRepository', () => {
     expect(pool.query).toHaveBeenCalledTimes(1);
     const [sql, params] = pool.query.mock.calls[0];
     expect(sql).toContain('AND table_code = $2');
+    expect(sql).toContain('LIMIT 100');
     expect(params).toEqual([['reflex_hunt', 'retro_chess', 'knowledge_quiz'], 'MASA06']);
     expect(rows).toEqual([{ id: 12, table: 'MASA06', status: 'waiting' }]);
   });
@@ -33,6 +34,7 @@ describe('gameRepository', () => {
 
     const [sql, params] = pool.query.mock.calls[0];
     expect(sql).toContain('AND EXISTS');
+    expect(sql).toContain('LIMIT 100');
     expect(params).toEqual([['reflex_hunt', 'retro_chess', 'knowledge_quiz'], 4]);
     expect(rows).toEqual([{ id: 31 }]);
   });

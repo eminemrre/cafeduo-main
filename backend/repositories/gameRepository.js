@@ -53,6 +53,7 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
             AND u.cafe_id = $2
         )
         ORDER BY created_at DESC
+        LIMIT 100
       `,
       [[...supportedGameTypes], cafeId]
     );
@@ -66,6 +67,7 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
         ${WAITING_GAMES_SELECT}
         AND table_code = $2
         ORDER BY created_at DESC
+        LIMIT 100
       `,
       [[...supportedGameTypes], tableCode]
     );
@@ -78,6 +80,7 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
       `
         ${WAITING_GAMES_SELECT}
         ORDER BY created_at DESC
+        LIMIT 100
       `,
       [[...supportedGameTypes]]
     );

@@ -63,13 +63,26 @@ const createErrorHandler = ({ logger } = {}) => {
           message: 'Referenced resource not found',
         });
       }
+      if (err?.code === 'CORS_ORIGIN_BLOCKED' || err?.message === 'Not allowed by CORS') {
+        return new ApiError({
+          status: Number(err?.status) || 403,
+          code: 'CORS_ORIGIN_BLOCKED',
+          message: 'Origin not allowed',
+          details: err?.details || null,
+        });
+      }
+
+      const status = Number(err?.status);
+      const normalizedStatus = Number.isFinite(status) && status >= 400 && status <= 599 ? status : 500;
+      const safeMessage = process.env.NODE_ENV === 'production' && normalizedStatus >= 500
+        ? 'Internal server error'
+        : String(err?.message || (normalizedStatus >= 500 ? 'Internal server error' : 'Request failed'));
 
       return new ApiError({
-        status: Number(err?.status) || 500,
+        status: normalizedStatus,
         code: String(err?.code || 'INTERNAL_ERROR'),
-        message: process.env.NODE_ENV === 'development'
-          ? String(err?.message || 'Internal server error')
-          : 'Internal server error',
+        message: safeMessage,
+        details: err?.details || null,
       });
     })();
 

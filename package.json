@@ -43,7 +43,7 @@
     "migrate:up": "node-pg-migrate up",
     "migrate:down": "node-pg-migrate down",
     "migrate:redo": "node-pg-migrate redo",
-    "migrate:status": "node-pg-migrate status"
+    "migrate:status": "node scripts/migrations/status.js"
   },
   "dependencies": {
     "@openrouter/sdk": "^0.5.1",

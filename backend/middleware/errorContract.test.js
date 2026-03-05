@@ -59,4 +59,23 @@ describe('errorContract middleware', () => {
     expect(Array.isArray(res.payload.details)).toBe(true);
     expect(logger.error).toHaveBeenCalled();
   });
+
+  it('preserves custom status/code for non-ApiError inputs', () => {
+    const req = { originalUrl: '/api/shop/buy', method: 'POST', requestId: 'req-3', ip: '127.0.0.1' };
+    const res = createMockRes();
+    const logger = { error: jest.fn() };
+    const handler = createErrorHandler({ logger });
+    const err = Object.assign(new Error('Origin not allowed'), {
+      status: 403,
+      code: 'CORS_ORIGIN_BLOCKED',
+      details: { origin: 'http://localhost:3000' },
+    });
+
+    handler(err, req, res, () => {});
+
+    expect(res.statusCode).toBe(403);
+    expect(res.payload.code).toBe('CORS_ORIGIN_BLOCKED');
+    expect(res.payload.message).toBe('Origin not allowed');
+    expect(res.payload.details).toEqual({ origin: 'http://localhost:3000' });
+  });
 });

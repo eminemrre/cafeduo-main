@@ -50,7 +50,7 @@ export const waitForApiReady = async (
   while (Date.now() < deadline) {
     try {
       const res = await request.get(`${root}/api/health`);
-      if (res.status() < 500) {
+      if (res.status() === 200) {
         return;
       }
       lastError = `status=${res.status()}`;

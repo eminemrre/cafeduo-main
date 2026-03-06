@@ -51,6 +51,8 @@ Operational defaults for same-origin production:
 - `sameSite='lax'`
 - `DEPLOY_SITE_URL` origin must be present in `CORS_ORIGIN`
 - Strict migration status is checked from the VPS network boundary, not from the GitHub runner.
+- For legacy production databases without `public.pgmigrations`, follow [PRODUCTION_MIGRATION_BASELINE.md](/home/emin/cafeduo-main/docs/PRODUCTION_MIGRATION_BASELINE.md) before expecting deploy to pass.
+- Preferred operator wrapper for that one-time step: `bash deploy/scripts/migration-baseline-vps.sh report|apply`
 
 External testing tools:
 

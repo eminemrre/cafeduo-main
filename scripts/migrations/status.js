@@ -153,8 +153,14 @@ const main = async () => {
   if (!dbReachable) {
     console.log(`Database: unreachable (${dbErrorMessage})`);
     console.log('Database-applied list is unavailable. Pending list is derived from local files.');
+    if (localFiles.length > 0) {
+      console.log('Legacy bootstrap hint: run `npm run migrate:baseline:report` before forcing migrate:up on pre-migration databases.');
+    }
   } else if (!tableExists) {
     console.log(`Database: connected (table "${MIGRATIONS_SCHEMA}.${MIGRATIONS_TABLE}" not found)`);
+    if (localFiles.length > 0) {
+      console.log('Legacy bootstrap hint: run `npm run migrate:baseline:report` before forcing migrate:up on pre-migration databases.');
+    }
   } else {
     console.log(`Database: connected (table "${MIGRATIONS_SCHEMA}.${MIGRATIONS_TABLE}")`);
   }

@@ -8,6 +8,12 @@ CafeDuo uses [node-pg-migrate](https://salsita.github.io/node-pg-migrate/) for d
 # Check migration status
 npm run migrate:status
 
+# Inspect legacy production baseline readiness
+npm run migrate:baseline:report
+
+# One-time baseline for pre-migration production databases
+npm run migrate:baseline:apply -- --include-superseded-performance
+
 # Run all pending migrations
 npm run migrate:up
 
@@ -226,9 +232,16 @@ exports.down = (pgm) => {
 ## Troubleshooting
 
 ### "Migration table does not exist"
-Run migrations to create the table:
+If this is a fresh development database, run:
 ```bash
 npm run migrate:up
+```
+
+If this is a legacy production database bootstrapped via `schema.sql` / `initDb`, do not run `migrate:up` blindly.
+Use:
+```bash
+bash deploy/scripts/migration-baseline-vps.sh report
+bash deploy/scripts/migration-baseline-vps.sh apply
 ```
 
 ### "Database connection failed"
@@ -259,6 +272,7 @@ exports.up = (pgm) => {
 |-----------|-------------|------|
 | 20240224000001 | Initial schema (cafes, users, games, user_items, password_reset_tokens) | 2024-02-24 |
 | 20240224000002 | Performance indexes (lobby, active games, leaderboard, cafe queries) | 2024-02-24 |
+| 20260306190000 | Normalize legacy performance indexes after production baseline | 2026-03-06 |
 
 ## References
 

@@ -40,10 +40,12 @@
     "smoke:prod": "node scripts/smoke/prod-smoke.mjs",
     "smoke:live": "SMOKE_BASE_URL=https://cafeduotr.com node scripts/smoke/prod-smoke.mjs",
     "migrate:create": "node-pg-migrate create",
-    "migrate:up": "node-pg-migrate up",
-    "migrate:down": "node-pg-migrate down",
-    "migrate:redo": "node-pg-migrate redo",
-    "migrate:status": "node scripts/migrations/status.js"
+    "migrate:up": "node-pg-migrate up --migrations-dir 'migrations/*.js' --use-glob",
+    "migrate:down": "node-pg-migrate down --migrations-dir 'migrations/*.js' --use-glob",
+    "migrate:redo": "node-pg-migrate redo --migrations-dir 'migrations/*.js' --use-glob",
+    "migrate:status": "node scripts/migrations/status.js",
+    "migrate:baseline:report": "node scripts/migrations/legacy-baseline.js report",
+    "migrate:baseline:apply": "node scripts/migrations/legacy-baseline.js apply"
   },
   "dependencies": {
     "@openrouter/sdk": "^0.5.1",

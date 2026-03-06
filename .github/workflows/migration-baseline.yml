@@ -1,0 +1,115 @@
+name: Migration Baseline
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Baseline action to run on the production VPS
+        required: true
+        default: report
+        type: choice
+        options:
+          - report
+          - status
+          - apply
+      confirm_apply:
+        description: Type APPLY to allow production baseline writes when mode=apply
+        required: false
+        default: ""
+
+concurrency:
+  group: production-migration-baseline
+  cancel-in-progress: false
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate workflow input
+        env:
+          BASELINE_MODE: ${{ inputs.mode }}
+          CONFIRM_APPLY: ${{ inputs.confirm_apply }}
+        run: |
+          set -euo pipefail
+
+          if [ "${BASELINE_MODE}" = "apply" ] && [ "${CONFIRM_APPLY}" != "APPLY" ]; then
+            echo "Refusing production baseline apply without confirm_apply=APPLY"
+            exit 1
+          fi
+
+      - name: Validate deploy secrets
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_ENV_B64: ${{ secrets.DEPLOY_ENV_B64 }}
+        run: |
+          set -euo pipefail
+          for var in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_PATH DEPLOY_ENV_B64; do
+            if [ -z "${!var:-}" ]; then
+              echo "Missing required secret: ${var}"
+              exit 1
+            fi
+          done
+
+      - name: Setup SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p "${DEPLOY_PORT:-22}" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Sync project to VPS
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p ${DEPLOY_PATH}"
+          rsync -az --delete \
+            --exclude ".git" \
+            --exclude ".env" \
+            --exclude "node_modules" \
+            --exclude "coverage" \
+            --exclude "dist" \
+            --exclude "playwright-report" \
+            --exclude "test-results" \
+            -e "ssh -p ${DEPLOY_PORT:-22}" \
+            ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}"
+
+      - name: Run migration baseline on VPS
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_ENV_B64: ${{ secrets.DEPLOY_ENV_B64 }}
+          BASELINE_MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "DEPLOY_PATH='${DEPLOY_PATH}' DEPLOY_ENV_B64='${DEPLOY_ENV_B64}' BASELINE_MODE='${BASELINE_MODE}' bash -s" <<'REMOTE'
+            set -euo pipefail
+
+            if ! command -v docker >/dev/null 2>&1; then
+              echo "docker is required on the VPS for migration baseline workflow"
+              exit 1
+            fi
+
+            cd "$DEPLOY_PATH"
+            echo "$DEPLOY_ENV_B64" | base64 -d > .env
+            bash deploy/scripts/migration-baseline-vps.sh "$BASELINE_MODE" "$DEPLOY_PATH"
+          REMOTE

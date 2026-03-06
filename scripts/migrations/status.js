@@ -3,11 +3,15 @@
 const fs = require('fs');
 const path = require('path');
 const { Pool } = require('pg');
-require('dotenv').config();
+
+const dotenvPath = process.env.DOTENV_CONFIG_PATH || process.env.ENV_FILE;
+require('dotenv').config(dotenvPath ? { path: dotenvPath } : undefined);
 
 const MIGRATIONS_DIR = path.resolve(__dirname, '../../migrations');
 const MIGRATIONS_TABLE = String(process.env.MIGRATIONS_TABLE || 'pgmigrations').trim();
 const MIGRATIONS_SCHEMA = String(process.env.MIGRATIONS_SCHEMA || 'public').trim();
+const REQUIRE_DB = ['1', 'true', 'yes'].includes(String(process.env.MIGRATION_STATUS_REQUIRE_DB || '').trim().toLowerCase());
+const FAIL_ON_PENDING = ['1', 'true', 'yes'].includes(String(process.env.MIGRATION_STATUS_FAIL_ON_PENDING || '').trim().toLowerCase());
 
 const parseBool = (value) => {
   if (typeof value !== 'string') return undefined;
@@ -163,6 +167,16 @@ const main = async () => {
   printSection('Applied', appliedDisplay);
   printSection('Pending', pending);
   printSection('Applied but missing locally', orphanApplied);
+
+  if (REQUIRE_DB && !dbReachable) {
+    process.exitCode = 1;
+    console.error('Migration status failed: database must be reachable in strict mode.');
+  }
+
+  if (FAIL_ON_PENDING && pending.length > 0) {
+    process.exitCode = 1;
+    console.error('Migration status failed: pending migrations detected in strict mode.');
+  }
 };
 
 main().catch((error) => {

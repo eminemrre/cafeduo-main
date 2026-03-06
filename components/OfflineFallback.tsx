@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { WifiOff, RefreshCw, Gamepad2 } from 'lucide-react';
 import RetroButton from './RetroButton';
+import { safeGoHome, safeReload } from '../lib/navigation';
 
 /**
  * OfflineFallback - PWA offline mode fallback component
@@ -12,11 +13,11 @@ import RetroButton from './RetroButton';
  */
 export default function OfflineFallback() {
   const handleRetry = () => {
-    window.location.reload();
+    safeReload();
   };
 
   const handleGoHome = () => {
-    window.location.href = '/';
+    safeGoHome();
   };
 
   return (

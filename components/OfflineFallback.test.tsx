@@ -1,5 +1,11 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import OfflineFallback, { OfflineBanner, useOnlineStatus } from './OfflineFallback';
+import { safeReload } from '../lib/navigation';
+
+jest.mock('../lib/navigation', () => ({
+  safeReload: jest.fn(),
+  safeGoHome: jest.fn(),
+}));
 
 describe('OfflineFallback', () => {
   beforeEach(() => {
@@ -25,6 +31,7 @@ describe('OfflineFallback', () => {
     
     const retryButton = screen.getByRole('button', { name: /yeniden dene/i });
     expect(() => fireEvent.click(retryButton)).not.toThrow();
+    expect(safeReload).toHaveBeenCalledTimes(1);
   });
 
   it('shows PWA status text', () => {

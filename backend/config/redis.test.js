@@ -6,6 +6,8 @@ describe('backend/config/redis', () => {
   const loadRedisConfig = ({ redisUrl, connectError = null } = {}) => {
     jest.resetModules();
 
+    process.env.REDIS_WARN_WHEN_DISABLED = '1';
+
     if (typeof redisUrl === 'string') {
       process.env.REDIS_URL = redisUrl;
     } else {
@@ -34,6 +36,7 @@ describe('backend/config/redis', () => {
   afterEach(() => {
     jest.clearAllMocks();
     jest.resetModules();
+    delete process.env.REDIS_WARN_WHEN_DISABLED;
     jest.dontMock('dotenv');
     jest.dontMock('ioredis');
     jest.dontMock('../utils/logger');

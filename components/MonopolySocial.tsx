@@ -2,9 +2,18 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { User } from '../types';
 import { RetroButton } from './RetroButton';
 import { socketService } from '../lib/socket';
-
-type Owner = 'host' | 'guest';
-type TurnOwner = Owner;
+import {
+  BOARD,
+  initMonopolyState,
+  MAX_TURNS,
+  maybeEndMonopolyState,
+  passStartBonus,
+  rollDice,
+  settleMonopolyLanding,
+  type MonopolyOwner as Owner,
+  type MonopolyState,
+  type MonopolyTurnOwner as TurnOwner,
+} from '../lib/game-logic/monopolySocial';
 
 interface MonopolySocialProps {
   currentUser: User;
@@ -14,80 +23,6 @@ interface MonopolySocialProps {
   onGameEnd: (winner: string, points: number) => void;
   onLeave: () => void;
 }
-
-interface BoardCell {
-  id: number;
-  name: string;
-  cost: number;
-  rent: number;
-}
-
-interface PendingPurchase {
-  owner: Owner;
-  tileId: number;
-}
-
-interface MonopolyState {
-  hostPos: number;
-  guestPos: number;
-  hostCash: number;
-  guestCash: number;
-  properties: Record<number, Owner>;
-  turn: TurnOwner;
-  turnCount: number;
-  lastRoll: number;
-  message: string;
-  pendingPurchase: PendingPurchase | null;
-  finished: boolean;
-  winner: string | null;
-  hostName: string;
-  guestName: string;
-}
-
-const BOARD: BoardCell[] = Array.from({ length: 20 }).map((_, index) => {
-  if (index === 0) {
-    return { id: 0, name: 'BAŞLANGIÇ', cost: 0, rent: 0 };
-  }
-  const cost = 120 + index * 22;
-  return {
-    id: index,
-    name: `Sokak ${index}`,
-    cost,
-    rent: Math.floor(cost * 0.22),
-  };
-});
-
-const MAX_TURNS = 30;
-
-const initState = (hostName: string, guestName: string): MonopolyState => ({
-  hostPos: 0,
-  guestPos: 0,
-  hostCash: 1500,
-  guestCash: 1500,
-  properties: {},
-  turn: 'host',
-  turnCount: 0,
-  lastRoll: 0,
-  message: 'Zar atarak başla.',
-  pendingPurchase: null,
-  finished: false,
-  winner: null,
-  hostName,
-  guestName,
-});
-
-const rollDice = (): number => 1 + Math.floor(Math.random() * 6);
-const passStartBonus = (oldPos: number, newPos: number): number => (newPos < oldPos ? 200 : 0);
-
-const resolveWinnerByCash = (
-  hostCash: number,
-  guestCash: number,
-  hostName: string,
-  guestName: string
-): string => {
-  if (hostCash === guestCash) return 'Berabere';
-  return hostCash > guestCash ? hostName : guestName;
-};
 
 export const MonopolySocial: React.FC<MonopolySocialProps> = ({
   currentUser,
@@ -102,7 +37,7 @@ export const MonopolySocial: React.FC<MonopolySocialProps> = ({
   // Determine if current user is host or guest
   // Host is always the game creator; in bot mode, player is always host
   const [myRole, setMyRole] = useState<Owner>('host');
-  const [state, setState] = useState<MonopolyState>(() => initState(currentUser.username, opponentLabel));
+  const [state, setState] = useState<MonopolyState>(() => initMonopolyState(currentUser.username, opponentLabel));
   const sentRef = useRef(false);
   const socketRef = useRef(socketService.getSocket());
   const [waitingForOpponent, setWaitingForOpponent] = useState(!isBot);
@@ -149,7 +84,7 @@ export const MonopolySocial: React.FC<MonopolySocialProps> = ({
             ? { ...prev, hostPos: nextPos, hostCash: prev.hostCash + bonus, lastRoll: dice, turnCount: prev.turnCount + 1, pendingPurchase: null }
             : { ...prev, guestPos: nextPos, guestCash: prev.guestCash + bonus, lastRoll: dice, turnCount: prev.turnCount + 1, pendingPurchase: null };
 
-          return settleLandingPure(moved, rollerRole, nextPos);
+          return settleMonopolyLanding(moved, rollerRole, nextPos);
         });
       } else if (move.type === 'purchase') {
         // Opponent made purchase decision
@@ -171,7 +106,7 @@ export const MonopolySocial: React.FC<MonopolySocialProps> = ({
           }
 
           next = { ...next, turn: owner === 'host' ? 'guest' : 'host' };
-          return maybeEndByStatePure(next);
+          return maybeEndMonopolyState(next);
         });
       } else if (move.type === 'game_end') {
         setState((prev) => ({
@@ -226,13 +161,13 @@ export const MonopolySocial: React.FC<MonopolySocialProps> = ({
   useEffect(() => {
     const hostN = myRole === 'host' ? currentUser.username : opponentLabel;
     const guestN = myRole === 'host' ? opponentLabel : currentUser.username;
-    setState(initState(hostN, guestN));
+    setState(initMonopolyState(hostN, guestN));
     sentRef.current = false;
     setWaitingForOpponent(!isBot);
 
     // If we're host in PvP, send initial state to guest
     if (!isBot && myRole === 'host' && gameId) {
-      const initialState = initState(hostN, guestN);
+      const initialState = initMonopolyState(hostN, guestN);
       setTimeout(() => {
         socketService.emitMove(String(gameId), {
           type: 'full_state',
@@ -244,56 +179,6 @@ export const MonopolySocial: React.FC<MonopolySocialProps> = ({
   }, [isBot, opponentLabel, myRole, currentUser.username]);
 
   // ======= Game Logic (pure functions) =======
-  const settleLandingPure = useCallback((base: MonopolyState, owner: Owner, nextPos: number): MonopolyState => {
-    const tile = BOARD[nextPos];
-    if (!tile || tile.id === 0) {
-      return { ...base, message: `${owner === 'host' ? base.hostName : base.guestName} başlangıçtan geçti.` };
-    }
-
-    const existingOwner = base.properties[tile.id];
-    if (!existingOwner) {
-      const ownerCash = owner === 'host' ? base.hostCash : base.guestCash;
-      if (ownerCash >= tile.cost) {
-        return {
-          ...base,
-          pendingPurchase: { owner, tileId: tile.id },
-          message: `${tile.name} boş. ${tile.cost} CP ile satın alabilirsin.`,
-        };
-      }
-      return { ...base, message: `${tile.name} boş ama bütçe yetersiz.` };
-    }
-
-    if (existingOwner === owner) {
-      return { ...base, message: `${tile.name} zaten sende.` };
-    }
-
-    const payerCash = owner === 'host' ? base.hostCash : base.guestCash;
-    const payAmount = Math.min(tile.rent, Math.max(0, payerCash));
-    const nextHostCash = owner === 'host' ? base.hostCash - payAmount : base.hostCash + payAmount;
-    const nextGuestCash = owner === 'guest' ? base.guestCash - payAmount : base.guestCash + payAmount;
-
-    return {
-      ...base,
-      hostCash: nextHostCash,
-      guestCash: nextGuestCash,
-      message: `${tile.name} kirası ödendi: ${payAmount} CP.`,
-    };
-  }, []);
-
-  const maybeEndByStatePure = useCallback((next: MonopolyState): MonopolyState => {
-    if (next.hostCash <= 0) {
-      return { ...next, finished: true, winner: next.guestName, message: `${next.hostName} bütçeyi bitirdi.` };
-    }
-    if (next.guestCash <= 0) {
-      return { ...next, finished: true, winner: next.hostName, message: `${next.guestName} bütçeyi bitirdi.` };
-    }
-    if (next.turnCount >= MAX_TURNS) {
-      const winner = resolveWinnerByCash(next.hostCash, next.guestCash, next.hostName, next.guestName);
-      return { ...next, finished: true, winner, message: `Tur limiti bitti. Kazanan: ${winner}` };
-    }
-    return next;
-  }, []);
-
   // ======= Bot Logic =======
   const botAutoAction = useCallback((snapshot: MonopolyState): MonopolyState => {
     if (!isBot || snapshot.turn !== 'guest' || snapshot.finished) return snapshot;
@@ -313,7 +198,7 @@ export const MonopolySocial: React.FC<MonopolySocialProps> = ({
         working = { ...working, pendingPurchase: null, message: `${opponentLabel} ${tile.name} almadı.` };
       }
       working = { ...working, turn: 'host' as TurnOwner };
-      return maybeEndByStatePure(working);
+      return maybeEndMonopolyState(working);
     }
 
     const dice = rollDice();
@@ -327,12 +212,12 @@ export const MonopolySocial: React.FC<MonopolySocialProps> = ({
       turnCount: working.turnCount + 1,
       pendingPurchase: null,
     };
-    const settled = settleLandingPure(moved, 'guest', rawPos);
+    const settled = settleMonopolyLanding(moved, 'guest', rawPos);
     if (settled.pendingPurchase?.owner === 'guest') {
       return botAutoAction(settled);
     }
-    return maybeEndByStatePure({ ...settled, turn: 'host' as TurnOwner });
-  }, [isBot, opponentLabel, settleLandingPure, maybeEndByStatePure]);
+    return maybeEndMonopolyState({ ...settled, turn: 'host' as TurnOwner });
+  }, [isBot, opponentLabel]);
 
   // ======= Player Actions =======
   const takeTurn = () => {
@@ -357,7 +242,7 @@ export const MonopolySocial: React.FC<MonopolySocialProps> = ({
           ? { ...prev, hostPos: nextPos, hostCash: prev.hostCash + bonus, lastRoll: dice, turnCount: prev.turnCount + 1, pendingPurchase: null }
           : { ...prev, guestPos: nextPos, guestCash: prev.guestCash + bonus, lastRoll: dice, turnCount: prev.turnCount + 1, pendingPurchase: null };
 
-        const settled = settleLandingPure(moved, myRole, nextPos);
+        const settled = settleMonopolyLanding(moved, myRole, nextPos);
 
         // If there's a pending purchase for us, don't switch turn yet
         if (settled.pendingPurchase?.owner === myRole) {
@@ -370,7 +255,7 @@ export const MonopolySocial: React.FC<MonopolySocialProps> = ({
 
         const nextTurn: TurnOwner = myRole === 'host' ? 'guest' : 'host';
         const switched = { ...settled, turn: nextTurn };
-        const checked = maybeEndByStatePure(switched);
+        const checked = maybeEndMonopolyState(switched);
 
         // Emit move to opponent (PvP)
         if (!isBot && gameId) {
@@ -405,7 +290,7 @@ export const MonopolySocial: React.FC<MonopolySocialProps> = ({
       }
 
       next = { ...next, turn: (owner === 'host' ? 'guest' : 'host') as TurnOwner };
-      const checked = maybeEndByStatePure(next);
+      const checked = maybeEndMonopolyState(next);
 
       // Emit purchase decision to opponent (PvP)
       if (!isBot && gameId) {

@@ -151,6 +151,7 @@ export const Store: React.FC<StoreProps> = ({ user, updateUser, onShowToast }) =
                 {items.map((item, index) => {
                     const owned = hasItem(item.code);
                     const afford = user ? user.points >= item.price : false;
+                    const canAttemptPurchase = !owned && buyingId !== item.id;
 
                     return (
                         <motion.div
@@ -185,10 +186,10 @@ export const Store: React.FC<StoreProps> = ({ user, updateUser, onShowToast }) =
                             <div className="relative z-10 mt-auto">
                                 <button
                                     onClick={() => handleBuy(item)}
-                                    disabled={owned || !afford || buyingId === item.id}
+                                    disabled={!canAttemptPurchase}
                                     className={`w-full py-3 font-display text-lg tracking-widest uppercase transition-all flex items-center justify-center gap-2 skew-x-[-5deg] ${owned ? 'bg-emerald-950/30 text-emerald-500 border-2 border-emerald-900/50 cursor-not-allowed'
                                         : afford ? 'bg-cyan-950/30 text-cyan-400 border-2 border-cyan-500/50 hover:bg-pink-950/30 hover:text-pink-400 hover:border-pink-500'
-                                            : 'bg-cyan-950/40 text-cyan-900/90 border-2 border-cyan-900/45 cursor-not-allowed'
+                                            : 'bg-cyan-950/40 text-cyan-300 border-2 border-cyan-800/70 hover:border-amber-400 hover:text-amber-300'
                                         }`}
                                 >
                                     <span className="skew-x-[5deg] flex items-center gap-2">
@@ -198,6 +199,8 @@ export const Store: React.FC<StoreProps> = ({ user, updateUser, onShowToast }) =
                                             <>
                                                 <Check size={18} /> SATIN ALINDI
                                             </>
+                                        ) : !user ? (
+                                            'GİRİŞ YAP'
                                         ) : afford ? (
                                             'SATIN AL'
                                         ) : (

@@ -207,22 +207,31 @@ If either the frontend API client or Socket.IO client is missing `credentials: t
    CORS_ORIGIN=https://cafeduotr.com,https://www.cafeduotr.com
    ```
 
-2. **Rebuild and redeploy**:
+2. **Update GitHub Actions secret source of truth**:
+   The VPS deploy workflow rewrites production `.env` from `DEPLOY_ENV_B64` on every deploy.
+   If you only edit `/opt/cafeduo-main/.env` manually, the next deploy will restore the old value.
+
+   Permanent fix:
+   - Update `DEPLOY_ENV_B64` in GitHub repository secrets
+   - Make sure the encoded env contains `COOKIE_DOMAIN=`
+   - Keep `DEPLOY_SITE_URL`, `SMOKE_LOGIN_EMAIL`, and `SMOKE_LOGIN_PASSWORD` set so authenticated public smoke can run
+
+3. **Rebuild and redeploy**:
    ```bash
    cd /home/emin/cafeduo-main
    git pull origin main
    cd deploy
-   docker-compose -f docker-compose.prod.yml down
-   docker-compose -f docker-compose.prod.yml up -d --build
+   docker compose -f docker-compose.prod.yml down
+   docker compose -f docker-compose.prod.yml up -d --build
    ```
 
-3. **Test authentication**:
+4. **Test authentication**:
    - Clear browser cookies
    - Login to application
    - Verify Socket.IO connection succeeds
    - Test game creation
 
-4. **Monitor logs**:
+5. **Monitor logs**:
    ```bash
    docker logs cafeduo-api-1 -f | grep -i "socket\|auth"
    ```

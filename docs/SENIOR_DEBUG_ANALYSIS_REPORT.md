@@ -1,5 +1,7 @@
 # CafeDuo Senior Debug Analiz Raporu
 
+> Historical reference. Current production truth lives in [docs/CURRENT_STATE.md](/home/emin/cafeduo-main/docs/CURRENT_STATE.md).
+
 **Tarih:** 4 Mart 2026  
 **Analiz Tipi:** Senior Seviye Component ve Sistem Debug  
 **Analiz Eden:** AI Debug Assistant  

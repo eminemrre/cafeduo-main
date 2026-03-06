@@ -5,9 +5,14 @@ const logger = require('../utils/logger'); // CommonJS import
 dotenv.config();
 
 const redisUrl = String(process.env.REDIS_URL || '').trim();
+const shouldSuppressMissingRedisWarning =
+    process.env.NODE_ENV === 'test' && process.env.REDIS_WARN_WHEN_DISABLED !== '1';
+
 const createRedisClient = () => {
     if (!redisUrl) {
-        logger.warn('Redis disabled: REDIS_URL is not configured. Falling back to in-memory mode.');
+        if (!shouldSuppressMissingRedisWarning) {
+            logger.warn('Redis disabled: REDIS_URL is not configured. Falling back to in-memory mode.');
+        }
         return null;
     }
 

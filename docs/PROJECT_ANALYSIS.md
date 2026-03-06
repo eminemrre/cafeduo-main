@@ -1,5 +1,7 @@
 # CafeDuo Proje Analizi ve Puanlama
 
+> Historical reference. Current production truth lives in [docs/CURRENT_STATE.md](/home/emin/cafeduo-main/docs/CURRENT_STATE.md).
+
 **Tarih:** 27 Şubat 2026  
 **Analiz Türü:** Genel Proje Değerlendirmesi  
 **Puanlama:** /100

@@ -10,6 +10,7 @@ Current validated state:
 
 - Live health endpoint returns `OK`
 - Live version endpoint reports a current production commit
+- `npm audit --audit-level=moderate` passes locally
 - `npm run test:ci` passes
 - `npm run build` passes
 - `npm run migrate:status` runs locally, but only reports file-based status when the database is unreachable
@@ -37,15 +38,16 @@ Historical analysis documents remain useful, but they are not the primary source
 
 ## Known Risks
 
-- Public smoke depends on `DEPLOY_SITE_URL`, `SMOKE_LOGIN_EMAIL`, and `SMOKE_LOGIN_PASSWORD` secrets being present and valid
+- `CI/CD Pipeline` is only green if the current lockfile is kept in sync with patched dependency resolutions
+- Public smoke and strict deploy gating depend on `DEPLOY_SITE_URL`, `SMOKE_LOGIN_EMAIL`, and `SMOKE_LOGIN_PASSWORD` secrets being present and valid
 - Manual edits on VPS `.env` are temporary unless `DEPLOY_ENV_B64` is updated in GitHub secrets
 - Coverage is still significantly lower than the desired level for large realtime game components
 
 ## Immediate Priorities
 
-1. Keep production deploy fail-fast on env validation, migration status, and authenticated smoke.
-2. Raise coverage on large realtime and social game components.
-3. Reduce build warnings and heavy component maintenance cost.
+1. Keep `CI/CD Pipeline` green by avoiding unnecessary dependency surface and maintaining patched transitive resolutions.
+2. Keep production deploy fail-fast on env validation, migration status, and authenticated smoke.
+3. Raise coverage on large realtime and social game components.
 
 ## Local Build Note
 

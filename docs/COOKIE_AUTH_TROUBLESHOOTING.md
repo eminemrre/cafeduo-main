@@ -215,6 +215,7 @@ If either the frontend API client or Socket.IO client is missing `credentials: t
    - Update `DEPLOY_ENV_B64` in GitHub repository secrets
    - Make sure the encoded env contains `COOKIE_DOMAIN=`
    - Keep `DEPLOY_SITE_URL`, `SMOKE_LOGIN_EMAIL`, and `SMOKE_LOGIN_PASSWORD` set so authenticated public smoke can run
+   - Strict deploy validation now fails early if these secrets are missing or if `CORS_ORIGIN` does not include the public site origin
 
 3. **Rebuild and redeploy**:
    ```bash

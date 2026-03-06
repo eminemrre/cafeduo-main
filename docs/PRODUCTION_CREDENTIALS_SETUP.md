@@ -239,8 +239,14 @@ GitHub repository settings'de şu secret'ları ekle:
 **Test Secrets:**
 - `TEST_USER_EMAIL` - Test kullanıcı email
 - `TEST_USER_PASSWORD` - Test kullanıcı password
-- `SMOKE_LOGIN_EMAIL` - Smoke test email
-- `SMOKE_LOGIN_PASSWORD` - Smoke test password
+- `SMOKE_LOGIN_EMAIL` - Regular user smoke test email
+- `SMOKE_LOGIN_PASSWORD` - Regular user smoke test password
+
+Notlar:
+- `SMOKE_LOGIN_EMAIL` / `SMOKE_LOGIN_PASSWORD` için admin hesabı kullanma.
+- Bu smoke hesabı yalnız login, `/api/auth/me`, cookie auth ve socket connect doğrulaması için kullanılmalı.
+- `Deploy VPS` workflow artık bu secret'lar eksikse fail eder.
+- `DEPLOY_ENV_B64` içeriğinde `COOKIE_DOMAIN=` boş olmalı ve `CORS_ORIGIN` içinde `DEPLOY_SITE_URL` origin'i bulunmalı.
 
 ### 📦 Base64 Encoding `.env` for GitHub
 

@@ -32,6 +32,30 @@
   - `deploy/scripts/smoke-vps.sh`
   - `deploy/scripts/rollback.sh`
 
+## Production Source Of Truth
+
+- GitHub Actions deploy uses `DEPLOY_ENV_B64` as the source of truth for production `.env`.
+- Manual edits on `/opt/cafeduo-main/.env` are only temporary hotfixes.
+- The next successful deploy will overwrite VPS `.env` from `DEPLOY_ENV_B64`.
+
+Required production GitHub secrets:
+
+- `DEPLOY_ENV_B64`
+- `DEPLOY_SITE_URL`
+- `SMOKE_LOGIN_EMAIL`
+- `SMOKE_LOGIN_PASSWORD`
+
+Operational defaults for same-origin production:
+
+- `COOKIE_DOMAIN=`
+- `sameSite='lax'`
+- `DEPLOY_SITE_URL` origin must be present in `CORS_ORIGIN`
+
+External testing tools:
+
+- `@testsprite/testsprite-mcp` is no longer a project dependency.
+- If TestSprite is needed, run it via `npx @testsprite/testsprite-mcp@latest` or a global install.
+
 ---
 
 ## System Requirements

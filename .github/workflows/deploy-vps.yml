@@ -25,9 +25,12 @@ jobs:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           DEPLOY_ENV_B64: ${{ secrets.DEPLOY_ENV_B64 }}
+          DEPLOY_SITE_URL: ${{ secrets.DEPLOY_SITE_URL }}
+          SMOKE_LOGIN_EMAIL: ${{ secrets.SMOKE_LOGIN_EMAIL }}
+          SMOKE_LOGIN_PASSWORD: ${{ secrets.SMOKE_LOGIN_PASSWORD }}
         run: |
           set -euo pipefail
-          for var in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_PATH DEPLOY_ENV_B64; do
+          for var in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_PATH DEPLOY_ENV_B64 DEPLOY_SITE_URL SMOKE_LOGIN_EMAIL SMOKE_LOGIN_PASSWORD; do
             if [ -z "${!var:-}" ]; then
               echo "Missing required secret: ${var}"
               exit 1
@@ -40,23 +43,34 @@ jobs:
           node-version: 20
           cache: npm
 
+      - name: Validate production environment config
+        env:
+          DEPLOY_ENV_B64: ${{ secrets.DEPLOY_ENV_B64 }}
+          DEPLOY_SITE_URL: ${{ secrets.DEPLOY_SITE_URL }}
+          SMOKE_LOGIN_EMAIL: ${{ secrets.SMOKE_LOGIN_EMAIL }}
+          SMOKE_LOGIN_PASSWORD: ${{ secrets.SMOKE_LOGIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          node scripts/ops/validate-production-env.mjs
+
       - name: Install dependencies
         run: npm ci
 
       - name: Run unit tests with coverage
         run: npm run test:ci
 
-      - name: Check for pending migrations
+      - name: Check migration status against production database
+        env:
+          DEPLOY_ENV_B64: ${{ secrets.DEPLOY_ENV_B64 }}
         run: |
-          echo "⚠️ MIGRATION REMINDER ⚠️"
-          echo "Before deploying, ensure migrations are run on the target environment."
-          echo "Run: npm run migrate:status"
-          echo "Then: npm run migrate:up"
-          echo ""
-          if [ -d "migrations" ] && ls migrations/*.js 1> /dev/null 2>&1; then
-            echo "📋 Migration files found:"
-            ls -1 migrations/*.js | tail -5
-          fi
+          set -euo pipefail
+          tmp_env="$(mktemp)"
+          trap 'rm -f "$tmp_env"' EXIT
+          echo "$DEPLOY_ENV_B64" | base64 -d > "$tmp_env"
+          DOTENV_CONFIG_PATH="$tmp_env" \
+          MIGRATION_STATUS_REQUIRE_DB=1 \
+          MIGRATION_STATUS_FAIL_ON_PENDING=1 \
+          npm run migrate:status
 
       - name: Build frontend
         run: npm run build
@@ -217,10 +231,8 @@ jobs:
         env:
           SMOKE_BASE_URL: ${{ secrets.DEPLOY_SITE_URL }}
           SMOKE_EXPECT_COMMIT: ${{ github.sha }}
+          SMOKE_LOGIN_EMAIL: ${{ secrets.SMOKE_LOGIN_EMAIL }}
+          SMOKE_LOGIN_PASSWORD: ${{ secrets.SMOKE_LOGIN_PASSWORD }}
         run: |
           set -euo pipefail
-          if [ -z "${SMOKE_BASE_URL:-}" ]; then
-            echo "DEPLOY_SITE_URL secret is not set. Skipping public smoke checks."
-            exit 0
-          fi
           npm run smoke:prod

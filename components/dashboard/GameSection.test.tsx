@@ -1,653 +1,473 @@
-/**
- * GameSection Component Tests
- * 
- * @description Comprehensive test suite for GameSection component
- * covering all UI states, user interactions, and edge cases
- * @author Senior Test Engineer
- * @since 2024-02-04
- */
-
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { GameSection } from './GameSection';
-import { User, GameRequest } from '../../types';
+import { api } from '../../lib/api';
+import type { GameHistoryEntry, GameRequest, User } from '../../types';
 
-// Mock child components
+jest.mock('../../lib/api', () => ({
+  api: {
+    games: {
+      get: jest.fn(),
+    },
+  },
+}));
+
 jest.mock('../GameLobby', () => ({
-  GameLobby: ({ requests, onJoinGame, onViewProfile, onCreateGameClick }: any) => (
+  GameLobby: ({
+    requests,
+    onJoinGame,
+    onCreateGameClick,
+    onQuickJoin,
+    quickJoinDisabled,
+    quickJoinBusy,
+    onViewProfile,
+  }: any) => (
     <div data-testid="game-lobby-mock">
-      <button data-testid="empty-state-action" onClick={onCreateGameClick}>Create Game Mock Button</button>
-      <button data-testid="create-game-button" disabled={false} onClick={onCreateGameClick}>Oyun Kur</button>
-      <button data-testid="quick-join-button" disabled={false} onClick={() => { }}>HIZLI EŞLEŞ</button>
+      <button data-testid="create-game-button" onClick={onCreateGameClick}>Oyun Kur</button>
+      <button
+        data-testid="quick-join-button"
+        disabled={quickJoinDisabled || quickJoinBusy}
+        onClick={() => onQuickJoin()}
+      >
+        HIZLI EŞLEŞ
+      </button>
       {requests?.map((game: GameRequest) => (
         <div key={game.id} data-testid={`game-item-${game.id}`}>
           <span>{game.hostName}</span>
-          <button onClick={() => onJoinGame(game.id)}>Join</button>
+          <button data-testid={`join-${game.id}`} onClick={() => onJoinGame(Number(game.id))}>Katıl</button>
+          <button data-testid={`profile-${game.id}`} onClick={() => onViewProfile(game.hostName)}>Profil</button>
         </div>
       ))}
     </div>
-  )
+  ),
 }));
 
 jest.mock('../CreateGameModal', () => ({
-  CreateGameModal: ({ isOpen, onClose, onSubmit }: any) => (
+  CreateGameModal: ({ isOpen, onClose, onSubmit, maxPoints }: any) =>
     isOpen ? (
       <div data-testid="create-game-modal-mock">
+        <span data-testid="modal-max-points">{maxPoints}</span>
         <button data-testid="modal-close" onClick={onClose}>Kapat</button>
-        <button
-          data-testid="modal-submit"
-          onClick={() => onSubmit('Refleks Avı', 100)}
-        >
-          Oluştur
-        </button>
+        <button data-testid="modal-submit" onClick={() => onSubmit('Refleks Avı', 100)}>Oluştur</button>
       </div>
-    ) : null
-  )
+    ) : null,
 }));
 
 jest.mock('../Skeleton', () => ({
-  SkeletonGrid: ({ count }: any) => (
-    <div data-testid="skeleton-grid">
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} data-testid="skeleton-item">Loading...</div>
-      ))}
-    </div>
-  )
+  SkeletonGrid: ({ count }: { count: number }) => (
+    <div data-testid="skeleton-grid">{Array.from({ length: count }).map((_, index) => <div key={index}>Loading</div>)}</div>
+  ),
 }));
 
-jest.mock('../EmptyState', () => ({
-  EmptyState: ({ title, description, action }: any) => (
-    <div data-testid="empty-state">
-      <h3>{title}</h3>
-      <p>{description}</p>
-      {action && (
-        <button data-testid="empty-state-action" onClick={action.onClick}>
-          {action.label}
-        </button>
-      )}
-    </div>
-  )
-}));
+const mockApiGamesGet = api.games.get as jest.MockedFunction<typeof api.games.get>;
 
-jest.mock('../RetroButton', () => ({
-  RetroButton: ({ children, onClick, disabled, ...props }: any) => (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      data-testid={props['data-testid']}
-      {...props}
-    >
-      {children}
-    </button>
-  )
-}));
+const mockUser: User = {
+  id: 1,
+  username: 'testuser',
+  email: 'test@example.com',
+  points: 500,
+  wins: 10,
+  gamesPlayed: 20,
+  role: 'user',
+  isAdmin: false,
+  department: 'Bilgisayar Mühendisliği',
+};
+
+const baseGames: GameRequest[] = [
+  {
+    id: 1,
+    hostName: 'hostuser1',
+    gameType: 'Refleks Avı',
+    points: 100,
+    table: 'MASA05',
+    status: 'waiting',
+  },
+  {
+    id: 2,
+    hostName: 'hostuser2',
+    gameType: 'Ritim Kopyala',
+    points: 200,
+    table: 'MASA07',
+    status: 'waiting',
+  },
+];
+
+const chessHistoryEntry: GameHistoryEntry = {
+  id: 51,
+  gameType: 'Retro Satranç',
+  points: 100,
+  status: 'finished',
+  table: 'MASA05',
+  opponentName: 'Rakip',
+  winner: 'testuser',
+  didWin: true,
+  createdAt: '2026-03-05T10:00:00.000Z',
+  moveCount: 12,
+  chessTempo: '5+3',
+};
+
+const mockHandlers = () => ({
+  onCreateGame: jest.fn().mockResolvedValue(undefined),
+  onJoinGame: jest.fn().mockResolvedValue(undefined),
+  onCancelGame: jest.fn().mockResolvedValue(undefined),
+  onViewProfile: jest.fn(),
+  onRejoinGame: jest.fn(),
+  setIsCreateModalOpen: jest.fn(),
+});
+
+const renderSection = (overrides: Partial<React.ComponentProps<typeof GameSection>> = {}) => {
+  const handlers = mockHandlers();
+  const props: React.ComponentProps<typeof GameSection> = {
+    currentUser: mockUser,
+    tableCode: 'MASA05',
+    isMatched: true,
+    games: baseGames,
+    gamesLoading: false,
+    gameHistory: [],
+    historyLoading: false,
+    activeGameId: null,
+    serverActiveGame: null,
+    isCreateModalOpen: false,
+    setIsCreateModalOpen: handlers.setIsCreateModalOpen,
+    onCreateGame: handlers.onCreateGame,
+    onJoinGame: handlers.onJoinGame,
+    onCancelGame: handlers.onCancelGame,
+    onViewProfile: handlers.onViewProfile,
+    onRejoinGame: handlers.onRejoinGame,
+    ...overrides,
+  };
+
+  render(
+    <GameSection {...props} />
+  );
+
+  return props;
+};
 
 describe('GameSection', () => {
-  // Test fixtures
-  const mockUser: User = {
-    id: 1,
-    username: 'testuser',
-    email: 'test@example.com',
-    points: 500,
-    wins: 10,
-    gamesPlayed: 20,
-    role: 'user',
-    isAdmin: false,
-    department: 'Bilgisayar Mühendisliği'
-  };
-
-  const mockGames: GameRequest[] = [
-    {
-      id: 1,
-      hostName: 'hostuser1',
-      gameType: 'Refleks Avı',
-      points: 100,
-      table: 'A1',
-      status: 'waiting'
-    },
-    {
-      id: 2,
-      hostName: 'hostuser2',
-      gameType: 'Ritim Kopyala',
-      points: 200,
-      table: 'B2',
-      status: 'waiting'
-    }
-  ];
-
-  const mockServerActiveGame: GameRequest = {
-    id: 999,
-    hostName: 'opponent',
-    gameType: 'Refleks Avı',
-    points: 150,
-    table: 'A1',
-    status: 'active'
-  };
-
-  // Mock handler'lar
-  const mockHandlers = {
-    onCreateGame: jest.fn(),
-    onJoinGame: jest.fn(),
-    onViewProfile: jest.fn(),
-    onRejoinGame: jest.fn(),
-    setIsCreateModalOpen: jest.fn()
-  };
-
   beforeEach(() => {
     jest.clearAllMocks();
+    mockApiGamesGet.mockReset();
   });
 
-  /**
-   * SCENARIO 1: Aktif oyun varsa banner göster
-   * CRITICAL: Kullanıcı aktif oyuna yönlendirilmeli
-   */
-  describe('Active Game Banner', () => {
-    it('should display rejoin banner when server has active game and no local active game', () => {
-      render(
-        <GameSection
-          currentUser={mockUser}
-          tableCode="A1"
-          isMatched={true}
-          games={[]}
-          gamesLoading={false}
-          activeGameId={null}
-          serverActiveGame={mockServerActiveGame}
-          isCreateModalOpen={false}
-          setIsCreateModalOpen={mockHandlers.setIsCreateModalOpen}
-          onCreateGame={mockHandlers.onCreateGame}
-          onJoinGame={mockHandlers.onJoinGame}
-          onViewProfile={mockHandlers.onViewProfile}
-          onRejoinGame={mockHandlers.onRejoinGame}
-        />
-      );
+  it('shows loading state when games are loading', () => {
+    renderSection({ games: [], gamesLoading: true });
 
-      // BUG CHECK: Banner görünüyor mu?
-      expect(screen.getByText(/DEVAM EDEN SAVAŞ!/i)).toBeInTheDocument();
-      expect(screen.getByText(/opponent/i)).toBeInTheDocument();
-      expect(screen.getByText(/Refleks Avı/i)).toBeInTheDocument();
-
-      // Oyuna dön butonu
-      const rejoinButton = screen.getByText(/ARENAYA DÖN/i);
-      expect(rejoinButton).toBeInTheDocument();
-
-      // Buton çalışıyor mu?
-      fireEvent.click(rejoinButton);
-      expect(mockHandlers.onRejoinGame).toHaveBeenCalledTimes(1);
-    });
-
-    it('should NOT show banner when activeGameId exists locally', () => {
-      render(
-        <GameSection
-          currentUser={mockUser}
-          tableCode="A1"
-          isMatched={true}
-          games={[]}
-          gamesLoading={false}
-          activeGameId={999} // Local'de aktif oyun var
-          serverActiveGame={mockServerActiveGame}
-          isCreateModalOpen={false}
-          setIsCreateModalOpen={mockHandlers.setIsCreateModalOpen}
-          onCreateGame={mockHandlers.onCreateGame}
-          onJoinGame={mockHandlers.onJoinGame}
-          onViewProfile={mockHandlers.onViewProfile}
-          onRejoinGame={mockHandlers.onRejoinGame}
-        />
-      );
-
-      // Banner görünmemeli
-      expect(screen.queryByText(/🎮 Aktif Oyunun Var!/i)).not.toBeInTheDocument();
-
-      // Normal game lobby görünmeli
-      expect(screen.getByTestId('game-lobby-mock')).toBeInTheDocument();
-    });
-
-    it('should NOT show banner when no server active game', () => {
-      render(
-        <GameSection
-          currentUser={mockUser}
-          tableCode="A1"
-          isMatched={true}
-          games={[]}
-          gamesLoading={false}
-          activeGameId={null}
-          serverActiveGame={null}
-          isCreateModalOpen={false}
-          setIsCreateModalOpen={mockHandlers.setIsCreateModalOpen}
-          onCreateGame={mockHandlers.onCreateGame}
-          onJoinGame={mockHandlers.onJoinGame}
-          onViewProfile={mockHandlers.onViewProfile}
-          onRejoinGame={mockHandlers.onRejoinGame}
-        />
-      );
-
-      expect(screen.queryByText(/🎮 Aktif Oyunun Var!/i)).not.toBeInTheDocument();
-    });
+    expect(screen.getByTestId('skeleton-grid')).toBeInTheDocument();
   });
 
-  /**
-   * SCENARIO 2: Loading state
-   */
-  describe('Loading State', () => {
-    it('should show skeleton grid when games are loading', () => {
-      render(
-        <GameSection
-          currentUser={mockUser}
-          tableCode="A1"
-          isMatched={true}
-          games={[]}
-          gamesLoading={true}
-          activeGameId={null}
-          serverActiveGame={null}
-          isCreateModalOpen={false}
-          setIsCreateModalOpen={mockHandlers.setIsCreateModalOpen}
-          onCreateGame={mockHandlers.onCreateGame}
-          onJoinGame={mockHandlers.onJoinGame}
-          onViewProfile={mockHandlers.onViewProfile}
-          onRejoinGame={mockHandlers.onRejoinGame}
-        />
-      );
-
-      expect(screen.getByTestId('skeleton-grid')).toBeInTheDocument();
-
-      // 4 skeleton item olmalı
-      const skeletonItems = screen.getAllByTestId('skeleton-item');
-      expect(skeletonItems).toHaveLength(4);
+  it('shows rejoin banner with guest label when current user is host', () => {
+    const handlers = renderSection({
+      games: [],
+      serverActiveGame: {
+        id: 99,
+        hostName: 'testuser',
+        guestName: 'guest-player',
+        gameType: 'Refleks Avı',
+        points: 50,
+        table: 'MASA05',
+        status: 'active',
+      },
     });
+
+    expect(screen.getByText(/DEVAM EDEN SAVAŞ/i)).toBeInTheDocument();
+    expect(screen.getByText(/guest-player/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /ARENAYA DÖN/i }));
+    expect(handlers.onRejoinGame).toHaveBeenCalledTimes(1);
   });
 
-  /**
-   * SCENARIO 3: Empty game list
-   */
-  describe('Empty Game List', () => {
-    it('should pass empty array to GameLobby when no games available', () => {
-      render(
-        <GameSection
-          currentUser={mockUser}
-          tableCode="A1"
-          isMatched={true}
-          games={[]}
-          gamesLoading={false}
-          activeGameId={null}
-          serverActiveGame={null}
-          isCreateModalOpen={false}
-          setIsCreateModalOpen={mockHandlers.setIsCreateModalOpen}
-          onCreateGame={mockHandlers.onCreateGame}
-          onJoinGame={mockHandlers.onJoinGame}
-          onViewProfile={mockHandlers.onViewProfile}
-          onRejoinGame={mockHandlers.onRejoinGame}
-        />
-      );
-
-      expect(screen.getByTestId('game-lobby-list')).toBeInTheDocument();
-      // Empty mock just renders <div data-testid="game-lobby-mock"></div>
-      expect(screen.getByTestId('game-lobby-mock')).toBeInTheDocument();
+  it('shows host label when current user is not the host', () => {
+    renderSection({
+      games: [],
+      serverActiveGame: {
+        id: 100,
+        hostName: 'other-host',
+        guestName: 'testuser',
+        gameType: 'Refleks Avı',
+        points: 50,
+        table: 'MASA05',
+        status: 'active',
+      },
     });
 
-    it('should open create modal from empty state action', () => {
-      render(
-        <GameSection
-          currentUser={mockUser}
-          tableCode="A1"
-          isMatched={true}
-          games={[]}
-          gamesLoading={false}
-          activeGameId={null}
-          serverActiveGame={null}
-          isCreateModalOpen={false}
-          setIsCreateModalOpen={mockHandlers.setIsCreateModalOpen}
-          onCreateGame={mockHandlers.onCreateGame}
-          onJoinGame={mockHandlers.onJoinGame}
-          onViewProfile={mockHandlers.onViewProfile}
-          onRejoinGame={mockHandlers.onRejoinGame}
-        />
-      );
+    expect(screen.getByText(/other-host/i)).toBeInTheDocument();
+  });
 
-      const actionButton = screen.getByTestId('empty-state-action');
-      fireEvent.click(actionButton);
+  it('quick-joins the same-table waiting game first and forwards profile clicks', async () => {
+    const handlers = renderSection({
+      games: [
+        {
+          id: 9,
+          hostName: 'testuser',
+          gameType: 'Refleks Avı',
+          points: 50,
+          table: 'MASA05',
+          status: 'waiting',
+        },
+        {
+          id: 11,
+          hostName: 'same-table-host',
+          gameType: 'Refleks Avı',
+          points: 75,
+          table: 'MASA05',
+          status: 'waiting',
+        },
+        {
+          id: 12,
+          hostName: 'other-table-host',
+          gameType: 'Refleks Avı',
+          points: 80,
+          table: 'MASA09',
+          status: 'waiting',
+        },
+      ],
+    });
 
-      expect(mockHandlers.setIsCreateModalOpen).toHaveBeenCalledWith(true);
+    fireEvent.click(screen.getByTestId('quick-join-button'));
+    await waitFor(() => {
+      expect(handlers.onJoinGame).toHaveBeenCalledWith(11);
+    });
+
+    fireEvent.click(screen.getByTestId('profile-11'));
+    expect(handlers.onViewProfile).toHaveBeenCalledWith('same-table-host');
+  });
+
+  it('disables quick join when user is not matched or there is no candidate', () => {
+    const { rerender } = render(
+      <GameSection
+        currentUser={mockUser}
+        tableCode="MASA05"
+        isMatched={false}
+        games={baseGames}
+        gamesLoading={false}
+        gameHistory={[]}
+        historyLoading={false}
+        activeGameId={null}
+        serverActiveGame={null}
+        isCreateModalOpen={false}
+        setIsCreateModalOpen={jest.fn()}
+        onCreateGame={jest.fn()}
+        onJoinGame={jest.fn()}
+        onCancelGame={jest.fn()}
+        onViewProfile={jest.fn()}
+        onRejoinGame={jest.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('quick-join-button')).toBeDisabled();
+
+    rerender(
+      <GameSection
+        currentUser={mockUser}
+        tableCode="MASA05"
+        isMatched={true}
+        games={[{ ...baseGames[0], hostName: 'testuser' }]}
+        gamesLoading={false}
+        gameHistory={[]}
+        historyLoading={false}
+        activeGameId={null}
+        serverActiveGame={null}
+        isCreateModalOpen={false}
+        setIsCreateModalOpen={jest.fn()}
+        onCreateGame={jest.fn()}
+        onJoinGame={jest.fn()}
+        onCancelGame={jest.fn()}
+        onViewProfile={jest.fn()}
+        onRejoinGame={jest.fn()}
+      />
+    );
+
+    expect(screen.getByTestId('quick-join-button')).toBeDisabled();
+  });
+
+  it('keeps quick join disabled while an async join is in flight', async () => {
+    let resolveJoin: (() => void) | undefined;
+    const handlers = renderSection({
+      onJoinGame: jest.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveJoin = resolve;
+          })
+      ),
+    });
+
+    fireEvent.click(screen.getByTestId('quick-join-button'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('quick-join-button')).toBeDisabled();
+    });
+
+    fireEvent.click(screen.getByTestId('quick-join-button'));
+    expect(handlers.onJoinGame).toHaveBeenCalledTimes(1);
+
+    resolveJoin?.();
+    await waitFor(() => {
+      expect(screen.getByTestId('quick-join-button')).not.toBeDisabled();
     });
   });
 
-  /**
-   * SCENARIO 4: Game list with items
-   */
-  describe('Game List with Items', () => {
-    it('should render game lobby with games', () => {
-      render(
-        <GameSection
-          currentUser={mockUser}
-          tableCode="A1"
-          isMatched={true}
-          games={mockGames}
-          gamesLoading={false}
-          activeGameId={null}
-          serverActiveGame={null}
-          isCreateModalOpen={false}
-          setIsCreateModalOpen={mockHandlers.setIsCreateModalOpen}
-          onCreateGame={mockHandlers.onCreateGame}
-          onJoinGame={mockHandlers.onJoinGame}
-          onViewProfile={mockHandlers.onViewProfile}
-          onRejoinGame={mockHandlers.onRejoinGame}
-        />
-      );
+  it('opens and closes the create modal and submits with current max points', async () => {
+    const handlers = renderSection({ isCreateModalOpen: true });
 
-      expect(screen.getByTestId('game-lobby-list')).toBeInTheDocument();
-      expect(screen.getByTestId('game-lobby-mock')).toBeInTheDocument();
+    expect(screen.getByTestId('create-game-modal-mock')).toBeInTheDocument();
+    expect(screen.getByTestId('modal-max-points')).toHaveTextContent('500');
 
-      // Game items render edildi mi?
-      expect(screen.getByTestId('game-item-1')).toBeInTheDocument();
-      expect(screen.getByTestId('game-item-2')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('modal-submit'));
+    await waitFor(() => {
+      expect(handlers.onCreateGame).toHaveBeenCalledWith('Refleks Avı', 100);
     });
 
-    it('should pass correct props to GameLobby', () => {
-      render(
-        <GameSection
-          currentUser={mockUser}
-          tableCode="A1"
-          isMatched={true}
-          games={mockGames}
-          gamesLoading={false}
-          activeGameId={null}
-          serverActiveGame={null}
-          isCreateModalOpen={false}
-          setIsCreateModalOpen={mockHandlers.setIsCreateModalOpen}
-          onCreateGame={mockHandlers.onCreateGame}
-          onJoinGame={mockHandlers.onJoinGame}
-          onViewProfile={mockHandlers.onViewProfile}
-          onRejoinGame={mockHandlers.onRejoinGame}
-        />
-      );
+    fireEvent.click(screen.getByTestId('modal-close'));
+    expect(handlers.setIsCreateModalOpen).toHaveBeenCalledWith(false);
+  });
 
-      // GameLobby'a doğru props gitti mi?
-      expect(screen.getByText('hostuser1')).toBeInTheDocument();
-      expect(screen.getByText('hostuser2')).toBeInTheDocument();
+  it('shows history loading and empty states', () => {
+    const { rerender } = render(
+      <GameSection
+        currentUser={mockUser}
+        tableCode="MASA05"
+        isMatched={true}
+        games={baseGames}
+        gamesLoading={false}
+        gameHistory={[]}
+        historyLoading={true}
+        activeGameId={null}
+        serverActiveGame={null}
+        isCreateModalOpen={false}
+        setIsCreateModalOpen={jest.fn()}
+        onCreateGame={jest.fn()}
+        onJoinGame={jest.fn()}
+        onCancelGame={jest.fn()}
+        onViewProfile={jest.fn()}
+        onRejoinGame={jest.fn()}
+      />
+    );
+
+    expect(screen.getByText(/Veri çekiliyor/i)).toBeInTheDocument();
+
+    rerender(
+      <GameSection
+        currentUser={mockUser}
+        tableCode="MASA05"
+        isMatched={true}
+        games={baseGames}
+        gamesLoading={false}
+        gameHistory={[]}
+        historyLoading={false}
+        activeGameId={null}
+        serverActiveGame={null}
+        isCreateModalOpen={false}
+        setIsCreateModalOpen={jest.fn()}
+        onCreateGame={jest.fn()}
+        onJoinGame={jest.fn()}
+        onCancelGame={jest.fn()}
+        onViewProfile={jest.fn()}
+        onRejoinGame={jest.fn()}
+      />
+    );
+
+    expect(screen.getByText(/SAVAŞ GEÇMİŞİ BULUNAMADI/i)).toBeInTheDocument();
+  });
+
+  it('renders chess history details with derived tempo and closes modal', async () => {
+    mockApiGamesGet.mockResolvedValue({
+      gameState: {
+        chess: {
+          moveHistory: [
+            { from: 'e2', to: 'e4', san: 'e4', spentMs: 1500 },
+            { from: 'e7', to: 'e5', san: 'e5', spentMs: 1200 },
+          ],
+          clock: {
+            baseMs: 300000,
+            incrementMs: 3000,
+          },
+        },
+      },
+    } as any);
+
+    renderSection({ gameHistory: [chessHistoryEntry] });
+
+    fireEvent.click(screen.getByRole('button', { name: /LOGLARI GÖSTER/i }));
+
+    await waitFor(() => {
+      expect(mockApiGamesGet).toHaveBeenCalledWith(51);
+    });
+
+    expect(screen.getByText(/SİSTEM KAYDI #CHESS/i)).toBeInTheDocument();
+    expect(screen.getByText(/001\./i)).toBeInTheDocument();
+    expect(screen.getByText(/002\./i)).toBeInTheDocument();
+    expect(screen.getByText(/Tempo: 5\+3/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /KAPAT/i }));
+    await waitFor(() => {
+      expect(screen.queryByText(/SİSTEM KAYDI #CHESS/i)).not.toBeInTheDocument();
     });
   });
 
-  /**
-   * SCENARIO 5: Create Game Button States
-   * CRITICAL: Masa eşleşmemişse buton disabled olmalı
-   */
-  describe('Create Game Action', () => {
-    it('should open modal when clicked', () => {
-      render(
-        <GameSection
-          currentUser={mockUser}
-          tableCode="A1"
-          isMatched={true}
-          games={[]}
-          gamesLoading={false}
-          activeGameId={null}
-          serverActiveGame={null}
-          isCreateModalOpen={false}
-          setIsCreateModalOpen={mockHandlers.setIsCreateModalOpen}
-          onCreateGame={mockHandlers.onCreateGame}
-          onJoinGame={mockHandlers.onJoinGame}
-          onViewProfile={mockHandlers.onViewProfile}
-          onRejoinGame={mockHandlers.onRejoinGame}
-        />
-      );
+  it('shows chess history error and empty move states', async () => {
+    mockApiGamesGet.mockRejectedValueOnce(new Error('api failed'));
 
-      const createButton = screen.getByTestId('create-game-button');
-      fireEvent.click(createButton);
+    const { rerender } = render(
+      <GameSection
+        currentUser={mockUser}
+        tableCode="MASA05"
+        isMatched={true}
+        games={baseGames}
+        gamesLoading={false}
+        gameHistory={[chessHistoryEntry]}
+        historyLoading={false}
+        activeGameId={null}
+        serverActiveGame={null}
+        isCreateModalOpen={false}
+        setIsCreateModalOpen={jest.fn()}
+        onCreateGame={jest.fn()}
+        onJoinGame={jest.fn()}
+        onCancelGame={jest.fn()}
+        onViewProfile={jest.fn()}
+        onRejoinGame={jest.fn()}
+      />
+    );
 
-      expect(mockHandlers.setIsCreateModalOpen).toHaveBeenCalledWith(true);
-      expect(mockHandlers.setIsCreateModalOpen).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  /**
-   * SCENARIO 6: Create Game Modal Integration
-   */
-  describe('Create Game Modal', () => {
-    it('should render modal when isCreateModalOpen is true', () => {
-      render(
-        <GameSection
-          currentUser={mockUser}
-          tableCode="A1"
-          isMatched={true}
-          games={[]}
-          gamesLoading={false}
-          activeGameId={null}
-          serverActiveGame={null}
-          isCreateModalOpen={true} // Modal açık
-          setIsCreateModalOpen={mockHandlers.setIsCreateModalOpen}
-          onCreateGame={mockHandlers.onCreateGame}
-          onJoinGame={mockHandlers.onJoinGame}
-          onViewProfile={mockHandlers.onViewProfile}
-          onRejoinGame={mockHandlers.onRejoinGame}
-        />
-      );
-
-      expect(screen.getByTestId('create-game-modal-mock')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /LOGLARI GÖSTER/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/api failed/i)).toBeInTheDocument();
     });
 
-    it('should NOT render modal when isCreateModalOpen is false', () => {
-      render(
-        <GameSection
-          currentUser={mockUser}
-          tableCode="A1"
-          isMatched={true}
-          games={[]}
-          gamesLoading={false}
-          activeGameId={null}
-          serverActiveGame={null}
-          isCreateModalOpen={false} // Modal kapalı
-          setIsCreateModalOpen={mockHandlers.setIsCreateModalOpen}
-          onCreateGame={mockHandlers.onCreateGame}
-          onJoinGame={mockHandlers.onJoinGame}
-          onViewProfile={mockHandlers.onViewProfile}
-          onRejoinGame={mockHandlers.onRejoinGame}
-        />
-      );
+    fireEvent.click(screen.getByRole('button', { name: /KAPAT/i }));
 
-      expect(screen.queryByTestId('create-game-modal-mock')).not.toBeInTheDocument();
-    });
+    mockApiGamesGet.mockResolvedValueOnce({
+      gameState: {
+        chess: {
+          moveHistory: [],
+        },
+      },
+    } as any);
 
-    it('should close modal when onClose is triggered', () => {
-      render(
-        <GameSection
-          currentUser={mockUser}
-          tableCode="A1"
-          isMatched={true}
-          games={[]}
-          gamesLoading={false}
-          activeGameId={null}
-          serverActiveGame={null}
-          isCreateModalOpen={true}
-          setIsCreateModalOpen={mockHandlers.setIsCreateModalOpen}
-          onCreateGame={mockHandlers.onCreateGame}
-          onJoinGame={mockHandlers.onJoinGame}
-          onViewProfile={mockHandlers.onViewProfile}
-          onRejoinGame={mockHandlers.onRejoinGame}
-        />
-      );
+    rerender(
+      <GameSection
+        currentUser={mockUser}
+        tableCode="MASA05"
+        isMatched={true}
+        games={baseGames}
+        gamesLoading={false}
+        gameHistory={[chessHistoryEntry]}
+        historyLoading={false}
+        activeGameId={null}
+        serverActiveGame={null}
+        isCreateModalOpen={false}
+        setIsCreateModalOpen={jest.fn()}
+        onCreateGame={jest.fn()}
+        onJoinGame={jest.fn()}
+        onCancelGame={jest.fn()}
+        onViewProfile={jest.fn()}
+        onRejoinGame={jest.fn()}
+      />
+    );
 
-      const closeButton = screen.getByTestId('modal-close');
-      fireEvent.click(closeButton);
-
-      expect(mockHandlers.setIsCreateModalOpen).toHaveBeenCalledWith(false);
-    });
-
-    it('should call onCreateGame with correct params when form submitted', async () => {
-      render(
-        <GameSection
-          currentUser={mockUser}
-          tableCode="A1"
-          isMatched={true}
-          games={[]}
-          gamesLoading={false}
-          activeGameId={null}
-          serverActiveGame={null}
-          isCreateModalOpen={true}
-          setIsCreateModalOpen={mockHandlers.setIsCreateModalOpen}
-          onCreateGame={mockHandlers.onCreateGame}
-          onJoinGame={mockHandlers.onJoinGame}
-          onViewProfile={mockHandlers.onViewProfile}
-          onRejoinGame={mockHandlers.onRejoinGame}
-        />
-      );
-
-      const submitButton = screen.getByTestId('modal-submit');
-      fireEvent.click(submitButton);
-
-      await waitFor(() => {
-        expect(mockHandlers.onCreateGame).toHaveBeenCalledWith('Refleks Avı', 100);
-      });
-    });
-
-    it('should pass maxPoints to CreateGameModal based on currentUser.points', () => {
-      const highPointsUser = { ...mockUser, points: 1000 };
-
-      render(
-        <GameSection
-          currentUser={highPointsUser}
-          tableCode="A1"
-          isMatched={true}
-          games={[]}
-          gamesLoading={false}
-          activeGameId={null}
-          serverActiveGame={null}
-          isCreateModalOpen={true}
-          setIsCreateModalOpen={mockHandlers.setIsCreateModalOpen}
-          onCreateGame={mockHandlers.onCreateGame}
-          onJoinGame={mockHandlers.onJoinGame}
-          onViewProfile={mockHandlers.onViewProfile}
-          onRejoinGame={mockHandlers.onRejoinGame}
-        />
-      );
-
-      // Modal render edildi mi?
-      expect(screen.getByTestId('create-game-modal-mock')).toBeInTheDocument();
-      // maxPoints props kontrolü (gerçek modal'da test edilmeli)
-    });
-  });
-
-  /**
-   * SCENARIO 7: Edge Cases & Error Handling
-   */
-  describe('Edge Cases', () => {
-    it('should handle undefined games array gracefully', () => {
-      // BUG POTENTIAL: games undefined/null olursa patlayabilir
-      render(
-        <GameSection
-          currentUser={mockUser}
-          tableCode="A1"
-          isMatched={true}
-          games={undefined as any} // Edge case
-          gamesLoading={false}
-          activeGameId={null}
-          serverActiveGame={null}
-          isCreateModalOpen={false}
-          setIsCreateModalOpen={mockHandlers.setIsCreateModalOpen}
-          onCreateGame={mockHandlers.onCreateGame}
-          onJoinGame={mockHandlers.onJoinGame}
-          onViewProfile={mockHandlers.onViewProfile}
-          onRejoinGame={mockHandlers.onRejoinGame}
-        />
-      );
-
-      // Component patlamamalı
-      expect(screen.getByText(/SAVAŞ ARŞİVİ/i)).toBeInTheDocument();
-    });
-
-    it('should handle null currentUser gracefully', () => {
-      // BUG POTENTIAL: currentUser null olursa points erişimi patlayabilir
-      render(
-        <GameSection
-          currentUser={null as any} // Edge case
-          tableCode="A1"
-          isMatched={true}
-          games={[]}
-          gamesLoading={false}
-          activeGameId={null}
-          serverActiveGame={null}
-          isCreateModalOpen={true}
-          setIsCreateModalOpen={mockHandlers.setIsCreateModalOpen}
-          onCreateGame={mockHandlers.onCreateGame}
-          onJoinGame={mockHandlers.onJoinGame}
-          onViewProfile={mockHandlers.onViewProfile}
-          onRejoinGame={mockHandlers.onRejoinGame}
-        />
-      );
-
-      // Component render olmalı (hata vermemeli)
-      expect(document.body).toBeInTheDocument();
-    });
-
-    it('should display correct table code in header', () => {
-      render(
-        <GameSection
-          currentUser={mockUser}
-          tableCode="C3"
-          isMatched={true}
-          games={[]}
-          gamesLoading={false}
-          activeGameId={null}
-          serverActiveGame={null}
-          isCreateModalOpen={false}
-          setIsCreateModalOpen={mockHandlers.setIsCreateModalOpen}
-          onCreateGame={mockHandlers.onCreateGame}
-          onJoinGame={mockHandlers.onJoinGame}
-          onViewProfile={mockHandlers.onViewProfile}
-          onRejoinGame={mockHandlers.onRejoinGame}
-        />
-      );
-
-      expect(screen.getByTestId('game-lobby-list')).toBeInTheDocument();
-    });
-  });
-
-  /**
-   * SCENARIO 8: Accessibility
-   */
-  describe('Accessibility', () => {
-    it('should have proper heading hierarchy', () => {
-      render(
-        <GameSection
-          currentUser={mockUser}
-          tableCode="A1"
-          isMatched={true}
-          games={[]}
-          gamesLoading={false}
-          activeGameId={null}
-          serverActiveGame={null}
-          isCreateModalOpen={false}
-          setIsCreateModalOpen={mockHandlers.setIsCreateModalOpen}
-          onCreateGame={mockHandlers.onCreateGame}
-          onJoinGame={mockHandlers.onJoinGame}
-          onViewProfile={mockHandlers.onViewProfile}
-          onRejoinGame={mockHandlers.onRejoinGame}
-        />
-      );
-
-      // H3 heading var mı?
-      const heading = screen.getByRole('heading', { level: 3 });
-      expect(heading).toHaveTextContent(/SAVAŞ ARŞİVİ/i);
-    });
-
-    it('should have accessible button labels', () => {
-      render(
-        <GameSection
-          currentUser={mockUser}
-          tableCode="A1"
-          isMatched={true}
-          games={[]}
-          gamesLoading={false}
-          activeGameId={null}
-          serverActiveGame={null}
-          isCreateModalOpen={false}
-          setIsCreateModalOpen={mockHandlers.setIsCreateModalOpen}
-          onCreateGame={mockHandlers.onCreateGame}
-          onJoinGame={mockHandlers.onJoinGame}
-          onViewProfile={mockHandlers.onViewProfile}
-          onRejoinGame={mockHandlers.onRejoinGame}
-        />
-      );
-
-      const createButton = screen.getByTestId('create-game-button');
-      expect(createButton).not.toHaveAttribute('aria-hidden');
+    fireEvent.click(screen.getByRole('button', { name: /LOGLARI GÖSTER/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/ANOMALİ: LOKASYON VERİSİ YOK/i)).toBeInTheDocument();
     });
   });
 });

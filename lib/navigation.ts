@@ -1,24 +1,29 @@
-export const safeReload = () => {
+type ReloadTarget = Pick<Location, 'reload'>;
+type HomeTarget = Pick<Location, 'href'>;
+type ReplaceTarget = Pick<Location, 'replace'>;
+
+const getLocation = (): Location => window.location;
+
+export const safeReload = (location: ReloadTarget = getLocation()) => {
   try {
-    window.location.reload();
+    location.reload();
   } catch {
     // noop
   }
 };
 
-export const safeGoHome = () => {
+export const safeGoHome = (location: HomeTarget = getLocation()) => {
   try {
-    window.location.href = '/';
+    location.href = '/';
   } catch {
     // noop
   }
 };
 
-export const safeReplace = (url: string) => {
+export const safeReplace = (url: string, location: ReplaceTarget = getLocation()) => {
   try {
-    window.location.replace(url);
+    location.replace(url);
   } catch {
     // noop
   }
 };
-

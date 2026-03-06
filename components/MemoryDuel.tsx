@@ -5,6 +5,13 @@ import { api } from '../lib/api';
 import { submitScoreAndWaitForWinner } from '../lib/multiplayer';
 import { socketService } from '../lib/socket';
 import { playGameSfx } from '../lib/gameAudio';
+import {
+    buildMemoryDeck,
+    canFlipCard,
+    getPlayerFlippedIndices,
+    pickBotPair,
+    type MemoryCard,
+} from '../lib/game-logic/memoryDuel';
 
 interface MemoryDuelProps {
     currentUser: User;
@@ -15,15 +22,6 @@ interface MemoryDuelProps {
     onLeave: () => void;
 }
 
-const EMOJIS = ['🚀', '🛸', '👾', '🎮', '⚡', '🔮', '🎲', '🏆'];
-
-interface CardObj {
-    id: number;
-    emoji: string;
-    flippedBy: string | null;
-    matchedBy: string | null;
-}
-
 export const MemoryDuel: React.FC<MemoryDuelProps> = ({
     currentUser,
     gameId,
@@ -32,7 +30,7 @@ export const MemoryDuel: React.FC<MemoryDuelProps> = ({
     onGameEnd,
     onLeave,
 }) => {
-    const [cards, setCards] = useState<CardObj[]>([]);
+    const [cards, setCards] = useState<MemoryCard[]>([]);
     const [playerScore, setPlayerScore] = useState(0);
     const [opponentScore, setOpponentScore] = useState(0);
     const [done, setDone] = useState(false);
@@ -52,21 +50,9 @@ export const MemoryDuel: React.FC<MemoryDuelProps> = ({
 
     // Game Setup & Synchronization
     useEffect(() => {
-        let mounted = true;
-
-        const initCards = () => {
-            const deck = [...EMOJIS, ...EMOJIS].sort(() => Math.random() - 0.5);
-            return deck.map((emoji, idx) => ({
-                id: idx,
-                emoji,
-                flippedBy: null,
-                matchedBy: null
-            }));
-        };
-
         const fetchGameRole = async () => {
             if (!gameId || isBot) {
-                setCards(initCards());
+                setCards(buildMemoryDeck());
                 setIsReady(true);
                 return;
             }
@@ -81,7 +67,7 @@ export const MemoryDuel: React.FC<MemoryDuelProps> = ({
 
                 if (isHostRef.current) {
                     // Host generates and broadcasts the initial board
-                    const initialCards = initCards();
+                    const initialCards = buildMemoryDeck();
                     setCards(initialCards);
                     setIsReady(true);
                     // Wait a bit for guest to be connected
@@ -93,13 +79,12 @@ export const MemoryDuel: React.FC<MemoryDuelProps> = ({
                 }
             } catch (err) {
                 console.error('Failed to fetch game details', err);
-                setCards(initCards());
+                setCards(buildMemoryDeck());
                 setIsReady(true);
             }
         };
 
         void fetchGameRole();
-        return () => { mounted = false; };
     }, [gameId, isBot, currentUser.username]);
 
     useEffect(() => {
@@ -137,7 +122,7 @@ export const MemoryDuel: React.FC<MemoryDuelProps> = ({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [gameId]);
 
-    const checkGameOver = useCallback(async (currentCards: CardObj[], pScore: number, oScore: number) => {
+    const checkGameOver = useCallback(async (currentCards: MemoryCard[], pScore: number, oScore: number) => {
         if (currentCards.every(c => c.matchedBy !== null) && !done) {
             setDone(true);
             const localWinner = pScore > oScore ? currentUser.username : (oScore > pScore ? target : 'Berabere');
@@ -268,12 +253,15 @@ export const MemoryDuel: React.FC<MemoryDuelProps> = ({
 
     // Local interaction handler
     const handleCardClick = (index: number) => {
-        if (done || !isReady || resolvingMatch || lockRef.current) return;
-        const card = cards[index];
-        if (card.flippedBy || card.matchedBy) return; // Already flipped or matched
-
-        const myFlipped = cards.map((c, i) => c.flippedBy === currentUser.username ? i : -1).filter(i => i !== -1);
-        if (myFlipped.length >= 2) return; // Can't flip more than 2
+        if (!canFlipCard({
+            cards,
+            index,
+            username: currentUser.username,
+            done,
+            isReady,
+            resolvingMatch,
+            locked: lockRef.current,
+        })) return;
 
         // Flip it
         flipCardInternal(index, currentUser.username);
@@ -281,7 +269,7 @@ export const MemoryDuel: React.FC<MemoryDuelProps> = ({
             socketService.emitMove(String(gameId), { action: 'flip', index });
         }
 
-        const activeFlipped = [...myFlipped, index];
+        const activeFlipped = [...getPlayerFlippedIndices(cards, currentUser.username), index];
         if (activeFlipped.length === 2) {
             lockRef.current = true;
             const [idx1, idx2] = activeFlipped;
@@ -324,16 +312,9 @@ export const MemoryDuel: React.FC<MemoryDuelProps> = ({
 
         setTimeout(() => {
             setCards(currentCards => {
-                const unmatchedIndices = currentCards
-                    .map((c, i) => c.matchedBy === null ? i : -1)
-                    .filter(i => i !== -1);
-
-                if (unmatchedIndices.length < 2) return currentCards;
-
-                // Shuffle and pick two
-                const shuffled = [...unmatchedIndices].sort(() => Math.random() - 0.5);
-                const idx1 = shuffled[0];
-                const idx2 = shuffled[1];
+                const pair = pickBotPair(currentCards);
+                if (!pair) return currentCards;
+                const [idx1, idx2] = pair;
 
                 // Flip first card
                 const next1 = [...currentCards];

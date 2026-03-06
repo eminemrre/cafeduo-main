@@ -7,16 +7,18 @@ const withProtocol = (url: string): string => {
     return `${isLocal ? 'http' : 'https'}://${url}`;
 };
 
-const enforceBrowserHttps = (url: string): string => {
-    if (typeof window === 'undefined') return url;
-    if (window.location.protocol !== 'https:') return url;
+const enforceBrowserHttps = (url: string, protocolOverride?: Pick<Location, 'protocol'>): string => {
+    const protocol =
+        protocolOverride?.protocol ??
+        (typeof window !== 'undefined' ? window.location.protocol : null);
+    if (protocol !== 'https:') return url;
     if (!url.startsWith('http://')) return url;
     if (/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(url)) return url;
     return url.replace(/^http:\/\//i, 'https://');
 };
 
-export const normalizeBaseUrl = (url: string): string =>
-    enforceBrowserHttps(withProtocol(url.trim())).replace(/\/+$/, '').replace(/\/api$/, '');
+export const normalizeBaseUrl = (url: string, protocolOverride?: Pick<Location, 'protocol'>): string =>
+    enforceBrowserHttps(withProtocol(url.trim()), protocolOverride).replace(/\/+$/, '').replace(/\/api$/, '');
 
 const resolveSocketUrl = () => {
     try {

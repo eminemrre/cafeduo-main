@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AuthProvider, useAuth } from './AuthContext';
 import type { User } from '../types';
+import { suppressExpectedReactError } from '../test-utils/suppressReactError';
 
 const mockVerifyToken = jest.fn();
 const mockLogout = jest.fn();
@@ -52,6 +53,27 @@ const renderWithProvider = () =>
     </AuthProvider>
   );
 
+class HookErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return <div data-testid="hook-error">{this.state.error.message}</div>;
+    }
+    return this.props.children;
+  }
+}
+
 describe('AuthContext', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -59,6 +81,10 @@ describe('AuthContext', () => {
     mockVerifyToken.mockResolvedValue(null);
     mockLogout.mockResolvedValue(undefined);
     mockGetUser.mockResolvedValue(null);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('restores session with a valid token', async () => {
@@ -152,14 +178,20 @@ describe('AuthContext', () => {
   });
 
   it('throws if useAuth is used outside provider', () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = suppressExpectedReactError();
 
     const Broken = () => {
       useAuth();
       return null;
     };
 
-    expect(() => render(<Broken />)).toThrow('useAuth must be used within an AuthProvider');
+    render(
+      <HookErrorBoundary>
+        <Broken />
+      </HookErrorBoundary>
+    );
+
+    expect(screen.getByTestId('hook-error')).toHaveTextContent('useAuth must be used within an AuthProvider');
     consoleSpy.mockRestore();
   });
 });

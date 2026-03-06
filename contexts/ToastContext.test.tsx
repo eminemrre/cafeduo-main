@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 import { ToastProvider, useToast } from './ToastContext';
+import { suppressExpectedReactError } from '../test-utils/suppressReactError';
 
 // Test component that uses toast
 const TestComponent = () => {
@@ -25,6 +26,27 @@ const renderWithProvider = (component: React.ReactElement) => {
   );
 };
 
+class HookErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return <div data-testid="hook-error">{this.state.error.message}</div>;
+    }
+    return this.props.children;
+  }
+}
+
 describe('ToastContext', () => {
   beforeEach(() => {
     jest.useFakeTimers();
@@ -34,6 +56,7 @@ describe('ToastContext', () => {
     jest.runOnlyPendingTimers();
     jest.clearAllTimers();
     jest.useRealTimers();
+    jest.restoreAllMocks();
   });
 
   it('renders without crashing', () => {
@@ -149,17 +172,20 @@ describe('ToastContext', () => {
   });
 
   it('throws error when useToast is used outside provider', () => {
-    // Suppress console.error for this test
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    
+    const consoleSpy = suppressExpectedReactError();
+
     const BrokenComponent = () => {
       useToast();
       return null;
     };
 
-    expect(() => {
-      render(<BrokenComponent />);
-    }).toThrow('useToast must be used within ToastProvider');
+    render(
+      <HookErrorBoundary>
+        <BrokenComponent />
+      </HookErrorBoundary>
+    );
+
+    expect(screen.getByTestId('hook-error')).toHaveTextContent('useToast must be used within ToastProvider');
 
     consoleSpy.mockRestore();
   });

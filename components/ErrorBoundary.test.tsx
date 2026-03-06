@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ErrorBoundary } from './ErrorBoundary';
 import { safeGoHome, safeReload } from '../lib/navigation';
+import { suppressExpectedReactError } from '../test-utils/suppressReactError';
 
 jest.mock('../lib/navigation', () => ({
   safeGoHome: jest.fn(),
@@ -21,6 +22,10 @@ describe('ErrorBoundary', () => {
     jest.clearAllMocks();
   });
 
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it('renders children when no error occurs', () => {
     render(
       <ErrorBoundary>
@@ -32,7 +37,7 @@ describe('ErrorBoundary', () => {
   });
 
   it('renders fallback UI when child throws', () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = suppressExpectedReactError();
 
     render(
       <ErrorBoundary>
@@ -46,7 +51,7 @@ describe('ErrorBoundary', () => {
   });
 
   it('clears storage on recovery button click', () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = suppressExpectedReactError();
     const clearSpy = jest.spyOn(window.localStorage, 'clear');
 
     render(
@@ -65,7 +70,7 @@ describe('ErrorBoundary', () => {
   });
 
   it('reloads page instead of clearing session on chunk-load error', () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleSpy = suppressExpectedReactError();
     const clearSpy = jest.spyOn(window.localStorage, 'clear');
 
     render(

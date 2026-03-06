@@ -118,6 +118,16 @@ export const GameSection: React.FC<GameSectionProps> = ({
   const openHistoryDetail = async (entry: GameHistoryEntry) => {
     if (entry.gameType !== 'Retro Satranç') return;
     setHistoryDetailError(null);
+    setSelectedHistory({
+      id: entry.id,
+      gameType: entry.gameType,
+      opponentName: entry.opponentName,
+      createdAt: entry.createdAt,
+      winner: entry.winner,
+      points: entry.points,
+      chessTempo: entry.chessTempo || null,
+      moves: [],
+    });
     setHistoryDetailLoading(true);
     try {
       const game = await api.games.get(entry.id);

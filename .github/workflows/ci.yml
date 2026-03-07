@@ -168,11 +168,11 @@ jobs:
 
       - name: Install Playwright Browsers
         if: steps.cache-playwright.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps chromium firefox webkit
+        run: npx playwright install --with-deps chromium
 
       - name: Run Playwright E2E Tests
         id: playwright
-        run: npx playwright test --reporter=list,html,junit
+        run: npx playwright test --project=chromium --reporter=list,html,junit
         env:
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL || 'test@example.com' }}
           TEST_USER_PASSWORD: ${{ secrets.TEST_USER_PASSWORD || 'testpassword123' }}

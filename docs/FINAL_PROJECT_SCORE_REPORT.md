@@ -11,8 +11,8 @@ The earlier `78/100` score is no longer aligned with the current repository and 
 
 Current calibrated score:
 
-- `89/100` based on verified local state and live production health
-- Expected `91-92/100` once the current GitHub Actions Chromium E2E fix is confirmed green in CI
+- `90/100` based on verified local state, live production health, and completed Sprint 3 coverage work
+- Expected `91-92/100` once the latest GitHub Actions run confirms the Playwright dual-web-server fix in CI
 
 Why the old score is stale:
 
@@ -30,7 +30,7 @@ Why the old score is stale:
 | Code Quality | Good | Stable test suite, but some components are still too dense |
 | Security | Strong | Cookie auth, strict deploy validation, production-safe defaults |
 | Performance | Good | Build time is healthy; bundle can still be reduced |
-| Testing and Reliability | Good with one blocker | Local quality is strong; CI Chromium reliability remains the last confidence gap |
+| Testing and Reliability | Strong but awaiting CI confirmation | Local quality is strong; the remaining confidence gap is confirming the latest CI readiness fix on GitHub Actions |
 
 ## Reclassified Findings
 
@@ -42,13 +42,13 @@ Why the old score is stale:
 
 ### Still valid but medium priority
 
-- Large realtime game components still carry coverage and maintenance risk.
+- Large realtime game components still carry direct component coverage and maintenance risk, even after helper extraction.
 - Bundle weight, especially around heavy game/UI dependencies, can still be improved.
 - Local operator hygiene around root `.env` remains important to avoid misleading build warnings.
 
 ### Current top issue
 
-- GitHub Actions Chromium E2E reliability was the actual blocking issue. The root cause was `localhost -> ::1` API readiness drift in CI, not a core backend or auth failure.
+- GitHub Actions Chromium E2E reliability was the actual blocking issue. The root cause was `localhost -> ::1` API readiness drift in CI, not a core backend or auth failure. The latest local fix replaces the single-server assumption with an explicit frontend+backend Playwright webServer model.
 
 ## Updated Production Readiness View
 
@@ -57,10 +57,11 @@ Current readiness estimate:
 - Local repo quality: strong
 - Live production health: healthy
 - Deploy process: hardened
-- Remaining blocker to a higher score: CI reliability confirmation on the latest E2E host-resolution fix
+- Coverage baseline: `68.26%` lines, `52%` branches
+- Remaining blocker to a higher score: CI reliability confirmation on the latest Playwright readiness fix and continued direct component decomposition
 
 ## Next Actions
 
-1. Confirm GitHub Actions `CI/CD Pipeline` is green on the new `@smoke` blocking set.
-2. Keep production-safe runtime defaults in place: JWT secret length, blacklist fail-closed, rate-limit fail-closed.
-3. Run `@advanced` Playwright coverage on schedule/manual cadence and use the next sprint for large-component coverage and maintenance reduction, not auth redesign.
+1. Confirm GitHub Actions `CI/CD Pipeline` and `Playwright Tests` are green on the new dual-web-server `@smoke` setup.
+2. Push direct component coverage further in `TankBattle.tsx` and `RetroChess.tsx`; global coverage targets are met, but file-level maintenance risk remains.
+3. Keep production-safe runtime defaults in place and continue using `@advanced` Playwright on scheduled/manual cadence.

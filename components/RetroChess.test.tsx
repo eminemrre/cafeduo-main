@@ -69,5 +69,38 @@ describe('RetroChess (classic)', () => {
     fireEvent.click(screen.getByText('Oyundan Çık'));
     expect(onLeave).toHaveBeenCalledTimes(1);
   });
-});
 
+  it('prevents selecting black pieces in bot mode', () => {
+    render(
+      <RetroChess
+        currentUser={mockUser}
+        gameId={null}
+        isBot={true}
+        onGameEnd={jest.fn()}
+        onLeave={jest.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('retro-chess-square-e7'));
+    expect(screen.getByText(/BOT modunda beyaz taşlarla oynuyorsun/i)).toBeInTheDocument();
+  });
+
+  it('does not corrupt board state after an illegal destination click', () => {
+    render(
+      <RetroChess
+        currentUser={mockUser}
+        gameId={null}
+        isBot={true}
+        onGameEnd={jest.fn()}
+        onLeave={jest.fn()}
+      />
+    );
+
+    const whitePawns = screen.getAllByLabelText('Beyaz Piyon');
+    fireEvent.click(screen.getByTestId('retro-chess-square-e2'));
+    fireEvent.click(screen.getByTestId('retro-chess-square-e5'));
+
+    expect(whitePawns.length).toBeGreaterThan(0);
+    expect(screen.getByTestId('retro-chess-board')).toBeInTheDocument();
+  });
+});

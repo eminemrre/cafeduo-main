@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { TankBattle } from './TankBattle';
 import { User } from '../types';
 
@@ -127,5 +127,66 @@ describe('TankBattle', () => {
         fireEvent.click(fireButton);
         // Fire was triggered (button may transition to disabled state asynchronously)
         expect(fireButton).toBeInTheDocument();
+    });
+
+    it('exposes a text renderer for debug snapshots', () => {
+        render(
+            <TankBattle
+                currentUser={mockUser}
+                gameId={1}
+                isBot={true}
+                onGameEnd={jest.fn()}
+                onLeave={jest.fn()}
+            />
+        );
+
+        const renderToText = (window as Window & { render_game_to_text?: () => string }).render_game_to_text;
+        expect(renderToText).toBeInstanceOf(Function);
+        expect(renderToText?.()).toContain('"gameType":"Tank Düellosu"');
+        expect(renderToText?.()).toContain('"name":"emin"');
+    });
+
+    it('times out the player turn in bot mode and hands control to the bot', () => {
+        render(
+            <TankBattle
+                currentUser={mockUser}
+                gameId={1}
+                isBot={true}
+                onGameEnd={jest.fn()}
+                onLeave={jest.fn()}
+            />
+        );
+
+        act(() => {
+            jest.advanceTimersByTime(20000);
+        });
+
+        expect(screen.getByText(/süre doldu/i)).toBeInTheDocument();
+
+        act(() => {
+            jest.advanceTimersByTime(600);
+        });
+
+        expect(screen.getByText(/BOT ateş ediyor/i)).toBeInTheDocument();
+    });
+
+    it('forfeits first and returns to lobby on a second leave click', () => {
+        const onLeave = jest.fn();
+        const onGameEnd = jest.fn();
+        render(
+            <TankBattle
+                currentUser={mockUser}
+                gameId={1}
+                isBot={true}
+                onGameEnd={onGameEnd}
+                onLeave={onLeave}
+            />
+        );
+
+        fireEvent.click(screen.getByText('Oyundan Çık'));
+        expect(onGameEnd).toHaveBeenCalledWith('BOT', 0);
+
+        fireEvent.click(screen.getByText('Oyundan Çık'));
+        expect(onLeave).toHaveBeenCalledTimes(1);
     });
 });

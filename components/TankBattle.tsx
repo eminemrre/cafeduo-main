@@ -6,6 +6,25 @@ import { submitScoreAndWaitForWinner } from '../lib/multiplayer';
 import { GAME_ASSETS } from '../lib/gameAssets';
 import { playGameSfx } from '../lib/gameAudio';
 import { socketService } from '../lib/socket';
+import {
+    CANVAS_H,
+    CANVAS_W,
+    MAX_HP,
+    TANK_H,
+    buildProjectile,
+    clampWind,
+    computeGameSeed,
+    createTankPositions,
+    deterministicWindForTurn,
+    generateTerrain,
+    getPlayerScoreFromOpponentHp,
+    getTankBarrelStart,
+    normalizeNameKey,
+    parseFiniteNumber,
+    resolveGroundImpact,
+    resolveNextTurnState,
+    terrainYAt,
+} from '../lib/game-logic/tankBattle';
 
 interface TankBattleProps {
     currentUser: User;
@@ -48,20 +67,14 @@ interface TankWindow extends Window {
 }
 
 // ------- Game constants -------
-const CANVAS_W = 800;
-const CANVAS_H = 400;
 const TANK_W = 48;
-const TANK_H = 28;
 const BARREL_LEN = 32;
 const PROJECTILE_R = 4;
 const GRAVITY = 0.10;
-const MAX_HP = 3;
 const TERRAIN_SEGMENTS = 40;
 const EXPLOSION_DURATION = 350;
-const HIT_RADIUS = 40;
 const MIN_TANK_GAP = 0.4; // minimum normalised distance between tanks
 const TURN_TIME = 20; // seconds per turn
-const SPEED_MULT = 0.14; // projectile speed multiplier
 
 // Color palette (retro-futuristic)
 const C = {
@@ -81,51 +94,6 @@ const C = {
     hudDim: 'rgba(21,212,255,0.35)',
     text: '#edf6ff',
     textDim: '#91a8c9',
-};
-
-const clampWind = (value: number): number => Math.max(-2.5, Math.min(2.5, Number(value.toFixed(1))));
-const parseFiniteNumber = (value: unknown): number | null => {
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-};
-const normalizeNameKey = (value: unknown): string => String(value || '').trim().toLowerCase();
-
-// Seeded RNG for multiplayer sync (both clients produce same values from same gameId)
-const createSeededRng = (seed: number) => {
-    let s = Math.abs(seed) || 1;
-    return () => {
-        s = (s * 1103515245 + 12345) & 0x7fffffff;
-        return s / 0x7fffffff;
-    };
-};
-
-// Terrain generation with seed
-const generateTerrain = (seed?: number): number[] => {
-    const rng = seed !== undefined ? createSeededRng(seed) : Math.random;
-    const points: number[] = [];
-    const base = CANVAS_H * 0.65;
-    // Use seed-derived offsets for variety
-    const o1 = 2.0 + rng() * 1.0;
-    const o2 = 0.8 + rng() * 0.8;
-    const o3 = 3.5 + rng() * 2.0;
-    const p1 = rng() * 3;
-    const p2 = rng() * 3;
-    for (let i = 0; i <= TERRAIN_SEGMENTS; i++) {
-        const x = i / TERRAIN_SEGMENTS;
-        const hill1 = Math.sin(x * Math.PI * o1 + p1) * 35;
-        const hill2 = Math.sin(x * Math.PI * o2 + 1.2) * 25;
-        const hill3 = Math.sin(x * Math.PI * o3 + p2) * 10;
-        points.push(base + hill1 + hill2 + hill3);
-    }
-    return points;
-};
-
-const terrainYAt = (terrain: number[], xNorm: number): number => {
-    const idx = xNorm * TERRAIN_SEGMENTS;
-    const lo = Math.max(0, Math.min(TERRAIN_SEGMENTS, Math.floor(idx)));
-    const hi = Math.min(TERRAIN_SEGMENTS, lo + 1);
-    const t = idx - lo;
-    return terrain[lo] * (1 - t) + terrain[hi] * t;
 };
 
 export const TankBattle: React.FC<TankBattleProps> = ({
@@ -153,15 +121,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
     const finalizingRef = useRef(false);
 
     // Compute seed FIRST so terrain + positions use it
-    const gameSeed = useMemo(() => {
-        if (!gameId) return 0;
-        const str = String(gameId);
-        let h = 0;
-        for (let i = 0; i < str.length; i++) {
-            h = ((h << 5) - h + str.charCodeAt(i)) | 0;
-        }
-        return Math.abs(h) || 1;
-    }, [gameId]);
+    const gameSeed = useMemo(() => computeGameSeed(gameId), [gameId]);
 
     // Terrain + positions initialized FROM seed (both clients produce identical results)
     const terrainRef = useRef<number[]>(generateTerrain(gameSeed));
@@ -180,17 +140,12 @@ export const TankBattle: React.FC<TankBattleProps> = ({
     const target = useMemo(() => (isBot ? 'BOT' : (opponentName || 'Rakip')), [isBot, opponentName]);
 
     // Tank positions — deterministic from seed
-    const [tankPositions, setTankPositions] = useState(() => {
-        const posRng = createSeededRng(gameSeed + 9999);
-        const px = 0.08 + posRng() * 0.15;
-        const ox = 0.77 + posRng() * 0.15;
-        return { px, ox };
-    });
+    const [tankPositions, setTankPositions] = useState(() => createTankPositions(gameSeed));
     const playerTankX = tankPositions.px;
     const opponentTankX = tankPositions.ox;
     const playerTankY = terrainYAt(terrainRef.current, playerTankX);
     const opponentTankY = terrainYAt(terrainRef.current, opponentTankX);
-    const getPlayerScore = useCallback(() => Math.max(0, MAX_HP - opponentHPRef.current), []);
+    const getPlayerScore = useCallback(() => getPlayerScoreFromOpponentHp(opponentHPRef.current), []);
 
     useEffect(() => {
         playerHPRef.current = playerHP;
@@ -381,25 +336,19 @@ export const TankBattle: React.FC<TankBattleProps> = ({
         }
     }, [currentUser.username, gameId, isBot, onGameEnd, target]);
 
-    const deterministicWindForTurn = useCallback((turn: number) => {
-        const normalizedTurn = Math.max(0, Math.floor(turn));
-        const rng = createSeededRng(gameSeed + 7001 + normalizedTurn * 97);
-        return clampWind(rng() * 5 - 2.5);
-    }, [gameSeed]);
-
     const advanceTurnState = useCallback((explicitTurn?: unknown, explicitWind?: unknown) => {
-        const parsedTurn = parseFiniteNumber(explicitTurn);
-        const nextTurn = parsedTurn !== null ? Math.max(0, Math.floor(parsedTurn)) : turnIndexRef.current + 1;
+        const { nextTurn, nextWind } = resolveNextTurnState({
+            currentTurn: turnIndexRef.current,
+            explicitTurn,
+            explicitWind,
+            isBot,
+            gameSeed,
+        });
         turnIndexRef.current = nextTurn;
-
-        const parsedWind = parseFiniteNumber(explicitWind);
-        const nextWind = parsedWind !== null
-            ? clampWind(parsedWind)
-            : (isBot ? clampWind(Math.random() * 5 - 2.5) : deterministicWindForTurn(nextTurn));
         setWind(nextWind);
 
         return { nextTurn, nextWind };
-    }, [deterministicWindForTurn, isBot]);
+    }, [gameSeed, isBot]);
 
     useEffect(() => {
         const socket = socketService.getSocket();
@@ -467,32 +416,28 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             if (incomingWind !== null) {
                 setWind(clampWind(incomingWind));
             } else if (!isBot) {
-                setWind(deterministicWindForTurn(turnIndexRef.current));
+                setWind(deterministicWindForTurn(gameSeed, turnIndexRef.current));
             }
             setIsPlayerTurn(false);
             setFiring(true);
             setMessage(`${target} ateş etti!`);
             playGameSfx('hit', 0.25);
 
-            const angleRad = (180 - moveData.angle) * (Math.PI / 180);
-            const speed = moveData.power * SPEED_MULT;
-            const startX = opponentTankX * CANVAS_W;
-            const startY = opponentTankY - TANK_H + 4;
-
-            projectileRef.current = {
-                x: startX,
-                y: startY,
-                vx: Math.cos(angleRad) * speed,
-                vy: -Math.sin(angleRad) * speed,
+            const start = getTankBarrelStart(opponentTankX, opponentTankY);
+            projectileRef.current = buildProjectile({
+                angle: moveData.angle,
+                power: moveData.power,
+                startX: start.x,
+                startY: start.y,
                 firedBy: 'opponent',
-            };
+            });
         };
 
         socket.on('opponent_move', handleOpponentMove);
         return () => {
             socket.off('opponent_move', handleOpponentMove);
         };
-    }, [advanceTurnState, deterministicWindForTurn, fetchSnapshot, finalizeMatch, gameId, getPlayerScore, isBot, opponentTankX, opponentTankY, syncLiveProgress, target]);
+    }, [advanceTurnState, fetchSnapshot, finalizeMatch, gameId, gameSeed, getPlayerScore, isBot, opponentTankX, opponentTankY, syncLiveProgress, target]);
 
     // ------- Draw -------
     const draw = useCallback(() => {
@@ -637,22 +582,18 @@ export const TankBattle: React.FC<TankBattleProps> = ({
         setFiring(true);
         playGameSfx('hit', 0.3);
 
-        const angleRad = angle * (Math.PI / 180);
-        const speed = power * SPEED_MULT;
-        const startX = playerTankX * CANVAS_W;
-        const startY = playerTankY - TANK_H + 4;
-
         if (!isBot && gameId) {
             socketService.emitMove(String(gameId), { angle, power, wind, turn: turnIndexRef.current });
         }
 
-        projectileRef.current = {
-            x: startX,
-            y: startY,
-            vx: Math.cos(angleRad) * speed,
-            vy: -Math.sin(angleRad) * speed,
+        const start = getTankBarrelStart(playerTankX, playerTankY);
+        projectileRef.current = buildProjectile({
+            angle,
+            power,
+            startX: start.x,
+            startY: start.y,
             firedBy: 'player',
-        };
+        });
     }, [angle, done, firing, isPlayerTurn, playerTankX, playerTankY, power, resolvingMatch, gameId, isBot, wind]);
 
     // ------- Projectile physics loop -------
@@ -678,24 +619,24 @@ export const TankBattle: React.FC<TankBattleProps> = ({
                 if (xNorm >= 0 && xNorm <= 1) {
                     const groundY = terrainYAt(terrain, xNorm);
                     if (proj.y >= groundY) {
-                        // Hit ground — use firedBy to determine who gets hit
-                        const shooterIsPlayer = proj.firedBy === 'player';
-
-                        const targetX = shooterIsPlayer ? opponentTankX * CANVAS_W : playerTankX * CANVAS_W;
-                        const targetY = shooterIsPlayer ? opponentTankY : playerTankY;
-
-                        const dist = Math.sqrt((proj.x - targetX) ** 2 + (proj.y - targetY) ** 2);
+                        const impact = resolveGroundImpact({
+                            projectile: proj,
+                            playerTankX,
+                            playerTankY,
+                            opponentTankX,
+                            opponentTankY,
+                            playerHp: playerHPRef.current,
+                            opponentHp: opponentHPRef.current,
+                        });
 
                         explosionRef.current = { x: proj.x, y: proj.y, startTime: Date.now() };
                         projectileRef.current = null;
-                        playGameSfx(dist <= HIT_RADIUS ? 'success' : 'fail', 0.25);
+                        playGameSfx(impact.isHit ? 'success' : 'fail', 0.25);
 
-                        const isHit = dist <= HIT_RADIUS;
-
-                        if (shooterIsPlayer) {
+                        if (impact.shooterIsPlayer) {
                             // Player fired — only player side handles damage + sync
-                            if (isHit) {
-                                const newHP = Math.max(0, opponentHPRef.current - 1);
+                            if (impact.isHit) {
+                                const newHP = impact.nextOpponentHp;
                                 opponentHPRef.current = newHP;
                                 setOpponentHP(newHP);
                                 setMessage('İsabet! Rakip tankı vurdun!');
@@ -720,7 +661,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
                             if (!isBot && gameId) {
                                 socketService.emitMove(String(gameId), {
                                     action: 'shot_result',
-                                    hit: isHit,
+                                    hit: impact.isHit,
                                     targetIsShooter: false,
                                     nextTurn,
                                     nextWind,
@@ -739,7 +680,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
                             }, EXPLOSION_DURATION);
                         } else {
                             // Opponent fired — only show visual (HP sync comes via socket)
-                            if (isHit) {
+                            if (impact.isHit) {
                                 setMessage('Tankın vuruldu!');
                             } else {
                                 setMessage('Rakip ıskaladı! Senin sıran.');
@@ -820,18 +761,14 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             const botAngle = Math.max(15, Math.min(80, baseAngle + (Math.random() * 20 - 10)));
             const botPower = 55 + Math.random() * 25;
 
-            const angleRad = (180 - botAngle) * (Math.PI / 180);
-            const speed = botPower * SPEED_MULT;
-            const startX = opponentTankX * CANVAS_W;
-            const startY = opponentTankY - TANK_H + 4;
-
-            projectileRef.current = {
-                x: startX,
-                y: startY,
-                vx: Math.cos(angleRad) * speed,
-                vy: -Math.sin(angleRad) * speed,
+            const start = getTankBarrelStart(opponentTankX, opponentTankY);
+            projectileRef.current = buildProjectile({
+                angle: botAngle,
+                power: botPower,
+                startX: start.x,
+                startY: start.y,
                 firedBy: 'opponent',
-            };
+            });
         }, 600);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [done, target, playerTankX, playerTankY, opponentTankX, opponentTankY]);
@@ -853,15 +790,11 @@ export const TankBattle: React.FC<TankBattleProps> = ({
         // Regenerate terrain and tank positions using gameId seed for sync
         const seed = gameSeed || 1;
         terrainRef.current = generateTerrain(seed);
-        const posRng = createSeededRng(seed + 9999);
-        setTankPositions({
-            px: 0.08 + posRng() * 0.15,
-            ox: 0.77 + posRng() * 0.15,
-        });
+        setTankPositions(createTankPositions(seed));
         turnIndexRef.current = 0;
-        setWind(isBot ? clampWind(Math.random() * 5 - 2.5) : deterministicWindForTurn(0));
+        setWind(isBot ? clampWind(Math.random() * 5 - 2.5) : deterministicWindForTurn(seed, 0));
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [deterministicWindForTurn, gameId, isBot]);
+    }, [gameId, gameSeed, isBot]);
 
     // Multiplayer setup — determine host/guest role
     useEffect(() => {
@@ -897,7 +830,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
         pollRef.current = window.setInterval(() => {
             if (document.visibilityState === 'hidden' || done) return;
             void fetchSnapshot(true);
-        }, 3000);
+        }, 15000);
         return () => {
             socket.off('game_state_updated', onRealtime);
             if (pollRef.current) window.clearInterval(pollRef.current);

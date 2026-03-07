@@ -37,7 +37,7 @@ Verified strengths:
 |---|---|---|
 | Refresh-token rotation is not implemented | Medium | Current session model is acceptable for same-origin scope, but this remains a future hardening option |
 | Large-file complexity in server and game components | Medium | More maintainability/reliability risk than direct vulnerability |
-| CI E2E reliability | Medium | Affects release confidence, not live auth correctness |
+| CI E2E reliability | Medium | Affects release confidence, not live auth correctness; latest local fix standardizes Playwright around explicit backend/frontend readiness |
 
 ## Current Security Decisions
 
@@ -52,8 +52,8 @@ Verified strengths:
 
 1. Keep `DEPLOY_ENV_B64`, `DEPLOY_SITE_URL`, and smoke credentials accurate; they are now part of the security boundary.
 2. Do not weaken runtime defaults for convenience in production.
-3. Treat CI Chromium E2E stability as a release-integrity issue, not just a test nuisance.
-4. Defer larger auth redesigns until the reliability and coverage backlog is reduced.
+3. Treat CI Chromium E2E stability as a release-integrity issue, not just a test nuisance; keep the explicit backend/frontend Playwright startup model intact.
+4. Defer larger auth redesigns until the reliability and direct component coverage backlog is reduced.
 
 ## Bottom Line
 

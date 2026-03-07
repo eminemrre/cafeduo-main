@@ -6,6 +6,24 @@ import { api } from '../lib/api';
 import { GAME_ASSETS } from '../lib/gameAssets';
 import { playGameSfx } from '../lib/gameAudio';
 import { socketService } from '../lib/socket';
+import {
+  FILES,
+  RANKS,
+  buildClockState,
+  deriveDisplayClock,
+  deriveOpponentLabel,
+  derivePlayerColor,
+  extractLastMove,
+  formatClock,
+  inferResultLabel,
+  loadChess,
+  normalizeDrawOfferState,
+  normalizeWinner,
+  parseRetryAfterMs,
+  shouldPollSnapshot,
+  toSquare,
+  type DrawOfferState,
+} from '../lib/game-logic/retroChess';
 
 interface RetroChessProps {
   currentUser: User;
@@ -72,19 +90,6 @@ interface GameStateUpdatedPayload {
   action?: string;
 }
 
-interface DrawOfferState {
-  status: 'pending' | 'accepted' | 'rejected' | 'cancelled';
-  offeredBy: string;
-  createdAt: string;
-  respondedBy?: string;
-  respondedAt?: string;
-}
-
-const DRAW_OFFER_STATUSES = new Set(['pending', 'accepted', 'rejected', 'cancelled']);
-
-const FILES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'] as const;
-const RANKS = ['8', '7', '6', '5', '4', '3', '2', '1'] as const;
-
 const PIECE_SYMBOL: Record<'w' | 'b', Record<'p' | 'n' | 'b' | 'r' | 'q' | 'k', string>> = {
   w: {
     p: '♙',
@@ -111,64 +116,6 @@ const PIECE_LABEL: Record<'p' | 'n' | 'b' | 'r' | 'q' | 'k', string> = {
   r: 'Kale',
   q: 'Vezir',
   k: 'Şah',
-};
-
-const normalizeWinner = (value: unknown): string | null => {
-  const raw = String(value || '').trim();
-  return raw ? raw : null;
-};
-
-const loadChess = (fen: unknown) => {
-  try {
-    const resolvedFen = String(fen || '').trim();
-    if (!resolvedFen) return new Chess();
-    return new Chess(resolvedFen);
-  } catch {
-    return new Chess();
-  }
-};
-
-const toSquare = (file: string, rank: string) => `${file}${rank}` as Square;
-
-const inferResultLabel = (engine: Chess): string => {
-  if (engine.isCheckmate()) return 'Şah mat';
-  if (engine.isStalemate()) return 'Pat';
-  if (engine.isThreefoldRepetition()) return 'Üçlü tekrar';
-  if (engine.isInsufficientMaterial()) return 'Yetersiz materyal';
-  if (engine.isDraw()) return 'Berabere';
-  return 'Oyun bitti';
-};
-
-const formatClock = (rawMs: number): string => {
-  const ms = Math.max(0, Math.floor(Number(rawMs) || 0));
-  const totalSeconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-};
-
-const parseRetryAfterMs = (message: string): number => {
-  const found = message.match(/(\d+)\s*sn/i);
-  const seconds = found ? Number(found[1]) : Number.NaN;
-  if (!Number.isFinite(seconds) || seconds <= 0) return 0;
-  return seconds * 1000;
-};
-
-const normalizeDrawOfferState = (value: unknown): DrawOfferState | null => {
-  if (!value || typeof value !== 'object') return null;
-  const source = value as Record<string, unknown>;
-  const statusRaw = String(source.status || '').trim().toLowerCase();
-  const offeredBy = String(source.offeredBy || '').trim();
-  if (!offeredBy || !DRAW_OFFER_STATUSES.has(statusRaw)) return null;
-  const createdAt = String(source.createdAt || '').trim() || new Date().toISOString();
-
-  return {
-    status: statusRaw as DrawOfferState['status'],
-    offeredBy,
-    createdAt,
-    respondedBy: source.respondedBy ? String(source.respondedBy) : undefined,
-    respondedAt: source.respondedAt ? String(source.respondedAt) : undefined,
-  };
 };
 
 export const RetroChess: React.FC<RetroChessProps> = ({
@@ -228,13 +175,12 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     chessFenRef.current = chess.fen();
   }, [chess]);
 
-  const playerColor = useMemo<'w' | 'b' | null>(() => {
-    if (isBot) return 'w';
-    const actor = String(currentUser.username || '').trim().toLowerCase();
-    if (hostName && actor === hostName.toLowerCase()) return 'w';
-    if (guestName && actor === guestName.toLowerCase()) return 'b';
-    return null;
-  }, [currentUser.username, guestName, hostName, isBot]);
+  const playerColor = useMemo<'w' | 'b' | null>(() => derivePlayerColor({
+    isBot,
+    currentUsername: currentUser.username,
+    hostName,
+    guestName,
+  }), [currentUser.username, guestName, hostName, isBot]);
 
   const orientation = playerColor === 'b' ? 'b' : 'w';
   const files = orientation === 'w' ? [...FILES] : [...FILES].reverse();
@@ -242,11 +188,13 @@ export const RetroChess: React.FC<RetroChessProps> = ({
   const turn = chess.turn();
   const effectiveSelectableColor = playerColor || turn;
   const isMyTurn = Boolean(playerColor) && turn === playerColor && serverStatus !== 'finished';
-  const opponentLabel = useMemo(() => {
-    if (isBot) return 'BOT';
-    if (playerColor === 'w') return guestName || opponentName || 'Rakip';
-    return hostName || opponentName || 'Rakip';
-  }, [guestName, hostName, isBot, opponentName, playerColor]);
+  const opponentLabel = useMemo(() => deriveOpponentLabel({
+    isBot,
+    playerColor,
+    guestName,
+    hostName,
+    opponentName,
+  }), [guestName, hostName, isBot, opponentName, playerColor]);
   const actorKey = String(currentUser.username || '').trim().toLowerCase();
   const pendingDrawOffer = drawOffer && drawOffer.status === 'pending' ? drawOffer : null;
   const isPendingOfferByActor = Boolean(
@@ -288,28 +236,16 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     if (snapshot.status) setServerStatus(String(snapshot.status));
     const winner = normalizeWinner(snapshot.winner || snapshot.gameState?.chess?.winner);
     if (winner) setServerWinner(winner);
-    const snapshotDrawOffer = normalizeDrawOfferState(snapshot.gameState?.chess?.drawOffer);
-    setDrawOffer(snapshotDrawOffer);
+    setDrawOffer(normalizeDrawOfferState(snapshot.gameState?.chess?.drawOffer));
     const incomingMoves = Array.isArray(snapshot.gameState?.chess?.moveHistory)
       ? snapshot.gameState?.chess?.moveHistory
       : [];
     setMoveLog(incomingMoves.slice(-200));
-    
-    // Track last move for highlighting
-    if (incomingMoves.length > 0) {
-      const lastMoveEntry = incomingMoves[incomingMoves.length - 1];
-      setLastMove({ from: lastMoveEntry.from as Square, to: lastMoveEntry.to as Square });
-    }
+    setLastMove(extractLastMove(incomingMoves));
 
-    const incomingClock = snapshot.gameState?.chess?.clock;
-    if (incomingClock && typeof incomingClock === 'object') {
-      setClockState({
-        whiteMs: Math.max(0, Number(incomingClock.whiteMs || 0)),
-        blackMs: Math.max(0, Number(incomingClock.blackMs || 0)),
-        incrementMs: Math.max(0, Number(incomingClock.incrementMs || 0)),
-        label: String(incomingClock.label || '3+2'),
-        lastTickAt: incomingClock.lastTickAt ? String(incomingClock.lastTickAt) : null,
-      });
+    const normalizedClock = buildClockState(snapshot.gameState?.chess?.clock);
+    if (normalizedClock) {
+      setClockState(normalizedClock);
     }
 
     const nextEngine = loadChess(snapshot.gameState?.chess?.fen);
@@ -441,20 +377,11 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       if (payload.chess?.fen) {
         if (Array.isArray(payload.chess.moveHistory)) {
           setMoveLog(payload.chess.moveHistory.slice(-200));
-          // Track last move for highlighting
-          if (payload.chess.moveHistory.length > 0) {
-            const lastMoveEntry = payload.chess.moveHistory[payload.chess.moveHistory.length - 1];
-            setLastMove({ from: lastMoveEntry.from as Square, to: lastMoveEntry.to as Square });
-          }
+          setLastMove(extractLastMove(payload.chess.moveHistory));
         }
-        if (payload.chess.clock && typeof payload.chess.clock === 'object') {
-          setClockState({
-            whiteMs: Math.max(0, Number(payload.chess.clock.whiteMs || 0)),
-            blackMs: Math.max(0, Number(payload.chess.clock.blackMs || 0)),
-            incrementMs: Math.max(0, Number(payload.chess.clock.incrementMs || 0)),
-            label: String(payload.chess.clock.label || '3+2'),
-            lastTickAt: payload.chess.clock.lastTickAt ? String(payload.chess.clock.lastTickAt) : null,
-          });
+        const normalizedClock = buildClockState(payload.chess.clock);
+        if (normalizedClock) {
+          setClockState(normalizedClock);
         }
         const engine = loadChess(payload.chess.fen);
         const nextFen = engine.fen();
@@ -495,12 +422,18 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     if (isBot || !gameId) return;
     
     pollingRef.current = window.setInterval(() => {
-      if (document.visibilityState === 'hidden') return;
-      if (serverStatus === 'finished') return;
-      if (Date.now() < pollPauseUntilRef.current) return;
-      if (Date.now() - lastRealtimeAtRef.current < 8000) return;
+      if (!shouldPollSnapshot({
+        isBot,
+        hasGameId: Boolean(gameId),
+        serverStatus,
+        pollPauseUntil: pollPauseUntilRef.current,
+        lastRealtimeAt: lastRealtimeAtRef.current,
+        visibilityState: document.visibilityState,
+      })) {
+        return;
+      }
       void fetchGameSnapshot(true);
-    }, 5000);
+    }, 15000);
     
     return () => {
       if (pollingRef.current) {
@@ -512,21 +445,11 @@ export const RetroChess: React.FC<RetroChessProps> = ({
 
   useEffect(() => {
     const tick = () => {
-      const whiteBase = Math.max(0, Number(clockState.whiteMs || 0));
-      const blackBase = Math.max(0, Number(clockState.blackMs || 0));
-      const startedAt = clockState.lastTickAt ? Date.parse(clockState.lastTickAt) : NaN;
-      const elapsed = Number.isFinite(startedAt) ? Math.max(0, Date.now() - startedAt) : 0;
-
-      if (serverStatus === 'finished') {
-        setDisplayClock({ white: whiteBase, black: blackBase });
-        return;
-      }
-
-      if (turn === 'w') {
-        setDisplayClock({ white: Math.max(0, whiteBase - elapsed), black: blackBase });
-      } else {
-        setDisplayClock({ white: whiteBase, black: Math.max(0, blackBase - elapsed) });
-      }
+      setDisplayClock(deriveDisplayClock({
+        clockState,
+        serverStatus,
+        turn,
+      }));
     };
 
     tick();
@@ -607,14 +530,9 @@ export const RetroChess: React.FC<RetroChessProps> = ({
         setMoveLog(result.gameState.chess.moveHistory.slice(-200));
         // Last move is already set before the API call
       }
-      if (result?.gameState?.chess?.clock && typeof result.gameState.chess.clock === 'object') {
-        setClockState({
-          whiteMs: Math.max(0, Number(result.gameState.chess.clock.whiteMs || 0)),
-          blackMs: Math.max(0, Number(result.gameState.chess.clock.blackMs || 0)),
-          incrementMs: Math.max(0, Number(result.gameState.chess.clock.incrementMs || 0)),
-          label: String(result.gameState.chess.clock.label || '3+2'),
-          lastTickAt: result.gameState.chess.clock.lastTickAt ? String(result.gameState.chess.clock.lastTickAt) : null,
-        });
+      const normalizedClock = buildClockState(result?.gameState?.chess?.clock);
+      if (normalizedClock) {
+        setClockState(normalizedClock);
       }
       clearSelection();
       if (result?.status) setServerStatus(result.status);

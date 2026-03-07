@@ -9,10 +9,10 @@ CafeDuo is live at `https://cafeduotr.com` and currently operates with cookie-fi
 Current repo-head validation:
 
 - `npm run test` passes
-- `npm run test:ci` passes
+- `npm run test:ci` passes with `68.26%` line coverage and `52%` branch coverage
 - `npm run build` passes
 - `npm run migrate:status` passes in informational mode when DB is unreachable locally
-- `npm run test:e2e -- --project=chromium` passes locally
+- `npm run test:e2e -- --project=chromium` passes locally, including the new dual-web-server Playwright setup
 - Production health endpoint returns `OK`
 - Production version endpoint returns a live commit hash
 
@@ -41,20 +41,22 @@ Historical analysis documents are useful for context, but they are not the sourc
 
 ## Active Risks
 
-- The main quality risk is CI E2E stability, not core application behavior. The current fix standardizes Playwright and E2E API readiness on `127.0.0.1` to eliminate `localhost -> ::1` drift in GitHub Actions.
-- Coverage is still materially low for large realtime game components such as `TankBattle`, `RetroChess`, and the social card/board games.
+- The main operational risk is no longer auth or deploy gating; it is keeping GitHub Actions aligned with the new Playwright dual-web-server readiness model so CI matches local behavior.
+- Overall coverage is now materially improved, but direct component coverage remains low for large realtime files such as `TankBattle.tsx` and `RetroChess.tsx`.
 - Root local `.env` can still trigger a Vite warning if it contains `NODE_ENV`; this is a local operator issue, not a production runtime issue.
 - Manual edits on VPS `.env` remain temporary unless `DEPLOY_ENV_B64` is updated in GitHub secrets.
 
 ## Immediate Priorities
 
-1. Keep GitHub Actions green by preserving deterministic Chromium E2E host resolution.
-2. Keep runtime security defaults aligned with production-safe behavior.
-3. Raise coverage on large realtime and social game components without destabilizing deploy quality.
+1. Confirm the latest GitHub Actions run is green on the Playwright dual-web-server fix.
+2. Raise direct component coverage on `TankBattle.tsx` and `RetroChess.tsx` now that global coverage targets are met.
+3. Continue decomposing oversized frontend/backend orchestration files without changing public behavior.
 
 ## E2E Policy
 
 - Blocking CI now uses `smoke-critical` Chromium Playwright coverage.
+- `npm run test:all` is aligned to that blocking contract and now runs unit tests plus Chromium `@smoke`.
+- Full multi-browser Playwright coverage remains available through `npm run test:all:full` or dedicated workflow runs.
 - `@smoke` covers auth, shop, and dashboard/check-in bootstrap paths.
 - `@advanced` covers heavier realtime and mobile/regression scenarios.
 - Advanced Playwright runs stay visible through scheduled or manual workflow execution instead of blocking every push.

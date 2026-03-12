@@ -34,6 +34,16 @@ export const normalizeApiBaseUrl = (url: string): string => {
   return enforceBrowserHttps(withProtocol(trimmed)).replace(/\/+$/, '').replace(/\/api$/, '');
 };
 
+/**
+ * Get CSRF token from cookie
+ * @returns CSRF token or null if not found
+ */
+export function getCsrfToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 const resolveApiBaseUrl = (): string => {
   try {
     const viteBaseUrl = new Function('return import.meta.env?.VITE_API_BASE_URL || import.meta.env?.VITE_API_URL || ""')();
@@ -202,6 +212,15 @@ async function fetchAPI<TResponse = unknown>(endpoint: string, options: RequestI
     'Content-Type': 'application/json',
     ...options.headers,
   };
+
+  // Add CSRF token for state-changing requests (POST, PUT, DELETE, PATCH)
+  const method = (options.method || 'GET').toUpperCase();
+  if (method !== 'GET' && method !== 'HEAD' && method !== 'OPTIONS') {
+    const csrfToken = getCsrfToken();
+    if (csrfToken) {
+      (headers as Record<string, string>)['X-CSRF-Token'] = csrfToken;
+    }
+  }
 
   let response: Response;
   const controller = new AbortController();

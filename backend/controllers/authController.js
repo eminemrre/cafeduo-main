@@ -8,6 +8,7 @@ const memoryState = require('../store/memoryState');
 const { sendPasswordResetEmail } = require('../services/emailService');
 const redisClient = require('../config/redis');
 const { getRequiredJwtSecret } = require('../utils/securityConfig');
+const { setCsrfCookie, clearCsrfCookie } = require('../middleware/csrf');
 
 const JWT_SECRET = getRequiredJwtSecret();
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
@@ -194,10 +195,12 @@ const buildAuthCookieOptions = () => ({
 
 const setAuthCookie = (res, token) => {
     res.cookie(AUTH_COOKIE_NAME, token, buildAuthCookieOptions());
+    setCsrfCookie(res);
 };
 
 const clearAuthCookie = (res) => {
     res.clearCookie(AUTH_COOKIE_NAME, buildAuthCookieOptions());
+    clearCsrfCookie(res);
 };
 
 const toPublicUser = (user) => {

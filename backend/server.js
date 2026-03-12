@@ -89,6 +89,7 @@ const { cache, clearCache } = require('./middleware/cache'); // Redis Cache Impo
 const redisClient = require('./config/redis'); // Redis client
 const { buildRateLimiterOptions, getPassOnStoreError } = require('./middleware/rateLimit');
 const { notFoundHandler, createErrorHandler } = require('./middleware/errorContract');
+const { csrfMiddleware } = require('./middleware/csrf');
 const authRoutes = require('./routes/authRoutes');
 const cafeRoutes = require('./routes/cafeRoutes'); // Cafe Routes Import
 const storeRoutes = require('./routes/storeRoutes'); // Store Routes Import
@@ -329,6 +330,10 @@ app.use('/api', apiLimiter);
 
 app.use(cookieParser());
 
+// CSRF Protection - Double Submit Cookie Pattern
+// Must come after cookieParser and before routes
+app.use(csrfMiddleware);
+
 app.use(cors({
   origin: (origin, callback) => {
     if (allowedOrigins.includes(origin) || !origin) {
@@ -344,7 +349,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token']
 }));
 app.use(express.json({ limit: '200kb' }));
 app.use(express.urlencoded({ extended: false, limit: '100kb', parameterLimit: 100 }));

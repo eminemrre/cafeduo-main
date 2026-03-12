@@ -252,4 +252,141 @@ describe('API Layer', () => {
       });
     });
   });
+
+  describe('CSRF Token Handling', () => {
+    describe('getCsrfToken', () => {
+      beforeEach(() => {
+        Object.defineProperty(document, 'cookie', {
+          writable: true,
+          value: '',
+        });
+      });
+
+      it('should extract CSRF token from cookie', () => {
+        document.cookie = 'csrf_token=abc123def456; other=value';
+        const { getCsrfToken } = require('./api');
+        expect(getCsrfToken()).toBe('abc123def456');
+      });
+
+      it('should decode URL-encoded CSRF token', () => {
+        document.cookie = 'csrf_token=test%20token; other=value';
+        const { getCsrfToken } = require('./api');
+        expect(getCsrfToken()).toBe('test token');
+      });
+
+      it('should return null when CSRF token not found', () => {
+        document.cookie = 'other=value';
+        const { getCsrfToken } = require('./api');
+        expect(getCsrfToken()).toBeNull();
+      });
+
+      it('should return null when no cookies exist', () => {
+        document.cookie = '';
+        const { getCsrfToken } = require('./api');
+        expect(getCsrfToken()).toBeNull();
+      });
+    });
+
+    describe('CSRF header injection', () => {
+      it('should add X-CSRF-Token header for POST requests', async () => {
+        document.cookie = 'csrf_token=test-token-123';
+        (fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true }),
+        });
+
+        await api.games.create({ hostName: 'Test User', gameType: 'Retro Satranç' });
+
+        const fetchCall = (fetch as jest.Mock).mock.calls[0];
+        const headers = fetchCall[1]?.headers;
+        expect(headers).toBeDefined();
+        expect(headers['X-CSRF-Token']).toBe('test-token-123');
+      });
+
+      it('should add X-CSRF-Token header for PUT requests', async () => {
+        document.cookie = 'csrf_token=put-token-456';
+        (fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true }),
+        });
+
+        await api.users.update({ id: 1, username: 'Updated' });
+
+        const fetchCall = (fetch as jest.Mock).mock.calls[0];
+        const headers = fetchCall[1]?.headers;
+        expect(headers['X-CSRF-Token']).toBe('put-token-456');
+      });
+
+      it('should add X-CSRF-Token header for DELETE requests', async () => {
+        document.cookie = 'csrf_token=delete-token-789';
+        (fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true }),
+        });
+
+        await api.games.delete(123);
+
+        const fetchCall = (fetch as jest.Mock).mock.calls[0];
+        const headers = fetchCall[1]?.headers;
+        expect(headers['X-CSRF-Token']).toBe('delete-token-789');
+      });
+
+      it('should NOT add X-CSRF-Token header for GET requests', async () => {
+        document.cookie = 'csrf_token=get-token-000';
+        (fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ data: 'test' }),
+        });
+
+        await api.auth.verifyToken();
+
+        const fetchCall = (fetch as jest.Mock).mock.calls[0];
+        const headers = fetchCall[1]?.headers;
+        expect(headers?.['X-CSRF-Token']).toBeUndefined();
+      });
+
+      it('should NOT add X-CSRF-Token header when CSRF token is missing', async () => {
+        document.cookie = '';
+        (fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true }),
+        });
+
+        await api.games.create({ hostName: 'Test User', gameType: 'Retro Satranç' });
+
+        const fetchCall = (fetch as jest.Mock).mock.calls[0];
+        const headers = fetchCall[1]?.headers;
+        expect(headers?.['X-CSRF-Token']).toBeUndefined();
+      });
+
+      it('should NOT add X-CSRF-Token header for HEAD requests', async () => {
+        document.cookie = 'csrf_token=head-token-111';
+        (fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ data: 'test' }),
+        });
+
+        // HEAD request (if any API uses it)
+        await fetch('/api/health', { method: 'HEAD' });
+
+        const fetchCall = (fetch as jest.Mock).mock.calls[0];
+        const headers = fetchCall[1]?.headers;
+        expect(headers?.['X-CSRF-Token']).toBeUndefined();
+      });
+
+      it('should NOT add X-CSRF-Token header for OPTIONS requests', async () => {
+        document.cookie = 'csrf_token=options-token-222';
+        (fetch as jest.Mock).mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ data: 'test' }),
+        });
+
+        await fetch('/api/health', { method: 'OPTIONS' });
+
+        const fetchCall = (fetch as jest.Mock).mock.calls[0];
+        const headers = fetchCall[1]?.headers;
+        expect(headers?.['X-CSRF-Token']).toBeUndefined();
+      });
+    });
+  });
 });

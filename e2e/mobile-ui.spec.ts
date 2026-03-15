@@ -50,7 +50,7 @@ test.describe('Mobile UI Stability', () => {
   test('@advanced dashboard remains operable on mobile after check-in', async ({ page, request, baseURL }) => {
     const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     const session = await provisionUser(request, root, 'mobile_dash');
-    await checkInUser(request, root, session.token, { tableNumber: 4 });
+    await checkInUser(request, root, session.token, { tableNumber: 4, csrfToken: session.csrfToken });
     const user = await fetchCurrentUser(request, root, session.token);
 
     await page.setViewportSize({ width: 390, height: 844 });

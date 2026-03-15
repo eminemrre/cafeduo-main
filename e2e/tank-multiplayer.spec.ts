@@ -7,7 +7,10 @@ import {
   waitForApiReady,
 } from './helpers/session';
 
-const authHeader = (token: string) => ({ Authorization: `Bearer ${token}`, Cookie: '' });
+const authHeader = (token: string, csrfToken?: string) => ({
+  Authorization: `Bearer ${token}`,
+  ...(csrfToken ? { 'X-CSRF-Token': csrfToken, Cookie: `csrf_token=${csrfToken}` } : { Cookie: '' }),
+});
 
 test.describe('Tank Multiplayer Sync & Settlement', () => {
   test('@advanced resolves tank winner from server-side scores despite spoofed finish payload', async ({
@@ -22,12 +25,12 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
     const guest = await provisionUser(request, root, 'tankguest');
     const intruder = await provisionUser(request, root, 'tankx');
 
-    await checkInUser(request, root, host.token, { tableNumber: 9 });
-    await checkInUser(request, root, guest.token, { tableNumber: 9 });
-    await checkInUser(request, root, intruder.token, { tableNumber: 9 });
+    await checkInUser(request, root, host.token, { tableNumber: 9, csrfToken: host.csrfToken });
+    await checkInUser(request, root, guest.token, { tableNumber: 9, csrfToken: guest.csrfToken });
+    await checkInUser(request, root, intruder.token, { tableNumber: 9, csrfToken: intruder.csrfToken });
 
     const createRes = await request.post(`${apiRoot}/api/games`, {
-      headers: authHeader(host.token),
+      headers: authHeader(host.token, host.csrfToken),
       data: {
         hostName: host.credentials.username,
         gameType: 'Tank Düellosu',
@@ -41,13 +44,13 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
     expect(gameId).toBeTruthy();
 
     const joinRes = await request.post(`${apiRoot}/api/games/${gameId}/join`, {
-      headers: authHeader(guest.token),
+      headers: authHeader(guest.token, guest.csrfToken),
       data: { guestName: guest.credentials.username },
     });
     expect(joinRes.ok()).toBeTruthy();
 
     const intruderLiveRes = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
-      headers: authHeader(intruder.token),
+      headers: authHeader(intruder.token, intruder.csrfToken),
       data: {
         liveSubmission: {
           mode: 'Tank Düellosu',
@@ -62,7 +65,7 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
     expect(intruderLiveRes.status()).toBe(403);
 
     const hostLiveRes = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
-      headers: authHeader(host.token),
+      headers: authHeader(host.token, host.csrfToken),
       data: {
         liveSubmission: {
           mode: 'Tank Düellosu',
@@ -77,7 +80,7 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
     expect(hostLiveRes.ok()).toBeTruthy();
 
     const guestLiveRes = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
-      headers: authHeader(guest.token),
+      headers: authHeader(guest.token, guest.csrfToken),
       data: {
         liveSubmission: {
           mode: 'Tank Düellosu',
@@ -92,7 +95,7 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
     expect(guestLiveRes.ok()).toBeTruthy();
 
     const hostScoreRes = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
-      headers: authHeader(host.token),
+      headers: authHeader(host.token, host.csrfToken),
       data: {
         scoreSubmission: {
           username: host.credentials.username,
@@ -105,7 +108,7 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
     expect(hostScoreRes.ok()).toBeTruthy();
 
     const guestScoreRes = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
-      headers: authHeader(guest.token),
+      headers: authHeader(guest.token, guest.csrfToken),
       data: {
         scoreSubmission: {
           username: guest.credentials.username,
@@ -118,7 +121,7 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
     expect(guestScoreRes.ok()).toBeTruthy();
 
     const spoofedFinishRes = await request.post(`${apiRoot}/api/games/${gameId}/finish`, {
-      headers: authHeader(guest.token),
+      headers: authHeader(guest.token, guest.csrfToken),
       data: {
         winner: intruder.credentials.username,
       },
@@ -148,11 +151,11 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
     const host = await provisionUser(request, root, 'tankresh');
     const guest = await provisionUser(request, root, 'tankresg');
 
-    await checkInUser(request, root, host.token, { tableNumber: 10 });
-    await checkInUser(request, root, guest.token, { tableNumber: 10 });
+    await checkInUser(request, root, host.token, { tableNumber: 10, csrfToken: host.csrfToken });
+    await checkInUser(request, root, guest.token, { tableNumber: 10, csrfToken: guest.csrfToken });
 
     const createRes = await request.post(`${apiRoot}/api/games`, {
-      headers: authHeader(host.token),
+      headers: authHeader(host.token, host.csrfToken),
       data: {
         hostName: host.credentials.username,
         gameType: 'Tank Düellosu',
@@ -165,13 +168,13 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
     const gameId = createdGame.id;
 
     const joinRes = await request.post(`${apiRoot}/api/games/${gameId}/join`, {
-      headers: authHeader(guest.token),
+      headers: authHeader(guest.token, guest.csrfToken),
       data: { guestName: guest.credentials.username },
     });
     expect(joinRes.ok()).toBeTruthy();
 
     const resignRes = await request.post(`${apiRoot}/api/games/${gameId}/resign`, {
-      headers: authHeader(guest.token),
+      headers: authHeader(guest.token, guest.csrfToken),
       data: {},
     });
     expect(resignRes.ok()).toBeTruthy();
@@ -179,7 +182,7 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
     expect(resignBody.winner).toBe(host.user.username);
 
     const guestLateScoreRes = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
-      headers: authHeader(guest.token),
+      headers: authHeader(guest.token, guest.csrfToken),
       data: {
         scoreSubmission: {
           username: guest.credentials.username,

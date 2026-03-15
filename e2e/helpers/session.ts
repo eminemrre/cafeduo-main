@@ -10,6 +10,7 @@ export interface E2ECredentials {
 export interface E2ESession {
   credentials: E2ECredentials;
   token: string;
+  csrfToken: string;
   user: any;
 }
 
@@ -108,6 +109,23 @@ export const generateCredentials = (prefix = 'e2e'): E2ECredentials => {
   };
 };
 
+const extractCsrfTokenFromCookies = (setCookieHeader: string | string[] | undefined): string => {
+  if (!setCookieHeader) {
+    return 'test-csrf-token-for-e2e';
+  }
+
+  const cookies = Array.isArray(setCookieHeader) ? setCookieHeader : [setCookieHeader];
+  
+  for (const cookie of cookies) {
+    const match = cookie.match(/csrf_token=([^;]+)/);
+    if (match) {
+      return match[1];
+    }
+  }
+
+  return 'test-csrf-token-for-e2e';
+};
+
 export const provisionUser = async (
   request: APIRequestContext,
   baseURL: string,
@@ -167,9 +185,13 @@ export const provisionUser = async (
     expect(loginBody?.token).toBeTruthy();
     expect(loginBody?.user?.id).toBeTruthy();
 
+    // Extract CSRF token from response cookies
+    const csrfToken = extractCsrfTokenFromCookies(loginRes.headers()['set-cookie']);
+
     return {
       credentials,
       token: loginBody.token,
+      csrfToken,
       user: loginBody.user,
     };
   }
@@ -198,7 +220,14 @@ export const checkInUser = async (
   request: APIRequestContext,
   baseURL: string,
   token: string,
-  options: { cafeId?: number; tableNumber?: number; latitude?: number; longitude?: number; accuracy?: number } = {}
+  options: {
+    cafeId?: number;
+    tableNumber?: number;
+    latitude?: number;
+    longitude?: number;
+    accuracy?: number;
+    csrfToken?: string;
+  } = {}
 ) => {
   const apiRoot = resolveApiBaseUrl(baseURL);
   await waitForApiReady(request, apiRoot);
@@ -220,11 +249,13 @@ export const checkInUser = async (
     Number.isFinite(options.longitude) ? Number(options.longitude) : Number(selectedCafe?.longitude ?? fallback.longitude);
   const accuracy = Number.isFinite(options.accuracy) ? Number(options.accuracy) : 35;
   const tableNumber = options.tableNumber || 1;
+  const csrfToken = options.csrfToken || 'test-csrf-token-for-e2e';
 
   const checkInRes = await request.post(`${apiRoot}/api/cafes/${selectedCafe.id}/check-in`, {
     headers: {
       Authorization: `Bearer ${token}`,
-      Cookie: '',
+      'X-CSRF-Token': csrfToken,
+      Cookie: `csrf_token=${csrfToken}`,
     },
     data: {
       latitude,
@@ -262,6 +293,15 @@ export const bootstrapAuthenticatedPage = async (
       value: session.token,
       domain: rootUrl.hostname,
       httpOnly: true,
+      sameSite: 'Lax',
+      secure: root.startsWith('https://'),
+      path: '/',
+    },
+    {
+      name: 'csrf_token',
+      value: session.csrfToken || 'test-csrf-token-for-e2e',
+      domain: rootUrl.hostname,
+      httpOnly: false,
       sameSite: 'Lax',
       secure: root.startsWith('https://'),
       path: '/',

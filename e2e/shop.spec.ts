@@ -20,7 +20,7 @@ test.describe('Shop & Inventory Flow', () => {
     await waitForApiReady(request, apiRoot);
     const session = await provisionUser(request, root, 'shop_user');
 
-    await checkInUser(request, root, session.token, { tableNumber: 6 });
+    await checkInUser(request, root, session.token, { tableNumber: 6, csrfToken: session.csrfToken });
     let currentUser = await fetchCurrentUser(request, root, session.token);
 
     // Test için puanı yükseltip satın almayı deterministik hale getiriyoruz.
@@ -28,6 +28,7 @@ test.describe('Shop & Inventory Flow', () => {
     const updateRes = await request.put(`${apiRoot}/api/users/${currentUser.id}`, {
       headers: {
         Authorization: `Bearer ${session.token}`,
+        'X-CSRF-Token': session.csrfToken || 'test-csrf-token-for-e2e',
         'Content-Type': 'application/json',
       },
       data: {

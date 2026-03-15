@@ -132,11 +132,20 @@ test.describe('Authentication Flow', () => {
           secure: root.startsWith('https://'),
           path: '/',
         },
+        {
+          // Add CSRF token cookie for POST requests
+          name: 'csrf_token',
+          value: session.csrfToken || 'test-csrf-token-for-e2e',
+          domain: rootUrl.hostname,
+          httpOnly: false,
+          sameSite: 'Lax',
+          secure: root.startsWith('https://'),
+          path: '/',
+        },
       ]);
       await page.reload();
     }
 
-    const dashboardTab = page.locator('[data-testid="dashboard-tab-games"]').first();
     const checkInHeading = page.getByRole('heading', { name: 'Kafe Giriş' }).first();
     const checkInSubmit = page.locator('[data-testid="checkin-submit-button"]').first();
     const tableInput = page.locator('[data-testid="checkin-table-input"]').first();
@@ -145,6 +154,7 @@ test.describe('Authentication Flow', () => {
     const waitForDashboardOrCheckIn = async (timeoutMs: number) => {
       const deadline = Date.now() + timeoutMs;
       while (Date.now() < deadline) {
+        const dashboardTab = page.locator('[data-testid="dashboard-tab-games"]').first();
         if (await dashboardTab.isVisible().catch(() => false)) return 'dashboard';
         if (await checkInHeading.isVisible().catch(() => false)) return 'checkin';
         await page.waitForTimeout(250);
@@ -165,6 +175,15 @@ test.describe('Authentication Flow', () => {
           secure: root.startsWith('https://'),
           path: '/',
         },
+        {
+          name: 'csrf_token',
+          value: session.csrfToken || 'test-csrf-token-for-e2e',
+          domain: rootUrl.hostname,
+          httpOnly: false,
+          sameSite: 'Lax',
+          secure: root.startsWith('https://'),
+          path: '/',
+        },
       ]);
       await page.goto(`${root}/dashboard`);
       surface = await waitForDashboardOrCheckIn(10000);
@@ -179,6 +198,8 @@ test.describe('Authentication Flow', () => {
       await checkInSubmit.click();
     }
 
+    // Wait for dashboard to be visible after checkin
+    const dashboardTab = page.locator('[data-testid="dashboard-tab-games"]').first();
     await expect(dashboardTab).toBeVisible({ timeout: 10000 });
 
     await page.context().clearCookies();

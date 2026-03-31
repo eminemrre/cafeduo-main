@@ -1,73 +1,62 @@
-import { safeGoHome, safeReload, safeReplace } from './navigation';
+import { safeReload, safeGoHome, safeReplace } from './navigation';
 
-type MockLocation = {
-  href: string;
-  reload: jest.Mock;
-  replace: jest.Mock;
-};
-
-const createLocation = (overrides: Partial<MockLocation> = {}): MockLocation => ({
-  href: 'http://localhost/',
-  reload: jest.fn(),
-  replace: jest.fn(),
-  ...overrides,
-});
-
-describe('navigation helpers', () => {
-  it('reloads safely when location reload is available', () => {
-    const location = createLocation();
-
-    safeReload(location);
-
-    expect(location.reload).toHaveBeenCalledTimes(1);
-  });
-
-  it('swallows reload errors', () => {
-    const location = createLocation({
-      reload: jest.fn(() => {
-        throw new Error('reload failed');
-      }),
+describe('navigation', () => {
+  describe('safeReload', () => {
+    it('calls location.reload() on the provided target', () => {
+      const mockLocation = { reload: jest.fn() };
+      safeReload(mockLocation);
+      expect(mockLocation.reload).toHaveBeenCalledTimes(1);
     });
 
-    expect(() => safeReload(location)).not.toThrow();
+    it('does not throw when reload throws', () => {
+      const mockLocation = {
+        reload: jest.fn(() => { throw new Error('Reload failed'); }),
+      };
+      expect(() => safeReload(mockLocation)).not.toThrow();
+      expect(mockLocation.reload).toHaveBeenCalledTimes(1);
+    });
   });
 
-  it('updates href safely for go-home navigation', () => {
-    const location = createLocation({ href: 'http://localhost/dashboard' });
-
-    safeGoHome(location);
-
-    expect(location.href).toBe('/');
-  });
-
-  it('swallows href assignment errors', () => {
-    const location = {
-      get href() {
-        return 'http://localhost/dashboard';
-      },
-      set href(_value: string) {
-        throw new Error('href blocked');
-      },
-    } as Pick<Location, 'href'>;
-
-    expect(() => safeGoHome(location)).not.toThrow();
-  });
-
-  it('replaces the current url safely', () => {
-    const location = createLocation();
-
-    safeReplace('/dashboard', location);
-
-    expect(location.replace).toHaveBeenCalledWith('/dashboard');
-  });
-
-  it('swallows replace errors', () => {
-    const location = createLocation({
-      replace: jest.fn(() => {
-        throw new Error('replace failed');
-      }),
+  describe('safeGoHome', () => {
+    it('sets location.href to "/" on the provided target', () => {
+      const mockLocation = { href: '/dashboard' };
+      safeGoHome(mockLocation);
+      expect(mockLocation.href).toBe('/');
     });
 
-    expect(() => safeReplace('/dashboard', location)).not.toThrow();
+    it('does not throw when setting href throws', () => {
+      const mockLocation = new Proxy(
+        { href: '' },
+        {
+          set(_target, prop, _value) {
+            if (prop === 'href') throw new Error('Set href failed');
+            return true;
+          },
+        }
+      );
+      expect(() => safeGoHome(mockLocation)).not.toThrow();
+    });
+  });
+
+  describe('safeReplace', () => {
+    it('calls location.replace() with the given url', () => {
+      const mockLocation = { replace: jest.fn() };
+      safeReplace('/test-url', mockLocation);
+      expect(mockLocation.replace).toHaveBeenCalledWith('/test-url');
+    });
+
+    it('passes different urls correctly', () => {
+      const mockLocation = { replace: jest.fn() };
+      safeReplace('/other-path', mockLocation);
+      expect(mockLocation.replace).toHaveBeenCalledWith('/other-path');
+    });
+
+    it('does not throw when replace throws', () => {
+      const mockLocation = {
+        replace: jest.fn(() => { throw new Error('Replace failed'); }),
+      };
+      expect(() => safeReplace('/test-url', mockLocation)).not.toThrow();
+      expect(mockLocation.replace).toHaveBeenCalledWith('/test-url');
+    });
   });
 });

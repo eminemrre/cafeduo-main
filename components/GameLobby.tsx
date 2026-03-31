@@ -4,17 +4,9 @@ import { Gamepad2, Swords } from 'lucide-react';
 import { GameRequest, User } from '../types';
 
 const gameIcon = (gameType: string) => {
-  if (gameType === 'Refleks Avı') return '⚡';
-  if (gameType === 'Nişancı Düellosu') return '🛡️';
-  if (gameType === 'Tank Düellosu') return '🎯';
-  if (gameType === 'Ritim Kopyala') return '🎵';
   if (gameType === 'Retro Satranç') return '♟️';
-  if (gameType === 'Çift Tek Sprint') return '🔢';
-  if (gameType === 'Neon Hafıza') return '🔮';
   if (gameType === 'Bilgi Yarışı') return '🧠';
-  if (gameType === 'UNO Sosyal') return '🃏';
-  if (gameType === '101 Okey Sosyal') return '🀄';
-  if (gameType === 'Monopoly Sosyal') return '🏙️';
+  if (gameType === 'Tank Düellosu') return '🎯';
   return '🎮';
 };
 

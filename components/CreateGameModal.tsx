@@ -15,14 +15,9 @@ interface CreateGameModalProps {
 }
 
 const GAME_TYPES = [
-  { id: 'reflex', name: 'Refleks Avı', category: 'Refleks', description: 'Işık yandığında en hızlı tıkla', minPoints: 0 },
-  { id: 'war', name: 'Nişancı Düellosu', category: 'Savaş', description: 'Nişan hattında merkezi vur, tur tur isabet topla', minPoints: 40 },
-  { id: 'tank', name: 'Tank Düellosu', category: 'Savaş', description: 'Açı ve güç ayarla, rakip tankı vur. İlk 3 isabet alan kazanır.', minPoints: 40 },
   { id: 'chess', name: 'Retro Satranç', category: 'Strateji', description: 'Klasik 2 oyunculu satranç. Gerçek zamanlı ve hamle doğrulamalı.', minPoints: 90 },
   { id: 'knowledge', name: 'Bilgi Yarışı', category: 'Bilgi', description: 'Kısa bilgi sorularında doğru cevabı en hızlı ver', minPoints: 120 },
-  { id: 'uno-social', name: 'UNO Sosyal', category: 'Sosyal', description: 'Puan etkisi olmadan UNO turu oynayın.', minPoints: 0, nonCompetitive: true },
-  { id: 'okey-social', name: '101 Okey Sosyal', category: 'Sosyal', description: 'Arkadaşlarla puansız 101 Okey masası.', minPoints: 0, nonCompetitive: true },
-  { id: 'monopoly-social', name: 'Monopoly Sosyal', category: 'Sosyal', description: 'Kısa turlu puansız Monopoly mini akışı.', minPoints: 0, nonCompetitive: true },
+  { id: 'tank', name: 'Tank Düellosu', category: 'Savaş', description: 'Açı ve güç ayarla, rakip tankı vur. İlk 3 isabet alan kazanır.', minPoints: 40 },
 ];
 
 const CHESS_TEMPO_OPTIONS = [
@@ -43,8 +38,8 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   onSubmit,
   maxPoints
 }) => {
-  const [gameType, setGameType] = useState('Refleks Avı');
-  const [points, setPoints] = useState(0);
+  const [gameType, setGameType] = useState('Tank Düellosu');
+  const [points, setPoints] = useState(40);
   const [chessTempoId, setChessTempoId] = useState<(typeof CHESS_TEMPO_OPTIONS)[number]['id']>('blitz_3_2');
   const [errors, setErrors] = useState<ValidationError>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -55,8 +50,8 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
-      setGameType('Refleks Avı');
-      setPoints(0);
+      setGameType('Tank Düellosu');
+      setPoints(40);
       setChessTempoId('blitz_3_2');
       setErrors({});
       setTouched({});
@@ -66,7 +61,6 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
 
   const selectedGame = GAME_TYPES.find(g => g.name === gameType);
   const minPoints = selectedGame?.minPoints || 0;
-  const isNonCompetitive = Boolean(selectedGame?.nonCompetitive);
 
   const validate = (): boolean => {
     const newErrors: ValidationError = {};
@@ -75,13 +69,11 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
       newErrors.gameType = 'Oyun türü seçmelisiniz';
     }
 
-    if (isNonCompetitive && points !== 0) {
-      newErrors.points = 'Sosyal modlar puansızdır (0 puan).';
-    } else if (points < minPoints) {
+    if (points < minPoints) {
       newErrors.points = `${gameType} için minimum ${minPoints} puan gerekli`;
     }
 
-    if (!isNonCompetitive && points > maxPoints) {
+    if (points > maxPoints) {
       newErrors.points = `Maksimum ${maxPoints} puan kullanabilirsiniz`;
     }
 
@@ -90,10 +82,6 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   };
 
   const handlePointsChange = (value: string) => {
-    if (isNonCompetitive) {
-      setPoints(0);
-      return;
-    }
     const numValue = parseInt(value) || 0;
     setPoints(numValue);
 
@@ -115,14 +103,9 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
     setGameType(newGameType);
     const game = GAME_TYPES.find(g => g.name === newGameType);
     const newMinPoints = game?.minPoints || 0;
-    const nonCompetitive = Boolean(game?.nonCompetitive);
-
-    if (nonCompetitive) {
-      setPoints(0);
-    }
 
     // Auto-adjust points if below minimum
-    if (!nonCompetitive && points < newMinPoints) {
+    if (points < newMinPoints) {
       setPoints(newMinPoints);
       toast.warning(`${newGameType} için minimum ${newMinPoints} puan ayarlandı`);
     }
@@ -147,7 +130,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
 
     try {
       const selectedTempo = CHESS_TEMPO_OPTIONS.find((tempo) => tempo.id === chessTempoId) || CHESS_TEMPO_OPTIONS[1];
-      const normalizedPoints = isNonCompetitive ? 0 : points;
+      const normalizedPoints = points;
       const options =
         gameType === 'Retro Satranç'
           ? {
@@ -267,7 +250,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
           <div>
             <label className="block text-cyan-300 font-pixel text-xs mb-3 tracking-widest flex justify-between">
               <span>ENERJİ (PUAN) YATIRIMI</span>
-              <span className="text-amber-300">{isNonCompetitive ? '0 / 0' : `${points} / ${maxPoints}`}</span>
+              <span className="text-amber-300">{`${points} / ${maxPoints}`}</span>
             </label>
 
             <div className="relative p-4 rounded-xl border border-cyan-800/40 bg-[#040a16] shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
@@ -277,7 +260,6 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                 max={maxPoints}
                 value={points}
                 onChange={(e) => handlePointsChange(e.target.value)}
-                disabled={isNonCompetitive}
                 className="w-full h-2 bg-cyan-950/70 rounded-lg appearance-none cursor-pointer accent-cyan-400 mb-4 disabled:opacity-40 disabled:cursor-not-allowed"
               />
 
@@ -290,18 +272,12 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                   min={minPoints}
                   max={maxPoints}
                   data-testid="game-points-input"
-                  disabled={isNonCompetitive}
                   className={`flex-1 bg-black/60 border-2 ${errors.points && touched.points ? 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'border-cyan-500/50 shadow-[0_0_15px_rgba(34,211,238,0.15)]'} text-white p-2 rounded-lg font-pixel text-xl text-center focus:border-cyan-300 focus:shadow-[0_0_15px_rgba(34,211,238,0.4)] outline-none transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50 disabled:cursor-not-allowed`}
                 />
                 <div className="text-[var(--rf-muted)] text-sm font-pixel pt-1">PUAN</div>
               </div>
             </div>
 
-            {isNonCompetitive && (
-              <p className="text-xs text-cyan-300 mt-2">
-                Bu oyun sosyal modda çalışır. Puan transferi ve rekabet puanı işlenmez.
-              </p>
-            )}
 
             {/* Preset Buttons */}
             <div className="flex gap-2 mt-3">
@@ -310,7 +286,6 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                   key={preset.label}
                   type="button"
                   onClick={() => handlePointsChange(preset.value.toString())}
-                  disabled={isNonCompetitive}
                   className={`flex-1 overflow-hidden relative group min-h-[36px] py-1 px-2 text-xs font-pixel tracking-wider border rounded-md transition-all ${points === preset.value
                     ? 'border-cyan-400 bg-cyan-900/50 text-cyan-300 shadow-[0_0_10px_rgba(34,211,238,0.3)]'
                     : 'border-cyan-800/50 hover:border-cyan-500/50 text-[var(--rf-muted)] bg-black/40'
@@ -357,7 +332,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
             </div>
             <div className="flex justify-between text-sm mt-1">
               <span className="text-[var(--rf-muted)]">Katılım Puanı:</span>
-              <span className="text-amber-300">{isNonCompetitive ? '0 Puan (Sosyal)' : `${points} Puan`}</span>
+              <span className="text-amber-300">{`${points} Puan`}</span>
             </div>
             {gameType === 'Retro Satranç' && (
               <div className="flex justify-between text-sm mt-1">
@@ -369,8 +344,8 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
             )}
             <div className="flex justify-between text-sm mt-1 pt-1 border-t border-cyan-400/20">
               <span className="text-[var(--rf-muted)]">Kalan:</span>
-              <span className={`${isNonCompetitive || maxPoints - points >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                {isNonCompetitive ? maxPoints : (maxPoints - points)} Puan
+              <span className={`${maxPoints - points >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {maxPoints - points} Puan
               </span>
             </div>
           </div>

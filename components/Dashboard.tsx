@@ -1,6 +1,6 @@
 /**
  * Dashboard Component (Refactored)
- * 
+ *
  * @description Ana dashboard container - sadece layout ve state dağıtımı
  * @version 2.0 - Custom hooks ile refactor edilmiş
  */
@@ -8,16 +8,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { User, Reward } from '../types';
 import { UserProfileModal } from './UserProfileModal';
-import { ReflexRush } from './ReflexRush';
-import { ArenaBattle } from './ArenaBattle';
 import { TankBattle } from './TankBattle';
-import { MemoryDuel } from './MemoryDuel';
-import { OddEvenSprint } from './OddEvenSprint';
 import { KnowledgeQuiz } from './KnowledgeQuiz';
 import { RetroChess } from './RetroChess';
-import { UnoSocial } from './UnoSocial';
-import { Okey101Social } from './Okey101Social';
-import { MonopolySocial } from './MonopolySocial';
 import { Leaderboard } from './Leaderboard';
 import { Achievements } from './Achievements';
 import { RetroButton } from './RetroButton';
@@ -301,16 +294,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
     if (gameEndHandledRef.current) return;
     gameEndHandledRef.current = true;
     const safeEarnedPoints = Number.isFinite(earnedPoints) ? earnedPoints : 0;
-    const nonCompetitiveGame = new Set(['UNO Sosyal', '101 Okey Sosyal', 'Monopoly Sosyal']).has(activeGameType);
     setGameResult((prev) => prev ?? { winner, earnedPoints: safeEarnedPoints });
     setShowGlitchAnim(true);
-
-    // Finish game on backend for social games that don't use Socket.IO
-    if (nonCompetitiveGame && activeGameId) {
-      api.games.finish(activeGameId, winner || null).catch((err) => {
-        console.error('Social game finish request failed:', err);
-      });
-    }
 
     void refetch();
     if (onRefreshUser) {
@@ -323,7 +308,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
     onUpdateUser({
       ...currentUser,
       points: Math.max(0, (currentUser.points || 0) + safeEarnedPoints),
-      wins: (currentUser.wins || 0) + (didWin && !nonCompetitiveGame ? 1 : 0),
+      wins: (currentUser.wins || 0) + (didWin ? 1 : 0),
       gamesPlayed: (currentUser.gamesPlayed || 0) + 1,
     });
   };
@@ -378,26 +363,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
               onGameEnd={handleGameFinish}
               onLeave={handleLeaveGame}
             />
-          ) : activeGameType === 'Refleks Avı' ? (
-            <ReflexRush
-              gameId={String(activeGameId)}
-              currentUser={currentUser}
-              opponentName={opponentName || 'Rakip'}
-              isBot={isBot}
-              onGameEnd={handleGameFinish}
-              onLeave={handleLeaveGame}
-            />
           ) : activeGameType === 'Bilgi Yarışı' ? (
             <KnowledgeQuiz
-              gameId={activeGameId}
-              currentUser={currentUser}
-              opponentName={opponentName || 'Rakip'}
-              isBot={isBot}
-              onGameEnd={handleGameFinish}
-              onLeave={handleLeaveGame}
-            />
-          ) : activeGameType === 'Nişancı Düellosu' ? (
-            <ArenaBattle
               gameId={activeGameId}
               currentUser={currentUser}
               opponentName={opponentName || 'Rakip'}
@@ -414,60 +381,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
               onGameEnd={handleGameFinish}
               onLeave={handleLeaveGame}
             />
-          ) : activeGameType === 'Neon Hafıza' ? (
-            <MemoryDuel
-              gameId={activeGameId}
-              currentUser={currentUser}
-              opponentName={opponentName || 'Rakip'}
-              isBot={isBot}
-              onGameEnd={handleGameFinish}
-              onLeave={handleLeaveGame}
-            />
-          ) : activeGameType === 'Çift Tek Sprint' ? (
-            <OddEvenSprint
-              gameId={activeGameId}
-              currentUser={currentUser}
-              opponentName={opponentName || 'Rakip'}
-              isBot={isBot}
-              onGameEnd={handleGameFinish}
-              onLeave={handleLeaveGame}
-            />
-          ) : activeGameType === 'UNO Sosyal' ? (
-            <UnoSocial
-              gameId={activeGameId}
-              currentUser={currentUser}
-              opponentName={opponentName || 'Arkadaşın'}
-              isBot={isBot}
-              onGameEnd={handleGameFinish}
-              onLeave={handleLeaveGame}
-            />
-          ) : activeGameType === '101 Okey Sosyal' ? (
-            <Okey101Social
-              gameId={activeGameId}
-              currentUser={currentUser}
-              opponentName={opponentName || 'Arkadaşın'}
-              isBot={isBot}
-              onGameEnd={handleGameFinish}
-              onLeave={handleLeaveGame}
-            />
-          ) : activeGameType === 'Monopoly Sosyal' ? (
-            <MonopolySocial
-              gameId={activeGameId}
-              currentUser={currentUser}
-              opponentName={opponentName || 'Arkadaşın'}
-              isBot={isBot}
-              onGameEnd={handleGameFinish}
-              onLeave={handleLeaveGame}
-            />
           ) : (
-            <ArenaBattle
-              gameId={activeGameId}
-              currentUser={currentUser}
-              opponentName={opponentName || 'Rakip'}
-              isBot={isBot}
-              onGameEnd={handleGameFinish}
-              onLeave={handleLeaveGame}
-            />
+            <div className="rf-panel border-red-400/30 rounded-xl p-8 text-center">
+              <p className="text-red-200 font-bold text-xl">Bilinmeyen Oyun Türü</p>
+              <p className="text-[var(--rf-muted)] mt-2">{activeGameType}</p>
+              <RetroButton onClick={handleBackToLobby} variant="secondary" className="mt-4">
+                Lobiye Dön
+              </RetroButton>
+            </div>
           )}
         </div>
       </div>

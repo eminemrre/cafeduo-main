@@ -23,7 +23,7 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
     const noAuthRes = await request.post(`${apiRoot}/api/games`, {
       data: {
         hostName: 'spoofed-user',
-        gameType: 'Refleks Avı',
+        gameType: 'Tank Düellosu',
         points: 10,
         table: 'MASA01',
       },
@@ -36,7 +36,7 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
       headers: authHeader(session.token),
       data: {
         hostName: 'spoofed-user',
-        gameType: 'Refleks Avı',
+        gameType: 'Tank Düellosu',
         points: 10,
         table: 'MASA01',
       },
@@ -87,7 +87,7 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
       headers: authHeader(host.token, host.csrfToken),
       data: {
         hostName: host.credentials.username,
-        gameType: 'Refleks Avı',
+        gameType: 'Tank Düellosu',
         points: 0,
         table: 'MASA05',
       },

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Timer, Zap, Swords, Brain, Crown, Sparkles, Gauge, ArrowUpRight, Gamepad2 } from 'lucide-react';
+import { Timer, Swords, Brain, Crown, Sparkles, Gauge, ArrowUpRight } from 'lucide-react';
 
 interface FeaturedGame {
   title: string;
@@ -19,32 +19,6 @@ interface FeaturedGame {
 }
 
 const featuredGames: FeaturedGame[] = [
-  {
-    title: 'Neon Refleks',
-    subtitle: 'Beliren hedefleri en hızlı yakala; seri korudukça puanın katlansın.',
-    duration: '35-45 sn',
-    mode: 'Arcade tempo',
-    accent: 'from-cyan-400/90 to-blue-500/90',
-    tone: 'radial-gradient(circle at 16% 22%, rgba(34, 213, 238, 0.26), transparent 42%), radial-gradient(circle at 88% 6%, rgba(34, 99, 255, 0.22), transparent 38%), linear-gradient(152deg, rgba(7, 18, 40, 0.96), rgba(9, 33, 72, 0.88))',
-    grid: 'rgba(34, 213, 238, 0.08)',
-    glow: 'rgba(34, 213, 238, 0.25)',
-    icon: <Zap size={26} />,
-    badge: 'Refleks',
-    cta: 'Reflekse gir',
-  },
-  {
-    title: 'Pixel Düello',
-    subtitle: 'Hamle sırasını doğru yönet, baskıyı kaybetmeden turu kapat.',
-    duration: '40-55 sn',
-    mode: 'Retro savaş',
-    accent: 'from-fuchsia-400/90 to-violet-500/90',
-    tone: 'radial-gradient(circle at 18% 20%, rgba(251, 113, 133, 0.23), transparent 42%), radial-gradient(circle at 85% 10%, rgba(129, 140, 248, 0.22), transparent 40%), linear-gradient(152deg, rgba(12, 16, 42, 0.96), rgba(31, 19, 68, 0.88))',
-    grid: 'rgba(251, 113, 133, 0.08)',
-    glow: 'rgba(192, 132, 252, 0.25)',
-    icon: <Swords size={26} />,
-    badge: 'Savaş',
-    cta: 'Düelloya başla',
-  },
   {
     title: 'Retro Satranç',
     subtitle: 'Gerçek zamanlı satrançta hamleni temiz oyna, süreyi doğru yönet.',
@@ -72,30 +46,17 @@ const featuredGames: FeaturedGame[] = [
     cta: 'Sprinti aç',
   },
   {
-    title: 'Neon Hafıza',
-    subtitle: 'Kartları rakibinden önce eşleştir, görseller aklından silinmeden serini kur.',
-    duration: '45-60 sn',
-    mode: 'Hafıza',
-    accent: 'from-rose-400/90 to-pink-500/90',
-    tone: 'radial-gradient(circle at 10% 20%, rgba(244, 63, 94, 0.2), transparent 40%), radial-gradient(circle at 90% 10%, rgba(236, 72, 153, 0.22), transparent 36%), linear-gradient(152deg, rgba(8, 24, 44, 0.96), rgba(63, 8, 30, 0.88))',
-    grid: 'rgba(244, 63, 94, 0.08)',
-    glow: 'rgba(236, 72, 153, 0.24)',
-    icon: <Sparkles size={26} />,
-    badge: 'Dikkat',
-    cta: 'Kartlara bak',
-  },
-  {
-    title: 'Sosyal Masa Modu',
-    subtitle: 'UNO, 101 Okey ve Monopoly mini turlarını puan etkisi olmadan arkadaş grubunla oyna.',
-    duration: 'Serbest',
-    mode: 'Puan yok',
-    accent: 'from-sky-400/90 to-fuchsia-500/90',
-    tone: 'radial-gradient(circle at 16% 20%, rgba(56, 189, 248, 0.2), transparent 42%), radial-gradient(circle at 88% 10%, rgba(217, 70, 239, 0.2), transparent 40%), linear-gradient(152deg, rgba(10, 18, 42, 0.96), rgba(29, 16, 56, 0.88))',
-    grid: 'rgba(56, 189, 248, 0.08)',
-    glow: 'rgba(217, 70, 239, 0.24)',
-    icon: <Gamepad2 size={26} />,
-    badge: 'Sosyal',
-    cta: 'Masayı aç',
+    title: 'Tank Düellosu',
+    subtitle: 'Açı ve güç ayarla, rakip tankı vur. İlk 3 isabet alan kazanır.',
+    duration: '60-90 sn',
+    mode: 'Savaş',
+    accent: 'from-red-400/90 to-orange-500/90',
+    tone: 'radial-gradient(circle at 14% 20%, rgba(248, 113, 113, 0.2), transparent 40%), radial-gradient(circle at 86% 12%, rgba(251, 146, 60, 0.22), transparent 36%), linear-gradient(152deg, rgba(20, 12, 8, 0.96), rgba(53, 28, 12, 0.88))',
+    grid: 'rgba(248, 113, 113, 0.08)',
+    glow: 'rgba(251, 146, 60, 0.24)',
+    icon: <Swords size={26} />,
+    badge: 'Savaş',
+    cta: 'Düelloya başla',
   },
 ];
 

@@ -3,11 +3,7 @@
  * Handles game state validation, admin checks, and game type checks
  */
 
-const NON_COMPETITIVE_GAME_TYPES = new Set([
-  'UNO Sosyal',
-  '101 Okey Sosyal',
-  'Monopoly Sosyal',
-]);
+const NON_COMPETITIVE_GAME_TYPES = new Set([]);
 
 /**
  * Check if user is an admin actor

@@ -135,7 +135,7 @@ describe('gameMoveService (db mode)', () => {
                 id: 9,
                 host_name: 'u1',
                 guest_name: 'u2',
-                game_type: 'Refleks Avı',
+                game_type: 'Tank Düellosu',
                 status: 'active',
                 game_state: {
                   results: {

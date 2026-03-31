@@ -44,9 +44,6 @@ describe('gameHandlers (memory mode)', () => {
       isDbConnected: jest.fn().mockResolvedValue(false),
       logger: { error: jest.fn() },
       supportedGameTypes: new Set([
-        'Refleks Avı',
-        'Ritim Kopyala',
-        'Çift Tek Sprint',
         'Tank Düellosu',
         'Retro Satranç',
         'Bilgi Yarışı',
@@ -54,9 +51,6 @@ describe('gameHandlers (memory mode)', () => {
       normalizeGameType: (value) => {
         const raw = String(value || '').trim();
         return [
-          'Refleks Avı',
-          'Ritim Kopyala',
-          'Çift Tek Sprint',
           'Tank Düellosu',
           'Retro Satranç',
           'Bilgi Yarışı',
@@ -106,9 +100,6 @@ describe('gameHandlers (memory mode)', () => {
             if (String(game.status || '').toLowerCase() !== 'waiting') return false;
             if (
               ![
-                'Refleks Avı',
-                'Ritim Kopyala',
-                'Çift Tek Sprint',
                 'Tank Düellosu',
                 'Retro Satranç',
                 'Bilgi Yarışı',
@@ -154,7 +145,7 @@ describe('gameHandlers (memory mode)', () => {
       {
         id: 101,
         hostName: 'u1',
-        gameType: 'Refleks Avı',
+        gameType: 'Tank Düellosu',
         points: 30,
         table: 'MASA05',
         status: 'waiting',
@@ -162,7 +153,7 @@ describe('gameHandlers (memory mode)', () => {
       {
         id: 102,
         hostName: 'u3',
-        gameType: 'Ritim Kopyala',
+        gameType: 'Bilgi Yarışı',
         points: 40,
         table: 'MASA09',
         status: 'waiting',
@@ -189,7 +180,7 @@ describe('gameHandlers (memory mode)', () => {
   it('creates game for checked-in user', async () => {
     const req = {
       user: { username: 'u1', role: 'user', isAdmin: false, table_number: '5', cafe_id: 1, points: 120 },
-      body: { gameType: 'Refleks Avı', points: 50 },
+      body: { gameType: 'Tank Düellosu', points: 50 },
     };
     const res = createMockRes();
 
@@ -225,7 +216,7 @@ describe('gameHandlers (memory mode)', () => {
       {
         id: 1,
         hostName: 'u1',
-        gameType: 'Refleks Avı',
+        gameType: 'Tank Düellosu',
         points: 20,
         table: 'MASA05',
         status: 'waiting',
@@ -249,7 +240,7 @@ describe('gameHandlers (memory mode)', () => {
         id: 71,
         hostName: 'u1',
         guestName: 'u2',
-        gameType: 'Refleks Avı',
+        gameType: 'Tank Düellosu',
         points: 20,
         table: 'MASA05',
         status: 'active',
@@ -279,7 +270,7 @@ describe('gameHandlers (memory mode)', () => {
         id: 72,
         hostName: 'u1',
         guestName: 'u2',
-        gameType: 'Refleks Avı',
+        gameType: 'Tank Düellosu',
         points: 20,
         table: 'MASA05',
         status: 'active',
@@ -304,7 +295,7 @@ describe('gameHandlers (memory mode)', () => {
         id: 73,
         hostName: 'u1',
         guestName: 'u2',
-        gameType: 'Refleks Avı',
+        gameType: 'Tank Düellosu',
         points: 20,
         table: 'MASA05',
         status: 'finished',
@@ -330,7 +321,7 @@ describe('gameHandlers (memory mode)', () => {
       {
         id: 75,
         hostName: 'u1',
-        gameType: 'Refleks Avı',
+        gameType: 'Tank Düellosu',
         points: 120,
         table: 'MASA05',
         status: 'waiting',
@@ -354,7 +345,7 @@ describe('gameHandlers (memory mode)', () => {
       {
         id: 77,
         hostName: 'u1',
-        gameType: 'Refleks Avı',
+        gameType: 'Tank Düellosu',
         points: 20,
         table: 'MASA05',
         status: 'finishing',
@@ -562,7 +553,7 @@ describe('gameHandlers (memory mode)', () => {
         id: 2,
         hostName: 'u1',
         guestName: 'u2',
-        gameType: 'Ritim Kopyala',
+        gameType: 'Bilgi Yarışı',
         points: 20,
         table: 'MASA01',
         status: 'active',
@@ -597,7 +588,7 @@ describe('gameHandlers (memory mode)', () => {
         id: 41,
         hostName: 'u1',
         guestName: 'u2',
-        gameType: 'Refleks Avı',
+        gameType: 'Tank Düellosu',
         points: 20,
         table: 'MASA01',
         status: 'finished',
@@ -663,7 +654,7 @@ describe('gameHandlers (memory mode)', () => {
         id: 3,
         hostName: 'u1',
         guestName: 'u2',
-        gameType: 'Çift Tek Sprint',
+        gameType: 'Retro Satranç',
         points: 20,
         table: 'MASA01',
         status: 'active',
@@ -697,7 +688,7 @@ describe('gameHandlers (memory mode)', () => {
         id: 33,
         hostName: 'u1',
         guestName: 'u2',
-        gameType: 'Refleks Avı',
+        gameType: 'Tank Düellosu',
         points: 30,
         table: 'MASA01',
         status: 'active',
@@ -724,7 +715,7 @@ describe('gameHandlers (memory mode)', () => {
         id: 34,
         hostName: 'u1',
         guestName: 'u2',
-        gameType: 'Refleks Avı',
+        gameType: 'Tank Düellosu',
         points: 30,
         table: 'MASA01',
         status: 'active',
@@ -751,7 +742,7 @@ describe('gameHandlers (memory mode)', () => {
         id: 35,
         hostName: 'u1',
         guestName: 'u2',
-        gameType: 'Refleks Avı',
+        gameType: 'Tank Düellosu',
         points: 30,
         table: 'MASA01',
         status: 'active',
@@ -811,7 +802,7 @@ describe('gameHandlers (memory mode)', () => {
         hostName: 'u1',
         guestName: 'u2',
         winner: 'u1',
-        gameType: 'Refleks Avı',
+        gameType: 'Tank Düellosu',
         points: 25,
         table: 'MASA03',
         status: 'finished',
@@ -822,7 +813,7 @@ describe('gameHandlers (memory mode)', () => {
         hostName: 'u3',
         guestName: 'u1',
         winner: 'u3',
-        gameType: 'Çift Tek Sprint',
+        gameType: 'Retro Satranç',
         points: 35,
         table: 'MASA07',
         status: 'finished',

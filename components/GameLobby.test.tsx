@@ -37,7 +37,7 @@ describe('GameLobby', () => {
   const mockGames: GameRequest[] = [
     {
       id: 1,
-      gameType: 'Refleks Avı',
+      gameType: 'Tank Düellosu',
       points: 50,
       hostName: 'host1',
       status: 'waiting',
@@ -45,7 +45,7 @@ describe('GameLobby', () => {
     },
     {
       id: 2,
-      gameType: 'Çift Tek Sprint',
+      gameType: 'Bilgi Yarışı',
       points: 100,
       hostName: 'host2',
       status: 'waiting',
@@ -92,8 +92,8 @@ describe('GameLobby', () => {
     it('shows game types', () => {
       render(<GameLobby {...defaultProps} />);
 
-      expect(screen.getByText('Refleks Avı')).toBeInTheDocument();
-      expect(screen.getByText('Çift Tek Sprint')).toBeInTheDocument();
+      expect(screen.getByText('Tank Düellosu')).toBeInTheDocument();
+      expect(screen.getByText('Bilgi Yarışı')).toBeInTheDocument();
     });
   });
 
@@ -170,8 +170,8 @@ describe('GameLobby', () => {
       const { container } = render(<GameLobby {...defaultProps} />);
 
       // Check for game types
-      expect(container.textContent).toContain('Refleks Avı');
-      expect(container.textContent).toContain('Çift Tek Sprint');
+      expect(container.textContent).toContain('Tank Düellosu');
+      expect(container.textContent).toContain('Bilgi Yarışı');
     });
   });
 

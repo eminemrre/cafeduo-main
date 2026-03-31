@@ -14,7 +14,7 @@ describe('gameService', () => {
       gameRepository,
       getMemoryGames: () => [],
       getMemoryUsers: () => [],
-      supportedGameTypes: new Set(['Refleks Avı']),
+      supportedGameTypes: new Set(['Tank Düellosu']),
     });
 
     const result = await service.listWaitingGames({
@@ -35,14 +35,14 @@ describe('gameService', () => {
       isDbConnected: jest.fn().mockResolvedValue(false),
       gameRepository: {},
       getMemoryGames: () => [
-        { id: 1, hostName: 'u1', gameType: 'Refleks Avı', table: 'MASA05', status: 'waiting' },
-        { id: 2, hostName: 'u2', gameType: 'Refleks Avı', table: 'MASA07', status: 'waiting' },
+        { id: 1, hostName: 'u1', gameType: 'Tank Düellosu', table: 'MASA05', status: 'waiting' },
+        { id: 2, hostName: 'u2', gameType: 'Tank Düellosu', table: 'MASA07', status: 'waiting' },
       ],
       getMemoryUsers: () => [
         { username: 'u1', cafe_id: 1 },
         { username: 'u2', cafe_id: 2 },
       ],
-      supportedGameTypes: new Set(['Refleks Avı']),
+      supportedGameTypes: new Set(['Tank Düellosu']),
     });
 
     const result = await service.listWaitingGames({
@@ -63,10 +63,10 @@ describe('gameService', () => {
       isDbConnected: jest.fn().mockResolvedValue(false),
       gameRepository: {},
       getMemoryGames: () => [
-        { id: 10, hostName: 'u1', status: 'active', gameType: 'Refleks Avı' },
+        { id: 10, hostName: 'u1', status: 'active', gameType: 'Tank Düellosu' },
       ],
       getMemoryUsers: () => [],
-      supportedGameTypes: new Set(['Refleks Avı']),
+      supportedGameTypes: new Set(['Tank Düellosu']),
     });
 
     const game = await service.getActiveGameForUser('u1');

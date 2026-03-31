@@ -19,7 +19,7 @@ const memoryState = {
     {
       id: 1,
       hostName: 'GamerTr_99',
-      gameType: 'Refleks Avı',
+      gameType: 'Tank Düellosu',
       points: 150,
       table: 'MASA04',
       status: 'waiting',

@@ -3,11 +3,7 @@
  * Handles point transfers and statistics updates for finished games
  */
 
-const NON_COMPETITIVE_GAME_TYPES = new Set([
-  'UNO Sosyal',
-  '101 Okey Sosyal',
-  'Monopoly Sosyal',
-]);
+const NON_COMPETITIVE_GAME_TYPES = new Set([]);
 
 /**
  * Normalize participant name to lowercase key

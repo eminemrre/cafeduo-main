@@ -11,13 +11,9 @@ const LOCAL_ALLOWED_ORIGINS = [
 ];
 
 const SUPPORTED_GAME_TYPES = new Set([
-  'Refleks Avı',
   'Tank Düellosu',
   'Retro Satranç',
   'Bilgi Yarışı',
-  'UNO Sosyal',
-  '101 Okey Sosyal',
-  'Monopoly Sosyal',
 ]);
 
 const normalizeGameType = (value) => {
@@ -26,9 +22,6 @@ const normalizeGameType = (value) => {
   if (SUPPORTED_GAME_TYPES.has(raw)) return raw;
 
   const aliasMap = {
-    refleks: 'Refleks Avı',
-    reflex: 'Refleks Avı',
-    rps: 'Refleks Avı',
     arena: 'Tank Düellosu',
     rhythm: 'Tank Düellosu',
     ritim_kopyala: 'Tank Düellosu',
@@ -38,24 +31,11 @@ const normalizeGameType = (value) => {
     satranc: 'Retro Satranç',
     retro_satranc: 'Retro Satranç',
     strategy: 'Retro Satranç',
-    dungeon: 'Retro Satranç',
-    odd_even: 'Retro Satranç',
-    odd_even_sprint: 'Retro Satranç',
-    sprint: 'Retro Satranç',
-    cift_tek_sprint: 'Retro Satranç',
     knowledge: 'Bilgi Yarışı',
     quiz: 'Bilgi Yarışı',
     trivia: 'Bilgi Yarışı',
     bilgi: 'Bilgi Yarışı',
     bilgi_yarisi: 'Bilgi Yarışı',
-    uno: 'UNO Sosyal',
-    uno_sosyal: 'UNO Sosyal',
-    okey: '101 Okey Sosyal',
-    okey_101: '101 Okey Sosyal',
-    okey101: '101 Okey Sosyal',
-    one_zero_one_okey: '101 Okey Sosyal',
-    monopoly: 'Monopoly Sosyal',
-    monopoly_sosyal: 'Monopoly Sosyal',
   };
 
   const normalizedKey = raw

@@ -59,7 +59,7 @@ describe('useGames', () => {
 
   it('fetches games on mount', async () => {
     const mockGames = [
-      { id: 1, hostName: 'user1', gameType: 'Refleks Avı', points: 50, table: 'MASA01', status: 'waiting' },
+      { id: 1, hostName: 'user1', gameType: 'Tank Düellosu', points: 50, table: 'MASA01', status: 'waiting' },
     ];
     (api.games.list as jest.Mock).mockResolvedValue(mockGames);
     (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);
@@ -93,9 +93,9 @@ describe('useGames', () => {
 
   it('keeps lobby list as returned by API', async () => {
     const mockGames = [
-      { id: 1, hostName: 'user1', gameType: 'Refleks Avı', points: 50, table: 'MASA01', status: 'waiting' },
-      { id: 2, hostName: 'Unknown', gameType: 'Ritim Kopyala', points: 100, table: 'MASA02', status: 'waiting' },
-      { id: 3, hostName: 'unknown', gameType: 'Çift Tek Sprint', points: 150, table: 'MASA03', status: 'waiting' },
+      { id: 1, hostName: 'user1', gameType: 'Tank Düellosu', points: 50, table: 'MASA01', status: 'waiting' },
+      { id: 2, hostName: 'Unknown', gameType: 'Bilgi Yarışı', points: 100, table: 'MASA02', status: 'waiting' },
+      { id: 3, hostName: 'unknown', gameType: 'Retro Satranç', points: 150, table: 'MASA03', status: 'waiting' },
     ];
     (api.games.list as jest.Mock).mockResolvedValue(mockGames);
     (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);
@@ -113,9 +113,9 @@ describe('useGames', () => {
 
   it('deduplicates malformed duplicate lobby entries by game id', async () => {
     const duplicatedGames = [
-      { id: 7, hostName: 'user1', gameType: 'Refleks Avı', points: 50, table: 'MASA01', status: 'waiting' },
-      { id: 7, hostName: 'user1', gameType: 'Refleks Avı', points: 50, table: 'MASA01', status: 'waiting' },
-      { id: 8, hostName: 'user2', gameType: 'Ritim Kopyala', points: 80, table: 'MASA02', status: 'waiting' },
+      { id: 7, hostName: 'user1', gameType: 'Tank Düellosu', points: 50, table: 'MASA01', status: 'waiting' },
+      { id: 7, hostName: 'user1', gameType: 'Tank Düellosu', points: 50, table: 'MASA01', status: 'waiting' },
+      { id: 8, hostName: 'user2', gameType: 'Bilgi Yarışı', points: 80, table: 'MASA02', status: 'waiting' },
     ];
     (api.games.list as jest.Mock).mockResolvedValue(duplicatedGames);
     (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);
@@ -175,11 +175,11 @@ describe('useGames', () => {
     );
 
     await act(async () => {
-      await result.current.createGame('Refleks Avı', 50);
+      await result.current.createGame('Tank Düellosu', 50);
     });
 
     expect(api.games.create).toHaveBeenCalledWith({
-      gameType: 'Refleks Avı',
+      gameType: 'Tank Düellosu',
       points: 50,
       hostName: 'testuser',
       table: 'MASA01',
@@ -187,10 +187,10 @@ describe('useGames', () => {
   });
 
   it('joinGame calls API and sets active game', async () => {
-    const joinedGame = { 
-      id: 1, 
-      hostName: 'otheruser', 
-      gameType: 'Refleks Avı',
+    const joinedGame = {
+      id: 1,
+      hostName: 'otheruser',
+      gameType: 'Tank Düellosu',
       status: 'active'
     };
     (api.games.list as jest.Mock).mockResolvedValue([]);
@@ -227,11 +227,11 @@ describe('useGames', () => {
     );
 
     await act(async () => {
-      await result.current.createGame('Ritim Kopyala', 75);
+      await result.current.createGame('Bilgi Yarışı', 75);
     });
 
     expect(api.games.create).toHaveBeenCalledWith({
-      gameType: 'Ritim Kopyala',
+      gameType: 'Bilgi Yarışı',
       points: 75,
       hostName: 'testuser',
       table: 'MASA08',
@@ -243,7 +243,7 @@ describe('useGames', () => {
       {
         id: 45,
         hostName: 'lobbyHost',
-        gameType: 'Çift Tek Sprint',
+        gameType: 'Retro Satranç',
         points: 120,
         table: 'MASA02',
         status: 'waiting',
@@ -268,7 +268,7 @@ describe('useGames', () => {
     });
 
     expect(result.current.activeGameId).toBe(45);
-    expect(result.current.activeGameType).toBe('Çift Tek Sprint');
+    expect(result.current.activeGameType).toBe('Retro Satranç');
     expect(result.current.opponentName).toBe('lobbyHost');
   });
 
@@ -276,7 +276,7 @@ describe('useGames', () => {
     (api.games.list as jest.Mock).mockResolvedValue([]);
     (api.users.getActiveGame as jest.Mock).mockResolvedValue({
       id: 99,
-      gameType: 'Ritim Kopyala',
+      gameType: 'Bilgi Yarışı',
     });
 
     const { result } = renderHook(() =>
@@ -288,7 +288,7 @@ describe('useGames', () => {
     });
 
     act(() => {
-      result.current.setActiveGame(501, 'Refleks Avı', 'bot-1', true);
+      result.current.setActiveGame(501, 'Tank Düellosu', 'bot-1', true);
     });
 
     (api.users.getActiveGame as jest.Mock).mockClear();
@@ -300,7 +300,7 @@ describe('useGames', () => {
 
     expect(api.users.getActiveGame).not.toHaveBeenCalled();
     expect(result.current.activeGameId).toBe(501);
-    expect(result.current.activeGameType).toBe('Refleks Avı');
+    expect(result.current.activeGameType).toBe('Tank Düellosu');
   });
 
   it('auto-joins active game returned by server state', async () => {
@@ -310,7 +310,7 @@ describe('useGames', () => {
         id: 88,
         hostName: 'hostA',
         guestName: 'testuser',
-        gameType: 'Refleks Avı',
+        gameType: 'Tank Düellosu',
         table: 'MASA01',
         status: 'active',
       })
@@ -328,7 +328,7 @@ describe('useGames', () => {
 
     await waitFor(() => {
       expect(result.current.activeGameId).toBe(88);
-      expect(result.current.activeGameType).toBe('Refleks Avı');
+      expect(result.current.activeGameType).toBe('Tank Düellosu');
       expect(result.current.opponentName).toBe('hostA');
       expect(result.current.serverActiveGame).toBeNull();
     });
@@ -371,11 +371,11 @@ describe('useGames', () => {
     );
 
     act(() => {
-      result.current.setActiveGame(1, 'Refleks Avı', 'opponent123', false);
+      result.current.setActiveGame(1, 'Tank Düellosu', 'opponent123', false);
     });
 
     expect(result.current.activeGameId).toBe(1);
-    expect(result.current.activeGameType).toBe('Refleks Avı');
+    expect(result.current.activeGameType).toBe('Tank Düellosu');
     expect(result.current.opponentName).toBe('opponent123');
     expect(result.current.isBot).toBe(false);
   });
@@ -390,7 +390,7 @@ describe('useGames', () => {
 
     // Set active game first
     act(() => {
-      result.current.setActiveGame(1, 'Refleks Avı', 'opponent', false);
+      result.current.setActiveGame(1, 'Tank Düellosu', 'opponent', false);
     });
 
     expect(result.current.activeGameId).toBe(1);
@@ -408,7 +408,7 @@ describe('useGames', () => {
   it('cancelGame calls delete endpoint and refreshes game list', async () => {
     (api.games.list as jest.Mock)
       .mockResolvedValueOnce([
-        { id: 91, hostName: 'testuser', gameType: 'Refleks Avı', points: 25, table: 'MASA01', status: 'waiting' },
+        { id: 91, hostName: 'testuser', gameType: 'Tank Düellosu', points: 25, table: 'MASA01', status: 'waiting' },
       ])
       .mockResolvedValueOnce([]);
     (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);
@@ -434,7 +434,7 @@ describe('useGames', () => {
   it('cancelGame tolerates already-removed game responses', async () => {
     (api.games.list as jest.Mock)
       .mockResolvedValueOnce([
-        { id: 99, hostName: 'testuser', gameType: 'Refleks Avı', points: 25, table: 'MASA01', status: 'waiting' },
+        { id: 99, hostName: 'testuser', gameType: 'Tank Düellosu', points: 25, table: 'MASA01', status: 'waiting' },
       ])
       .mockResolvedValueOnce([]);
     (api.users.getActiveGame as jest.Mock).mockResolvedValue(null);

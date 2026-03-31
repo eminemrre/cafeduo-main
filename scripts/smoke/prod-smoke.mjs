@@ -202,8 +202,10 @@ const runAuthenticatedChecks = async () => {
   await checkAuthenticatedSocket(authCookieHeader, true);
 
   printStep('Auth check: logout clears cookie and revokes old socket token');
+  const csrfToken = cookieJar.get('csrf_token');
   const logoutResponse = await fetchWithCookies(`${baseUrl}/api/auth/logout`, cookieJar, {
     method: 'POST',
+    headers: csrfToken ? { 'X-CSRF-Token': csrfToken } : {},
   });
   assert(logoutResponse.ok, `Logout failed: ${logoutResponse.status}`);
 

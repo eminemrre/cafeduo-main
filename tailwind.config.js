@@ -54,15 +54,9 @@ module.exports = {
         wide: "0.08em",
         wider: "0.14em",
       },
-      backgroundImage: {
-        "radial-spotlight": "radial-gradient(60% 60% at 50% 0%, rgba(245, 193, 108, 0.2), rgba(0, 0, 0, 0))",
-        grain: "url('/textures/grain.png')",
-      },
       animation: {
         float: "float 6s ease-in-out infinite",
-        shimmer: "shimmer 2.5s linear infinite",
         "pulse-soft": "pulse-soft 4s ease-in-out infinite",
-        "grid-flow": "grid-flow 3s linear infinite",
         "neon-pulse": "neon-pulse 2s ease-in-out infinite",
       },
       keyframes: {
@@ -70,17 +64,9 @@ module.exports = {
           "0%, 100%": { transform: "translateY(0px)" },
           "50%": { transform: "translateY(-8px)" },
         },
-        shimmer: {
-          "0%": { backgroundPosition: "-200% 0" },
-          "100%": { backgroundPosition: "200% 0" },
-        },
         "pulse-soft": {
           "0%, 100%": { opacity: "0.6" },
           "50%": { opacity: "1" },
-        },
-        "grid-flow": {
-          "0%": { transform: "translateY(0)" },
-          "100%": { transform: "translateY(50px)" },
         },
         "neon-pulse": {
           "0%, 100%": { textShadow: "0 0 7px #fff, 0 0 10px #fff, 0 0 21px #fff, 0 0 42px #0fa, 0 0 82px #0fa, 0 0 92px #0fa, 0 0 102px #0fa, 0 0 151px #0fa" },

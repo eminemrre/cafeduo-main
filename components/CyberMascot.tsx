@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { motion, useSpring } from 'framer-motion';
 
 export type MascotMood = 'neutral' | 'happy' | 'angry' | 'typing';
@@ -11,11 +11,13 @@ interface CyberMascotProps {
 export const CyberMascot: React.FC<CyberMascotProps> = ({ mood, className = '' }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const moodResetTimerRef = useRef<number | null>(null);
-    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+    const rafIdRef = useRef<number | null>(null);
     const [temporaryMood, setTemporaryMood] = useState<MascotMood | null>(null);
     const [isHovered, setIsHovered] = useState(false);
     const [isPressed, setIsPressed] = useState(false);
     const [pulseSeed, setPulseSeed] = useState(0);
+    // Store raw mouse coords in a ref to avoid re-renders
+    const mouseRef = useRef({ x: 0, y: 0 });
 
     const activeMood = temporaryMood || mood;
     const statusText = useMemo(() => {
@@ -36,7 +38,7 @@ export const CyberMascot: React.FC<CyberMascotProps> = ({ mood, className = '' }
     const eyeY = useSpring(0, { stiffness: 200, damping: 20 });
     const headRotate = useSpring(0, { stiffness: 150, damping: 15 });
 
-    const applyMoodBoost = (nextMood: MascotMood, duration = 950) => {
+    const applyMoodBoost = useCallback((nextMood: MascotMood, duration = 950) => {
         setTemporaryMood(nextMood);
         setPulseSeed((prev) => prev + 1);
         if (moodResetTimerRef.current) {
@@ -46,7 +48,86 @@ export const CyberMascot: React.FC<CyberMascotProps> = ({ mood, className = '' }
             setTemporaryMood(null);
             moodResetTimerRef.current = null;
         }, duration);
-    };
+    }, []);
+
+    // Throttled mouse handler using rAF
+    useEffect(() => {
+        const updateSprings = () => {
+            const { x: nx, y: ny } = mouseRef.current;
+            const hoverBoost = isHovered ? 1.35 : 1;
+            let targetEyeX = nx * 6 * hoverBoost;
+            let targetEyeY = ny * 4 * hoverBoost;
+            let targetRotate = nx * -10 * hoverBoost;
+
+            if (activeMood === 'angry') {
+                targetEyeX += (Math.random() - 0.5) * 2;
+                targetEyeY += (Math.random() - 0.5) * 2;
+            } else if (activeMood === 'happy') {
+                targetEyeY = -4;
+            } else if (activeMood === 'typing') {
+                targetEyeY = Math.min(targetEyeY, -1);
+            }
+
+            eyeX.set(targetEyeX);
+            eyeY.set(targetEyeY);
+            headRotate.set(targetRotate);
+        };
+
+        const handleMouseMove = (e: MouseEvent) => {
+            if (isHovered) return;
+            const { clientX, clientY } = e;
+            const { innerWidth, innerHeight } = window;
+            mouseRef.current = {
+                x: (clientX / innerWidth) * 2 - 1,
+                y: (clientY / innerHeight) * 2 - 1,
+            };
+            if (rafIdRef.current === null) {
+                rafIdRef.current = requestAnimationFrame(() => {
+                    updateSprings();
+                    rafIdRef.current = null;
+                });
+            }
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            if (rafIdRef.current !== null) {
+                cancelAnimationFrame(rafIdRef.current);
+            }
+        };
+    }, [activeMood, eyeX, eyeY, headRotate, isHovered]);
+
+    // Update springs when hovered (local pointer) or mood changes
+    useEffect(() => {
+        if (isHovered) return; // handled by onPointerMove
+        const { x: nx, y: ny } = mouseRef.current;
+        const hoverBoost = 1;
+        let targetEyeX = nx * 6 * hoverBoost;
+        let targetEyeY = ny * 4 * hoverBoost;
+        let targetRotate = nx * -10 * hoverBoost;
+
+        if (activeMood === 'angry') {
+            targetEyeX += (Math.random() - 0.5) * 2;
+            targetEyeY += (Math.random() - 0.5) * 2;
+        } else if (activeMood === 'happy') {
+            targetEyeY = -4;
+        } else if (activeMood === 'typing') {
+            targetEyeY = Math.min(targetEyeY, -1);
+        }
+
+        eyeX.set(targetEyeX);
+        eyeY.set(targetEyeY);
+        headRotate.set(targetRotate);
+    }, [activeMood, eyeX, eyeY, headRotate, isHovered]);
+
+    useEffect(() => {
+        return () => {
+            if (moodResetTimerRef.current) {
+                window.clearTimeout(moodResetTimerRef.current);
+            }
+        };
+    }, []);
 
     const resolveLocalPointer = (clientX: number, clientY: number) => {
         const rect = containerRef.current?.getBoundingClientRect();
@@ -58,59 +139,13 @@ export const CyberMascot: React.FC<CyberMascotProps> = ({ mood, className = '' }
         return { x: nx, y: ny };
     };
 
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            if (isHovered) return;
-            const { clientX, clientY } = e;
-            const { innerWidth, innerHeight } = window;
-
-            // Calculate normalized position -1 to 1
-            const nx = (clientX / innerWidth) * 2 - 1;
-            const ny = (clientY / innerHeight) * 2 - 1;
-
-            setMousePosition({ x: nx, y: ny });
-        };
-
-        window.addEventListener('mousemove', handleMouseMove);
-        return () => window.removeEventListener('mousemove', handleMouseMove);
-    }, [isHovered]);
-
-    useEffect(() => {
-        return () => {
-            if (moodResetTimerRef.current) {
-                window.clearTimeout(moodResetTimerRef.current);
-            }
-        };
-    }, []);
-
-    useEffect(() => {
-        // Update spring targets based on mouse position
-        const hoverBoost = isHovered ? 1.35 : 1;
-        let targetEyeX = mousePosition.x * 6 * hoverBoost; // max eye travel 6px
-        let targetEyeY = mousePosition.y * 4 * hoverBoost; // max eye travel 4px
-        let targetRotate = mousePosition.x * -10 * hoverBoost; // max head rotate 10deg
-
-        if (activeMood === 'angry') {
-            targetEyeX += (Math.random() - 0.5) * 2; // subtle shaking
-            targetEyeY += (Math.random() - 0.5) * 2;
-        } else if (activeMood === 'happy') {
-            targetEyeY = -4; // Look up/smile
-        } else if (activeMood === 'typing') {
-            targetEyeY = Math.min(targetEyeY, -1);
-        }
-
-        eyeX.set(targetEyeX);
-        eyeY.set(targetEyeY);
-        headRotate.set(targetRotate);
-    }, [activeMood, eyeX, eyeY, headRotate, isHovered, mousePosition]);
-
     // Colors based on mood
     const getColors = () => {
         switch (activeMood) {
-            case 'happy': return { eye: '#4ade80', glow: 'rgba(74, 222, 128, 0.4)' }; // neon-green
-            case 'angry': return { eye: '#f43f5e', glow: 'rgba(244, 63, 94, 0.5)' }; // neon-pink
-            case 'typing': return { eye: '#eab308', glow: 'rgba(234, 179, 8, 0.4)' }; // yellow
-            default: return { eye: '#00f3ff', glow: 'rgba(0, 243, 255, 0.4)' }; // neon-blue
+            case 'happy': return { eye: '#4ade80', glow: 'rgba(74, 222, 128, 0.4)' };
+            case 'angry': return { eye: '#f43f5e', glow: 'rgba(244, 63, 94, 0.5)' };
+            case 'typing': return { eye: '#eab308', glow: 'rgba(234, 179, 8, 0.4)' };
+            default: return { eye: '#00f3ff', glow: 'rgba(0, 243, 255, 0.4)' };
         }
     };
 
@@ -130,7 +165,23 @@ export const CyberMascot: React.FC<CyberMascotProps> = ({ mood, className = '' }
             onPointerMove={(e) => {
                 const local = resolveLocalPointer(e.clientX, e.clientY);
                 if (local) {
-                    setMousePosition(local);
+                    mouseRef.current = local;
+                    // Directly update springs on hover for responsiveness
+                    const hoverBoost = 1.35;
+                    let targetEyeX = local.x * 6 * hoverBoost;
+                    let targetEyeY = local.y * 4 * hoverBoost;
+                    let targetRotate = local.x * -10 * hoverBoost;
+                    if (activeMood === 'angry') {
+                        targetEyeX += (Math.random() - 0.5) * 2;
+                        targetEyeY += (Math.random() - 0.5) * 2;
+                    } else if (activeMood === 'happy') {
+                        targetEyeY = -4;
+                    } else if (activeMood === 'typing') {
+                        targetEyeY = Math.min(targetEyeY, -1);
+                    }
+                    eyeX.set(targetEyeX);
+                    eyeY.set(targetEyeY);
+                    headRotate.set(targetRotate);
                 }
             }}
             onPointerLeave={() => {
@@ -256,7 +307,7 @@ export const CyberMascot: React.FC<CyberMascotProps> = ({ mood, className = '' }
                         className="absolute top-0 left-0 w-full h-[2px] bg-cyan-400/20 shadow-[0_0_10px_rgba(34,211,238,0.3)] pointer-events-none"
                     />
 
-                    {/* Jaw details details */}
+                    {/* Jaw details */}
                     <div className="absolute bottom-2 left-2 flex gap-1 flex-col">
                         <div className="w-3 h-0.5 bg-cyber-border/40 skew-x-12" />
                         <div className="w-2 h-0.5 bg-cyber-border/40 skew-x-12" />

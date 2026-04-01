@@ -1,34 +1,28 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import { Timer, Swords, Brain, Crown, Sparkles, Gauge, ArrowUpRight } from 'lucide-react';
 
-interface FeaturedGame {
+interface GameCardData {
   title: string;
   subtitle: string;
   duration: string;
   mode: string;
-  accent: string;
-  tone: string;
-  grid: string;
-  glow: string;
+  accentFrom: string;
+  accentTo: string;
   icon: React.ReactNode;
   badge: string;
   cta: string;
-  disabled?: boolean;
   onClick?: () => void;
 }
 
-const featuredGames: FeaturedGame[] = [
+const games: GameCardData[] = [
   {
     title: 'Retro Satranç',
     subtitle: 'Gerçek zamanlı satrançta hamleni temiz oyna, süreyi doğru yönet.',
     duration: '3+2 / 5+0',
     mode: 'Strateji',
-    accent: 'from-amber-400/90 to-orange-500/90',
-    tone: 'radial-gradient(circle at 12% 18%, rgba(251, 191, 36, 0.22), transparent 40%), radial-gradient(circle at 82% 8%, rgba(251, 146, 60, 0.22), transparent 36%), linear-gradient(152deg, rgba(20, 17, 41, 0.96), rgba(53, 32, 76, 0.88))',
-    grid: 'rgba(251, 191, 36, 0.09)',
-    glow: 'rgba(251, 191, 36, 0.25)',
-    icon: <Crown size={26} />,
+    accentFrom: 'from-amber-400',
+    accentTo: 'to-orange-500',
+    icon: <Crown size={22} />,
     badge: 'Strateji',
     cta: 'Tahtaya geç',
   },
@@ -37,11 +31,9 @@ const featuredGames: FeaturedGame[] = [
     subtitle: 'Rastgele sorularda hız ve doğrulukla rakibini geride bırak.',
     duration: '45-60 sn',
     mode: 'Quiz modu',
-    accent: 'from-emerald-400/90 to-teal-500/90',
-    tone: 'radial-gradient(circle at 14% 20%, rgba(74, 222, 128, 0.2), transparent 40%), radial-gradient(circle at 86% 12%, rgba(16, 185, 129, 0.22), transparent 36%), linear-gradient(152deg, rgba(8, 24, 44, 0.96), rgba(8, 40, 63, 0.88))',
-    grid: 'rgba(45, 212, 191, 0.08)',
-    glow: 'rgba(52, 211, 153, 0.24)',
-    icon: <Brain size={26} />,
+    accentFrom: 'from-emerald-400',
+    accentTo: 'to-teal-500',
+    icon: <Brain size={22} />,
     badge: 'Bilgi',
     cta: 'Sprinti aç',
   },
@@ -50,128 +42,89 @@ const featuredGames: FeaturedGame[] = [
     subtitle: 'Açı ve güç ayarla, rakip tankı vur. İlk 3 isabet alan kazanır.',
     duration: '60-90 sn',
     mode: 'Savaş',
-    accent: 'from-red-400/90 to-orange-500/90',
-    tone: 'radial-gradient(circle at 14% 20%, rgba(248, 113, 113, 0.2), transparent 40%), radial-gradient(circle at 86% 12%, rgba(251, 146, 60, 0.22), transparent 36%), linear-gradient(152deg, rgba(20, 12, 8, 0.96), rgba(53, 28, 12, 0.88))',
-    grid: 'rgba(248, 113, 113, 0.08)',
-    glow: 'rgba(251, 146, 60, 0.24)',
-    icon: <Swords size={26} />,
+    accentFrom: 'from-red-400',
+    accentTo: 'to-orange-500',
+    icon: <Swords size={22} />,
     badge: 'Savaş',
     cta: 'Düelloya başla',
   },
 ];
 
-const GameCard: React.FC<FeaturedGame> = ({ title, subtitle, duration, mode, accent, tone, grid, glow, icon, badge, cta, disabled, onClick }) => (
-  <motion.article
-    initial={{ opacity: 0, y: 14 }}
-    whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true, margin: '-60px' }}
-    transition={{ duration: 0.5 }}
-    whileHover={disabled ? {} : { y: -8, rotateX: 2, rotateY: -2 }}
+const GameCard: React.FC<GameCardData> = ({ title, subtitle, duration, mode, accentFrom, accentTo, icon, badge, cta, onClick }) => (
+  <article
     onClick={onClick}
-    style={!disabled ? { backgroundImage: tone, cursor: onClick ? 'pointer' : 'default' } : undefined}
-    className={`relative rounded-[1.6rem] border p-6 md:p-7 transition-all ${disabled
-        ? 'border-cyan-900/45 bg-[#090f22]/72'
-        : 'group border-cyan-300/25 hover:shadow-[0_22px_56px_rgba(0,0,0,0.5)]'
-      }`}
+    role={onClick ? 'button' : undefined}
+    tabIndex={onClick ? 0 : undefined}
+    onKeyDown={onClick ? (e) => e.key === 'Enter' && onClick() : undefined}
+    aria-label={`${title} - ${cta}`}
+    className="group relative rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-[#0a1228]/95 to-[#0d0a1a]/90 p-6 transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_16px_48px_rgba(0,0,0,0.4)] hover:border-cyan-300/40 cursor-pointer"
   >
-    {!disabled && (
-      <>
-        <div
-          className="pointer-events-none absolute inset-0 opacity-45"
-          style={{
-            backgroundImage: `linear-gradient(${grid} 1px, transparent 1px), linear-gradient(90deg, ${grid} 1px, transparent 1px)`,
-            backgroundSize: '24px 24px',
-          }}
-        />
-        <div
-          className="pointer-events-none absolute -right-16 bottom-0 h-44 w-44 rounded-full blur-3xl"
-          style={{ backgroundColor: glow }}
-        />
-      </>
-    )}
-
-    {!disabled && (
-      <motion.div
-        className="pointer-events-none absolute -left-24 top-0 h-24 w-52 -rotate-12 bg-cyan-300/20 blur-2xl"
-        animate={{ x: ['0%', '220%'] }}
-        transition={{ duration: 3.6, repeat: Infinity, ease: 'easeInOut' }}
-      />
-    )}
-
-    <div className={`relative z-10 inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${accent} text-white px-3 py-1.5 shadow-lg`}>
+    <div className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${accentFrom} ${accentTo} text-white px-3 py-1.5 text-xs font-bold tracking-wider uppercase`}>
       {icon}
-      <span className="font-pixel text-[11px] tracking-[0.16em] uppercase">{badge}</span>
+      <span>{badge}</span>
     </div>
 
-    <h3 className="relative z-10 mt-5 text-2xl font-display text-white tracking-wide">{title}</h3>
-    <p className="relative z-10 mt-3 text-[var(--rf-muted)] leading-relaxed">{subtitle}</p>
+    <h3 className="mt-4 text-2xl font-display text-white tracking-wide">{title}</h3>
+    <p className="mt-2 text-ink-300 leading-relaxed text-sm">{subtitle}</p>
 
-    <div className="relative z-10 mt-6 pt-5 border-t border-cyan-900/45 flex items-center justify-between gap-3">
-      <div className="space-y-1">
-        <p className="text-xs uppercase tracking-[0.14em] font-pixel text-cyan-300/80">Ortalama süre</p>
+    <div className="mt-5 pt-4 border-t border-cyan-900/40 flex items-center justify-between text-sm">
+      <div>
+        <p className="text-xs uppercase tracking-wider text-cyan-300/70">Süre</p>
         <p className="text-white font-semibold">{duration}</p>
       </div>
-      <div className="space-y-1 text-right">
-        <p className="text-xs uppercase tracking-[0.14em] font-pixel text-cyan-300/80">Mod</p>
+      <div className="text-right">
+        <p className="text-xs uppercase tracking-wider text-cyan-300/70">Mod</p>
         <p className="text-white font-semibold">{mode}</p>
       </div>
     </div>
 
-    <div className="relative z-10 mt-5 text-sm font-semibold text-cyan-200 flex items-center gap-2 group-hover:text-white transition-colors">
+    <div className="mt-4 text-sm font-semibold text-cyan-200 flex items-center gap-1.5 group-hover:text-white transition-colors">
       <span>{cta}</span>
-      <ArrowUpRight size={16} />
+      <ArrowUpRight size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
     </div>
-  </motion.article>
+  </article>
 );
 
 export const Games: React.FC<{ onPlayClick?: () => void }> = ({ onPlayClick }) => {
   return (
-    <section id="games" className="cd-section overflow-hidden">
+    <section id="games" className="cd-section overflow-hidden" aria-label="Oyunlar">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6 mb-10">
-          <div>
-            <span className="cd-kicker">HIZLI ARCADE RETRO OYUNLAR</span>
-            <h2
-              data-testid="games-main-heading"
-              className="mt-4 text-3xl md:text-5xl font-display text-white max-w-2xl leading-tight"
-            >
-              Bekleme dakikalarını oyuna çeviren kısa tur kütüphanesi.
-            </h2>
-          </div>
-          <div className="cd-panel px-5 py-4 max-w-sm border-cyan-400/25">
-            <p className="font-pixel text-[10px] uppercase tracking-[0.2em] text-cyan-300/80">Neden işe yarıyor?</p>
-            <p className="mt-2 text-[var(--rf-muted)]">
-              Turlar kısa, eşleşme hızlı; kullanıcı oyunda kalır ve puan döngüsü kesilmez.
-            </p>
-          </div>
+        <div className="text-center max-w-3xl mx-auto mb-10">
+          <span className="cd-kicker">HIZLI ARCADE RETRO OYUNLAR</span>
+          <h2
+            data-testid="games-main-heading"
+            className="mt-4 text-3xl md:text-5xl font-display text-white leading-tight"
+          >
+            Bekleme dakikalarını oyuna çeviren kısa tur kütüphanesi.
+          </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {featuredGames.map((game) => (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {games.map((game) => (
             <GameCard key={game.title} {...game} onClick={onPlayClick} />
           ))}
         </div>
 
-        <div className="mt-10 grid sm:grid-cols-3 gap-3">
-          <div className="cd-panel p-4 flex items-center gap-3 border-cyan-400/20">
-            <Timer className="text-cyan-300" size={20} />
+        <div className="mt-8 grid sm:grid-cols-3 gap-3">
+          <div className="glass rounded-xl p-4 flex items-center gap-3">
+            <Timer className="text-cyan-300 shrink-0" size={20} />
             <div>
-              <p className="font-semibold text-white">Beklerken Oyna</p>
-              <p className="text-sm text-[var(--rf-muted)]">Kafedeki bekleme süresini aktif oyuna dönüştür.</p>
+              <p className="font-semibold text-white text-sm">Beklerken Oyna</p>
+              <p className="text-xs text-ink-300">Kafedeki bekleme süresini aktif oyuna dönüştür.</p>
             </div>
           </div>
-          <div className="cd-panel p-4 flex items-center gap-3 border-cyan-400/20">
-            <Sparkles className="text-fuchsia-300" size={20} />
+          <div className="glass rounded-xl p-4 flex items-center gap-3">
+            <Sparkles className="text-fuchsia-300 shrink-0" size={20} />
             <div>
-              <p className="font-semibold text-white">Anlık Kazanç</p>
-              <p className="text-sm text-[var(--rf-muted)]">Her tur puanı cüzdana işlenir, ödül hedefine yaklaştırır.</p>
+              <p className="font-semibold text-white text-sm">Anlık Kazanç</p>
+              <p className="text-xs text-ink-300">Her tur puanı cüzdana işlenir, ödül hedefine yaklaştırır.</p>
             </div>
           </div>
-          <div className="cd-panel p-4 flex items-center gap-3 border-cyan-400/20">
-            <Gauge className="text-amber-300" size={20} />
+          <div className="glass rounded-xl p-4 flex items-center gap-3">
+            <Gauge className="text-amber-300 shrink-0" size={20} />
             <div>
-              <p className="font-semibold text-white">Kafe Bağı</p>
-              <p className="text-sm text-[var(--rf-muted)]">Oyun ve ödül döngüsüyle tekrar gelme motivasyonu artar.</p>
+              <p className="font-semibold text-white text-sm">Kafe Bağı</p>
+              <p className="text-xs text-ink-300">Oyun ve ödül döngüsüyle tekrar gelme motivasyonu artar.</p>
             </div>
           </div>
         </div>

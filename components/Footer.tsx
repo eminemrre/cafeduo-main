@@ -7,16 +7,15 @@ export const Footer: React.FC = () => {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="relative mt-8 border-t border-cyan-400/24 bg-[linear-gradient(180deg,#040b1a,#040915)]" role="contentinfo">
-      <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-cyan-500/12 to-transparent pointer-events-none" />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative z-10">
+    <footer className="relative mt-8 border-t border-cyan-400/20 bg-gradient-to-b from-[#050a19] to-[#040915]" role="contentinfo">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid md:grid-cols-3 gap-7 items-start">
           <div>
             <span className="font-display text-3xl text-white block">CafeDuo</span>
-            <p className="mt-2 text-sm text-[var(--rf-muted)]">
+            <p className="mt-2 text-sm text-ink-300">
               Kafede bekleyen kullanıcıları eşleştirip oyun ve ödül döngüsüne bağlayan sosyal deneyim altyapısı.
             </p>
-            <p className="mt-3 font-pixel text-[10px] tracking-[0.2em] uppercase text-cyan-300/75">
+            <p className="mt-3 text-[10px] tracking-wider uppercase text-cyan-300/70">
               © {year} tüm hakları saklıdır
             </p>
             <span
@@ -29,7 +28,7 @@ export const Footer: React.FC = () => {
           </div>
 
           <div className="space-y-2">
-            <p className="font-pixel text-[10px] tracking-[0.2em] uppercase text-cyan-300/75">Yasal</p>
+            <p className="text-[10px] tracking-wider uppercase text-cyan-300/70">Yasal</p>
             <Link
               to="/gizlilik"
               className="inline-flex items-center gap-2 text-cyan-100 hover:text-cyan-300 transition-colors"
@@ -41,14 +40,14 @@ export const Footer: React.FC = () => {
           </div>
 
           <div>
-            <p className="font-pixel text-[10px] tracking-[0.2em] uppercase text-cyan-300/75 mb-3">İletişim</p>
+            <p className="text-[10px] tracking-wider uppercase text-cyan-300/70 mb-3">İletişim</p>
             <div className="flex items-center gap-3">
               <a
                 href="https://instagram.com/cafeduotr"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
-                className="w-10 h-10 rounded-full border border-cyan-400/35 bg-[#0a1834]/85 flex items-center justify-center text-cyan-100 hover:text-cyan-300 hover:border-cyan-300/58 transition-colors"
+                className="w-10 h-10 rounded-full border border-cyan-400/30 bg-[#0a1834]/70 flex items-center justify-center text-cyan-100 hover:text-cyan-300 hover:border-cyan-300/50 transition-all"
               >
                 <Instagram size={18} />
               </a>
@@ -57,14 +56,14 @@ export const Footer: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Twitter"
-                className="w-10 h-10 rounded-full border border-cyan-400/35 bg-[#0a1834]/85 flex items-center justify-center text-cyan-100 hover:text-cyan-300 hover:border-cyan-300/58 transition-colors"
+                className="w-10 h-10 rounded-full border border-cyan-400/30 bg-[#0a1834]/70 flex items-center justify-center text-cyan-100 hover:text-cyan-300 hover:border-cyan-300/50 transition-all"
               >
                 <Twitter size={18} />
               </a>
               <a
                 href="mailto:cafeduotr@gmail.com"
                 aria-label="E-posta"
-                className="w-10 h-10 rounded-full border border-cyan-400/35 bg-[#0a1834]/85 flex items-center justify-center text-cyan-100 hover:text-cyan-300 hover:border-cyan-300/58 transition-colors"
+                className="w-10 h-10 rounded-full border border-cyan-400/30 bg-[#0a1834]/70 flex items-center justify-center text-cyan-100 hover:text-cyan-300 hover:border-cyan-300/50 transition-all"
               >
                 <Mail size={18} />
               </a>

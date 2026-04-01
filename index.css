@@ -61,35 +61,39 @@ body {
   overflow-x: hidden;
 }
 
-body::after {
-  content: "";
-  position: fixed;
-  inset: -50%;
-  width: 200%;
-  height: 200%;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  opacity: 0.05;
-  z-index: 9999;
-  animation: cb-noise 2s steps(2) infinite;
+/* ── Utility: Glassmorphism ── */
+.glass {
+  background: rgba(8, 18, 40, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 
-@media (prefers-reduced-motion: reduce) {
-  body::after {
-    animation: none;
-  }
+/* ── Utility: Neon glow ── */
+.neon-glow {
+  box-shadow: 0 0 0 1px rgba(0, 243, 255, 0.3), 0 0 20px rgba(0, 243, 255, 0.15);
 }
 
-@keyframes cb-noise {
-  0% {
-    transform: translate(0, 0);
-  }
-
-  100% {
-    transform: translate(-2%, -2%);
-  }
+.neon-glow-pink {
+  box-shadow: 0 0 0 1px rgba(255, 0, 234, 0.3), 0 0 20px rgba(255, 0, 234, 0.15);
 }
 
+/* ── Utility: Card hover ── */
+.card-hover {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(0, 243, 255, 0.2);
+}
+
+/* ── Utility: Focus ring ── */
+.focus-ring:focus-visible {
+  outline: 2px solid rgba(0, 243, 255, 0.6);
+  outline-offset: 2px;
+}
+
+/* ── Noise background (kept for specific elements, not body) ── */
 .noise-bg {
   position: relative;
   isolation: isolate;
@@ -117,6 +121,7 @@ body::after {
   z-index: 1;
 }
 
+/* ── Glitch text effects ── */
 .glitch-text {
   position: relative;
   display: inline-block;
@@ -168,6 +173,7 @@ body::after {
   content: none !important;
 }
 
+/* ── Typography ── */
 .font-display-tr {
   font-family: "Noto Sans Display", "Oswald", "Chakra Petch", "Teko", sans-serif;
   font-weight: 700;
@@ -182,7 +188,6 @@ body::after {
   text-shadow: none !important;
 }
 
-/* Cyber-Brutalism Hero Title Styles */
 .hero-title-wrapper {
   font-family: "Teko", "Chakra Petch", sans-serif;
   font-variant-ligatures: none;
@@ -198,6 +203,7 @@ body::after {
   text-shadow: 2px 2px 0 rgba(0, 243, 255, 0.15), -1px -1px 0 rgba(255, 0, 234, 0.1);
 }
 
+/* ── CSS Animations ── */
 @keyframes slide-up {
   from {
     transform: translateY(8px);
@@ -209,11 +215,55 @@ body::after {
   }
 }
 
+@keyframes fade-in-up {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes shimmer {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
 .animate-slide-up {
   animation: slide-up 220ms ease-out both;
 }
 
+.animate-fade-in-up {
+  animation: fade-in-up 600ms ease-out both;
+}
 
+.animate-fade-in-up-slow {
+  animation: fade-in-up 800ms ease-out 200ms both;
+}
+
+.animate-fade-in {
+  animation: fade-in 300ms ease-out both;
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s linear infinite;
+}
+
+/* ── Stagger utilities ── */
+.stagger-1 { animation-delay: 100ms; }
+.stagger-2 { animation-delay: 200ms; }
+.stagger-3 { animation-delay: 300ms; }
+.stagger-4 { animation-delay: 400ms; }
+.stagger-5 { animation-delay: 500ms; }
+
+/* ── Card styles ── */
 .rf-screen-card {
   border: 2px solid var(--rf-line-cyan);
   border-right-width: 4px;
@@ -232,6 +282,7 @@ body::after {
   box-shadow: 0 0 0 1px rgba(0, 243, 255, 0.12), 0 16px 34px rgba(0, 0, 0, 0.42);
 }
 
+/* ── Terminal strip ── */
 .rf-terminal-strip {
   display: flex;
   align-items: center;
@@ -264,6 +315,7 @@ body::after {
   text-transform: uppercase;
 }
 
+/* ── Admin table ── */
 .rf-admin-table {
   width: 100%;
   border-collapse: collapse;
@@ -295,6 +347,7 @@ body::after {
   background: rgba(14, 26, 53, 0.46);
 }
 
+/* ── Form inputs ── */
 .rf-page-shell input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]),
 .rf-page-shell select,
 .rf-page-shell textarea {
@@ -318,29 +371,7 @@ body::after {
   letter-spacing: 0.06em;
 }
 
-/* Base stagger utilities for brutalist reveal */
-.stagger-1 {
-  animation-delay: 100ms;
-}
-
-.stagger-2 {
-  animation-delay: 200ms;
-}
-
-.stagger-3 {
-  animation-delay: 300ms;
-}
-
-.stagger-4 {
-  animation-delay: 400ms;
-}
-
-.stagger-5 {
-  animation-delay: 500ms;
-}
-
-
-/* Custom Scrollbar */
+/* ── Scrollbar ── */
 ::-webkit-scrollbar {
   width: 10px;
 }
@@ -377,6 +408,7 @@ body::after {
   border-radius: 999px;
 }
 
+/* ── Section / Panel ── */
 .rf-section,
 .cd-section {
   padding: 3.75rem 0;
@@ -397,6 +429,7 @@ body::after {
     var(--rf-shadow);
 }
 
+/* ── App shells ── */
 .rf-app-shell {
   min-height: 100vh;
   position: relative;
@@ -419,6 +452,7 @@ body::after {
     linear-gradient(180deg, rgba(4, 10, 21, 0.98), rgba(3, 8, 18, 1));
 }
 
+/* ── Card variants ── */
 .rf-card-flat {
   background: linear-gradient(160deg, rgba(7, 16, 35, 0.94), rgba(7, 15, 32, 0.82));
   border: 1px solid rgba(131, 156, 193, 0.24);
@@ -432,6 +466,7 @@ body::after {
   border-radius: 0.9rem;
 }
 
+/* ── Badge ── */
 .rf-badge {
   display: inline-flex;
   align-items: center;
@@ -445,6 +480,7 @@ body::after {
   padding: 0.28rem 0.7rem;
 }
 
+/* ── Tabs ── */
 .rf-tab-button {
   border-radius: 0.7rem;
   border: 1px solid transparent;
@@ -466,6 +502,7 @@ body::after {
   box-shadow: inset 0 0 0 1px rgba(12, 214, 255, 0.25), 0 8px 18px rgba(0, 0, 0, 0.28);
 }
 
+/* ── Kicker ── */
 .rf-kicker,
 .cd-kicker {
   display: inline-flex;
@@ -481,6 +518,7 @@ body::after {
   padding: 0.45rem 0.9rem;
 }
 
+/* ── Version pill ── */
 .rf-version-pill {
   display: inline-flex;
   align-items: center;
@@ -497,6 +535,7 @@ body::after {
   line-height: 1;
 }
 
+/* ── Input ── */
 .rf-input {
   width: 100%;
   min-height: 2.85rem;
@@ -548,6 +587,7 @@ body::after {
   appearance: textfield;
 }
 
+/* ── Google login ── */
 .google-login-shell {
   display: flex;
   align-items: center;
@@ -573,10 +613,12 @@ body::after {
   display: none !important;
 }
 
+/* ── Elevated ── */
 .rf-elevated {
   box-shadow: 0 18px 44px rgba(2, 9, 24, 0.54), 0 0 0 1px rgba(10, 215, 255, 0.12);
 }
 
+/* ── Modal scroll ── */
 .rf-modal-scroll {
   scrollbar-width: thin;
   scrollbar-color: rgba(10, 215, 255, 0.5) rgba(8, 19, 43, 0.8);
@@ -595,6 +637,7 @@ body::after {
   border-radius: 999px;
 }
 
+/* ── Grid backgrounds ── */
 .rf-grid,
 .cd-dot-grid {
   background-image:
@@ -612,108 +655,46 @@ body::after {
   display: none;
 }
 
+/* ── Keyframe animations ── */
 @keyframes pulse-soft {
-
-  0%,
-  100% {
-    opacity: 0.58;
-  }
-
-  50% {
-    opacity: 1;
-  }
+  0%, 100% { opacity: 0.58; }
+  50% { opacity: 1; }
 }
 
 @keyframes grid-drift {
-  from {
-    transform: translate3d(0, 0, 0);
-  }
-
-  to {
-    transform: translate3d(0, 44px, 0);
-  }
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(0, 44px, 0); }
 }
 
 @keyframes float-slow {
-
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-9px);
-  }
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-9px); }
 }
 
 @keyframes neon-pulse {
-
-  0%,
-  100% {
-    box-shadow: 0 0 0 1px rgba(0, 217, 255, 0.25), 0 0 26px rgba(0, 217, 255, 0.25);
-  }
-
-  50% {
-    box-shadow: 0 0 0 1px rgba(0, 217, 255, 0.55), 0 0 36px rgba(0, 217, 255, 0.55);
-  }
+  0%, 100% { box-shadow: 0 0 0 1px rgba(0, 217, 255, 0.25), 0 0 26px rgba(0, 217, 255, 0.25); }
+  50% { box-shadow: 0 0 0 1px rgba(0, 217, 255, 0.55), 0 0 36px rgba(0, 217, 255, 0.55); }
 }
 
 @keyframes aurora-pan {
-  0% {
-    transform: translate3d(-8%, 0, 0) scale(1);
-  }
-
-  50% {
-    transform: translate3d(8%, -2%, 0) scale(1.06);
-  }
-
-  100% {
-    transform: translate3d(-8%, 0, 0) scale(1);
-  }
+  0% { transform: translate3d(-8%, 0, 0) scale(1); }
+  50% { transform: translate3d(8%, -2%, 0) scale(1.06); }
+  100% { transform: translate3d(-8%, 0, 0) scale(1); }
 }
 
 @keyframes horizon-scan {
-  0% {
-    transform: translateX(-120%);
-    opacity: 0;
-  }
-
-  20% {
-    opacity: 0.75;
-  }
-
-  80% {
-    opacity: 0.75;
-  }
-
-  100% {
-    transform: translateX(120%);
-    opacity: 0;
-  }
+  0% { transform: translateX(-120%); opacity: 0; }
+  20% { opacity: 0.75; }
+  80% { opacity: 0.75; }
+  100% { transform: translateX(120%); opacity: 0; }
 }
 
 @keyframes shake {
-
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-
-  20% {
-    transform: translateX(-4px);
-  }
-
-  40% {
-    transform: translateX(4px);
-  }
-
-  60% {
-    transform: translateX(-3px);
-  }
-
-  80% {
-    transform: translateX(3px);
-  }
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
 }
 
 .animate-pulse-slow {
@@ -750,8 +731,8 @@ body::after {
   animation: horizon-scan 5.8s linear infinite;
 }
 
+/* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
-
   *,
   *::before,
   *::after {
@@ -762,8 +743,8 @@ body::after {
   }
 }
 
+/* ── Responsive section padding ── */
 @media (min-width: 768px) {
-
   .rf-section,
   .cd-section {
     padding: 5.5rem 0;
@@ -771,14 +752,13 @@ body::after {
 }
 
 @media (max-width: 640px) {
-
   .rf-section,
   .cd-section {
     padding: 3.2rem 0;
   }
 }
 
-/* Game Animation Keyframes - Active Games Only */
+/* ── Game animation keyframes ── */
 @keyframes flash-green {
   0%, 100% { background: transparent; }
   50% { background: rgba(52,211,153,0.3); }
@@ -806,7 +786,6 @@ body::after {
   100% { background-color: rgba(251,191,36,0.2); }
 }
 
-/* Animation utility classes - Active Games Only */
 .animate-flash-green {
   animation: flash-green 0.6s ease-in-out;
 }

@@ -302,7 +302,22 @@ logger.info('🔐 Security defaults:', {
 
 
 // Security Middleware
-app.use(helmet()); // Secure HTTP headers
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Vite build için gerekli
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "blob:", "https:"],
+      connectSrc: ["'self'", "wss:", "ws:"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  },
+  crossOriginEmbedderPolicy: false, // Socket.IO uyumluluğu
+})); // Secure HTTP headers with CSP
 
 // Sentry Request and Tracing Handlers (must be before other middleware)
 // In Sentry v10+, request/tracing is automatic via instrumentation

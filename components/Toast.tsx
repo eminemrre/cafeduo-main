@@ -12,48 +12,33 @@ interface ToastProps {
   duration?: number;
 }
 
-export const Toast: React.FC<ToastProps> = ({ 
-  id,
-  message, 
-  type = 'info', 
-  onClose, 
-  duration = 5000 
-}) => {
+const iconMap: Record<ToastType, React.ReactNode> = {
+  success: <CheckCircle className="text-green-500 shrink-0" size={20} />,
+  error: <AlertCircle className="text-red-500 shrink-0" size={20} />,
+  loading: <Loader2 className="text-blue-500 animate-spin shrink-0" size={20} />,
+  info: <Info className="text-blue-500 shrink-0" size={20} />,
+};
+
+const borderColors: Record<ToastType, string> = {
+  success: 'border-green-500',
+  error: 'border-red-500',
+  loading: 'border-blue-500',
+  info: 'border-blue-500',
+};
+
+const bgColors: Record<ToastType, string> = {
+  success: 'bg-green-500/5',
+  error: 'bg-red-500/5',
+  loading: 'bg-blue-500/5',
+  info: 'bg-blue-500/5',
+};
+
+export const Toast: React.FC<ToastProps> = ({ id, message, type = 'info', onClose, duration = 5000 }) => {
   useEffect(() => {
-    if (type === 'loading') return; // Loading toast'u otomatik kapanmaz
-    
-    const timer = setTimeout(() => {
-      onClose();
-    }, duration);
+    if (type === 'loading') return;
+    const timer = setTimeout(onClose, duration);
     return () => clearTimeout(timer);
   }, [duration, onClose, type]);
-
-  const getIcon = () => {
-    switch (type) {
-      case 'success': return <CheckCircle className="text-green-500" size={20} />;
-      case 'error': return <AlertCircle className="text-red-500" size={20} />;
-      case 'loading': return <Loader2 className="text-blue-500 animate-spin" size={20} />;
-      default: return <Info className="text-blue-500" size={20} />;
-    }
-  };
-
-  const getBorderColor = () => {
-    switch (type) {
-      case 'success': return 'border-green-500';
-      case 'error': return 'border-red-500';
-      case 'loading': return 'border-blue-500';
-      default: return 'border-blue-500';
-    }
-  };
-
-  const getBgColor = () => {
-    switch (type) {
-      case 'success': return 'bg-green-500/5';
-      case 'error': return 'bg-red-500/5';
-      case 'loading': return 'bg-blue-500/5';
-      default: return 'bg-blue-500/5';
-    }
-  };
 
   return (
     <motion.div
@@ -63,18 +48,17 @@ export const Toast: React.FC<ToastProps> = ({
       animate={{ x: 0, opacity: 1, scale: 1 }}
       exit={{ x: 100, opacity: 0, scale: 0.8 }}
       transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-      className={`rf-screen-card-muted noise-bg flex items-center gap-3 ${getBgColor()} border-l-4 ${getBorderColor()} text-white px-4 py-3 shadow-2xl min-w-[300px] max-w-[400px]`}
+      className={`rf-screen-card-muted flex items-center gap-3 ${bgColors[type]} border-l-4 ${borderColors[type]} text-white px-4 py-3 shadow-2xl min-w-[300px] max-w-[400px] rounded-lg`}
     >
-      {getIcon()}
+      {iconMap[type]}
       <p className="font-medium text-sm flex-1">{message}</p>
-      <motion.button 
-        onClick={onClose} 
-        className="text-[var(--rf-muted)] hover:text-white p-1 border border-transparent hover:border-cyan-500/35 hover:bg-cyan-900/20 transition-colors"
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.9 }}
+      <button
+        onClick={onClose}
+        aria-label="Bildirimi kapat"
+        className="text-[var(--rf-muted)] hover:text-white p-1 border border-transparent hover:border-cyan-500/35 hover:bg-cyan-900/20 rounded transition-colors"
       >
         <X size={16} />
-      </motion.button>
+      </button>
     </motion.div>
   );
 };

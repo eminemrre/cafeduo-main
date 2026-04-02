@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Mail, Lock, ArrowRight, AlertTriangle, Briefcase, Check, Eye, EyeOff, ChevronDown } from 'lucide-react';
-import { GoogleLogin, CredentialResponse } from '@react-oauth/google';
 import { RetroButton } from './RetroButton';
 import { CyberMascot, MascotMood } from './CyberMascot';
 import { User as UserType } from '../types';
@@ -229,30 +228,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setHasSubmitted(false);
   };
 
-  const handleGoogleLogin = async (credentialResponse: CredentialResponse) => {
-    const credential = String(credentialResponse.credential || '');
-    if (!credential) {
-      const message = 'Google kimlik doğrulaması alınamadı.';
-      setError(message);
-      toast.error(message);
-      return;
-    }
-
-    setError('');
-    setForgotMessage('');
-    setIsLoading(true);
-    try {
-      const user = await api.auth.googleLogin(credential);
-      onLoginSuccess(user);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Google ile giriş başarısız.';
-      setError(message);
-      toast.error(message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const inputBaseClass =
     'w-full h-12 bg-black/40 border-2 text-cyan-50 font-body text-base group-[.is-error]:text-red-100 outline-none transition-all duration-200 placeholder:text-cyan-800/60 pl-11 pr-4 skew-x-[-2deg] cursor-text';
   const inputBorderClass =
@@ -261,10 +236,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     'border-red-500/50 focus:border-red-400 focus:shadow-[4px_4px_0_rgba(239,68,68,0.3)] focus:skew-x-0 focus:-translate-y-0.5 focus:-translate-x-0.5';
   const iconBaseClass =
     'absolute left-4 top-1/2 -translate-y-1/2 text-cyan-700 pointer-events-none transition-colors group-focus-within:text-cyan-400 group-[.is-error]:text-red-400 z-10 skew-x-[2deg] group-focus-within:skew-x-0';
-  const googleClientId =
-    typeof window !== 'undefined'
-      ? String((window as Window & { __CAFEDUO_GOOGLE_CLIENT_ID__?: string }).__CAFEDUO_GOOGLE_CLIENT_ID__ || '').trim()
-      : '';
 
   const mascotMood: MascotMood = ((error || Object.keys(fieldErrors).length > 0) && hasSubmitted)
     ? 'angry'
@@ -509,32 +480,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   )}
                 </RetroButton>
               </form>
-
-              {mode === 'login' && !isForgotPasswordMode && googleClientId && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 text-[var(--rf-muted)] text-xs uppercase tracking-[0.12em]">
-                    <span className="h-px flex-1 bg-cyan-900/70" />
-                    veya
-                    <span className="h-px flex-1 bg-cyan-900/70" />
-                  </div>
-                  <div className="flex justify-center">
-                    <div className="google-login-shell w-full max-w-[320px] overflow-hidden rounded-full" data-testid="auth-google-login-shell">
-                      <GoogleLogin
-                        key={googleClientId}
-                        onSuccess={handleGoogleLogin}
-                        onError={() => {
-                          setError('Google ile giriş işlemi başlatılamadı.');
-                          toast.error('Google ile giriş işlemi başlatılamadı.');
-                        }}
-                        theme="filled_black"
-                        shape="pill"
-                        text="continue_with"
-                        width="300"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
 
               <div className="space-y-2">
                 {mode === 'login' && !isForgotPasswordMode && (

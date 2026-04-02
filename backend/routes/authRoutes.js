@@ -8,7 +8,6 @@ const { authenticateToken } = require('../middleware/auth'); // Will create this
 const AUTH_WINDOW_MS = Number(process.env.AUTH_RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
 const AUTH_LOGIN_MAX_ATTEMPTS = Number(process.env.AUTH_LOGIN_RATE_LIMIT_MAX_REQUESTS || 20);
 const AUTH_REGISTER_MAX_ATTEMPTS = Number(process.env.AUTH_REGISTER_RATE_LIMIT_MAX_REQUESTS || 10);
-const AUTH_GOOGLE_MAX_ATTEMPTS = Number(process.env.AUTH_GOOGLE_RATE_LIMIT_MAX_REQUESTS || 30);
 const AUTH_FORGOT_PASSWORD_MAX_ATTEMPTS = Number(process.env.AUTH_FORGOT_PASSWORD_RATE_LIMIT_MAX_REQUESTS || 6);
 const AUTH_RESET_PASSWORD_MAX_ATTEMPTS = Number(process.env.AUTH_RESET_PASSWORD_RATE_LIMIT_MAX_REQUESTS || 12);
 
@@ -48,13 +47,6 @@ const registerLimiter = buildAuthLimiter(
   'AUTH_REGISTER_RATE_LIMITED'
 );
 
-const googleLimiter = buildAuthLimiter(
-  'auth:google',
-  AUTH_GOOGLE_MAX_ATTEMPTS,
-  'Çok fazla Google giriş denemesi. Lütfen biraz bekleyip tekrar deneyin.',
-  'AUTH_GOOGLE_RATE_LIMITED'
-);
-
 const forgotPasswordLimiter = buildAuthLimiter(
   'auth:forgot-password',
   AUTH_FORGOT_PASSWORD_MAX_ATTEMPTS,
@@ -72,7 +64,6 @@ const resetPasswordLimiter = buildAuthLimiter(
 router.post('/register', registerLimiter, authController.register);
 router.post('/login', loginLimiter, authController.login);
 router.post('/logout', authenticateToken, authController.logout);
-router.post('/google', googleLimiter, authController.googleLogin);
 router.post('/forgot-password', forgotPasswordLimiter, authController.forgotPassword);
 router.post('/reset-password', resetPasswordLimiter, authController.resetPassword);
 router.get(

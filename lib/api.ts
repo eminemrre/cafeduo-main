@@ -289,14 +289,6 @@ export const api = {
       return data as User;
     },
 
-    googleLogin: async (token: string): Promise<User> => {
-      const data = await fetchAPI<AuthLoginResponse>('/auth/google', {
-        method: 'POST',
-        body: JSON.stringify({ token }),
-      });
-      return (data.user || data) as User;
-    },
-
     forgotPassword: async (email: string): Promise<{ success: boolean; message: string }> => {
       return await fetchAPI('/auth/forgot-password', {
         method: 'POST',

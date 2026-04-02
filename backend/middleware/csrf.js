@@ -35,7 +35,6 @@ const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const EXEMPT_PATHS = new Set([
   '/api/auth/login',
   '/api/auth/register',
-  '/api/auth/google-login',
   '/api/auth/forgot-password',
   '/api/auth/reset-password',
   '/api/meta/version',

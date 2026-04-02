@@ -66,12 +66,6 @@ describe('CSRF Middleware', () => {
       expect(next).toHaveBeenCalled();
     });
 
-    it('should bypass CSRF check for google-login endpoint', () => {
-      const { req, res, next } = createMocks({ method: 'POST', path: '/api/auth/google-login' });
-      csrfMiddleware(req, res, next);
-      expect(next).toHaveBeenCalled();
-    });
-
     it('should bypass CSRF check for forgot-password endpoint', () => {
       const { req, res, next } = createMocks({ method: 'POST', path: '/api/auth/forgot-password' });
       csrfMiddleware(req, res, next);

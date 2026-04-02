@@ -51,8 +51,11 @@
     "migrate:baseline:apply": "node scripts/migrations/legacy-baseline.js apply"
   },
   "dependencies": {
+    "@fontsource/chakra-petch": "^5.2.7",
+    "@fontsource/noto-sans": "^5.2.10",
+    "@fontsource/oswald": "^5.2.8",
+    "@fontsource/teko": "^5.2.7",
     "@openrouter/sdk": "^0.5.1",
-    "@react-oauth/google": "^0.12.2",
     "@sentry/node": "^10.42.0",
     "@sentry/profiling-node": "^10.42.0",
     "@sentry/react": "^10.42.0",
@@ -67,7 +70,6 @@
     "express": "^4.18.2",
     "express-rate-limit": "^8.3.0",
     "framer-motion": "^12.31.0",
-    "google-auth-library": "^10.6.1",
     "helmet": "^8.1.0",
     "ioredis": "^5.9.2",
     "js-yaml": "^4.1.1",

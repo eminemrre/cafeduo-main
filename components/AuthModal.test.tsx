@@ -2,14 +2,6 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { AuthModal } from './AuthModal';
 
-jest.mock('@react-oauth/google', () => ({
-  GoogleLogin: ({ onSuccess }: { onSuccess: (payload: { credential: string }) => void }) => (
-    <button type="button" onClick={() => onSuccess({ credential: 'mock-google-token' })}>
-      Google Login
-    </button>
-  ),
-}));
-
 const mockToastSuccess = jest.fn();
 const mockToastError = jest.fn();
 const mockToastWarning = jest.fn();
@@ -30,7 +22,6 @@ jest.mock('../lib/api', () => ({
       login: jest.fn(),
       register: jest.fn(),
       forgotPassword: jest.fn(),
-      googleLogin: jest.fn(),
     }
   }
 }));

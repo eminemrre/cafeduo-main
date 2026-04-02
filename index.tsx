@@ -4,7 +4,6 @@ import { BrowserRouter } from 'react-router-dom';
 import * as Sentry from '@sentry/react';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { GoogleOAuthProvider } from '@react-oauth/google';
 import './index.css';
 
 // Initialize Sentry for frontend error tracking
@@ -44,24 +43,13 @@ if (!rootElement) {
 }
 
 const root = ReactDOM.createRoot(rootElement);
-const googleClientId = String(import.meta.env.VITE_GOOGLE_CLIENT_ID || '').trim();
-if (typeof window !== 'undefined') {
-  (window as Window & { __CAFEDUO_GOOGLE_CLIENT_ID__?: string }).__CAFEDUO_GOOGLE_CLIENT_ID__ = googleClientId;
-}
-const appTree = (
-  <BrowserRouter>
-    <App />
-  </BrowserRouter>
-);
 
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
-      {googleClientId ? (
-        <GoogleOAuthProvider clientId={googleClientId}>{appTree}</GoogleOAuthProvider>
-      ) : (
-        appTree
-      )}
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
     </ErrorBoundary>
   </React.StrictMode>
 );

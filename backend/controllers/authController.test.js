@@ -8,13 +8,6 @@ jest.mock('jsonwebtoken', () => ({
   decode: jest.fn(() => ({ id: 1, exp: Math.floor(Date.now() / 1000) + 300 })),
 }));
 
-const mockVerifyIdToken = jest.fn();
-jest.mock('google-auth-library', () => ({
-  OAuth2Client: jest.fn().mockImplementation(() => ({
-    verifyIdToken: mockVerifyIdToken,
-  })),
-}));
-
 jest.mock('../db', () => ({
   pool: {
     query: jest.fn(),
@@ -40,7 +33,6 @@ const { pool, isDbConnected } = require('../db');
 const logger = require('../utils/logger');
 process.env.JWT_SECRET = 'test-secret';
 process.env.BOOTSTRAP_ADMIN_EMAILS = 'emin3619@gmail.com';
-process.env.GOOGLE_CLIENT_ID = 'google-client-id-test';
 const authController = require('./authController');
 
 const buildRes = () => {
@@ -118,48 +110,6 @@ describe('authController security-critical auth flows', () => {
       true,
     ]);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ role: 'admin' }));
-  });
-
-  it('rejects login when recaptcha verification fails', async () => {
-    process.env.RECAPTCHA_SECRET_KEY = 'captcha-secret';
-    global.fetch.mockResolvedValue({
-      json: async () => ({ success: false }),
-    });
-
-    const req = {
-      body: {
-        email: 'user@example.com',
-        password: 'Password1!',
-        captchaToken: 'captcha-token',
-      },
-    };
-    const res = buildRes();
-
-    await authController.login(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Robot doğrulaması başarısız.' });
-    expect(pool.query).not.toHaveBeenCalled();
-  });
-
-  it('fails closed when recaptcha service errors out while secret is configured', async () => {
-    process.env.RECAPTCHA_SECRET_KEY = 'captcha-secret';
-    global.fetch.mockRejectedValue(new Error('network down'));
-
-    const req = {
-      body: {
-        email: 'user@example.com',
-        password: 'Password1!',
-        captchaToken: 'captcha-token',
-      },
-    };
-    const res = buildRes();
-
-    await authController.login(req, res);
-
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Robot doğrulaması başarısız.' });
-    expect(pool.query).not.toHaveBeenCalled();
   });
 
   it('rejects register when username format is invalid', async () => {

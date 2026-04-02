@@ -208,35 +208,6 @@ paths:
         404:
           description: Kullanıcı bulunamadı
 
-  /api/auth/google:
-    post:
-      tags:
-        - Authentication
-      summary: Google ile giriş
-      description: Google OAuth token'ı ile giriş yapar
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - token
-              properties:
-                token:
-                  type: string
-                  description: Google ID token
-      responses:
-        200:
-          description: Giriş başarılı
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-        401:
-          description: Google doğrulaması başarısız
-
   # ==========================================
   # USERS
   # ==========================================

@@ -188,28 +188,6 @@ describe('API Layer', () => {
       // Note: Error case testing skipped due to JSDOM fetch mock limitations
     });
 
-    describe('googleLogin', () => {
-      it('posts google credential token and stores auth token', async () => {
-        const mockUser = { id: 7, email: 'g@example.com', username: 'google-user' };
-        (fetch as jest.Mock).mockResolvedValueOnce({
-          ok: true,
-          json: async () => ({ user: mockUser, token: 'google-jwt-token' }),
-        });
-
-        const result = await api.auth.googleLogin('google-credential-token');
-
-        expect(fetch).toHaveBeenCalledWith(
-          '/api/auth/google',
-          expect.objectContaining({
-            method: 'POST',
-            body: JSON.stringify({ token: 'google-credential-token' }),
-            credentials: 'include',
-          })
-        );
-        expect(result).toEqual(mockUser);
-      });
-    });
-
     describe('forgotPassword', () => {
       it('requests reset link without exposing account existence', async () => {
         const payload = { success: true, message: 'Reset mail gönderildi.' };

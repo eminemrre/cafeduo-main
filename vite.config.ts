@@ -60,15 +60,6 @@ export default defineConfig(({ mode }) => {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
           runtimeCaching: [
             {
-              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'google-fonts-cache',
-                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-                cacheableResponse: { statuses: [0, 200] },
-              },
-            },
-            {
               urlPattern: /\/api\/health$/i,
               handler: 'NetworkFirst',
               options: {
@@ -82,8 +73,6 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     define: {
-      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
       'import.meta.env.VITE_APP_VERSION': JSON.stringify(buildVersion),
       'import.meta.env.VITE_BUILD_TIME': JSON.stringify(buildTime),
     },

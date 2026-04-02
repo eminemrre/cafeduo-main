@@ -1,7 +1,6 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { OAuth2Client } = require('google-auth-library');
 const { pool, isDbConnected } = require('../db');
 const logger = require('../utils/logger');
 const memoryState = require('../store/memoryState');
@@ -11,7 +10,6 @@ const { getRequiredJwtSecret } = require('../utils/securityConfig');
 const { setCsrfCookie, clearCsrfCookie } = require('../middleware/csrf');
 
 const JWT_SECRET = getRequiredJwtSecret();
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID;
 const PASSWORD_RESET_TOKEN_TTL_MINUTES = Number(process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES || 30);
 const PASSWORD_RESET_TOKEN_TTL_MS = Math.max(5, PASSWORD_RESET_TOKEN_TTL_MINUTES) * 60 * 1000;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -30,7 +28,6 @@ const USER_SELECT_FIELDS = `
     table_number,
     avatar_url
 `;
-const googleClient = GOOGLE_CLIENT_ID ? new OAuth2Client(GOOGLE_CLIENT_ID) : null;
 const memoryPasswordResetTokens = [];
 
 const hashResetToken = (token) =>
@@ -216,22 +213,6 @@ const toPublicUser = (user) => {
     return safeUser;
 };
 
-// Helper for reCAPTCHA (moved from server.js)
-const verifyRecaptcha = async (token) => {
-    if (!token) return true;
-    try {
-        const secretKey = process.env.RECAPTCHA_SECRET_KEY;
-        if (!secretKey) return true;
-        const response = await fetch(`https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${token}`, { method: 'POST' });
-        const data = await response.json();
-        return Boolean(data.success);
-    } catch (error) {
-        logger.error('reCAPTCHA Error:', error);
-        // Secret key tanımlıysa ve doğrulama servisine erişilemediyse fail-closed davran.
-        return false;
-    }
-};
-
 const responseForgotPassword = {
     success: true,
     message:
@@ -321,7 +302,7 @@ const authController = {
 
     // LOGIN
     async login(req, res) {
-        const { email, password, captchaToken } = req.body;
+        const { email, password } = req.body;
         const normalizedEmail = normalizeEmail(email);
         const normalizedPassword = String(password || '');
 
@@ -331,9 +312,6 @@ const authController = {
         if (normalizedPassword.length < 6 || normalizedPassword.length > 128) {
             return res.status(400).json({ error: 'Geçersiz şifre formatı.' });
         }
-
-        const isHuman = await verifyRecaptcha(captchaToken);
-        if (!isHuman) return res.status(400).json({ error: 'Robot doğrulaması başarısız.' });
 
         try {
             if (await isDbConnected()) {
@@ -403,118 +381,6 @@ const authController = {
         } catch (err) {
             logger.error('Login error:', err);
             res.status(500).json({ error: 'Sunucu hatası.' });
-        }
-    },
-
-    // GOOGLE LOGIN
-    async googleLogin(req, res) {
-        const idToken = String(req.body?.token || '').trim();
-        if (!idToken) {
-            return res.status(400).json({ error: 'Google token zorunludur.' });
-        }
-        if (!GOOGLE_CLIENT_ID || !googleClient) {
-            return res.status(503).json({ error: 'Google giriş şu anda yapılandırılmamış.' });
-        }
-
-        try {
-            const ticket = await googleClient.verifyIdToken({
-                idToken,
-                audience: GOOGLE_CLIENT_ID,
-            });
-            const payload = ticket.getPayload() || {};
-            const email = normalizeEmail(payload.email);
-            if (!email) {
-                return res.status(400).json({ error: 'Google hesabından e-posta alınamadı.' });
-            }
-
-            const shouldBootstrapAdmin = BOOTSTRAP_ADMIN_EMAILS.includes(email);
-            const avatarUrl = typeof payload.picture === 'string' ? payload.picture : null;
-            const profileName = toSafeUsername(payload.name, email);
-
-            if (await isDbConnected()) {
-                const found = await pool.query(
-                    `SELECT ${USER_SELECT_FIELDS} FROM users WHERE LOWER(email) = $1 LIMIT 1`,
-                    [email]
-                );
-
-                let user;
-                if (found.rows.length > 0) {
-                    const existing = found.rows[0];
-                    const nextRole = shouldBootstrapAdmin ? 'admin' : existing.role || 'user';
-                    const nextIsAdmin = shouldBootstrapAdmin ? true : Boolean(existing.isAdmin);
-                    const updated = await pool.query(
-                        `UPDATE users
-                         SET avatar_url = COALESCE($1, avatar_url),
-                             role = $2,
-                             is_admin = $3,
-                             cafe_id = NULL,
-                             table_number = NULL
-                         WHERE id = $4
-                         RETURNING ${USER_SELECT_FIELDS}`,
-                        [avatarUrl, nextRole, nextIsAdmin, existing.id]
-                    );
-                    user = updated.rows[0];
-                } else {
-                    const randomPassword = crypto.randomBytes(24).toString('hex');
-                    const hashedPassword = await bcrypt.hash(randomPassword, 10);
-                    const inserted = await pool.query(
-                        `INSERT INTO users (username, email, password_hash, points, department, role, is_admin, avatar_url)
-                         VALUES ($1, $2, $3, 100, $4, $5, $6, $7)
-                         RETURNING ${USER_SELECT_FIELDS}`,
-                        [
-                            profileName,
-                            email,
-                            hashedPassword,
-                            'Google User',
-                            shouldBootstrapAdmin ? 'admin' : 'user',
-                            shouldBootstrapAdmin,
-                            avatarUrl,
-                        ]
-                    );
-                    user = inserted.rows[0];
-                }
-
-                const token = generateToken(user);
-                setAuthCookie(res, token);
-                return res.json({ user: toPublicUser(user), token });
-            }
-
-            let user = memoryState.users.find((u) => normalizeEmail(u.email) === email);
-            if (!user) {
-                const nextId =
-                    (memoryState.users.reduce((max, item) => Math.max(max, Number(item.id) || 0), 0) || 0) + 1;
-                user = {
-                    id: nextId,
-                    username: profileName,
-                    email,
-                    password_hash: await bcrypt.hash(crypto.randomBytes(24).toString('hex'), 10),
-                    points: 100,
-                    wins: 0,
-                    gamesPlayed: 0,
-                    department: 'Google User',
-                    role: shouldBootstrapAdmin ? 'admin' : 'user',
-                    isAdmin: shouldBootstrapAdmin,
-                    cafe_id: null,
-                    table_number: null,
-                    avatar_url: avatarUrl,
-                };
-                memoryState.users.unshift(user);
-            } else {
-                user.avatar_url = avatarUrl || user.avatar_url;
-                user.cafe_id = null;
-                user.table_number = null;
-                if (shouldBootstrapAdmin) {
-                    user.role = 'admin';
-                    user.isAdmin = true;
-                }
-            }
-
-            const token = generateToken(user);
-            setAuthCookie(res, token);
-            return res.json({ user: toPublicUser(user), token });
-        } catch (error) {
-            logger.error('Google auth failed', error);
-            return res.status(401).json({ error: 'Google doğrulaması başarısız.' });
         }
     },
 

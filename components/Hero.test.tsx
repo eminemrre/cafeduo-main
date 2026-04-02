@@ -8,48 +8,6 @@ jest.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
 }));
 
-jest.mock('./ABTest', () => ({
-  ABTest: ({ variantA }: { variantA: React.ReactNode }) => <>{variantA}</>,
-}));
-
-jest.mock('framer-motion', () => {
-  const ReactLib = require('react');
-  const stripMotionProps = (props: Record<string, unknown>) => {
-    const {
-      initial,
-      animate,
-      exit,
-      transition,
-      whileInView,
-      whileHover,
-      whileTap,
-      viewport,
-      ...rest
-    } = props;
-    return rest;
-  };
-
-  const motion = new Proxy(
-    {},
-    {
-      get: (_target, key) => {
-        const tag = typeof key === 'string' ? key : 'div';
-        return ({ children, ...props }: any) =>
-          ReactLib.createElement(tag, stripMotionProps(props), children);
-      },
-    }
-  );
-
-  return {
-    motion,
-    useMotionValue: () => ({ set: jest.fn(), get: () => 0 }),
-    useSpring: (value: unknown) => value,
-    useTransform: () => '50%',
-    useScroll: () => ({ scrollYProgress: 0 }),
-    useReducedMotion: () => false,
-  };
-});
-
 describe('Hero', () => {
   beforeEach(() => {
     jest.clearAllMocks();

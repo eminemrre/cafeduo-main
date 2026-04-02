@@ -717,8 +717,6 @@ export const api = {
     },
   },
 
-
-
   // COUPONS (for CafeDashboard)
   coupons: {
     use: async (code: string): Promise<{ success: boolean; item?: CouponUseItem }> => {

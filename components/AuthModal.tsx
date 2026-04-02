@@ -198,7 +198,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       const authErr = (typeof err === 'object' && err !== null ? err : {}) as AuthLikeError;
       const errCode = String(authErr.code || '');
 
-      // Firebase error messages
+      // Legacy Firebase error code mapping (kept for backward compatibility with tests)
+      // Current backend returns error messages directly via authErr.message
       if (errCode === 'auth/wrong-password' || errCode === 'auth/user-not-found') {
         errorMessage = 'E-posta veya şifre hatalı.';
       } else if (errCode === 'auth/email-already-in-use') {

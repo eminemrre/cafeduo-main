@@ -138,18 +138,6 @@ const findDbUserByEmail = async (email) => {
     return gmailLookup.rows[0] || null;
 };
 
-const toSafeUsername = (name, fallbackEmail) => {
-    const fromName = String(name || '')
-        .normalize('NFKD')
-        .replace(/[^\w]/g, '');
-    const fromEmail = String(fallbackEmail || '')
-        .split('@')[0]
-        .replace(/[^\w]/g, '');
-    const value = (fromName || fromEmail || 'GoogleUser').slice(0, 20);
-    if (value.length >= 3) return value;
-    return `${value || 'usr'}${Math.floor(Math.random() * 900 + 100)}`.slice(0, 20);
-};
-
 const parseAdminEmails = (emailsValue, fallback = []) => {
     const source = emailsValue || fallback.join(',');
     return source

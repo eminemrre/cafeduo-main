@@ -57,7 +57,7 @@ const GameCard: React.FC<GameCardData> = ({ title, subtitle, duration, mode, acc
     tabIndex={onClick ? 0 : undefined}
     onKeyDown={onClick ? (e) => e.key === 'Enter' && onClick() : undefined}
     aria-label={`${title} - ${cta}`}
-    className="group relative rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-[#0a1228]/95 to-[#0d0a1a]/90 p-6 transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_16px_48px_rgba(0,0,0,0.4)] hover:border-cyan-300/40 cursor-pointer"
+    className="group relative rounded-2xl border border-cyan-400/20 bg-gradient-to-br from-[#0a1228]/95 to-[#0d0a1a]/90 p-6 transition-all duration-300 hover:-translate-y-3 hover:shadow-[0_20px_60px_rgba(0,0,0,0.5),0_0_40px_rgba(34,211,238,0.2)] hover:border-cyan-300/50 hover:scale-[1.02] cursor-pointer"
   >
     <div className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r ${accentFrom} ${accentTo} text-white px-3 py-1.5 text-xs font-bold tracking-wider uppercase`}>
       {icon}

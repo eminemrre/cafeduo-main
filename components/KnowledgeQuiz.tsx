@@ -188,11 +188,12 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
       }
     };
     socket.on('game_state_updated', onRealtime);
+    // Fallback polling every 15s per AGENTS.md (Socket.IO should handle realtime updates)
     pollRef.current = window.setInterval(() => {
       if (document.visibilityState === 'hidden') return;
       if (done) return;
       void fetchSnapshot(true);
-    }, 2200);
+    }, 15000);
     return () => {
       socket.off('game_state_updated', onRealtime);
       if (pollRef.current) {

@@ -33,6 +33,18 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
       <div className="absolute inset-0 bg-gradient-to-br from-[#050a19] via-[#0a1628] to-[#0d0a1a]" />
       <div className="absolute top-0 right-0 w-[60%] h-full bg-gradient-to-l from-neon-blue/5 to-transparent pointer-events-none" />
 
+      {/* Marquee Banner - Kayan text */}
+      <div className="absolute top-0 left-0 right-0 bg-gradient-to-r from-neon-pink/10 via-neon-blue/10 to-neon-pink/10 border-b border-neon-blue/20 overflow-hidden py-2">
+        <div className="flex whitespace-nowrap animate-marquee">
+          <span className="inline-block px-8 text-xs font-bold tracking-[0.3em] uppercase text-neon-blue">
+            ☕ KAFELERDE OYUN OYNA • 🎮 3 FARKLI OYUN • 🏆 PUAN KAZAN • 🎁 ÖDÜLLER AL • ♟️ RETRO SATRANÇ • 🎯 TANK DÜELLOSU • 🧠 BİLGİ YARIŞMASI
+          </span>
+          <span className="inline-block px-8 text-xs font-bold tracking-[0.3em] uppercase text-neon-pink">
+            ☕ KAFELERDE OYUN OYNA • 🎮 3 FARKLI OYUN • 🏆 PUAN KAZAN • 🎁 ÖDÜLLER AL • ♟️ RETRO SATRANÇ • 🎯 TANK DÜELLOSU • 🧠 BİLGİ YARIŞMASI
+          </span>
+        </div>
+      </div>
+
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 

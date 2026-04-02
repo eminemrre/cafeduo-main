@@ -46,7 +46,7 @@ export const HowItWorks: React.FC = () => (
           <article
             key={step.id}
             data-testid={`how-step-${step.id}`}
-            className="relative glass rounded-2xl p-6 border border-cyan-400/20 transition-all duration-300 hover:-translate-y-1 hover:border-cyan-300/40"
+            className="relative glass rounded-2xl p-6 border border-cyan-400/20 transition-all duration-300 hover:-translate-y-2 hover:border-cyan-300/50 hover:scale-[1.03] hover:shadow-[0_12px_32px_rgba(0,0,0,0.3),0_0_20px_rgba(34,211,238,0.15)]"
           >
             <span className="absolute top-4 right-4 text-cyan-900/50 font-display text-4xl select-none pointer-events-none">
               {step.id}

@@ -33,30 +33,27 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
       <div className="absolute inset-0 bg-gradient-to-br from-[#050a19] via-[#0a1628] to-[#0d0a1a]" />
       <div className="absolute top-0 right-0 w-[60%] h-full bg-gradient-to-l from-neon-blue/5 to-transparent pointer-events-none" />
 
-      <div className="relative z-10 w-full px-6 max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center pt-24 pb-32">
-        {/* Left column - Typography */}
-        <div className="lg:col-span-7 flex flex-col justify-center animate-fade-in-up">
-          <div className="inline-block bg-neon-pink/15 text-neon-pink text-xs uppercase tracking-[0.3em] font-bold px-4 py-1.5 rounded-full border border-neon-pink/30 mb-6 w-fit">
+      <div className="relative z-10 w-full px-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-5 gap-8 lg:gap-16 items-center pt-24 pb-32">
+        {/* Left column - Typography (3/5 of desktop width) */}
+        <div className="lg:col-span-3 flex flex-col justify-center animate-fade-in-up">
+          <div className="inline-block bg-neon-pink/15 text-neon-pink text-xs uppercase tracking-[0.3em] font-bold px-4 py-1.5 rounded-full border border-neon-pink/30 mb-8 w-fit">
             KAFEDE BEKLERKEN OYNA
           </div>
 
-          <div lang="tr" className="hero-title-wrapper flex flex-col tracking-tight">
-            <span className="hero-title block text-[4.5rem] sm:text-[6rem] lg:text-[8rem] leading-[0.85] text-ink-50 font-black">
-              KAFENİN
+          <h1 lang="tr" className="hero-title-wrapper mb-6">
+            <span className="hero-title block text-5xl sm:text-6xl lg:text-7xl xl:text-8xl leading-[1.1] text-ink-50 font-black tracking-tight">
+              Kafenin
             </span>
-            <span className="hero-title block text-[4.5rem] sm:text-[6rem] lg:text-[8rem] leading-[0.88] text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-pink font-black -mt-1 lg:-mt-2">
-              OYUN
+            <span className="hero-title block text-5xl sm:text-6xl lg:text-7xl xl:text-8xl leading-[1.1] text-transparent bg-clip-text bg-gradient-to-r from-neon-blue to-neon-pink font-black tracking-tight">
+              Oyun Platformu
             </span>
-            <span className="hero-title block text-[4.5rem] sm:text-[6.5rem] lg:text-[9rem] leading-[0.9] text-ink-50 font-black -mt-1 lg:-mt-3 ml-1 lg:ml-4">
-              PLATFORMU
-            </span>
-          </div>
+          </h1>
 
-          <p className="mt-4 text-lg md:text-xl text-ink-200 font-sans max-w-xl leading-relaxed border-l-4 border-neon-blue pl-6 ml-1">
+          <p className="mt-6 text-base md:text-lg text-ink-200 font-sans max-w-xl leading-relaxed border-l-4 border-neon-blue pl-6">
             Kafede beklerken seni mekandaki aktif oyuncularla <span className="text-neon-pink font-bold">45-60 saniyelik</span> rekabetçi mini oyunlarda eşleştiren sosyal oyun platformu.
           </p>
 
-          <div className="mt-10 flex flex-col sm:flex-row gap-4 w-full max-w-lg">
+          <div className="mt-8 flex flex-col sm:flex-row gap-4 w-full max-w-lg">
             {isLoggedIn ? (
               <button
                 onClick={handlePanelClick}
@@ -88,9 +85,9 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
           </div>
         </div>
 
-        {/* Right column - Preview card */}
-        <div className="lg:col-span-5 relative flex items-center justify-center animate-fade-in-up-slow">
-          <div className="relative w-full max-w-md glass rounded-2xl p-8 border border-neon-blue/20">
+        {/* Right column - Preview card (2/5 of desktop width) */}
+        <div className="lg:col-span-2 relative flex items-center justify-center lg:justify-end animate-fade-in-up-slow">
+          <div className="relative w-full max-w-sm glass rounded-2xl p-6 lg:p-8 border border-neon-blue/20 shadow-2xl">
             <div className="flex justify-between items-center mb-6 border-b border-cyber-border/50 pb-4">
               <span className="font-display text-lg text-ink-50 uppercase tracking-widest">CafeDuo</span>
               <div className="flex items-center gap-2">

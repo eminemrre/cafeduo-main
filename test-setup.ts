@@ -66,6 +66,19 @@ if (typeof window !== 'undefined') {
   });
 }
 
+// Mock sessionStorage
+const sessionStorageMock = {
+  getItem: jest.fn(),
+  setItem: jest.fn(),
+  removeItem: jest.fn(),
+  clear: jest.fn(),
+};
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'sessionStorage', {
+    value: sessionStorageMock,
+  });
+}
+
 // Mock browser dialogs used by UI actions
 if (typeof window !== 'undefined') {
   Object.defineProperty(window, 'alert', {

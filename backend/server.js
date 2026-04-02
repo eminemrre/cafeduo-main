@@ -83,6 +83,10 @@ const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcrypt');
 const { Server } = require("socket.io");
 
+// Swagger UI
+const swaggerUi = require('swagger-ui-express');
+const YAML = require('yamljs');
+
 // Local modules
 const { pool, isDbConnected } = require('./db');
 const { cache, clearCache } = require('./middleware/cache'); // Redis Cache Import
@@ -766,6 +770,18 @@ registerGameCleanupJobs({
   logger,
 });
 
+// --- SWAGGER UI ---
+try {
+  const swaggerDocument = YAML.load(path.resolve(__dirname, '../openapi.yaml'));
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'CafeDuo API Documentation',
+  }));
+  console.log('✅ Swagger UI available at /api-docs');
+} catch (swaggerErr) {
+  console.warn('⚠️  Swagger UI not loaded:', swaggerErr.message);
+}
+
 // --- API ROUTES ---
 
 // Auth Routes (Modularized)
@@ -818,6 +834,24 @@ app.use(express.static(path.join(__dirname, '../dist')));
 // Duplicate /api/rewards endpoints removed. The secured canonical handlers are defined above.
 
 // NOTE: Duplicate endpoints removed. Protected versions are defined above.
+
+// ==========================================
+// SWAGGER UI - API DOCUMENTATION
+// ==========================================
+try {
+  const swaggerUi = require('swagger-ui-express');
+  const yaml = require('js-yaml');
+  const fs = require('fs');
+  const swaggerDocument = yaml.load(fs.readFileSync('./openapi.yaml', 'utf8'));
+
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'CafeDuo API Documentation',
+  }));
+  console.log('✅ Swagger UI available at /api-docs');
+} catch (err) {
+  console.warn('⚠️  Swagger UI could not be loaded:', err.message);
+}
 
 // ==========================================
 // GLOBAL ERROR HANDLING

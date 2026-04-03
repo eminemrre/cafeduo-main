@@ -162,6 +162,7 @@ const createGameHandlers = ({
     sanitizeScoreSubmission,
     sanitizeLiveSubmission: (payload) => require('./game/utils/helperUtils').sanitizeLiveSubmission(payload, normalizeGameType),
     getMemoryGames,
+    getMemoryUsers,
     io,
   });
 

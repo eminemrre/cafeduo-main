@@ -21,6 +21,9 @@ const createGameMoveService = ({
   sanitizeScoreSubmission,
   getMemoryGames,
   emitRealtimeUpdate,
+  applyDbSettlement,
+  applyMemorySettlement,
+  getMemoryUsers,
 }) => {
   const DEFAULT_CLOCK = Object.freeze({
     baseMs: 3 * 60 * 1000,
@@ -177,6 +180,18 @@ const createGameMoveService = ({
               ...(timeoutWinner ? { resolvedWinner: timeoutWinner } : {}),
             };
 
+            // Apply settlement for timeout
+            const settlementTimeout = await applyDbSettlement({
+              client,
+              game,
+              winnerName: timeoutWinner,
+              isDraw: false,
+              gameType: game.game_type,
+            });
+            timeoutState.settlementApplied = true;
+            timeoutState.stakeTransferred = settlementTimeout.transferredPoints;
+            timeoutState.settledAt = nowIso;
+
             await client.query(
               `
                 UPDATE games
@@ -261,6 +276,21 @@ const createGameMoveService = ({
           }
 
           const nextStatus = gameOver ? 'finished' : 'active';
+
+          // Apply settlement when chess game ends by checkmate or draw
+          if (gameOver && applyDbSettlement) {
+            const isDraw = !winner;
+            const settlementCheckmate = await applyDbSettlement({
+              client,
+              game,
+              winnerName: winner,
+              isDraw,
+              gameType: game.game_type,
+            });
+            nextState.settlementApplied = true;
+            nextState.stakeTransferred = settlementCheckmate.transferredPoints;
+            nextState.settledAt = new Date().toISOString();
+          }
           const chessTransition = assertGameStatusTransition({
             fromStatus: game.status,
             toStatus: nextStatus,
@@ -672,6 +702,20 @@ const createGameMoveService = ({
           ...(timeoutWinner ? { resolvedWinner: timeoutWinner } : {}),
         };
 
+        // Apply memory settlement for timeout
+        if (applyMemorySettlement && getMemoryUsers) {
+          const settlementMemTimeout = applyMemorySettlement({
+            game,
+            winnerName: timeoutWinner,
+            isDraw: false,
+            gameType: game.gameType,
+            getMemoryUsers,
+          });
+          game.gameState.settlementApplied = true;
+          game.gameState.stakeTransferred = settlementMemTimeout.transferredPoints;
+          game.gameState.settledAt = nowIso;
+        }
+
         emitRealtimeUpdate(id, {
           type: 'chess_state',
           gameId: id,
@@ -756,6 +800,21 @@ const createGameMoveService = ({
       game.status = nextMemoryStatus;
       if (winner || gameOver) {
         game.winner = winner || null;
+      }
+
+      // Apply memory settlement when chess game ends by checkmate or draw
+      if (gameOver && applyMemorySettlement && getMemoryUsers) {
+        const isDraw = !winner;
+        const settlementMemCheckmate = applyMemorySettlement({
+          game,
+          winnerName: winner,
+          isDraw,
+          gameType: game.gameType,
+          getMemoryUsers,
+        });
+        game.gameState.settlementApplied = true;
+        game.gameState.stakeTransferred = settlementMemCheckmate.transferredPoints;
+        game.gameState.settledAt = nowIso;
       }
 
       emitRealtimeUpdate(id, {

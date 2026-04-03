@@ -66,6 +66,7 @@ class SocketService {
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
             reconnectionAttempts: 5,
+            transports: ['websocket', 'polling'], // Prefer WebSocket over long-polling for lower latency
         });
 
         this.socket.on('connect', () => {

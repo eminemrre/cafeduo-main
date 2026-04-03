@@ -5,6 +5,7 @@
  */
 
 const { createGameMoveService } = require('../../../services/gameMoveService');
+const { applyDbSettlement, applyMemorySettlement } = require('../settlementUtils');
 
 const createMakeMoveHandler = (deps) => {
   const {
@@ -26,6 +27,7 @@ const createMakeMoveHandler = (deps) => {
     sanitizeScoreSubmission,
     sanitizeLiveSubmission,
     getMemoryGames,
+    getMemoryUsers,
     io,
   } = deps;
 
@@ -62,6 +64,9 @@ const createMakeMoveHandler = (deps) => {
     sanitizeScoreSubmission,
     getMemoryGames,
     emitRealtimeUpdate,
+    applyDbSettlement,
+    applyMemorySettlement,
+    getMemoryUsers,
   });
 
   return makeMove;

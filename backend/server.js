@@ -212,7 +212,8 @@ const io = new Server(server, {
     origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true
-  }
+  },
+  transports: ['websocket', 'polling'], // Prefer WebSocket for lower latency
 });
 
 // Parse auth cookie from Socket.IO handshake headers for cookie-based auth.

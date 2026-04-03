@@ -286,7 +286,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
       setDone(true);
       const localWinner = isBot
         ? (nextPlayerScore >= nextOpponentScore ? currentUser.username : targetName)
-        : currentUser.username;
+        : (nextPlayerScore >= nextOpponentScore ? currentUser.username : targetName);
       void finalizeMatch(localWinner, nextPlayerScore);
       return;
     }

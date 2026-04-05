@@ -26,11 +26,11 @@ describe('Hero', () => {
 
     render(<Hero onLogin={onLogin} onRegister={onRegister} isLoggedIn={false} />);
 
-    expect(screen.getByText('OYUNA GİR')).toBeInTheDocument();
-    expect(screen.getByText('OTURUM AÇ')).toBeInTheDocument();
+    expect(screen.getByText('Ücretsiz Kaydol')).toBeInTheDocument();
+    expect(screen.getByText('Oturum Aç')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('OYUNA GİR'));
-    fireEvent.click(screen.getByText('OTURUM AÇ'));
+    fireEvent.click(screen.getByText('Ücretsiz Kaydol'));
+    fireEvent.click(screen.getByText('Oturum Aç'));
 
     expect(onRegister).toHaveBeenCalledTimes(1);
     expect(onLogin).toHaveBeenCalledTimes(1);

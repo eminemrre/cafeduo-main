@@ -4,21 +4,21 @@ import { UserPlus, Coffee, Trophy, ChevronRight } from 'lucide-react';
 const steps = [
   {
     id: '01',
-    icon: <UserPlus size={22} className="text-cyan-300" />,
+    icon: <UserPlus size={22} className="text-sky-400" />,
     title: 'Hesabını aç',
     description: '30 saniyede profilini tamamla ve oyuncu kimliğini aktive et.',
     hint: '20 sn',
   },
   {
     id: '02',
-    icon: <Coffee size={22} className="text-fuchsia-300" />,
+    icon: <Coffee size={22} className="text-violet-400" />,
     title: 'Kafeye bağlan',
     description: 'Kafeni seç, güvenli girişi tamamla ve lobiye gir.',
     hint: '15 sn',
   },
   {
     id: '03',
-    icon: <Trophy size={22} className="text-amber-300" />,
+    icon: <Trophy size={22} className="text-amber-400" />,
     title: 'Eşleş ve kazan',
     description: 'Bekleyen oyuncuyla maça gir, turu bitir, puanı hesabına yaz.',
     hint: '45 sn',
@@ -36,7 +36,7 @@ export const HowItWorks: React.FC = () => (
         >
           3 adımda eşleş, oyna, ödüle yaklaş.
         </h2>
-        <p className="mt-4 text-lg text-ink-300">
+        <p className="mt-4 text-lg text-slate-400">
           Arkadaşını beklerken boşta kalma; bağlan, eşleş ve puanı topla.
         </p>
       </div>
@@ -46,27 +46,27 @@ export const HowItWorks: React.FC = () => (
           <article
             key={step.id}
             data-testid={`how-step-${step.id}`}
-            className="relative glass rounded-2xl p-6 border border-cyan-400/20 transition-all duration-300 hover:-translate-y-2 hover:border-cyan-300/50 hover:scale-[1.03] hover:shadow-[0_12px_32px_rgba(0,0,0,0.3),0_0_20px_rgba(34,211,238,0.15)]"
+            className="relative glass rounded-2xl p-6 border border-slate-700/40 bg-slate-900/60 transition-all duration-300 hover:-translate-y-2 hover:border-slate-600/60 hover:shadow-xl hover:shadow-black/20"
           >
-            <span className="absolute top-4 right-4 text-cyan-900/50 font-display text-4xl select-none pointer-events-none">
+            <span className="absolute top-4 right-4 text-slate-800 font-display text-4xl select-none pointer-events-none">
               {step.id}
             </span>
 
-            <div className="w-11 h-11 rounded-xl bg-cyan-500/10 border border-cyan-400/30 flex items-center justify-center mb-4">
+            <div className="w-11 h-11 rounded-xl bg-slate-800/60 border border-slate-700/40 flex items-center justify-center mb-4">
               {step.icon}
             </div>
 
             <h3 className="text-xl font-display text-white mb-2">{step.title}</h3>
-            <p className="text-ink-300 text-sm leading-relaxed">{step.description}</p>
+            <p className="text-slate-400 text-sm leading-relaxed">{step.description}</p>
 
-            <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#0a1834]/70 border border-cyan-400/30 text-sm">
-              <span className="text-[10px] tracking-wider text-cyan-300 uppercase font-bold">Ortalama</span>
+            <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-800/60 border border-slate-700/40 text-sm">
+              <span className="text-[10px] tracking-wider text-slate-400 uppercase font-bold">Ortalama</span>
               <span className="text-white font-semibold">{step.hint}</span>
             </div>
 
             {index < steps.length - 1 && (
-              <div className="hidden md:flex items-center justify-center absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-[#0a1834] border border-cyan-400/30 z-10">
-                <ChevronRight size={14} className="text-cyan-300/80" />
+              <div className="hidden md:flex items-center justify-center absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-slate-900 border border-slate-700/40 z-10">
+                <ChevronRight size={14} className="text-slate-500" />
               </div>
             )}
           </article>

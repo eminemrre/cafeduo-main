@@ -1,0 +1,144 @@
+import React from 'react';
+
+export interface NavItem {
+  label: string;
+  id: string;
+}
+
+export interface GameCardProps {
+  title: string;
+  icon?: React.ReactNode;
+  isNew?: boolean;
+  disabled?: boolean;
+  content?: React.ReactNode;
+}
+
+export interface StepProps {
+  number: string;
+  text: string;
+  isLast?: boolean;
+}
+
+export interface User {
+  id: string | number;
+  username: string;
+  email: string;
+  table?: string;
+  points: number;
+  wins: number;
+  gamesPlayed: number;
+  department?: string;
+  isAdmin?: boolean;
+  role?: 'user' | 'admin' | 'cafe_admin';
+  cafe_id?: string | number;
+  cafe_name?: string;
+  table_number?: string;
+  avatar_url?: string;
+  bonusReceived?: boolean;
+}
+
+export interface GameRequest {
+  id: string | number;
+  hostName: string;
+  gameType: string;
+  points: number;
+  table: string;
+  status: 'waiting' | 'active' | 'finishing' | 'finished' | 'playing';
+  guestName?: string;
+  player1Move?: string;
+  player2Move?: string;
+  gameState?: unknown;
+  chessClock?: {
+    baseSeconds: number;
+    incrementSeconds: number;
+    label?: string;
+  };
+}
+
+export interface GameHistoryEntry {
+  id: string | number;
+  gameType: string;
+  points: number;
+  status: string;
+  table: string;
+  opponentName: string;
+  winner: string | null;
+  didWin: boolean;
+  createdAt: string;
+  moveCount?: number;
+  chessTempo?: string | null;
+}
+
+export interface AdminGameRow {
+  id: number;
+  host_name: string;
+  guest_name: string | null;
+  game_type: string;
+  status: string;
+  created_at: string;
+  cafe_name?: string | null;
+  table_code?: string | null;
+}
+
+export interface Achievement {
+  id: string | number;
+  title: string;
+  description: string;
+  icon: string;
+  points_reward: number;
+  unlocked: boolean;
+  unlockedAt: string | null;
+}
+
+export interface Reward {
+  id: string | number;
+  title: string;
+  cost: number;
+  description: string;
+  icon: 'coffee' | 'discount' | 'dessert' | 'game' | string;
+}
+
+export interface RedeemedReward extends Reward {
+  redeemId: string;
+  redeemedAt: Date;
+  code: string;
+  isUsed: boolean;
+}
+
+export interface Cafe {
+  id: string | number;
+  name: string;
+  address?: string;
+  total_tables?: number;
+  pin?: string;
+  daily_pin?: string;
+  table_count?: number;
+  latitude?: number;
+  longitude?: number;
+  radius?: number;
+  secondary_latitude?: number;
+  secondary_longitude?: number;
+  secondary_radius?: number;
+}
+
+export interface BuildMeta {
+  version: string;
+  shortVersion: string;
+  buildTime: string;
+}
+
+export interface DeleteCafeCleanup {
+  detachedUsers: number;
+  cafeAdminsDemoted: number;
+  rewardsDeleted: number;
+  gamesForceClosed: number;
+}
+
+export interface DeleteCafeResult {
+  success: boolean;
+  deletedCafe: {
+    id: string | number;
+    name: string;
+  };
+  cleanup: DeleteCafeCleanup;
+}

@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CafeDuo | Profesyonel Proje Sunumu</title>
+  <style>
+    :root {
+      --bg: #020714;
+      --panel: #06122d;
+      --panel2: #071a3d;
+      --ink: #e9f3ff;
+      --muted: #9ab0cc;
+      --cyan: #2dd4ff;
+      --green: #32d296;
+      --amber: #ffbe5c;
+      --rose: #fb7185;
+      --line: rgba(45, 212, 255, 0.24);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, "Segoe UI", system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 10% 12%, rgba(45, 212, 255, 0.14), transparent 36%),
+        radial-gradient(circle at 90% 8%, rgba(255, 190, 92, 0.09), transparent 30%),
+        linear-gradient(180deg, #020713, #02050e 65%, #01030a);
+    }
+    .wrap { max-width: 1320px; margin: 0 auto; padding: 24px; }
+    .slide {
+      min-height: 88vh;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      margin-bottom: 18px;
+      padding: 30px;
+      position: relative;
+      overflow: hidden;
+      background:
+        linear-gradient(160deg, rgba(6, 17, 45, 0.95), rgba(4, 12, 31, 0.9));
+      box-shadow: 0 20px 80px rgba(0, 0, 0, 0.35);
+    }
+    .slide::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 8px, rgba(45,212,255,0.018) 9px);
+      pointer-events: none;
+    }
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--line);
+      padding: 8px 14px;
+      border-radius: 999px;
+      color: var(--cyan);
+      font-size: 12px;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+    h1, h2 { margin: 0 0 12px; line-height: 1.1; }
+    h1 { font-size: clamp(34px, 6vw, 72px); }
+    h2 { font-size: clamp(28px, 4vw, 50px); }
+    .lead { color: var(--muted); font-size: clamp(16px, 1.9vw, 24px); line-height: 1.5; max-width: 980px; }
+    .accent { color: var(--cyan); }
+
+    .grid-2 { display: grid; grid-template-columns: 1.2fr 1fr; gap: 16px; margin-top: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-top: 18px; }
+    .panel { border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(145deg, rgba(8,24,56,.85), rgba(6,16,40,.9)); padding: 16px; }
+    .panel h3 { margin: 0 0 10px; font-size: 22px; }
+    .panel p, .panel li { color: var(--muted); line-height: 1.5; }
+
+    .metric-grid { display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-top: 16px; }
+    .metric-card { border:1px solid var(--line); border-radius:14px; padding:14px; background: rgba(6,18,44,.75); }
+    .metric-card h4 { margin:0 0 10px; font-size:15px; color:#b9d9ff; font-weight:600; }
+    .metric-card .metric { margin:0; font-size:28px; color:var(--cyan); font-weight:700; }
+    .metric-card span { color: var(--muted); font-size:12px; }
+
+    table { width:100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+    th, td { border-bottom: 1px solid rgba(45,212,255,.15); padding: 9px 10px; text-align: left; }
+    th { color:#c8e6ff; font-weight:600; background: rgba(7,20,50,.7); }
+    td { color: var(--muted); }
+
+    .bar { margin-top: 8px; }
+    .bar .label { display:flex; justify-content:space-between; color:#bdd8f8; font-size:13px; margin-bottom:4px; }
+    .bar .track { height: 10px; border-radius:999px; background: rgba(255,255,255,.08); overflow:hidden; }
+    .bar .fill { height:100%; background: linear-gradient(90deg, #2dd4ff, #30f5b1); }
+
+    .screenshot { width:100%; border:1px solid var(--line); border-radius:14px; background:#020814; display:block; }
+    .caption { color: var(--muted); font-size: 12px; margin-top: 6px; }
+
+    .timeline { margin-top: 12px; }
+    .timeline .item { border-left:2px solid rgba(45,212,255,.35); padding:0 0 14px 12px; margin-left:6px; }
+    .timeline .item strong { color:#d7ebff; }
+    .foot { color: var(--muted); font-size: 13px; margin-top: 16px; }
+
+    .arch { display:grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap:10px; margin-top: 16px; }
+    .arch .node { padding:12px; border-radius:12px; border:1px solid var(--line); background: rgba(6,20,52,.78); text-align:center; font-size:14px; color:#c7e4ff; }
+
+    @media (max-width: 1024px) {
+      .grid-2, .metric-grid { grid-template-columns: 1fr; }
+      .grid-3 { grid-template-columns: 1fr; }
+      .arch { grid-template-columns: 1fr 1fr; }
+      .slide { min-height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="slide">
+      <span class="kicker">CafeDuo • Yönetici Sunumu</span>
+      <h1>Kafede beklemeyi <span class="accent">eşleşmeli oyuna</span> ve <span class="accent">ödül döngüsüne</span> çeviren platform.</h1>
+      <p class="lead">Bu sunum canlı sistemden alınmış doğrulanabilir metrikler, test çıktıları ve ekran görüntüleriyle hazırlanmıştır. Amaç: kullanıcı değeri + kafe değeri + teknik olgunluğu aynı tabloda göstermek.</p>
+      <div class="metric-grid"><article class='metric-card'><h4>Test Suite Başarı</h4><p class='metric'>69/69</p><span>Jest CI</span></article>
+<article class='metric-card'><h4>Test Case Başarı</h4><p class='metric'>521/521</p><span>Jest CI</span></article>
+<article class='metric-card'><h4>Toplam Coverage (Stmt)</h4><p class='metric'>70.03%</p><span>npm run test:ci</span></article>
+<article class='metric-card'><h4>Toplam Coverage (Lines)</h4><p class='metric'>71.59%</p><span>npm run test:ci</span></article>
+<article class='metric-card'><h4>CI Test Süresi</h4><p class='metric'>15.239 sn</p><span>Jest JSON output</span></article>
+<article class='metric-card'><h4>Prod Build Süresi</h4><p class='metric'>11.29 sn</p><span>Vite build</span></article></div>
+      <p class="foot">Veri üretim zamanı: <code>2026-02-19T13:28:43Z</code> • Canlı commit: <code>d381319</code> • Build zamanı: <code>2026-02-18T20:32:06Z</code></p>
+    </section>
+
+    <section class="slide">
+      <span class="kicker">İş Problemi</span>
+      <h2>Kullanıcı bekliyor, kafe etkileşimi kaybediyor.</h2>
+      <div class="grid-2">
+        <article class="panel">
+          <h3>Mevcut Durum</h3>
+          <ul>
+            <li>Kafede bekleme anı pasif geçiyor.</li>
+            <li>Kullanıcıların dikkat penceresi kısa; hızlı değer üreten akışa ihtiyaç var.</li>
+            <li>Kafe tarafında tekrar ziyaret ve masa başı etkileşim ölçümü zayıf kalıyor.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h3>CafeDuo Yaklaşımı</h3>
+          <ul>
+            <li>Kafede bulunan oyuncuları kısa tur oyunlarda anlık eşleştirir.</li>
+            <li>Maçtan sonra puanı cüzdana yazar, ödül döngüsüne bağlar.</li>
+            <li>Kafe paneliyle ödül ve kullanıcı akışı operasyonel olarak yönetilir.</li>
+          </ul>
+        </article>
+      </div>
+      <div class="arch">
+        <div class="node">Kullanıcı Uygulaması</div>
+        <div class="node">Gerçek Zamanlı Eşleşme</div>
+        <div class="node">Puan/Ödül Ekonomisi</div>
+        <div class="node">Kafe Yönetim Paneli</div>
+      </div>
+    </section>
+
+    <section class="slide">
+      <span class="kicker">Canlı Operasyon Sağlığı</span>
+      <h2>Deploy, sağlık ve sürüm zinciri doğrulanmış durumda.</h2>
+      <div class="grid-2">
+        <article class="panel">
+          <h3>Canlı Sistem Snapshot</h3>
+          <table>
+            <tr><th>Kontrol</th><th>Değer</th></tr>
+            <tr><td><code>/health</code></td><td>OK (DB: true)</td></tr>
+            <tr><td>Uptime</td><td>16.82 saat</td></tr>
+            <tr><td><code>/api/meta/version</code></td><td><code>d3813196649c3e916dcb9f522f73c8904c455fdb</code></td></tr>
+            <tr><td>Node Env</td><td>production</td></tr>
+            <tr><td>Build Time</td><td>2026-02-18T20:32:06Z</td></tr>
+          </table>
+        </article>
+        <article class="panel">
+          <h3>Son Başarılı Deploy</h3>
+          <table>
+            <tr><th>Alan</th><th>Değer</th></tr>
+            <tr><td>Workflow</td><td>Deploy VPS</td></tr>
+            <tr><td>Run ID</td><td>22156495680</td></tr>
+            <tr><td>Branch</td><td>main</td></tr>
+            <tr><td>Commit</td><td><code>d381319</code></td></tr>
+            <tr><td>Sonuç</td><td>success</td></tr>
+            <tr><td>URL</td><td><a href="https://github.com/eminemrre/cafeduo-main/actions/runs/22156495680" target="_blank" style="color:#8ad7ff">GitHub Actions Run</a></td></tr>
+          </table>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <span class="kicker">Kalite Metrikleri</span>
+      <h2>Test güveni yüksek, coverage tarafında planlı iyileştirme alanı var.</h2>
+      <div class="grid-2">
+        <article class="panel">
+          <h3>CI Test Sonucu (Gerçek Çıktı)</h3>
+          <table>
+            <tr><th>Metrik</th><th>Değer</th></tr>
+            <tr><td>Suite Başarı</td><td>69/69</td></tr>
+            <tr><td>Test Başarı</td><td>521/521</td></tr>
+            <tr><td>Toplam Süre</td><td>15.239 sn</td></tr>
+            <tr><td>Coverage Kaynağı</td><td>npm run test:ci console table</td></tr>
+          </table>
+        </article>
+        <article class="panel">
+          <h3>Coverage Breakdown</h3>
+          <div class="bar"><div class="label"><span>Statements</span><span>70.03%</span></div><div class="track"><div class="fill" style="width:70.03%"></div></div></div>
+          <div class="bar"><div class="label"><span>Lines</span><span>71.59%</span></div><div class="track"><div class="fill" style="width:71.59%"></div></div></div>
+          <div class="bar"><div class="label"><span>Functions</span><span>74.04%</span></div><div class="track"><div class="fill" style="width:74.04%"></div></div></div>
+          <div class="bar"><div class="label"><span>Branches</span><span>51.65%</span></div><div class="track"><div class="fill" style="width:51.65%"></div></div></div>
+          <p class="foot">Not: Branch coverage en düşük alan; sonraki sprintlerde oyun edge-case testleriyle artırılmalı.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <span class="kicker">API Performans Baseline</span>
+      <h2>Canlı uç noktalar p95 eşiklerinin altında.</h2>
+      <p class="lead">Kaynak: <code>docs/reports/api-p95-latest.json</code> • 20 istek/uç nokta • Baseline zamanı: 2026-02-17T14:47:06.251Z</p>
+      <article class="panel" style="margin-top:14px;">
+        <table>
+          <thead>
+            <tr>
+              <th>Endpoint</th><th>Method</th><th>Success</th><th>P50</th><th>P95</th><th>P99</th><th>Avg</th><th>Max</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><code>/health</code></td><td>GET</td><td>100%</td><td>51.5 ms</td><td>137.2 ms</td><td>314.9 ms</td><td>69.5 ms</td><td>314.9 ms</td></tr>
+<tr><td><code>/api/meta/version</code></td><td>GET</td><td>100%</td><td>58.4 ms</td><td>73.4 ms</td><td>85.7 ms</td><td>57.9 ms</td><td>85.7 ms</td></tr>
+<tr><td><code>/api/auth/login</code></td><td>POST</td><td>100%</td><td>54.2 ms</td><td>72.9 ms</td><td>84.0 ms</td><td>57.1 ms</td><td>84.0 ms</td></tr>
+          </tbody>
+        </table>
+      </article>
+      <div class="grid-3">
+        <article class="panel"><h3>Health</h3><p>P95: 137.2 ms</p></article>
+        <article class="panel"><h3>Meta Version</h3><p>P95: 73.4 ms</p></article>
+        <article class="panel"><h3>Auth (Invalid Login)</h3><p>P95: 72.9 ms</p></article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <span class="kicker">Build Ayak İzi</span>
+      <h2>Bundle ölçümü ve dağıtım verisi.</h2>
+      <div class="grid-2">
+        <article class="panel">
+          <h3>Build Sonuçları</h3>
+          <table>
+            <tr><th>Metrik</th><th>Değer</th></tr>
+            <tr><td>Vite Build Süresi</td><td>11.29 sn</td></tr>
+            <tr><td>Main JS</td><td>443.92 kB (gzip 143.05 kB)</td></tr>
+            <tr><td>Main CSS</td><td>121.32 kB (gzip 19.41 kB)</td></tr>
+          </table>
+        </article>
+        <article class="panel">
+          <h3>Yorum</h3>
+          <ul>
+            <li>Ana JS bundle boyutu yüksek; kod bölme ve oyun modüllerinde daha agresif lazy loading planlanmalı.</li>
+            <li>CSS tarafı kontrollü seviyede; tasarım sistemi token yaklaşımı korunmalı.</li>
+            <li>Build süresi operasyonel olarak kabul edilebilir aralıkta.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <span class="kicker">Ürün Ekran Görüntüleri</span>
+      <h2>Canlı UI snapshot'ları</h2>
+      <div class="grid-2">
+        <figure class="panel">
+          <img class="screenshot" src="./assets/home-desktop.png" alt="CafeDuo anasayfa desktop" />
+          <figcaption class="caption">Anasayfa / Desktop (otomatik alınan ekran görüntüsü)</figcaption>
+        </figure>
+        <figure class="panel">
+          <img class="screenshot" src="./assets/home-mobile.png" alt="CafeDuo anasayfa mobile" />
+          <figcaption class="caption">Anasayfa / Mobile (otomatik alınan ekran görüntüsü)</figcaption>
+        </figure>
+      </div>
+      <div class="grid-2" style="margin-top:12px;">
+        <figure class="panel">
+          <img class="screenshot" src="./assets/dashboard-gate-mobile.png" alt="CafeDuo dashboard giriş kontrolü" />
+          <figcaption class="caption">Dashboard erişim kapısı / Mobile</figcaption>
+        </figure>
+        <article class="panel">
+          <h3>Ekran Görüntüsü Alma Yöntemi</h3>
+          <ul>
+            <li>Playwright tabanlı headless browser ile otomatik capture.</li>
+            <li>Kaynak dosyalar: <code>docs/presentation/assets/</code></li>
+            <li>Çekim zamanı: 2026-02-19T13:28:43Z</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <span class="kicker">Değer Önerisi (Paydaş Bazlı)</span>
+      <h2>Ne yapıyoruz, ne başardık, nasıl ilerleyeceğiz?</h2>
+      <div class="grid-3">
+        <article class="panel">
+          <h3>Kullanıcı</h3>
+          <ul>
+            <li>Bekleme süresinde hızlı oyun deneyimi.</li>
+            <li>Maç başına anlık puan kazanımı.</li>
+            <li>Arkadaşını beklerken sosyal etkileşim.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h3>Kafe Sahibi</h3>
+          <ul>
+            <li>Masa başı etkileşim artışı.</li>
+            <li>Ödül ekonomisi ile tekrar ziyaret motivasyonu.</li>
+            <li>Kafe panelinden operasyonel yönetim.</li>
+          </ul>
+        </article>
+        <article class="panel">
+          <h3>Akademik Değer</h3>
+          <ul>
+            <li>Gerçek zamanlı sistem tasarımı.</li>
+            <li>CI/CD ve gözlemlenebilirlik pratiği.</li>
+            <li>Test + performans baseline disiplinleri.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="slide">
+      <span class="kicker">Yol Haritası</span>
+      <h2>Sonraki adımlar (ölçülebilir hedeflerle)</h2>
+      <div class="timeline">
+        <div class="item"><strong>Sprint A (Stabilite)</strong><br/><span>Oyun timeout/reconnect senaryolarında branch coverage artışı: +8 puan hedef.</span></div>
+        <div class="item"><strong>Sprint B (Performans)</strong><br/><span>Main JS bundle boyutunda %15 düşüş hedefi (lazy import + route split).</span></div>
+        <div class="item"><strong>Sprint C (İşletme Analitiği)</strong><br/><span>Kafe paneline KPI ekranı: eşleşme oranı, maç tamamlama, ödül dönüşüm takibi.</span></div>
+        <div class="item"><strong>Sprint D (Büyüme)</strong><br/><span>Kampanya/turnuva katmanı ile kullanıcı tutundurma denemeleri.</span></div>
+      </div>
+      <p class="foot">Bu hedeflerde ilk iki sprint teknik borç ve ölçeklenebilirlik odaklı, sonraki sprintler işletme etkisi odaklıdır.</p>
+    </section>
+
+    <section class="slide">
+      <span class="kicker">Sonuç</span>
+      <h2>CafeDuo çalışır bir ürün altyapısıdır; şimdi odak, ölçülebilir büyüme ve kalite derinliği.</h2>
+      <p class="lead">Canlı sistem ve CI/CD doğrulaması mevcut. Test güveni yüksek, performans baseline ölçümlenmiş durumda. Bundan sonraki ana kaldıraç: oyun senaryolarında derin branch coverage, bundle optimizasyonu ve kafe KPI ekranları.</p>
+      <div class="panel" style="margin-top:18px;">
+        <h3>Sunum Kaynakları</h3>
+        <ul>
+          <li><code>docs/presentation/data/metrics.json</code></li>
+          <li><code>docs/reports/api-p95-latest.json</code></li>
+          <li><code>output/presentation/jest-results.json</code></li>
+          <li><code>docs/presentation/assets/*.png</code></li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+</body>
+</html>

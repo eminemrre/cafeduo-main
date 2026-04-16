@@ -1,0 +1,269 @@
+name: Deploy VPS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate deploy secrets
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_ENV_B64: ${{ secrets.DEPLOY_ENV_B64 }}
+          DEPLOY_SITE_URL: ${{ secrets.DEPLOY_SITE_URL }}
+          SMOKE_LOGIN_EMAIL: ${{ secrets.SMOKE_LOGIN_EMAIL }}
+          SMOKE_LOGIN_PASSWORD: ${{ secrets.SMOKE_LOGIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for var in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY DEPLOY_PATH DEPLOY_ENV_B64 DEPLOY_SITE_URL SMOKE_LOGIN_EMAIL SMOKE_LOGIN_PASSWORD; do
+            if [ -z "${!var:-}" ]; then
+              echo "Missing required secret: ${var}"
+              exit 1
+            fi
+          done
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Validate production environment config
+        env:
+          DEPLOY_ENV_B64: ${{ secrets.DEPLOY_ENV_B64 }}
+          DEPLOY_SITE_URL: ${{ secrets.DEPLOY_SITE_URL }}
+          SMOKE_LOGIN_EMAIL: ${{ secrets.SMOKE_LOGIN_EMAIL }}
+          SMOKE_LOGIN_PASSWORD: ${{ secrets.SMOKE_LOGIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          node scripts/ops/validate-production-env.mjs
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests with coverage
+        run: npm run test:ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Setup SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -p "${DEPLOY_PORT:-22}" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Create deployment backup on VPS
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "if [ -d '${DEPLOY_PATH}' ]; then \
+               rm -rf '${DEPLOY_PATH}_backup_latest'; \
+               mkdir -p '${DEPLOY_PATH}_backup_latest'; \
+               rsync -a --delete '${DEPLOY_PATH}/' '${DEPLOY_PATH}_backup_latest/'; \
+             fi"
+
+      - name: Sync project to VPS
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p ${DEPLOY_PATH}"
+          rsync -az --delete \
+            --exclude ".git" \
+            --exclude ".env" \
+            --exclude "node_modules" \
+            --exclude "coverage" \
+            --exclude "dist" \
+            --exclude "playwright-report" \
+            --exclude "test-results" \
+            -e "ssh -p ${DEPLOY_PORT:-22}" \
+            ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}"
+
+      - name: Check migration status against production database on VPS
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_ENV_B64: ${{ secrets.DEPLOY_ENV_B64 }}
+        run: |
+          set -euo pipefail
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "DEPLOY_PATH='${DEPLOY_PATH}' DEPLOY_ENV_B64='${DEPLOY_ENV_B64}' bash -s" <<'REMOTE'
+            set -euo pipefail
+
+            if ! command -v docker >/dev/null 2>&1; then
+              apt-get update
+              apt-get install -y docker.io
+              systemctl enable --now docker
+            fi
+
+            cd "$DEPLOY_PATH"
+            echo "$DEPLOY_ENV_B64" | base64 -d > .env
+
+            if docker compose version >/dev/null 2>&1; then
+              run_compose() { docker compose "$@"; }
+            else
+              if ! command -v docker-compose >/dev/null 2>&1; then
+                apt-get update
+                apt-get install -y docker-compose-v2 || apt-get install -y docker-compose
+              fi
+
+              if docker compose version >/dev/null 2>&1; then
+                run_compose() { docker compose "$@"; }
+              else
+                run_compose() { docker-compose "$@"; }
+              fi
+            fi
+
+            run_compose -f deploy/docker-compose.prod.yml --env-file .env run --rm --build \
+              -e DOTENV_CONFIG_PATH=.env \
+              -e MIGRATION_STATUS_REQUIRE_DB=1 \
+              -e MIGRATION_STATUS_FAIL_ON_PENDING=1 \
+              api npm run migrate:status
+          REMOTE
+
+      - name: Deploy containers on VPS
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_ENV_B64: ${{ secrets.DEPLOY_ENV_B64 }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          APP_VERSION="${GITHUB_SHA}"
+          APP_BUILD_TIME="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "DEPLOY_PATH='${DEPLOY_PATH}' DEPLOY_ENV_B64='${DEPLOY_ENV_B64}' APP_VERSION='${APP_VERSION}' APP_BUILD_TIME='${APP_BUILD_TIME}' bash -s" <<'REMOTE'
+            set -euo pipefail
+
+            if ! command -v docker >/dev/null 2>&1; then
+              apt-get update
+              apt-get install -y docker.io
+              systemctl enable --now docker
+            fi
+
+            if docker compose version >/dev/null 2>&1; then
+              run_compose() { docker compose "$@"; }
+            else
+              if ! command -v docker-compose >/dev/null 2>&1; then
+                apt-get update
+                apt-get install -y docker-compose-v2 || apt-get install -y docker-compose
+              fi
+
+              if docker compose version >/dev/null 2>&1; then
+                run_compose() { docker compose "$@"; }
+              else
+                run_compose() { docker-compose "$@"; }
+              fi
+            fi
+
+            cd "$DEPLOY_PATH"
+            echo "$DEPLOY_ENV_B64" | base64 -d > .env
+            grep -Ev '^(APP_VERSION|APP_BUILD_TIME)=' .env > .env.tmp || true
+            printf 'APP_VERSION=%s\nAPP_BUILD_TIME=%s\n' "$APP_VERSION" "$APP_BUILD_TIME" >> .env.tmp
+            mv .env.tmp .env
+
+            try_compose_up() {
+              run_compose -f deploy/docker-compose.prod.yml --env-file .env up -d --build --force-recreate --remove-orphans
+            }
+
+            recover_container_runtime() {
+              systemctl daemon-reload || true
+              systemctl unmask containerd.service || true
+              systemctl unmask docker.service || true
+              systemctl enable containerd.service || true
+              systemctl enable docker.service || true
+              systemctl restart containerd.service || true
+              systemctl restart docker.service || service docker restart || true
+              sleep 8
+              docker info >/dev/null 2>&1 || true
+            }
+
+            recover_container_runtime
+
+            up_ok=0
+            for attempt in 1 2 3; do
+              echo "Compose deploy attempt ${attempt}/3"
+              if try_compose_up; then
+                up_ok=1
+                break
+              fi
+
+              echo "Compose attempt ${attempt} failed. Restarting docker services..."
+              recover_container_runtime
+            done
+
+            if [ "$up_ok" -ne 1 ]; then
+              echo "Compose deploy failed after retries."
+              exit 1
+            fi
+
+            docker image prune -f
+          REMOTE
+
+      - name: Run VPS smoke checks
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SMOKE_EXPECT_COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "cd '${DEPLOY_PATH}' && SMOKE_EXPECT_COMMIT='${SMOKE_EXPECT_COMMIT}' bash deploy/scripts/smoke-vps.sh http://127.0.0.1"
+
+      - name: Run VPS DB explain probes
+        continue-on-error: true
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          set -euo pipefail
+          ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            "cd '${DEPLOY_PATH}' && bash deploy/scripts/db-explain-vps.sh"
+
+      - name: Run public smoke checks
+        env:
+          SMOKE_BASE_URL: ${{ secrets.DEPLOY_SITE_URL }}
+          SMOKE_EXPECT_COMMIT: ${{ github.sha }}
+          SMOKE_LOGIN_EMAIL: ${{ secrets.SMOKE_LOGIN_EMAIL }}
+          SMOKE_LOGIN_PASSWORD: ${{ secrets.SMOKE_LOGIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          npm run smoke:prod

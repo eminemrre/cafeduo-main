@@ -1,0 +1,13 @@
+.git
+.github
+.vscode
+.agent
+node_modules
+coverage
+dist
+playwright-report
+test-results
+npm-debug.log*
+.env
+.env.*
+!.env.example

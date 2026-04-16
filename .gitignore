@@ -1,0 +1,56 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment variables
+.env
+.env.ai
+.env.local
+.env*.local
+
+# Temporary extracted assets
+temp_assets/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/
+
+# Jest coverage outputs
+/coverage/
+/output/
+
+# Agent configurations (keep workflows, ignore local)
+.agent/local/
+
+# Deprecated/temporary
+*.sh.log
+antigravity/
+
+# Database migrations (keep migration files, ignore state)
+# pgmigrations table is created in database, not in filesystem
+# Migration files (*.js) should be tracked in git

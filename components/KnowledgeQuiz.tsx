@@ -156,14 +156,17 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
   const syncLiveProgress = useCallback(async (score: number, round: number, isDone: boolean) => {
     if (isBot || !gameId) return;
     try {
+      // 🔒 VALIDATION: Sanitize inputs before sending to server
+      const safeScore = Math.max(0, Math.min(100, Math.floor(score)));
+      const safeRound = Math.max(0, Math.min(100, Math.floor(round)));
       await api.games.move(gameId, {
         liveSubmission: {
           mode: 'Bilgi Yarışı',
-          score,
-          roundsWon: score,
-          round,
-          done: isDone,
-          submissionKey: `quiz|${String(gameId)}|${currentUser.username}|${round}|${score}|${isDone ? 1 : 0}`,
+          score: safeScore,
+          roundsWon: safeScore,
+          round: safeRound,
+          done: Boolean(isDone),
+          submissionKey: `quiz|${String(gameId)}|${currentUser.username}|${safeRound}|${safeScore}|${isDone ? 1 : 0}`,
         },
       });
     } catch (err) {

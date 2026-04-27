@@ -251,13 +251,34 @@ io.on('connection', (socket) => {
     logger.info(`Socket ${socket.id} (${socket.username}) left game: ${normalizedGameId}`);
   });
 
+  // 🔒 SECURITY: Allowed move action types for validation
+  const ALLOWED_MOVE_ACTIONS = new Set([
+    'shot_result', 'turn_timeout', 'game_over', 'player_left',
+    'fire', 'move', 'resign', 'draw_offer',
+  ]);
+
   socket.on('game_move', (data) => {
     const normalizedGameId = String(data?.gameId || '').trim();
     if (!normalizedGameId || normalizedGameId.length > 64) return;
 
+    const move = data?.move;
+    // Validate move data size and structure
+    if (move && typeof move === 'object') {
+      const moveKeys = Object.keys(move);
+      if (moveKeys.length > 20) return; // Prevent oversized payloads
+      // Validate action type if present
+      if (move.action && !ALLOWED_MOVE_ACTIONS.has(String(move.action))) {
+        logger.warn(`Blocked game_move with invalid action: ${move.action}`, { socketId: socket.id, gameId: normalizedGameId });
+        return;
+      }
+      // Validate angle/power ranges for tank battle
+      if (typeof move.angle === 'number' && (move.angle < 0 || move.angle > 360)) return;
+      if (typeof move.power === 'number' && (move.power < 0 || move.power > 200)) return;
+    }
+
     const sanitizedMove = {
       gameId: normalizedGameId,
-      move: data?.move ?? null,
+      move: move ?? null,
       player: socket.username, // Use authenticated username instead of client-provided player
       ts: Date.now(),
     };

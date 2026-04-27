@@ -361,6 +361,11 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             const moveData = payload?.move;
             if (!moveData) return;
 
+            // 🔒 SECURITY: Validate opponent move structure
+            if (moveData.action && typeof moveData.action !== 'string') return;
+            if (typeof moveData.angle === 'number' && (moveData.angle < 0 || moveData.angle > 360)) return;
+            if (typeof moveData.power === 'number' && (moveData.power < 0 || moveData.power > 200)) return;
+
             // Handle shot result from opponent (HP sync)
             if (moveData.action === 'shot_result') {
                 // 🔒 CRITICAL FIX: Clear opponent projectile and explosion if still flying

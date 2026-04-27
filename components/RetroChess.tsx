@@ -343,6 +343,9 @@ export const RetroChess: React.FC<RetroChessProps> = ({
 
     const handleRealtime = (payload: GameStateUpdatedPayload) => {
       if (String(payload?.gameId || '') !== String(gameId)) return;
+      // 🔒 SECURITY: Validate payload structure
+      if (payload.type && typeof payload.type !== 'string') return;
+      if (payload.chess && typeof payload.chess !== 'object') return;
       lastRealtimeAtRef.current = Date.now();
 
       if (payload.type === 'draw_offer_updated') {

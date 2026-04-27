@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS games (
     game_type VARCHAR(50) NOT NULL,
     points INTEGER NOT NULL,
     table_code VARCHAR(50) NOT NULL,
-    status VARCHAR(20) DEFAULT 'waiting', -- 'waiting', 'active', 'completed'
+    status VARCHAR(20) DEFAULT 'waiting', -- 'waiting', 'active', 'finished'
     player1_move VARCHAR(50),
     player2_move VARCHAR(50),
     game_state JSONB,

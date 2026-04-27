@@ -6,6 +6,7 @@ import { submitScoreAndWaitForWinner } from '../lib/multiplayer';
 import { GAME_ASSETS } from '../lib/gameAssets';
 import { playGameSfx } from '../lib/gameAudio';
 import { socketService } from '../lib/socket';
+import { ConnectionOverlay } from './ConnectionOverlay';
 import { buildQuizRoundSet } from '../lib/knowledgeQuizQuestions';
 
 interface KnowledgeQuizProps {
@@ -66,6 +67,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
   const [guestName, setGuestName] = useState('');
   const [feedbackAnimation, setFeedbackAnimation] = useState<'correct' | 'incorrect' | null>(null);
   const [scoreAnimation, setScoreAnimation] = useState<'player' | 'opponent' | null>(null);
+  const [floatingScore, setFloatingScore] = useState<string | null>(null);
   const matchStartedAtRef = useRef<number>(Date.now());
   const advanceTimerRef = useRef<number | null>(null);
   const pollRef = useRef<number | null>(null);
@@ -277,6 +279,15 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
     // Score animation
     setScoreAnimation(isCorrect ? 'player' : 'opponent');
     setTimeout(() => setScoreAnimation(null), 400);
+
+    // Floating score effect
+    if (isCorrect) {
+      setFloatingScore('+1');
+      window.setTimeout(() => setFloatingScore(null), 800);
+    } else {
+      setFloatingScore('✕');
+      window.setTimeout(() => setFloatingScore(null), 600);
+    }
     
     setPlayerScore(nextPlayerScore);
     setOpponentScore(nextOpponentScore);
@@ -321,9 +332,11 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
   };
 
   return (
-    <div
-      className="max-w-2xl mx-auto rf-screen-card noise-bg p-4 sm:p-6 text-white relative overflow-hidden"
-      data-testid="knowledge-quiz"
+    <>
+      <ConnectionOverlay gameId={gameId} />
+      <div
+        className="max-w-2xl mx-auto rf-screen-card noise-bg p-4 sm:p-6 text-white relative overflow-hidden"
+        data-testid="knowledge-quiz"
       style={{
         backgroundImage: `linear-gradient(165deg, rgba(4, 17, 41, 0.92), rgba(2, 28, 52, 0.9)), url('${GAME_ASSETS.backgrounds.knowledgeQuiz}')`,
         backgroundSize: 'cover',
@@ -368,7 +381,15 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
 
         <p className="text-sm text-[var(--rf-muted)] mb-4 pl-3 border-l-2 border-cyan-400/55 min-h-[2rem] flex items-center">{message}</p>
 
-        <div className={`rf-screen-card-muted p-4 transition-all duration-300 ${feedbackAnimation === 'correct' ? 'animate-flash-green' : feedbackAnimation === 'incorrect' ? 'animate-flash-red' : ''}`}>
+        <div className={`rf-screen-card-muted p-4 transition-all duration-300 relative overflow-hidden ${feedbackAnimation === 'correct' ? 'animate-flash-green animate-glow-pulse' : feedbackAnimation === 'incorrect' ? 'animate-flash-red animate-shake' : ''}`}>
+          {/* Floating score overlay */}
+          {floatingScore && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+              <span className={`text-6xl font-bold animate-float-up ${floatingScore === '+1' ? 'text-emerald-400 drop-shadow-[0_0_20px_rgba(52,211,153,0.6)]' : 'text-rose-400 drop-shadow-[0_0_20px_rgba(244,63,94,0.6)]'}`}>
+                {floatingScore}
+              </span>
+            </div>
+          )}
           <p data-testid="knowledge-question" className="text-base md:text-lg font-semibold text-white leading-relaxed mb-4">
             {currentQuestion.question}
           </p>

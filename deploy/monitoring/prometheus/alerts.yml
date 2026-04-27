@@ -1,0 +1,281 @@
+# Prometheus Alert Rules for CafeDuo
+# Location: /opt/cafeduo-main/deploy/monitoring/prometheus/alerts.yml
+
+groups:
+  # Infrastructure Alerts
+  - name: infrastructure
+    interval: 30s
+    rules:
+      # Instance down alert
+      - alert: InstanceDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Instance {{ $labels.instance }} down"
+          description: "{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 2 minutes."
+
+      # High CPU usage
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}"
+
+      # Disk space running low
+      - alert: DiskSpaceLow
+        expr: (1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|fuse.lxcfs"} / node_filesystem_size_bytes)) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          category: infrastructure
+        annotations:
+          summary: "Disk space low on {{ $labels.instance }}"
+          description: "Disk usage is {{ $value }}% on {{ $labels.instance }} ({{ $labels.mountpoint }})"
+
+      # Disk space critical
+      - alert: DiskSpaceCritical
+        expr: (1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|fuse.lxcfs"} / node_filesystem_size_bytes)) * 100 > 95
+        for: 2m
+        labels:
+          severity: critical
+          category: infrastructure
+        annotations:
+          summary: "Disk space critically low on {{ $labels.instance }}"
+          description: "Disk usage is {{ $value }}% on {{ $labels.instance }} ({{ $labels.mountpoint }})"
+
+  # Container Alerts
+  - name: containers
+    interval: 30s
+    rules:
+      # Container down
+      - alert: ContainerDown
+        expr: absent(container_last_seen{name=~"deploy.*"})
+        for: 2m
+        labels:
+          severity: critical
+          category: containers
+        annotations:
+          summary: "Container {{ $labels.name }} is down"
+          description: "Container {{ $labels.name }} has been down for more than 2 minutes"
+
+      # Container high CPU
+      - alert: ContainerHighCPU
+        expr: rate(container_cpu_usage_seconds_total{name=~"deploy.*"}[5m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          category: containers
+        annotations:
+          summary: "High CPU usage in container {{ $labels.name }}"
+          description: "Container {{ $labels.name }} CPU usage is {{ $value }}%"
+
+      # Container high memory
+      - alert: ContainerHighMemory
+        expr: (container_memory_usage_bytes{name=~"deploy.*"} / container_spec_memory_limit_bytes{name=~"deploy.*"}) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          category: containers
+        annotations:
+          summary: "High memory usage in container {{ $labels.name }}"
+          description: "Container {{ $labels.name }} memory usage is {{ $value }}%"
+
+      # Container restart
+      - alert: ContainerRestarted
+        expr: rate(container_last_seen{name=~"deploy.*"}[5m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          category: containers
+        annotations:
+          summary: "Container {{ $labels.name }} restarted"
+          description: "Container {{ $labels.name }} has restarted"
+
+  # Database Alerts
+  - name: database
+    interval: 30s
+    rules:
+      # PostgreSQL down
+      - alert: PostgreSQLDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: database
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL instance {{ $labels.instance }} is down"
+
+      # Too many connections
+      - alert: PostgreSQLTooManyConnections
+        expr: sum(pg_stat_activity_count) > 80
+        for: 2m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "PostgreSQL too many connections"
+          description: "PostgreSQL has {{ $value }} active connections"
+
+      # Slow queries
+      - alert: PostgreSQLSlowQueries
+        expr: rate(pg_stat_activity_max_tx_duration[5m]) > 60
+        for: 2m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "PostgreSQL slow queries detected"
+          description: "Slow queries detected on PostgreSQL"
+
+      # Database size growing rapidly
+      - alert: DatabaseSizeGrowingRapidly
+        expr: rate(pg_database_size_bytes[1h]) > 1073741824  # 1GB/hour
+        for: 10m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "Database size growing rapidly"
+          description: "Database size is growing at {{ $value | humanize }}B/s"
+
+  # Redis Alerts
+  - name: redis
+    interval: 30s
+    rules:
+      # Redis down
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: redis
+        annotations:
+          summary: "Redis is down"
+          description: "Redis instance {{ $labels.instance }} is down"
+
+      # Redis high memory
+      - alert: RedisHighMemory
+        expr: (redis_memory_used_bytes / redis_memory_max_bytes) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+          category: redis
+        annotations:
+          summary: "Redis high memory usage"
+          description: "Redis memory usage is {{ $value }}% on {{ $labels.instance }}"
+
+      # Redis too many connections
+      - alert: RedisTooManyConnections
+        expr: redis_connected_clients > 100
+        for: 2m
+        labels:
+          severity: warning
+          category: redis
+        annotations:
+          summary: "Redis too many connections"
+          description: "Redis has {{ $value }} connected clients on {{ $labels.instance }}"
+
+      # Redis rejected connections
+      - alert: RedisRejectedConnections
+        expr: increase(redis_rejected_connections_total[1m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+          category: redis
+        annotations:
+          summary: "Redis rejecting connections"
+          description: "Redis is rejecting connections on {{ $labels.instance }}"
+
+  # Application Alerts
+  - name: application
+    interval: 30s
+    rules:
+      # API high error rate
+      - alert: APIHighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          category: application
+        annotations:
+          summary: "API high error rate"
+          description: "API error rate is {{ $value }} on {{ $labels.instance }}"
+
+      # API slow response time
+      - alert: APISlowResponseTime
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 2
+        for: 5m
+        labels:
+          severity: warning
+          category: application
+        annotations:
+          summary: "API slow response time"
+          description: "API 95th percentile response time is {{ $value }}s"
+
+      # API high request rate
+      - alert: APIHighRequestRate
+        expr: rate(http_requests_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: info
+          category: application
+        annotations:
+          summary: "API high request rate"
+          description: "API is receiving {{ $value }} requests/second"
+
+      # WebSocket connection issues
+      - alert: WebSocketConnectionIssues
+        expr: rate(websocket_connection_errors_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: warning
+          category: application
+        annotations:
+          summary: "WebSocket connection issues"
+          description: "WebSocket error rate is {{ $value }} on {{ $labels.instance }}"
+
+  # SSL Certificate Alerts
+  - name: ssl
+    interval: 1h
+    rules:
+      # SSL certificate expiring soon
+      - alert: SSLCertificateExpiringSoon
+        expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 30  # 30 days
+        for: 1h
+        labels:
+          severity: warning
+          category: ssl
+        annotations:
+          summary: "SSL certificate expiring soon"
+          description: "SSL certificate for {{ $labels.instance }} expires in {{ $value | humanizeDuration }}"
+
+      # SSL certificate expired
+      - alert: SSLCertificateExpired
+        expr: probe_ssl_earliest_cert_expiry - time() < 0
+        for: 1m
+        labels:
+          severity: critical
+          category: ssl
+        annotations:
+          summary: "SSL certificate expired"
+          description: "SSL certificate for {{ $labels.instance }} has expired"
+

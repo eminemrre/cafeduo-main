@@ -48,8 +48,37 @@ const resolveSocketUrl = () => {
 
 const SOCKET_URL = resolveSocketUrl();
 
+type ConnectionListener = (connected: boolean) => void;
+
 class SocketService {
     private socket: Socket | null = null;
+    private listeners: Set<ConnectionListener> = new Set();
+    private _isConnected = false;
+
+    /**
+     * Subscribe to connection status changes
+     */
+    onConnectionChange(listener: ConnectionListener) {
+        this.listeners.add(listener);
+        // Immediately notify with current state
+        listener(this._isConnected);
+        return () => { this.listeners.delete(listener); };
+    }
+
+    private notifyListeners() {
+        const connected = this.socket?.connected ?? false;
+        if (connected !== this._isConnected) {
+            this._isConnected = connected;
+            this.listeners.forEach((l) => l(connected));
+        }
+    }
+
+    /**
+     * Check if socket is currently connected
+     */
+    isConnected() {
+        return this.socket?.connected ?? false;
+    }
 
     /**
      * Establish socket connection with authentication
@@ -71,10 +100,12 @@ class SocketService {
 
         this.socket.on('connect', () => {
             console.log('✅ Socket connected:', this.socket?.id);
+            this.notifyListeners();
         });
 
         this.socket.on('connect_error', (error) => {
             console.error('❌ Socket connection error:', error.message);
+            this.notifyListeners();
             // If authentication failed, token might be invalid or expired
             if (error.message === 'Authentication required: No token provided' ||
                 error.message === 'Invalid token' ||
@@ -85,6 +116,7 @@ class SocketService {
 
         this.socket.on('disconnect', (reason) => {
             console.log('❌ Socket disconnected:', reason);
+            this.notifyListeners();
             // If server disconnected, try to reconnect with fresh token
             if (reason === 'io server disconnect') {
                 this.socket?.connect();

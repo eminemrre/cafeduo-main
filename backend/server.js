@@ -730,6 +730,13 @@ const systemRoutes = createSystemRoutes({
   appVersion: APP_VERSION,
   appBuildTime: APP_BUILD_TIME,
   isDbConnected,
+  getRedisStatus: () => ({
+    status: redisClient.status || 'unknown',
+    ready: redisClient.status === 'ready',
+  }),
+  getSocketStatus: () => ({
+    connectedClients: io.engine.clientsCount || 0,
+  }),
 });
 
 const promoteBootstrapAdmins = async () => {

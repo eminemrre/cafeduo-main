@@ -104,6 +104,8 @@ describe('backend/server.js route registry', () => {
       'GET /api/meta/version',
       'GET /health',
       'GET /api/health',
+      'GET /readiness',
+      'GET /api/readiness',
     ];
 
     for (const routeKey of expectedSingleRoutes) {

@@ -1,0 +1,145 @@
+# CafeDuo Monitoring Stack
+# Prometheus + Grafana + Node Exporter + cAdvisor
+
+services:
+  # Prometheus - Metrik toplama ve depolama
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: cafeduo-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - monitoring
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Grafana - Görselleştirme ve dashboard
+  grafana:
+    image: grafana/grafana:latest
+    container_name: cafeduo-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=cafeduo_monitor_2026
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_ROOT_URL=https://monitor.cafeduotr.com
+      - GF_INSTALL_PLUGINS=redis-datasource
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - monitoring
+    depends_on:
+      - prometheus
+
+  # Node Exporter - Sistem metrikleri
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: cafeduo-node-exporter
+    restart: unless-stopped
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/host'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/host:ro,rslave
+    networks:
+      - monitoring
+
+  # cAdvisor - Container metrikleri
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cafeduo-cadvisor
+    restart: unless-stopped
+    command:
+      - '--housekeeping_interval=30s'
+      - '--docker_only=true'
+    ports:
+      - "8081:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - monitoring
+    privileged: true
+    devices:
+      - /dev/kmsg
+
+  # Redis Exporter - Redis metrikleri
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: cafeduo-redis-exporter
+    restart: unless-stopped
+    # Redis şifresi environment variable'dan alınacak
+    command:
+      - '--redis.addr=host.docker.internal:6379'
+    ports:
+      - "9121:9121"
+    networks:
+      - monitoring
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Postgres Exporter - PostgreSQL metrikleri
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: cafeduo-postgres-exporter
+    restart: unless-stopped
+    environment:
+      - DATA_SOURCE_NAME=postgresql://postgres:postgres@host.docker.internal:5432/cafeduo?sslmode=disable
+    ports:
+      - "9187:9187"
+    networks:
+      - monitoring
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  # Alertmanager - Alert yönetimi
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: cafeduo-alertmanager
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=https://alert.cafeduotr.com'
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  prometheus_data:
+  grafana_data:
+  alertmanager_data:
+

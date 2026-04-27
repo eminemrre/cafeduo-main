@@ -6,6 +6,7 @@ import { api } from '../lib/api';
 import { GAME_ASSETS } from '../lib/gameAssets';
 import { playGameSfx } from '../lib/gameAudio';
 import { socketService } from '../lib/socket';
+import { ConnectionOverlay } from './ConnectionOverlay';
 import {
   FILES,
   RANKS,
@@ -498,6 +499,8 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     const movingPiece = chess.get(from);
     if (!movingPiece) return;
     const promotion = movingPiece.type === 'p' && (to.endsWith('8') || to.endsWith('1')) ? 'q' : undefined;
+    const targetPiece = chess.get(to);
+    const isCapture = Boolean(targetPiece);
 
     // Track last move for highlighting
     setLastMove({ from, to });
@@ -514,7 +517,16 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       const cloned = loadChess(sandbox.fen());
       setChess(cloned);
       clearSelection();
-      playGameSfx('success', 0.25);
+      // 🎵 Rich sound feedback for bot mode
+      if (cloned.isCheckmate()) {
+        playGameSfx('success', 0.45);
+      } else if (cloned.isCheck()) {
+        playGameSfx('fail', 0.3);
+      } else if (isCapture) {
+        playGameSfx('hit', 0.3);
+      } else {
+        playGameSfx('select', 0.2);
+      }
       if (cloned.isGameOver()) {
         concludeGame(null, cloned);
         return;
@@ -524,6 +536,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       return;
     }
 
+    // Multiplayer mode
     setSubmitting(true);
     try {
       const result = await api.games.move(gameId, {
@@ -539,7 +552,6 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       setChess(engine);
       if (Array.isArray(result?.gameState?.chess?.moveHistory)) {
         setMoveLog(result.gameState.chess.moveHistory.slice(-200));
-        // Last move is already set before the API call
       }
       const normalizedClock = buildClockState(result?.gameState?.chess?.clock);
       if (normalizedClock) {
@@ -549,7 +561,18 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       if (result?.status) setServerStatus(result.status);
       const winner = normalizeWinner(result?.winner || result?.gameState?.chess?.winner);
       if (winner) setServerWinner(winner);
-      playGameSfx('success', 0.22);
+
+      // 🎵 Rich sound feedback for multiplayer
+      if (engine.isCheckmate()) {
+        playGameSfx('success', 0.45);
+      } else if (engine.isCheck()) {
+        playGameSfx('fail', 0.3);
+      } else if (isCapture) {
+        playGameSfx('hit', 0.3);
+      } else {
+        playGameSfx('select', 0.2);
+      }
+
       if (result?.gameState?.chess?.isGameOver || result?.status === 'finished' || engine.isGameOver()) {
         concludeGame(winner, engine);
         return;
@@ -678,9 +701,11 @@ export const RetroChess: React.FC<RetroChessProps> = ({
   const statusLabel = serverStatus === 'finished' ? 'Bitti' : 'Aktif';
 
   return (
-    <div
-      className="max-w-4xl mx-auto rf-screen-card noise-bg p-4 sm:p-6 text-white relative overflow-hidden"
-      data-testid="retro-chess"
+    <>
+      <ConnectionOverlay gameId={gameId} />
+      <div
+        className="max-w-4xl mx-auto rf-screen-card noise-bg p-4 sm:p-6 text-white relative overflow-hidden"
+        data-testid="retro-chess"
       style={{
         backgroundImage: `linear-gradient(165deg, rgba(3, 16, 40, 0.94), rgba(4, 28, 56, 0.9)), url('${GAME_ASSETS.backgrounds.strategyChess}')`,
         backgroundSize: 'cover',
@@ -774,10 +799,12 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                 ? 'before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.08),transparent_50%)] before:pointer-events-none'
                 : 'before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_70%_70%,rgba(0,0,0,0.15),transparent_50%)] before:pointer-events-none';
               
-              const selectedClass = isSelected ? 'border-cyan-100 ring-2 ring-cyan-200/85' : 'border-cyan-500/30';
+              const selectedClass = isSelected ? 'border-cyan-100 ring-2 ring-cyan-200/85 z-10 scale-[1.08] shadow-[0_8px_24px_rgba(34,211,238,0.4)]' : 'border-cyan-500/30';
               const legalClass = isLegal ? 'before:absolute before:inset-0 before:m-auto before:w-3.5 before:h-3.5 before:bg-cyan-200 before:shadow-[0_0_16px_rgba(165,243,252,0.95)] before:z-10' : '';
-              const lastMoveClass = (isLastMoveFrom || isLastMoveTo) ? 'last-move-highlight bg-[rgba(251,191,36,0.25)]' : '';
-              const checkClass = isInCheck ? 'animate-check-pulse bg-[rgba(239,68,68,0.35)]' : '';
+              const lastMoveClass = (isLastMoveFrom || isLastMoveTo)
+                ? 'border-amber-400/80 shadow-[inset_0_0_20px_rgba(251,191,36,0.35),0_0_12px_rgba(251,191,36,0.25)]'
+                : '';
+              const checkClass = isInCheck ? 'animate-check-pulse bg-[rgba(239,68,68,0.45)] shadow-[inset_0_0_30px_rgba(239,68,68,0.4)]' : '';
 
               return (
                 <button
@@ -787,21 +814,21 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                   aria-label={`Kare ${square}`}
                   onClick={() => handleSquareClick(square)}
                   disabled={loading || submitting || serverStatus === 'finished'}
-                  className={`relative aspect-square border transition-all duration-200 ${baseClass} ${patternClass} ${selectedClass} ${legalClass} ${lastMoveClass} ${checkClass} disabled:cursor-not-allowed`}
+                  className={`relative aspect-square border transition-all duration-300 ease-out ${baseClass} ${patternClass} ${selectedClass} ${legalClass} ${lastMoveClass} ${checkClass} disabled:cursor-not-allowed`}
                 >
                   {piece && (
                     <span
                       aria-label={`${piece.color === 'w' ? 'Beyaz' : 'Siyah'} ${PIECE_LABEL[piece.type]}`}
-                      className={`pointer-events-none absolute inset-0 flex items-center justify-center select-none transition-transform duration-200 ${piece.color === 'w' ? 'text-white' : 'text-[#1a1a2e]'
-                        }`}
+                      className={`pointer-events-none absolute inset-0 flex items-center justify-center select-none transition-all duration-300 ease-out ${piece.color === 'w' ? 'text-white' : 'text-[#1a1a2e]'
+                        } ${isSelected ? 'scale-110' : 'scale-100'}`}
                       style={{
                         fontSize: 'clamp(1.4rem, 5.2vw, 2.3rem)',
                         fontFamily: 'serif',
                         lineHeight: 1,
                         filter:
                           piece.color === 'w'
-                            ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.8)) drop-shadow(0 0 6px rgba(165,243,252,0.35))'
-                            : 'drop-shadow(0 1px 1px rgba(200,230,255,0.6)) drop-shadow(0 0 4px rgba(34,211,238,0.2))',
+                            ? `drop-shadow(0 2px 4px rgba(0,0,0,0.8)) drop-shadow(0 0 ${isSelected ? '12px' : '6px'} rgba(165,243,252,${isSelected ? '0.6' : '0.35'}))`
+                            : `drop-shadow(0 2px 2px rgba(200,230,255,0.6)) drop-shadow(0 0 ${isSelected ? '10px' : '4px'} rgba(34,211,238,${isSelected ? '0.4' : '0.2'}))`,
                         WebkitTextStroke:
                           piece.color === 'w'
                             ? '0.8px rgba(6,18,40,0.9)'

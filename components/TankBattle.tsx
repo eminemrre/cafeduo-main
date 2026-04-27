@@ -6,6 +6,7 @@ import { submitScoreAndWaitForWinner } from '../lib/multiplayer';
 import { GAME_ASSETS } from '../lib/gameAssets';
 import { playGameSfx } from '../lib/gameAudio';
 import { socketService } from '../lib/socket';
+import { ConnectionOverlay } from './ConnectionOverlay';
 import {
     CANVAS_H,
     CANVAS_W,
@@ -105,6 +106,9 @@ export const TankBattle: React.FC<TankBattleProps> = ({
     onLeave,
 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const canvasShakeRef = useRef({ x: 0, y: 0, intensity: 0 });
+    const particlesRef = useRef<Array<{ x: number; y: number; vx: number; vy: number; life: number; maxLife: number; color: string }>>([]);
+    const shockwavesRef = useRef<Array<{ x: number; y: number; radius: number; maxRadius: number; alpha: number; startTime: number }>>([]);
     const [angle, setAngle] = useState(45);
     const [power, setPower] = useState(60);
     const [playerHP, setPlayerHP] = useState(MAX_HP);
@@ -467,12 +471,60 @@ export const TankBattle: React.FC<TankBattleProps> = ({
         };
     }, [advanceTurnState, fetchSnapshot, finalizeMatch, gameId, gameSeed, getPlayerScore, isBot, opponentTankX, opponentTankY, syncLiveProgress, target]);
 
+    // ------- Particle System -------
+    const spawnParticles = (x: number, y: number, count: number, color: string) => {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = 1 + Math.random() * 3;
+            particlesRef.current.push({
+                x,
+                y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                life: 1,
+                maxLife: 20 + Math.random() * 20,
+                color,
+            });
+        }
+    };
+
+    const spawnShockwave = (x: number, y: number) => {
+        shockwavesRef.current.push({
+            x,
+            y,
+            radius: 5,
+            maxRadius: 60,
+            alpha: 1,
+            startTime: Date.now(),
+        });
+    };
+
+    const triggerScreenshake = (intensity: number) => {
+        canvasShakeRef.current.intensity = intensity;
+    };
+
     // ------- Draw -------
     const draw = useCallback(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
+
+        // Apply screenshake
+        const shake = canvasShakeRef.current;
+        if (shake.intensity > 0.5) {
+            shake.x = (Math.random() - 0.5) * shake.intensity;
+            shake.y = (Math.random() - 0.5) * shake.intensity;
+            shake.intensity *= 0.9;
+        } else {
+            shake.x = 0;
+            shake.y = 0;
+            shake.intensity = 0;
+        }
+
+        ctx.save();
+        ctx.translate(shake.x, shake.y);
+
         const terrain = terrainRef.current;
 
         // Sky gradient
@@ -588,20 +640,105 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             ctx.fill();
         }
 
-        // HUD overlay
-        ctx.fillStyle = C.textDim;
-        ctx.font = '11px monospace';
-        ctx.fillText(`Açı: ${angle}°  Güç: ${power}%`, 10, 20);
+        // Shockwaves
+        shockwavesRef.current = shockwavesRef.current.filter((sw) => {
+            const elapsed = Date.now() - sw.startTime;
+            const progress = Math.min(1, elapsed / 400);
+            sw.radius = sw.maxRadius * progress;
+            sw.alpha = 1 - progress;
+            if (progress >= 1) return false;
 
-        // Draw Wind
-        let windStr = 'Yok';
-        if (wind < 0) windStr = '◄◄ ' + Math.abs(wind);
-        if (wind > 0) windStr = '►► ' + Math.abs(wind);
+            ctx.beginPath();
+            ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 159, 67, ${sw.alpha * 0.8})`;
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(sw.x, sw.y, sw.radius * 0.6, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(255, 224, 102, ${sw.alpha * 0.5})`;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            return true;
+        });
+
+        // Particles
+        particlesRef.current = particlesRef.current.filter((p) => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.15; // gravity
+            p.life -= 1 / p.maxLife;
+            if (p.life <= 0) return false;
+
+            ctx.globalAlpha = p.life;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 2 * p.life, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            return true;
+        });
+
+        ctx.restore(); // End screenshake
+
+        // HUD overlay (no shake)
+        ctx.fillStyle = C.textDim;
+        ctx.font = 'bold 12px "Chakra Petch", monospace';
+        ctx.fillText(`AÇI: ${angle}°`, 10, 20);
+
+        // Power bar
+        const powerBarX = 70;
+        const powerBarY = 12;
+        const powerBarW = 80;
+        const powerBarH = 8;
+        const powerRatio = (power - 10) / 90;
+        const powerColor = power < 35 ? '#f43f5e' : power < 70 ? '#f59e0b' : '#39d98a';
+        ctx.fillStyle = 'rgba(255,255,255,0.15)';
+        ctx.fillRect(powerBarX, powerBarY, powerBarW, powerBarH);
+        ctx.fillStyle = powerColor;
+        ctx.shadowColor = powerColor;
+        ctx.shadowBlur = 8;
+        ctx.fillRect(powerBarX, powerBarY, powerBarW * powerRatio, powerBarH);
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#fff';
+        ctx.font = '10px "Chakra Petch", monospace';
+        ctx.fillText(`${power}%`, powerBarX + powerBarW + 6, powerBarY + 7);
+
+        // Wind arrow
+        ctx.font = 'bold 12px "Chakra Petch", monospace';
         ctx.fillStyle = wind === 0 ? C.textDim : '#39d98a';
-        ctx.fillText(`Rüzgar: ${windStr}`, 10, 36);
+        ctx.fillText('RÜZGAR:', 10, 40);
+        const windArrowX = 70;
+        const windArrowY = 35;
+        if (wind !== 0) {
+            const arrowDir = wind > 0 ? 1 : -1;
+            const arrowLen = Math.min(40, Math.abs(wind) * 14);
+            ctx.strokeStyle = '#39d98a';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(windArrowX, windArrowY);
+            ctx.lineTo(windArrowX + arrowLen * arrowDir, windArrowY);
+            ctx.stroke();
+            // Arrowhead
+            ctx.beginPath();
+            ctx.moveTo(windArrowX + arrowLen * arrowDir, windArrowY);
+            ctx.lineTo(windArrowX + arrowLen * arrowDir - 6 * arrowDir, windArrowY - 4);
+            ctx.lineTo(windArrowX + arrowLen * arrowDir - 6 * arrowDir, windArrowY + 4);
+            ctx.closePath();
+            ctx.fillStyle = '#39d98a';
+            ctx.fill();
+            ctx.fillStyle = '#39d98a';
+            ctx.fillText(`${Math.abs(wind)}`, windArrowX + arrowLen * arrowDir + (arrowDir > 0 ? 4 : -20), windArrowY + 4);
+        } else {
+            ctx.fillStyle = C.textDim;
+            ctx.fillText('Yok', windArrowX, windArrowY + 4);
+        }
 
-        ctx.fillStyle = C.textDim;
-        ctx.fillText(isPlayerTurn ? '» Senin sıran' : `» ${target} ateş ediyor...`, 10, 52);
+        // Turn indicator
+        ctx.fillStyle = isPlayerTurn ? '#39d98a' : C.textDim;
+        ctx.font = 'bold 11px "Chakra Petch", monospace';
+        const turnText = isPlayerTurn ? '▲ SENİN SIRAN' : `▼ ${target.toUpperCase()} ATEŞ EDİYOR...`;
+        ctx.fillText(turnText, 10, 58);
     }, [angle, isPlayerTurn, opponentHP, playerHP, power, target, isBot, playerTankX, playerTankY, opponentTankX, opponentTankY, wind]);
 
     // ------- Fire -------
@@ -647,6 +784,19 @@ export const TankBattle: React.FC<TankBattleProps> = ({
                 proj.x += proj.vx;
                 proj.y += proj.vy;
 
+                // 🔥 Particle trail every few frames
+                if (Math.random() < 0.4) {
+                    particlesRef.current.push({
+                        x: proj.x,
+                        y: proj.y,
+                        vx: (Math.random() - 0.5) * 0.5,
+                        vy: (Math.random() - 0.5) * 0.5,
+                        life: 1,
+                        maxLife: 10 + Math.random() * 10,
+                        color: proj.firedBy === 'player' ? '#ffe066' : '#ff9f43',
+                    });
+                }
+
                 // Check terrain collision
                 const xNorm = proj.x / CANVAS_W;
                 if (xNorm >= 0 && xNorm <= 1) {
@@ -665,6 +815,11 @@ export const TankBattle: React.FC<TankBattleProps> = ({
                         explosionRef.current = { x: proj.x, y: proj.y, startTime: Date.now() };
                         projectileRef.current = null;
                         playGameSfx(impact.isHit ? 'success' : 'fail', 0.25);
+
+                        // 🔥 Visual effects on impact
+                        spawnParticles(proj.x, proj.y, impact.isHit ? 25 : 12, impact.isHit ? '#ff5c7c' : '#ffe066');
+                        spawnShockwave(proj.x, proj.y);
+                        triggerScreenshake(impact.isHit ? 6 : 3);
 
                         if (impact.shooterIsPlayer) {
                             // Player fired — only player side handles damage + sync
@@ -738,6 +893,7 @@ export const TankBattle: React.FC<TankBattleProps> = ({
                 if (proj.x < -50 || proj.x > CANVAS_W + 50 || proj.y > CANVAS_H + 50) {
                     const shooterIsPlayer = proj.firedBy === 'player';
                     projectileRef.current = null;
+                    spawnParticles(proj.x < 0 ? 0 : proj.x > CANVAS_W ? CANVAS_W : proj.x, proj.y > CANVAS_H ? CANVAS_H : proj.y, 6, '#91a8c9');
 
                     if (shooterIsPlayer) {
                         setMessage('Mermi alanın dışına çıktı. Sıra değişti.');
@@ -951,10 +1107,12 @@ export const TankBattle: React.FC<TankBattleProps> = ({
     }, [done, gameId, isBot, onGameEnd, onLeave, syncLiveProgress, target]);
 
     return (
-        <div
-            className="max-w-3xl mx-auto rf-screen-card noise-bg p-4 sm:p-6 text-white relative overflow-hidden"
-            data-testid="tank-battle"
-            style={{
+        <>
+            <ConnectionOverlay gameId={gameId} />
+            <div
+                className="max-w-3xl mx-auto rf-screen-card noise-bg p-4 sm:p-6 text-white relative overflow-hidden"
+                data-testid="tank-battle"
+                style={{
                 backgroundImage: `linear-gradient(165deg, rgba(4, 17, 41, 0.92), rgba(2, 28, 52, 0.9)), url('${GAME_ASSETS.backgrounds.tankBattle}')`,
                 backgroundSize: 'cover',
                 backgroundPosition: 'center',

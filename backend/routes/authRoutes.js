@@ -5,11 +5,13 @@ const authController = require('../controllers/authController');
 const { buildRateLimiterOptions } = require('../middleware/rateLimit');
 const { authenticateToken } = require('../middleware/auth'); // Will create this later or move from server.js
 
-const AUTH_WINDOW_MS = Number(process.env.AUTH_RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
-const AUTH_LOGIN_MAX_ATTEMPTS = Number(process.env.AUTH_LOGIN_RATE_LIMIT_MAX_REQUESTS || 20);
-const AUTH_REGISTER_MAX_ATTEMPTS = Number(process.env.AUTH_REGISTER_RATE_LIMIT_MAX_REQUESTS || 10);
-const AUTH_FORGOT_PASSWORD_MAX_ATTEMPTS = Number(process.env.AUTH_FORGOT_PASSWORD_RATE_LIMIT_MAX_REQUESTS || 6);
-const AUTH_RESET_PASSWORD_MAX_ATTEMPTS = Number(process.env.AUTH_RESET_PASSWORD_RATE_LIMIT_MAX_REQUESTS || 12);
+// 🔒 SECURITY: Rate limiting tuned for better UX while maintaining protection
+// Window reduced from 15min to 5min to prevent excessive lockout times
+const AUTH_WINDOW_MS = Number(process.env.AUTH_RATE_LIMIT_WINDOW_MS || 5 * 60 * 1000); // 5 minutes
+const AUTH_LOGIN_MAX_ATTEMPTS = Number(process.env.AUTH_LOGIN_RATE_LIMIT_MAX_REQUESTS || 8);
+const AUTH_REGISTER_MAX_ATTEMPTS = Number(process.env.AUTH_REGISTER_RATE_LIMIT_MAX_REQUESTS || 5);
+const AUTH_FORGOT_PASSWORD_MAX_ATTEMPTS = Number(process.env.AUTH_FORGOT_PASSWORD_RATE_LIMIT_MAX_REQUESTS || 3);
+const AUTH_RESET_PASSWORD_MAX_ATTEMPTS = Number(process.env.AUTH_RESET_PASSWORD_RATE_LIMIT_MAX_REQUESTS || 6);
 
 const buildAuthLimiter = (scope, limit, message, code, skipSuccessfulRequests = false) =>
   rateLimit(

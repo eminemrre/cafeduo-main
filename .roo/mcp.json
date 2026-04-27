@@ -1,15 +1,55 @@
 {
 	"mcpServers": {
+		"browserTools": {
+			"command": "npx",
+			"args": ["-y", "@agentdeskai/browser-tools-mcp@1.2.0"],
+			"transport": "stdio",
+			"alwaysAllow": ["browserTools"]
+		},
 		"context7": {
 			"command": "npx",
-			"args": [
-				"-y",
-				"@upstash/context7-mcp"
-			],
+			"args": ["-y", "@upstash/context7-mcp"],
 			"transport": "stdio",
-			"alwaysAllow": [
-				"resolve-library-id"
-			]
+			"alwaysAllow": ["resolve-library-id"]
+		},
+		"memory": {
+			"command": "npx",
+			"args": ["-y", "@modelcontextprotocol/server-memory"],
+			"transport": "stdio"
+		},
+		"memoryBank": {
+			"command": "npx",
+			"args": ["-y", "@alioshr/memory-bank-mcp"],
+			"transport": "stdio"
+		},
+		"openaiDeveloperDocs": {
+			"command": "npx",
+			"args": ["-y", "@zereght/openai-developer-docs-mcp-server"],
+			"transport": "stdio"
+		},
+		"playwright": {
+			"command": "npx",
+			"args": ["-y", "@executeautomation/playwright-mcp-server"],
+			"transport": "stdio",
+			"alwaysAllow": ["playwright"]
+		},
+		"sequentialThinking": {
+			"command": "npx",
+			"args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],
+			"transport": "stdio"
+		},
+		"style": {
+			"command": "npx",
+			"args": ["-y", "@supabase-community/style-mcp-server"],
+			"transport": "stdio"
+		},
+		"tavily": {
+			"command": "npx",
+			"args": ["-y", "tavily-mcp"],
+			"transport": "stdio",
+			"env": {
+				"TAVILY_API_KEY": "${env:TAVILY_API_KEY}"
+			}
 		}
 	}
 }

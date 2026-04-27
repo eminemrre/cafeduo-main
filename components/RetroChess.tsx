@@ -167,6 +167,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
   const concludeRef = useRef(false);
   const pollingRef = useRef<number | null>(null);
   const requestInFlightRef = useRef(false);
+  const pendingSnapshotRef = useRef(false);
   const pollPauseUntilRef = useRef(0);
   const lastRealtimeAtRef = useRef(0);
   const chessFenRef = useRef<string>(chess.fen());
@@ -270,7 +271,12 @@ export const RetroChess: React.FC<RetroChessProps> = ({
   }, [concludeGame]);
 
   const fetchGameSnapshot = useCallback(async (silent = false) => {
-    if (!gameId || isBot || requestInFlightRef.current) return;
+    if (!gameId || isBot) return;
+    // 🔒 CRITICAL FIX: If another request is in-flight, mark as pending and retry after
+    if (requestInFlightRef.current) {
+      pendingSnapshotRef.current = true;
+      return;
+    }
     requestInFlightRef.current = true;
     if (!silent) setLoading(true);
     try {
@@ -291,6 +297,11 @@ export const RetroChess: React.FC<RetroChessProps> = ({
     } finally {
       requestInFlightRef.current = false;
       if (!silent) setLoading(false);
+      // 🔒 CRITICAL FIX: If a snapshot was requested while we were in-flight, fetch again
+      if (pendingSnapshotRef.current) {
+        pendingSnapshotRef.current = false;
+        window.setTimeout(() => fetchGameSnapshot(silent), 0);
+      }
     }
   }, [applyGameSnapshot, gameId, isBot]);
 

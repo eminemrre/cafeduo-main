@@ -59,8 +59,9 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
   const [opponentScore, setOpponentScore] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [done, setDone] = useState(false);
-  const [resolvingMatch, setResolvingMatch] = useState(false);
-  const [message, setMessage] = useState('Soruları hızlı ve doğru yanıtla. En yüksek net kazanır.');
+    const [resolvingMatch, setResolvingMatch] = useState(false);
+    const [message, setMessage] = useState('Soruları hızlı ve doğru yanıtla. En yüksek net kazanır.');
+    const finalizationTimeoutRef = useRef<number | null>(null);
   const [hostName, setHostName] = useState('');
   const [guestName, setGuestName] = useState('');
   const [feedbackAnimation, setFeedbackAnimation] = useState<'correct' | 'incorrect' | null>(null);
@@ -102,6 +103,11 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
   const finishFromServer = useCallback((winnerRaw: string | null) => {
     if (finishHandledRef.current) return;
     finishHandledRef.current = true;
+    // 🔒 CRITICAL FIX: Clear any pending finalization timeout
+    if (finalizationTimeoutRef.current) {
+      window.clearTimeout(finalizationTimeoutRef.current);
+      finalizationTimeoutRef.current = null;
+    }
     const winner = String(winnerRaw || '').trim() || 'Berabere';
     const points = winner.toLowerCase() === currentUser.username.toLowerCase() ? 10 : 0;
     setDone(true);
@@ -170,6 +176,9 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
       }
       if (pollRef.current) {
         window.clearInterval(pollRef.current);
+      }
+      if (finalizationTimeoutRef.current) {
+        window.clearTimeout(finalizationTimeoutRef.current);
       }
     };
   }, []);
@@ -251,7 +260,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
     }
   };
 
-  const handleAnswer = (optionIndex: number) => {
+    const handleAnswer = (optionIndex: number) => {
     if (done || resolvingMatch || selectedOption !== null || !currentQuestion) return;
 
     const isCorrect = optionIndex === currentQuestion.answerIndex;
@@ -284,10 +293,22 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
     void syncLiveProgress(nextPlayerScore, roundIndex + 1, isLastRound);
     if (isLastRound) {
       setDone(true);
-      const localWinner = isBot
-        ? (nextPlayerScore >= nextOpponentScore ? currentUser.username : targetName)
-        : (nextPlayerScore >= nextOpponentScore ? currentUser.username : targetName);
-      void finalizeMatch(localWinner, nextPlayerScore);
+      if (isBot || !gameId) {
+        // Bot/local modu: hemen bitir
+        const localWinner = nextPlayerScore >= nextOpponentScore ? currentUser.username : targetName;
+        void finalizeMatch(localWinner, nextPlayerScore);
+        return;
+      }
+      // 🔒 CRITICAL FIX: Multiplayer'de server'ın Socket.IO ile winner bildirmesini bekle.
+      // Hemen finalizeMatch çağırmak yerine sadece done=true yap, applySnapshot/finishFromServer halletsin.
+      setMessage('Tur tamamlandı. Sunucu sonucu kesinleştiriyor...');
+      // Eğer 10sn içinde server'dan event gelmezse, fallback olarak finalizeMatch çalıştır
+      if (finalizationTimeoutRef.current) window.clearTimeout(finalizationTimeoutRef.current);
+      finalizationTimeoutRef.current = window.setTimeout(() => {
+        if (!finishHandledRef.current) {
+          void finalizeMatch(nextPlayerScore >= opponentScore ? currentUser.username : targetName, nextPlayerScore);
+        }
+      }, 10000);
       return;
     }
 

@@ -359,6 +359,15 @@ export const TankBattle: React.FC<TankBattleProps> = ({
 
             // Handle shot result from opponent (HP sync)
             if (moveData.action === 'shot_result') {
+                // 🔒 CRITICAL FIX: Clear opponent projectile and explosion if still flying
+                projectileRef.current = null;
+                explosionRef.current = null;
+                // 🔒 CRITICAL FIX: Clear turn timer to prevent timeout misfire
+                if (turnTimerRef.current) {
+                    window.clearInterval(turnTimerRef.current);
+                    turnTimerRef.current = null;
+                }
+
                 if (moveData.hit && moveData.targetIsShooter === false) {
                     const nextPlayerHP = Math.max(0, playerHPRef.current - 1);
                     playerHPRef.current = nextPlayerHP;
@@ -382,6 +391,13 @@ export const TankBattle: React.FC<TankBattleProps> = ({
 
             // Handle turn timeout from opponent
             if (moveData.action === 'turn_timeout') {
+                // 🔒 CRITICAL FIX: Clear any lingering projectile and timer
+                projectileRef.current = null;
+                explosionRef.current = null;
+                if (turnTimerRef.current) {
+                    window.clearInterval(turnTimerRef.current);
+                    turnTimerRef.current = null;
+                }
                 advanceTurnState(moveData.nextTurn, moveData.nextWind);
                 setIsPlayerTurn(true);
                 setFiring(false);
@@ -391,6 +407,12 @@ export const TankBattle: React.FC<TankBattleProps> = ({
 
             // Handle game over from opponent
             if (moveData.action === 'game_over') {
+                projectileRef.current = null;
+                explosionRef.current = null;
+                if (turnTimerRef.current) {
+                    window.clearInterval(turnTimerRef.current);
+                    turnTimerRef.current = null;
+                }
                 const winner = moveData.winner;
                 void finalizeMatch(winner, getPlayerScore());
                 return;
@@ -409,6 +431,12 @@ export const TankBattle: React.FC<TankBattleProps> = ({
             const incomingTurn = parseFiniteNumber(moveData.turn);
             if (incomingTurn !== null) {
                 turnIndexRef.current = Math.max(0, Math.floor(incomingTurn));
+            }
+
+            // 🔒 CRITICAL FIX: Clear any lingering projectile before opponent fires
+            if (projectileRef.current !== null) {
+                projectileRef.current = null;
+                explosionRef.current = null;
             }
 
             // Opponent fired!
@@ -579,6 +607,11 @@ export const TankBattle: React.FC<TankBattleProps> = ({
     // ------- Fire -------
     const fire = useCallback(() => {
         if (done || firing || resolvingMatch || !isPlayerTurn) return;
+        // 🔒 CRITICAL FIX: Prevent firing while any projectile is still in flight
+        if (projectileRef.current !== null) {
+            setMessage('Mermi hâlâ havada! Bekle...');
+            return;
+        }
         setFiring(true);
         playGameSfx('hit', 0.3);
 

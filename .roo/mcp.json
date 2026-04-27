@@ -48,7 +48,7 @@
 			"args": ["-y", "tavily-mcp"],
 			"transport": "stdio",
 			"env": {
-				"TAVILY_API_KEY": "${env:TAVILY_API_KEY}"
+				"TAVILY_API_KEY": "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"
 			}
 		}
 	}

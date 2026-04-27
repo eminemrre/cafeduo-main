@@ -20,6 +20,7 @@ interface GameLobbyProps {
   quickJoinDisabled?: boolean;
   quickJoinBusy?: boolean;
   onViewProfile: (username: string) => void;
+  activeGameId?: string | number | null;
 }
 
 const normalizeNameKey = (value: unknown): string =>
@@ -34,8 +35,10 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
   onQuickJoin = () => { },
   quickJoinDisabled = false,
   quickJoinBusy = false,
-  onViewProfile
+  onViewProfile,
+  activeGameId = null,
 }) => {
+  const isInGame = Boolean(activeGameId);
   return (
     <div className="flex flex-col gap-8 h-full" data-testid="game-lobby-container">
 
@@ -43,10 +46,11 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <motion.button
           onClick={onCreateGameClick}
-          className="group relative bg-neon-blue font-sans font-bold uppercase tracking-widest text-cyber-dark h-24 md:h-32 border-2 border-neon-blue flex flex-col items-center justify-center gap-2 shadow-[8px_8px_0_rgba(255,0,234,0.4)] hover:shadow-none hover:translate-x-2 hover:translate-y-2 transition-all"
+          disabled={isInGame}
+          className="group relative bg-neon-blue font-sans font-bold uppercase tracking-widest text-cyber-dark h-24 md:h-32 border-2 border-neon-blue flex flex-col items-center justify-center gap-2 shadow-[8px_8px_0_rgba(255,0,234,0.4)] hover:shadow-none hover:translate-x-2 hover:translate-y-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Gamepad2 size={32} />
-          <span className="text-lg md:text-xl">Oyun Kur</span>
+          <span className="text-lg md:text-xl">{isInGame ? 'OYUNDASIN' : 'Oyun Kur'}</span>
         </motion.button>
 
         <motion.button
@@ -127,9 +131,10 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                     {!isOwnLobby ? (
                       <button
                         onClick={() => onJoinGame(Number(req.id))}
-                        className="w-full sm:w-auto px-8 py-4 bg-neon-blue text-cyber-dark font-sans font-bold uppercase tracking-widest text-lg hover:bg-transparent hover:text-neon-blue border-2 border-neon-blue transition-all"
+                        disabled={isInGame}
+                        className="w-full sm:w-auto px-8 py-4 bg-neon-blue text-cyber-dark font-sans font-bold uppercase tracking-widest text-lg hover:bg-transparent hover:text-neon-blue border-2 border-neon-blue transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        SAVAŞA KATIL
+                        {isInGame ? 'ZATEN OYUNDASIN' : 'SAVAŞA KATIL'}
                       </button>
                     ) : (
                       <div className="flex items-center gap-4 w-full sm:w-auto">

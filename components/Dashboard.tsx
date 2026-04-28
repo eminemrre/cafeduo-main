@@ -19,6 +19,7 @@ import { CyberGlitchScreen } from './CyberGlitchScreen';
 // Hooks
 import { useGames } from '../hooks/useGames';
 import { useRewards } from '../hooks/useRewards';
+import { useToast } from '../contexts/ToastContext';
 
 // Sub-components
 import { StatusBar } from './dashboard/StatusBar';
@@ -37,6 +38,8 @@ interface DashboardProps {
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser, onRefreshUser }) => {
+  const toast = useToast();
+
   const normalizeTableCode = (raw: unknown): string => {
     const value = String(raw || '').trim().toUpperCase();
     if (!value || value === 'NULL' || value === 'UNDEFINED') return '';
@@ -127,7 +130,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
     options?: { chessClock?: { baseSeconds: number; incrementSeconds: number; label: string } }
   ) => {
     if (!isMatched) {
-      alert('Oyun kurmak için önce bir masaya bağlanmalısın!');
+      toast.warning('Oyun kurmak için önce bir masaya bağlanmalısın!');
       setIsCreateModalOpen(false);
       return;
     }
@@ -136,14 +139,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
       await createGame(gameType, points, options);
       setIsCreateModalOpen(false);
     } catch (err) {
-      alert('Oyun kurulurken hata oluştu.');
+      toast.error('Oyun kurulurken hata oluştu.');
     }
   };
 
   // Oyuna katılma
   const handleJoinGame = async (gameId: number) => {
     if (!isMatched) {
-      alert('Oyuna katılmak için önce bir masaya bağlanmalısın!');
+      toast.warning('Oyuna katılmak için önce bir masaya bağlanmalısın!');
       return;
     }
 
@@ -154,7 +157,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
         err instanceof Error && err.message
           ? err.message
           : 'Oyuna katılırken hata oluştu.';
-      alert(message);
+      toast.error(message);
     }
   };
 
@@ -185,13 +188,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
         points: result.newPoints
       });
 
-      alert(`${reward.title} satın alındı! Kupon kodu: ${result.code}`);
+      toast.success(`${reward.title} satın alındı! Kupon kodu: ${result.code}`);
     } catch (err: unknown) {
       const message =
         err instanceof Error && err.message
           ? err.message
           : 'Satın alma başarısız.';
-      alert(message);
+      toast.error(message);
     }
   };
 
@@ -228,7 +231,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
       await cancelGame(gameId);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Oyun iptal edilirken hata oluştu.';
-      alert(message);
+      toast.error(message);
     }
   };
 

@@ -646,18 +646,13 @@ describe('Dashboard Integration', () => {
         createGame: mockCreateGame,
       });
 
-      // Mock alert
-      const mockAlert = jest.spyOn(window, 'alert').mockImplementation(() => { });
-
       renderDashboard();
 
       fireEvent.click(screen.getByTestId('create-game-btn'));
 
       await waitFor(() => {
-        expect(mockAlert).toHaveBeenCalledWith('Oyun kurulurken hata oluştu.');
+        expect(screen.getByText('Oyun kurulurken hata oluştu.')).toBeInTheDocument();
       });
-
-      mockAlert.mockRestore();
     });
 
     it('handles reward purchase error gracefully', async () => {
@@ -670,18 +665,13 @@ describe('Dashboard Integration', () => {
         buyReward: mockBuyReward,
       });
 
-      // Mock alert
-      const mockAlert = jest.spyOn(window, 'alert').mockImplementation(() => { });
-
       renderDashboard();
 
       fireEvent.click(screen.getByTestId('buy-reward-1'));
 
       await waitFor(() => {
-        expect(mockAlert).toHaveBeenCalledWith('Insufficient points');
+        expect(screen.getByText('Insufficient points')).toBeInTheDocument();
       });
-
-      mockAlert.mockRestore();
     });
   });
 

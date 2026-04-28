@@ -158,11 +158,9 @@ const AppContent: React.FC = () => {
   };
 
   const handleLoginSuccess = async (userData: User) => {
-    console.log("Login success:", userData);
-
     if (!userData || !userData.username) {
       console.error("Invalid user data received:", userData);
-      alert("Giriş başarısız: Geçersiz kullanıcı verisi.");
+      toast.error("Giriş başarısız: Geçersiz kullanıcı verisi.");
       return;
     }
 

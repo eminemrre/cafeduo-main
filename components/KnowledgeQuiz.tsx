@@ -449,5 +449,6 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
         )}
       </div>
     </div>
+    </>
   );
 };

@@ -924,5 +924,6 @@ export const RetroChess: React.FC<RetroChessProps> = ({
         </div>
       </div>
     </div>
+    </>
   );
 };

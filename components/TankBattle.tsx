@@ -1243,5 +1243,6 @@ export const TankBattle: React.FC<TankBattleProps> = ({
                 )}
             </div>
         </div>
+        </>
     );
 };

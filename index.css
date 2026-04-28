@@ -25,17 +25,17 @@
 @source "./lib/**/*.{js,ts,jsx,tsx}";
 
 :root {
-  --rf-bg: #050a19;
-  --rf-bg-soft: rgba(11, 22, 44, 0.8);
-  --rf-bg-deep: #020713;
+  --rf-bg: #090f1a;
+  --rf-bg-soft: rgba(15, 23, 42, 0.82);
+  --rf-bg-deep: #060a12;
   --rf-ink: #f4f5f7;
-  --rf-muted: #a7b0bd;
-  --rf-primary: #38bdf8;
-  --rf-secondary: #f43f5e;
-  --rf-accent: #39d98a;
-  --rf-accent-strong: #34d399;
-  --rf-danger: #f43f5e;
-  --rf-success: #39d98a;
+  --rf-muted: #aeb7c5;
+  --rf-primary: #5cc8ff;
+  --rf-secondary: #ff5a7a;
+  --rf-accent: #47d7a4;
+  --rf-accent-strong: #47d7a4;
+  --rf-danger: #ff5a7a;
+  --rf-success: #47d7a4;
   --rf-border: rgba(148, 163, 184, 0.25);
   --rf-border-soft: rgba(148, 163, 184, 0.12);
   --rf-card: rgba(6, 11, 25, 0.9);
@@ -452,16 +452,12 @@ body {
   min-height: 100vh;
   color: var(--rf-ink);
   background:
-    radial-gradient(circle at 14% 7%, rgba(19, 216, 255, 0.16), transparent 34%),
-    radial-gradient(circle at 88% 4%, rgba(216, 138, 71, 0.15), transparent 30%),
-    linear-gradient(180deg, rgba(4, 10, 21, 0.98), rgba(3, 8, 18, 1));
+    linear-gradient(180deg, #060a12 0%, #0a101c 42%, #0c111b 100%);
 }
 
 .rf-dashboard-shell {
   background:
-    radial-gradient(circle at 14% 7%, rgba(19, 216, 255, 0.16), transparent 34%),
-    radial-gradient(circle at 88% 4%, rgba(216, 138, 71, 0.15), transparent 30%),
-    linear-gradient(180deg, rgba(4, 10, 21, 0.98), rgba(3, 8, 18, 1));
+    linear-gradient(180deg, #060a12 0%, #0a101c 42%, #0c111b 100%);
 }
 
 /* ── Card variants ── */
@@ -519,15 +515,108 @@ body {
 .cd-kicker {
   display: inline-flex;
   align-items: center;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: rgba(15, 23, 42, 0.7);
-  color: #94a3b8;
+  gap: 0.65rem;
+  color: #91a4b9;
   font-family: "Noto Sans", "Exo 2", sans-serif;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   font-size: 0.72rem;
-  padding: 0.45rem 0.9rem;
+  font-weight: 700;
+  padding: 0;
+}
+
+.cd-kicker::before {
+  content: "";
+  width: 2.25rem;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(92, 200, 255, 0.85), rgba(255, 90, 122, 0.55));
+}
+
+.cd-hero-shell {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(180deg, #060a12 0%, #080e19 54%, #0b1018 100%);
+  background-size: 72px 72px, 72px 72px, auto;
+}
+
+.cd-hero-shell::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgba(6, 10, 18, 0.92) 0%, rgba(6, 10, 18, 0.18) 48%, rgba(6, 10, 18, 0.72) 100%),
+    linear-gradient(180deg, rgba(6, 10, 18, 0.86) 0%, transparent 22%, rgba(6, 10, 18, 0.92) 100%);
+}
+
+.cd-topline {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  background: rgba(6, 10, 18, 0.86);
+  backdrop-filter: blur(14px);
+}
+
+.cd-nav-shell {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(8, 13, 22, 0.88);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(18px);
+}
+
+.cd-brand-mark {
+  background: linear-gradient(180deg, #f1f5f9, #cbd5e1);
+  color: #07111f;
+}
+
+.cd-button-primary {
+  background: #f3f7fb;
+  color: #07111f;
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
+}
+
+.cd-button-primary:hover {
+  background: #ffffff;
+  transform: translateY(-1px);
+}
+
+.cd-button-secondary {
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  background: rgba(8, 13, 22, 0.52);
+  color: #eef4fb;
+}
+
+.cd-button-secondary:hover {
+  border-color: rgba(92, 200, 255, 0.55);
+  background: rgba(12, 21, 35, 0.82);
+}
+
+.cd-product-panel {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(8, 13, 22, 0.78);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(16px);
+}
+
+.cd-product-panel-inner {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: rgba(13, 20, 32, 0.74);
+}
+
+.cd-card {
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(9, 15, 26, 0.76);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
+}
+
+.cd-card:hover {
+  border-color: rgba(203, 213, 225, 0.28);
+  background: rgba(12, 19, 31, 0.86);
+}
+
+.cd-hairline {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(148, 163, 184, 0.24), transparent);
 }
 
 /* ── Version pill ── */

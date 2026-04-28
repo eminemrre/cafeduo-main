@@ -32,21 +32,21 @@ export const CookieConsent: React.FC = () => {
       aria-label="Çerez bildirimi"
       className="fixed bottom-[calc(6.75rem+env(safe-area-inset-bottom))] left-4 right-4 z-[90] pointer-events-none md:bottom-6 md:left-auto md:right-6 md:w-[26rem]"
     >
-      <div className="pointer-events-auto rounded-2xl border border-cyan-300/20 bg-slate-950/92 p-4 shadow-2xl shadow-cyan-950/35 backdrop-blur-xl animate-slide-up">
+      <div className="pointer-events-auto rounded-md border border-slate-700/60 bg-[#080d16]/95 p-3.5 shadow-2xl shadow-black/30 backdrop-blur-xl animate-slide-up">
         <div className="flex items-start gap-3">
-          <div className="p-2.5 bg-cyan-500/15 text-cyan-300 border border-cyan-400/30 rounded-xl shrink-0">
-            <Cookie size={24} />
+          <div className="hidden sm:flex p-2.5 bg-slate-950/60 text-slate-200 border border-slate-700/60 rounded-md shrink-0">
+            <Cookie size={22} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="rf-terminal-strip mb-2">Sistem Bilgisi</div>
-            <h3 className="text-white font-bold mb-3 uppercase tracking-[0.08em] leading-tight">Çerez Kullanımı</h3>
-            <p className="text-[var(--rf-muted)] text-sm leading-relaxed mb-4 break-words">
+            <div className="rf-terminal-strip mb-1.5">Sistem Bilgisi</div>
+            <h3 className="text-white font-bold mb-2 uppercase tracking-[0.08em] leading-tight">Çerez Kullanımı</h3>
+            <p className="text-[var(--rf-muted)] text-[13px] leading-relaxed mb-3 break-words">
               Size daha iyi bir deneyim sunmak ve konum doğrulaması yapabilmek için çerezleri kullanıyoruz.
             </p>
             <button
               type="button"
               onClick={handleAccept}
-              className="w-full rounded-xl bg-cyan-400 hover:bg-cyan-300 text-[#041226] py-3 text-sm font-bold transition-colors uppercase tracking-[0.08em]"
+              className="w-full rounded-md bg-slate-100 hover:bg-white text-[#07111f] py-2.5 text-sm font-bold transition-colors uppercase tracking-[0.08em]"
             >
               Anladım
             </button>

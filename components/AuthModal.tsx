@@ -268,9 +268,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
           <motion.div
             className="relative w-full h-full max-h-[92vh] bg-[#050a19] border-t-2 border-r-4 border-b-4 border-l-2 border-t-cyan-400 border-r-pink-500 border-b-pink-500 border-l-cyan-400 shadow-[10px_10px_0px_rgba(0,0,0,0.8)] sm:rounded-none overflow-hidden flex flex-col noise-bg"
-            initial={{ y: '100%', opacity: 0.5 }}
+            initial={{ y: 24, opacity: 0.5 }}
             animate={{ y: 0, opacity: 1 }}
-            exit={{ y: '100%', opacity: 0.5 }}
+            exit={{ y: 24, opacity: 0.5 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           >
             {/* Drag handle for mobile */}

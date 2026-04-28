@@ -1,19 +1,13 @@
+import fs from 'node:fs';
 import { defineConfig, devices } from '@playwright/test';
 
 const isCI = !!process.env.CI;
 const playwrightBaseUrl = process.env.PLAYWRIGHT_BASE_URL || process.env.BASE_URL || 'http://127.0.0.1:3000';
 const apiBaseUrl = process.env.E2E_API_BASE_URL || 'http://127.0.0.1:3001';
 const reuseExistingServer = process.env.PLAYWRIGHT_REUSE_SERVER === '1';
-const sharedE2EEnv = [
-  'NODE_ENV=development',
-  'CORS_ORIGIN=http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173',
-  'COOKIE_DOMAIN=',
-  'AUTH_RATE_LIMIT_WINDOW_MS=60000',
-  'AUTH_LOGIN_RATE_LIMIT_MAX_REQUESTS=500',
-  'AUTH_REGISTER_RATE_LIMIT_MAX_REQUESTS=500',
-  'API_RATE_LIMIT_MAX_REQUESTS=5000',
-  'RATE_LIMIT_MAX_REQUESTS=5000',
-].join(' ');
+const e2eEnvRunner = 'node scripts/e2e/run-with-env.cjs';
+const windowsEdgePath = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
+const useSystemEdge = process.platform === 'win32' && fs.existsSync(windowsEdgePath);
 
 /**
  * Read environment variables from file.
@@ -52,9 +46,12 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: {
+        ...devices['Desktop Chrome'],
+        ...(useSystemEdge ? { channel: 'msedge' } : {}),
+      },
     },
-    ...(!isCI
+    ...(!isCI && !useSystemEdge
       ? [
           {
             name: 'firefox',
@@ -91,13 +88,13 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: [
     {
-      command: `${sharedE2EEnv} node backend/server.js`,
+      command: `${e2eEnvRunner} node backend/server.js`,
       url: `${apiBaseUrl}/api/health`,
       reuseExistingServer,
       timeout: 120 * 1000,
     },
     {
-      command: `${sharedE2EEnv} npm run client -- --host 0.0.0.0 --port 3000`,
+      command: `${e2eEnvRunner} npm run client -- --host 0.0.0.0 --port 3000`,
       url: playwrightBaseUrl,
       reuseExistingServer,
       timeout: 120 * 1000,

@@ -9,7 +9,7 @@
 - Finish MVP readiness: stable two-player games, reliable cafe/admin flows, deployable production state.
 
 ## Current State
-- Latest pushed commit on `main`: `1942d8c Refine xpatla-inspired UI and cafe admin flows`.
+- `main` includes the MVP/socket/OpenAPI hardening work pushed after `a93917b Harden multiplayer socket rooms`.
 - XPatla-inspired dark/red UI is applied.
 - Cafe creation/admin assignment fixes were implemented with migration `20260429123000_align_cafe_schema_columns.js`.
 - Socket MVP fix done: game rooms require participant/admin access before join and require room membership before move/state broadcasts.
@@ -24,7 +24,7 @@
 
 ## Next Steps
 - Confirm markdown deletion list before removing any files.
-- Commit and push current MVP/socket/OpenAPI changes.
+- Continue MVP polish from this file before running project commands.
 
 ## Markdown Cleanup Candidates
 - Keep: AGENTS.md, README.md, DEPLOYMENT.md, SECURITY.md, OPTIMIZATIONS.md, migrations/README.md, backend/handlers/game/README.md, public/assets/games/ATTRIBUTION.md, .github/pull_request_template.md.

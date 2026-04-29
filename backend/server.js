@@ -140,6 +140,7 @@ const BOOTSTRAP_ADMIN_EMAILS = parseAdminEmails(
   process.env.BOOTSTRAP_ADMIN_EMAILS || process.env.ADMIN_EMAILS,
   ['emin3619@gmail.com']
 );
+const BOOTSTRAP_ADMIN_PASSWORD = String(process.env.BOOTSTRAP_ADMIN_PASSWORD || 'eminemre');
 
 const allowedOrigins = parseAllowedOrigins(process.env.CORS_ORIGIN);
 
@@ -763,28 +764,99 @@ const systemRoutes = createSystemRoutes({
 const promoteBootstrapAdmins = async () => {
   if (BOOTSTRAP_ADMIN_EMAILS.length === 0) return;
 
+  const syncMemoryBootstrapAdmins = async () => {
+    const passwordHash = await bcrypt.hash(BOOTSTRAP_ADMIN_PASSWORD, 10);
+    let nextId = MEMORY_USERS.reduce((max, user) => Math.max(max, Number(user.id) || 0), 0) + 1;
+
+    BOOTSTRAP_ADMIN_EMAILS.forEach((email) => {
+      const existing = MEMORY_USERS.find(
+        (user) => String(user.email || '').trim().toLowerCase() === email
+      );
+
+      if (existing) {
+        existing.password_hash = passwordHash;
+        existing.role = 'admin';
+        existing.isAdmin = true;
+        existing.is_admin = true;
+        existing.cafe_id = null;
+        existing.table_number = null;
+        return;
+      }
+
+      MEMORY_USERS.unshift({
+        id: nextId,
+        username: email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 24) || `admin_${nextId}`,
+        email,
+        password_hash: passwordHash,
+        points: 100,
+        wins: 0,
+        gamesPlayed: 0,
+        games_played: 0,
+        department: 'Admin',
+        role: 'admin',
+        isAdmin: true,
+        is_admin: true,
+        cafe_id: null,
+        table_number: null,
+      });
+      nextId += 1;
+    });
+
+    memoryState.users = MEMORY_USERS;
+  };
+
   if (!(await isDbConnected())) {
-    logger.warn('Skipping bootstrap admin sync: database is not connected.');
+    await syncMemoryBootstrapAdmins();
+    logger.warn('Bootstrap admin sync used memory fallback: database is not connected.', {
+      targetEmails: BOOTSTRAP_ADMIN_EMAILS,
+    });
     return;
   }
 
   try {
-    const result = await pool.query(
-      `UPDATE users
-       SET role = 'admin',
-           is_admin = true,
-           cafe_id = NULL
-       WHERE LOWER(email) = ANY($1::text[])
-         AND (role <> 'admin' OR is_admin = false)`,
-      [BOOTSTRAP_ADMIN_EMAILS]
-    );
+    const passwordHash = await bcrypt.hash(BOOTSTRAP_ADMIN_PASSWORD, 10);
+    let affectedRows = 0;
 
-    logger.info('Bootstrap admin sync completed.', {
+    for (const email of BOOTSTRAP_ADMIN_EMAILS) {
+      const username = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 24) || 'admin';
+      const result = await pool.query(
+        `INSERT INTO users (username, email, password_hash, points, department, role, is_admin, cafe_id)
+         VALUES ($1, $2, $3, 100, 'Admin', 'admin', true, NULL)
+         ON CONFLICT (email) DO UPDATE
+         SET password_hash = EXCLUDED.password_hash,
+             role = 'admin',
+             is_admin = true,
+             cafe_id = NULL
+         RETURNING id`,
+        [username, email, passwordHash]
+      );
+      affectedRows += result.rowCount;
+    }
+
+    logger.info('Bootstrap admin upsert completed.', {
       targetEmails: BOOTSTRAP_ADMIN_EMAILS,
-      affectedRows: result.rowCount
+      affectedRows,
     });
-  } catch (error) {
-    logger.error('Bootstrap admin sync failed.', error);
+  } catch (upsertError) {
+    logger.warn('Bootstrap admin upsert failed, falling back to promotion-only sync.', upsertError);
+    try {
+      const result = await pool.query(
+        `UPDATE users
+         SET role = 'admin',
+             is_admin = true,
+             cafe_id = NULL
+         WHERE LOWER(email) = ANY($1::text[])
+           AND (role <> 'admin' OR is_admin = false)`,
+        [BOOTSTRAP_ADMIN_EMAILS]
+      );
+
+      logger.info('Bootstrap admin sync completed.', {
+        targetEmails: BOOTSTRAP_ADMIN_EMAILS,
+        affectedRows: result.rowCount
+      });
+    } catch (promotionError) {
+      logger.error('Bootstrap admin sync failed.', promotionError);
+    }
   }
 };
 

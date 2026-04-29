@@ -60,7 +60,7 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-[var(--rf-muted)] text-xs uppercase tracking-[0.12em] mb-2">Enlem (Latitude) *</label>
+            <label className="block text-[var(--rf-muted)] text-xs uppercase tracking-[0.12em] mb-2">Enlem (Latitude)</label>
             <input
               type="number"
               step="0.000001"
@@ -72,7 +72,7 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
           </div>
 
           <div>
-            <label className="block text-[var(--rf-muted)] text-xs uppercase tracking-[0.12em] mb-2">Boylam (Longitude) *</label>
+            <label className="block text-[var(--rf-muted)] text-xs uppercase tracking-[0.12em] mb-2">Boylam (Longitude)</label>
             <input
               type="number"
               step="0.000001"

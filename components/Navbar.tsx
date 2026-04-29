@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Menu, X, Coffee, LogOut, ChevronRight, Sparkles, ShoppingCart, Wallet } from 'lucide-react';
+import { Menu, X, Coffee, LogOut, ChevronRight, ShoppingCart, Wallet } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NAV_ITEMS } from '../constants';
 import { BUILD_META } from '../lib/buildMeta';
@@ -41,13 +41,13 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
   return (
     <>
       <nav
-        className="fixed bottom-5 left-1/2 z-[100] w-[92%] -translate-x-1/2 transition-transform duration-300 md:w-auto"
+        className="fixed left-1/2 top-4 z-[100] w-[94%] max-w-5xl -translate-x-1/2 transition-transform duration-300"
         role="navigation"
         aria-label="Ana navigasyon"
       >
-        <div className="cd-nav-shell flex items-center justify-between gap-5 rounded-md px-3.5 py-3 md:px-5">
+        <div className="cd-nav-shell flex items-center justify-between gap-4 px-4 py-3 md:px-5">
           <div
-            className="flex cursor-pointer items-center gap-3 transition-opacity hover:opacity-85"
+            className="flex cursor-pointer items-center gap-2 transition-opacity hover:opacity-85"
             onClick={() => {
               if (isLoggedIn) navigate('/dashboard');
               else scrollToSection('home');
@@ -57,42 +57,38 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
             aria-label="Ana sayfa"
             onKeyDown={(event) => event.key === 'Enter' && (isLoggedIn ? navigate('/dashboard') : scrollToSection('home'))}
           >
-            <div className="cd-brand-mark flex h-9 w-9 items-center justify-center rounded-md">
-              <Coffee size={19} />
+            <div className="cd-brand-mark flex h-9 w-9 items-center justify-center">
+              <Coffee size={18} />
             </div>
-            <span className="font-display-tr text-base uppercase tracking-[0.16em] text-white sm:text-lg">
+            <span className="text-base font-black tracking-[-0.02em] text-white">
               CafeDuo
             </span>
           </div>
 
-          <div className="hidden items-center gap-1.5 md:flex">
+          <div className="hidden items-center gap-1 md:flex">
             {!isLoggedIn ? (
               NAV_ITEMS.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => scrollToSection(item.id)}
-                  className="rounded-md px-3.5 py-2 text-xs font-semibold uppercase tracking-[0.13em] text-slate-300 transition-all hover:bg-white/[0.06] hover:text-white"
+                  className="rounded-full px-4 py-2 text-sm font-medium text-neutral-500 transition-all hover:bg-white/[0.04] hover:text-white"
                 >
                   {item.label}
                 </button>
               ))
             ) : (
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 rounded-md border border-emerald-300/25 bg-emerald-300/10 px-3 py-1.5">
-                  <Sparkles size={14} className="text-emerald-200" />
-                  <span className="text-xs font-bold uppercase tracking-widest text-emerald-100">Canlı</span>
-                </div>
                 {user && (
-                  <div className="flex items-center gap-2 rounded-md border border-white/10 bg-white/[0.04] px-3 py-1.5">
-                    <Wallet size={14} className="text-slate-300" />
-                    <span className="font-display-tr text-lg text-white">
-                      {user.points} <span className="text-[10px] text-slate-400">CP</span>
+                  <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-3 py-2">
+                    <Wallet size={14} className="text-[#ff2d3d]" />
+                    <span className="text-sm font-bold text-white">
+                      {user.points} <span className="text-xs text-neutral-500">CP</span>
                     </span>
                   </div>
                 )}
                 <button
                   onClick={() => navigate('/store')}
-                  className="flex items-center gap-2 rounded-md border border-white/10 px-3.5 py-2 text-sm font-bold uppercase text-slate-200 transition-all hover:border-sky-200/40 hover:bg-white/[0.06]"
+                  className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold text-neutral-300 transition-all hover:bg-white/[0.04] hover:text-white"
                 >
                   <ShoppingCart size={16} />
                   <span className="hidden lg:inline">Mağaza</span>
@@ -100,7 +96,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                 <button
                   onClick={onLogout}
                   data-testid="logout-button"
-                  className="flex items-center gap-2 rounded-md border border-white/10 px-3.5 py-2 text-sm font-bold uppercase text-slate-200 transition-all hover:border-rose-200/40 hover:bg-white/[0.06]"
+                  className="flex items-center gap-2 rounded-full bg-[#ff2d3d] px-4 py-2 text-sm font-bold text-white transition-all hover:bg-[#ff4d5a]"
                 >
                   <LogOut size={16} />
                   <span className="hidden lg:inline">Çıkış</span>
@@ -108,7 +104,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
               </div>
             )}
             <span
-              className="ml-3 hidden text-[10px] uppercase tracking-widest text-slate-500 lg:block"
+              className="ml-2 hidden text-[10px] uppercase tracking-widest text-neutral-700 lg:block"
               title={BUILD_META.buildTime !== 'unknown' ? `Build: ${BUILD_META.buildTime}` : ''}
             >
               V-{BUILD_META.shortVersion}
@@ -120,9 +116,9 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
             aria-expanded={isOpen}
             aria-controls="mobile-menu"
             aria-label={isOpen ? 'Menüyü kapat' : 'Menüyü aç'}
-            className="flex h-10 w-10 items-center justify-center rounded-md border border-white/10 bg-white/[0.04] text-slate-200 transition-colors hover:bg-white/[0.08] md:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white transition-colors hover:bg-white/[0.08] md:hidden"
           >
-            {isOpen ? <X size={23} /> : <Menu size={23} />}
+            {isOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </nav>
@@ -130,28 +126,28 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
       {isOpen && (
         <div
           id="mobile-menu"
-          className="cd-nav-shell fixed bottom-24 left-4 right-4 z-[90] rounded-md p-5 shadow-2xl md:hidden"
+          className="cd-nav-shell fixed left-4 right-4 top-20 z-[90] rounded-[28px] p-5 shadow-2xl md:hidden"
           aria-hidden={false}
         >
-          <div className="flex flex-col gap-4">
-            <span className="font-display-tr text-2xl uppercase tracking-wide text-white">Menü</span>
+          <div className="flex flex-col gap-3">
+            <span className="text-2xl font-black tracking-[-0.03em] text-white">Menü</span>
             {!isLoggedIn ? (
               NAV_ITEMS.map((item) => (
                 <button
                   key={item.id}
                   onClick={() => scrollToSection(item.id)}
-                  className="flex items-center justify-between border-b border-white/10 py-3 text-base font-semibold uppercase tracking-widest text-slate-200 transition-colors hover:text-white"
+                  className="flex items-center justify-between border-b border-white/10 py-3 text-base font-semibold text-neutral-200 transition-colors hover:text-white"
                 >
                   {item.label}
-                  <ChevronRight size={20} className="text-slate-500" />
+                  <ChevronRight size={20} className="text-neutral-600" />
                 </button>
               ))
             ) : (
               <>
                 {user && (
-                  <div className="flex items-center justify-between border-b border-white/10 py-3 text-base font-semibold uppercase tracking-widest text-slate-100">
+                  <div className="flex items-center justify-between border-b border-white/10 py-3 text-base font-semibold text-white">
                     <span className="flex items-center gap-2"><Wallet size={20} /> Cüzdan</span>
-                    <span className="font-display-tr text-xl">{user.points} CP</span>
+                    <span>{user.points} CP</span>
                   </div>
                 )}
                 <button
@@ -159,17 +155,17 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                     navigate('/store');
                     setIsOpen(false);
                   }}
-                  className="flex items-center justify-between border-b border-white/10 py-3 text-base font-semibold uppercase tracking-widest text-slate-200 transition-colors hover:text-white"
+                  className="flex items-center justify-between border-b border-white/10 py-3 text-base font-semibold text-neutral-200 transition-colors hover:text-white"
                 >
                   <span>Mağaza</span>
-                  <ShoppingCart size={20} className="text-slate-500" />
+                  <ShoppingCart size={20} className="text-neutral-600" />
                 </button>
                 <button
                   onClick={() => {
                     onLogout?.();
                     setIsOpen(false);
                   }}
-                  className="cd-button-primary mt-3 flex w-full items-center justify-center gap-3 rounded-md py-4 text-base font-bold uppercase tracking-widest"
+                  className="cd-button-primary mt-3 flex w-full items-center justify-center gap-3 py-4 text-base font-bold"
                 >
                   <LogOut size={20} /> Çıkış Yap
                 </button>

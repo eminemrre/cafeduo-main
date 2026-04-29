@@ -16,6 +16,65 @@ const createAdminHandlers = ({
   setMemoryUsers,
   clearCacheByPattern = async () => {},
 }) => {
+  let cafeColumnCache = null;
+  const knownCafeColumns = [
+    'id',
+    'name',
+    'address',
+    'total_tables',
+    'pin',
+    'latitude',
+    'longitude',
+    'table_count',
+    'radius',
+    'secondary_latitude',
+    'secondary_longitude',
+    'secondary_radius',
+    'daily_pin',
+  ];
+
+  const getCafeColumns = async () => {
+    if (cafeColumnCache) return cafeColumnCache;
+    const result = await pool.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_schema = current_schema()
+         AND table_name = 'cafes'
+         AND column_name = ANY($1::text[])
+       LIMIT 20`,
+      [knownCafeColumns]
+    );
+    cafeColumnCache = new Set(result.rows.map((row) => row.column_name));
+    return cafeColumnCache;
+  };
+
+  const buildCafeProjection = (columns) => [
+    'id',
+    'name',
+    columns.has('address') ? 'address' : 'NULL::text AS address',
+    columns.has('total_tables')
+      ? 'total_tables'
+      : columns.has('table_count')
+        ? 'table_count AS total_tables'
+        : '20::integer AS total_tables',
+    columns.has('pin')
+      ? 'pin'
+      : columns.has('daily_pin')
+        ? 'SUBSTRING(daily_pin FROM 1 FOR 4) AS pin'
+        : "'0000'::varchar AS pin",
+    'latitude',
+    'longitude',
+    columns.has('table_count')
+      ? 'table_count'
+      : columns.has('total_tables')
+        ? 'total_tables AS table_count'
+        : '20::integer AS table_count',
+    'radius',
+    'secondary_latitude',
+    'secondary_longitude',
+    'secondary_radius',
+  ].join(', ');
+
   const getUsers = async (req, res) =>
     executeDataMode(isDbConnected, {
       db: async () => {
@@ -28,6 +87,7 @@ const createAdminHandlers = ({
             FROM users u
             LEFT JOIN cafes c ON u.cafe_id = c.id
             ORDER BY u.created_at DESC
+            LIMIT 100
           `);
           return res.json(result.rows);
         } catch (err) {
@@ -147,6 +207,18 @@ const createAdminHandlers = ({
           let result;
 
           if (payload.role === 'cafe_admin') {
+            const cafeResult = await pool.query(
+              'SELECT id FROM cafes WHERE id = $1 LIMIT 1',
+              [payload.cafeId]
+            );
+            if (cafeResult.rows.length === 0) {
+              return sendApiProblem(res, {
+                status: 404,
+                code: 'CAFE_NOT_FOUND',
+                message: 'Kafe bulunamadı.',
+              });
+            }
+
             result = await pool.query(
               'UPDATE users SET role = $1, is_admin = false, cafe_id = $2 WHERE id = $3 RETURNING id, username, email, role, is_admin, cafe_id, points, wins, games_played, department',
               [payload.role, payload.cafeId, id]
@@ -267,51 +339,68 @@ const createAdminHandlers = ({
     return executeDataMode(isDbConnected, {
       db: async () => {
         try {
+          const columns = await getCafeColumns();
           const updates = [];
           const values = [];
           let paramCount = 1;
+          const addUpdate = (column, value) => {
+            if (!columns.has(column)) return;
+            updates.push(`${column} = $${paramCount++}`);
+            values.push(value);
+          };
 
           if (updatesPayload.address !== undefined) {
-            updates.push(`address = $${paramCount++}`);
-            values.push(updatesPayload.address);
+            addUpdate('address', updatesPayload.address);
           }
           if (updatesPayload.totalTables !== undefined) {
-            updates.push(`total_tables = $${paramCount++}`);
-            values.push(updatesPayload.totalTables);
-            updates.push(`table_count = $${paramCount++}`);
-            values.push(updatesPayload.tableCount);
+            addUpdate('total_tables', updatesPayload.totalTables);
+            addUpdate('table_count', updatesPayload.tableCount);
           }
           if (updatesPayload.pin !== undefined) {
-            updates.push(`pin = $${paramCount++}`);
-            values.push(updatesPayload.pin);
+            addUpdate('pin', updatesPayload.pin);
+            addUpdate('daily_pin', updatesPayload.pin);
           }
           if (updatesPayload.latitude !== undefined) {
-            updates.push(`latitude = $${paramCount++}`);
-            values.push(updatesPayload.latitude);
+            addUpdate('latitude', updatesPayload.latitude);
           }
           if (updatesPayload.longitude !== undefined) {
-            updates.push(`longitude = $${paramCount++}`);
-            values.push(updatesPayload.longitude);
+            addUpdate('longitude', updatesPayload.longitude);
           }
           if (updatesPayload.radius !== undefined) {
-            updates.push(`radius = $${paramCount++}`);
-            values.push(updatesPayload.radius);
+            addUpdate('radius', updatesPayload.radius);
           }
           if (updatesPayload.secondaryLatitude !== undefined) {
-            updates.push(`secondary_latitude = $${paramCount++}`);
-            values.push(updatesPayload.secondaryLatitude);
+            addUpdate('secondary_latitude', updatesPayload.secondaryLatitude);
           }
           if (updatesPayload.secondaryLongitude !== undefined) {
-            updates.push(`secondary_longitude = $${paramCount++}`);
-            values.push(updatesPayload.secondaryLongitude);
+            addUpdate('secondary_longitude', updatesPayload.secondaryLongitude);
           }
           if (updatesPayload.secondaryRadius !== undefined) {
-            updates.push(`secondary_radius = $${paramCount++}`);
-            values.push(updatesPayload.secondaryRadius);
+            addUpdate('secondary_radius', updatesPayload.secondaryRadius);
+          }
+
+          if (updates.length === 0) {
+            const result = await pool.query(
+              `SELECT ${buildCafeProjection(columns)}
+               FROM cafes
+               WHERE id = $1
+               LIMIT 1`,
+              [id]
+            );
+
+            if (result.rows.length === 0) {
+              return sendApiProblem(res, {
+                status: 404,
+                code: 'CAFE_NOT_FOUND',
+                message: 'Kafe bulunamadı.',
+              });
+            }
+
+            return res.json({ success: true, cafe: result.rows[0] });
           }
 
           values.push(id);
-          const query = `UPDATE cafes SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING id, name, address, total_tables, pin, latitude, longitude, table_count, radius, secondary_latitude, secondary_longitude, secondary_radius`;
+          const query = `UPDATE cafes SET ${updates.join(', ')} WHERE id = $${paramCount} RETURNING ${buildCafeProjection(columns)}`;
           const result = await pool.query(query, values);
 
           if (result.rows.length === 0) {
@@ -350,35 +439,33 @@ const createAdminHandlers = ({
     return executeDataMode(isDbConnected, {
       db: async () => {
         try {
+          const columns = await getCafeColumns();
+          const insertColumns = ['name'];
+          const values = [cafe.name];
+          const addColumnValue = (column, value) => {
+            if (!columns.has(column)) return;
+            insertColumns.push(column);
+            values.push(value);
+          };
+
+          addColumnValue('address', cafe.address);
+          addColumnValue('total_tables', cafe.totalTables);
+          addColumnValue('pin', cafe.pin);
+          addColumnValue('latitude', cafe.latitude);
+          addColumnValue('longitude', cafe.longitude);
+          addColumnValue('table_count', cafe.tableCount);
+          addColumnValue('daily_pin', cafe.pin);
+          addColumnValue('radius', cafe.radius);
+          addColumnValue('secondary_latitude', cafe.secondaryLatitude);
+          addColumnValue('secondary_longitude', cafe.secondaryLongitude);
+          addColumnValue('secondary_radius', cafe.secondaryRadius);
+
+          const placeholders = insertColumns.map((_, index) => `$${index + 1}`).join(', ');
           const result = await pool.query(
-            `INSERT INTO cafes (
-              name,
-              address,
-              total_tables,
-              pin,
-              latitude,
-              longitude,
-              table_count,
-              radius,
-              secondary_latitude,
-              secondary_longitude,
-              secondary_radius
-            )
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-             RETURNING id, name, address, total_tables, pin, latitude, longitude, table_count, radius, secondary_latitude, secondary_longitude, secondary_radius`,
-            [
-              cafe.name,
-              cafe.address,
-              cafe.totalTables,
-              cafe.pin,
-              cafe.latitude,
-              cafe.longitude,
-              cafe.tableCount,
-              cafe.radius,
-              cafe.secondaryLatitude,
-              cafe.secondaryLongitude,
-              cafe.secondaryRadius,
-            ]
+            `INSERT INTO cafes (${insertColumns.join(', ')})
+             VALUES (${placeholders})
+             RETURNING ${buildCafeProjection(columns)}`,
+            values
           );
 
           return res.status(201).json({ success: true, cafe: result.rows[0] });

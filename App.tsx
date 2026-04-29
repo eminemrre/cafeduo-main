@@ -17,7 +17,6 @@ import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
-import { CustomCursor } from './components/CustomCursor';
 import { TankBattleHarness } from './components/dev/TankBattleHarness';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -228,7 +227,6 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="rf-app-shell min-h-screen text-[var(--rf-ink)] font-sans selection:bg-cyan-300/30 selection:text-white">
-      <CustomCursor />
       <Navbar 
         isLoggedIn={!!user} 
         user={user} 

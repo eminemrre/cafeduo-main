@@ -13,11 +13,11 @@ describe('Hero', () => {
     jest.clearAllMocks();
   });
 
-  it('renders the new slogan "Kafenin Oyun Platformu"', () => {
+  it('renders the XPatla-inspired slogan', () => {
     render(<Hero onLogin={jest.fn()} onRegister={jest.fn()} isLoggedIn={false} />);
 
-    expect(screen.getByText('Kafenin')).toBeInTheDocument();
-    expect(screen.getByText('Oyun Platformu')).toBeInTheDocument();
+    expect(screen.getByText(/Kafede oyun oynamak artık/i)).toBeInTheDocument();
+    expect(screen.getByText('kolay.')).toBeInTheDocument();
   });
 
   it('renders logged-out CTAs and triggers register/login callbacks', () => {
@@ -26,10 +26,10 @@ describe('Hero', () => {
 
     render(<Hero onLogin={onLogin} onRegister={onRegister} isLoggedIn={false} />);
 
-    expect(screen.getByText('Ücretsiz Kaydol')).toBeInTheDocument();
+    expect(screen.getByText("CafeDuo'ya Başla")).toBeInTheDocument();
     expect(screen.getByText('Oturum Aç')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('Ücretsiz Kaydol'));
+    fireEvent.click(screen.getByText("CafeDuo'ya Başla"));
     fireEvent.click(screen.getByText('Oturum Aç'));
 
     expect(onRegister).toHaveBeenCalledTimes(1);

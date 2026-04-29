@@ -10,15 +10,6 @@ jest.mock('react-router-dom', () => ({
   useLocation: () => mockUseLocation(),
 }));
 
-jest.mock('framer-motion', () => ({
-  motion: {
-    button: ({ children, onClick, ...props }: any) => <button onClick={onClick} {...props}>{children}</button>,
-    div: ({ children, onClick, ...props }: any) => <div onClick={onClick} {...props}>{children}</div>,
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
-// Dummy constants
 jest.mock('../constants', () => ({
   NAV_ITEMS: [
     { id: 'features', label: 'ÖZELLİKLER' },

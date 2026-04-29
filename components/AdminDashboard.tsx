@@ -139,7 +139,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         const secondaryLatitude = Number(editCafeData.secondaryLatitude);
         const secondaryLongitude = Number(editCafeData.secondaryLongitude);
         const secondaryRadius = Number(editCafeData.secondaryRadius);
-        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        if (hasPrimaryLocation && (!Number.isFinite(latitude) || !Number.isFinite(longitude))) {
             alert('Kafe konumu için geçerli enlem ve boylam girin.');
             return;
         }
@@ -166,8 +166,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
             await api.admin.updateCafe(selectedCafe.id, {
                 address: editCafeData.address,
                 total_tables: editCafeData.total_tables,
-                latitude,
-                longitude,
+                latitude: hasPrimaryLocation ? latitude : null,
+                longitude: hasPrimaryLocation ? longitude : null,
                 radius,
                 secondary_latitude: hasSecondaryInput ? secondaryLatitude : null,
                 secondary_longitude: hasSecondaryInput ? secondaryLongitude : null,
@@ -342,8 +342,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
             alert('Lütfen kafe adı girin.');
             return;
         }
-        const latitude = Number(newCafeData.latitude);
-        const longitude = Number(newCafeData.longitude);
+        const latitudeRaw = String(newCafeData.latitude || '').trim();
+        const longitudeRaw = String(newCafeData.longitude || '').trim();
+        const hasPrimaryLocation = Boolean(latitudeRaw) || Boolean(longitudeRaw);
+        const latitude = Number(latitudeRaw);
+        const longitude = Number(longitudeRaw);
         const radius = Number(newCafeData.radius);
         const hasSecondaryInput =
             Boolean(String(newCafeData.secondaryLatitude).trim())
@@ -351,7 +354,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         const secondaryLatitude = Number(newCafeData.secondaryLatitude);
         const secondaryLongitude = Number(newCafeData.secondaryLongitude);
         const secondaryRadius = Number(newCafeData.secondaryRadius);
-        if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+        if (hasPrimaryLocation && (!Number.isFinite(latitude) || !Number.isFinite(longitude))) {
             alert('Yeni kafe için geçerli enlem ve boylam zorunludur.');
             return;
         }
@@ -376,8 +379,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         try {
             await api.admin.createCafe({
                 ...newCafeData,
-                latitude,
-                longitude,
+                latitude: hasPrimaryLocation ? latitude : null,
+                longitude: hasPrimaryLocation ? longitude : null,
                 radius,
                 secondary_latitude: hasSecondaryInput ? secondaryLatitude : null,
                 secondary_longitude: hasSecondaryInput ? secondaryLongitude : null,

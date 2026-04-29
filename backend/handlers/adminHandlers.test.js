@@ -119,7 +119,7 @@ describe('adminHandlers', () => {
     await handlers.deleteUser(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(String(res.payload.error)).toContain('Kendi hesabınızı');
+    expect(String(res.payload.error)).toContain('silemezsiniz');
   });
 
   it('creates cafe in memory mode with normalized payload', async () => {
@@ -139,6 +139,62 @@ describe('adminHandlers', () => {
     expect(res.payload.success).toBe(true);
     expect(res.payload.cafe.total_tables).toBe(22);
     expect(res.payload.cafe.pin).toBe('4321');
+  });
+
+  it('creates cafe in db mode on legacy table_count schema', async () => {
+    const pool = {
+      query: jest.fn()
+        .mockResolvedValueOnce({
+          rows: [
+            { column_name: 'id' },
+            { column_name: 'name' },
+            { column_name: 'latitude' },
+            { column_name: 'longitude' },
+            { column_name: 'table_count' },
+            { column_name: 'radius' },
+            { column_name: 'secondary_latitude' },
+            { column_name: 'secondary_longitude' },
+            { column_name: 'secondary_radius' },
+            { column_name: 'daily_pin' },
+          ],
+        })
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 7,
+            name: 'Legacy Cafe',
+            total_tables: 18,
+            pin: '5555',
+            table_count: 18,
+          }],
+        }),
+    };
+    const dbHandlers = createAdminHandlers({
+      pool,
+      isDbConnected: jest.fn().mockResolvedValue(true),
+      bcrypt: { hash: jest.fn().mockResolvedValue('hashed') },
+      logger: { error: jest.fn() },
+      normalizeCafeCreatePayload,
+      normalizeCafeUpdatePayload,
+      getMemoryUsers: () => [],
+      setMemoryUsers: () => {},
+    });
+
+    const req = {
+      body: {
+        name: 'Legacy Cafe',
+        total_tables: 18,
+        pin: '5555',
+      },
+    };
+    const res = createMockRes();
+
+    await dbHandlers.createCafe(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(201);
+    const insertSql = pool.query.mock.calls[1][0];
+    expect(insertSql).toContain('table_count');
+    expect(insertSql).toContain('daily_pin');
+    expect(insertSql).toMatch(/INSERT INTO cafes \((?![^)]*total_tables)(?![^)]*address)/);
   });
 
   describe('deleteCafe (db mode)', () => {
@@ -232,7 +288,7 @@ describe('adminHandlers', () => {
       await dbHandlers.deleteCafe(req, res);
 
       expect(res.statusCode).toBe(404);
-      expect(String(res.payload.error)).toContain('Kafe bulunamadı');
+      expect(String(res.payload.error)).toContain('Kafe bulunamad');
       expect(client.release).toHaveBeenCalled();
     });
   });

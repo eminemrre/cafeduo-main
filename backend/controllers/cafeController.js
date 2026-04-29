@@ -184,7 +184,8 @@ const cafeController = {
                 `SELECT id, name, latitude, longitude, radius, table_count,
                         secondary_latitude, secondary_longitude, secondary_radius
                  FROM cafes
-                 ORDER BY name`
+                 ORDER BY name
+                 LIMIT 100`
             );
             res.json(result.rows);
         } catch (err) {

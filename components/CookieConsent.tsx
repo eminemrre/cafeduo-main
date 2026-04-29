@@ -12,14 +12,12 @@ export const CookieConsent: React.FC = () => {
   useEffect(() => {
     setHydrated(true);
     const consent = localStorage.getItem(CONSENT_KEY);
-    // Only show banner if user hasn't consented yet
     if (!consent) {
       setShowBanner(true);
     }
   }, []);
 
   const handleAccept = () => {
-    // Store consent only after user explicitly clicks
     localStorage.setItem(CONSENT_KEY, 'true');
     setShowBanner(false);
   };
@@ -30,23 +28,23 @@ export const CookieConsent: React.FC = () => {
     <div
       role="region"
       aria-label="Çerez bildirimi"
-      className="fixed bottom-[calc(6.75rem+env(safe-area-inset-bottom))] left-4 right-4 z-[90] pointer-events-none md:bottom-6 md:left-auto md:right-6 md:w-[26rem]"
+      className="pointer-events-none fixed bottom-[calc(6.25rem+env(safe-area-inset-bottom))] left-4 right-4 z-[90] md:bottom-24 md:left-auto md:right-6 md:w-[26rem]"
     >
-      <div className="pointer-events-auto rounded-md border border-slate-700/60 bg-[#080d16]/95 p-3.5 shadow-2xl shadow-black/30 backdrop-blur-xl animate-slide-up">
+      <div className="pointer-events-auto rounded-md border border-white/10 bg-[#0a1018]/95 p-3 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-3.5">
         <div className="flex items-start gap-3">
-          <div className="hidden sm:flex p-2.5 bg-slate-950/60 text-slate-200 border border-slate-700/60 rounded-md shrink-0">
+          <div className="hidden shrink-0 rounded-md border border-white/10 bg-white/[0.04] p-2.5 text-slate-200 sm:flex">
             <Cookie size={22} />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="rf-terminal-strip mb-1.5">Sistem Bilgisi</div>
-            <h3 className="text-white font-bold mb-2 uppercase tracking-[0.08em] leading-tight">Çerez Kullanımı</h3>
-            <p className="text-[var(--rf-muted)] text-[13px] leading-relaxed mb-3 break-words">
-              Size daha iyi bir deneyim sunmak ve konum doğrulaması yapabilmek için çerezleri kullanıyoruz.
+          <div className="min-w-0 flex-1">
+            <p className="mb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">Sistem bilgisi</p>
+            <h3 className="mb-1.5 text-sm font-bold uppercase tracking-[0.08em] text-white sm:text-base">Çerez Kullanımı</h3>
+            <p className="mb-2.5 break-words text-xs leading-5 text-slate-400 sm:text-[13px]">
+              Deneyim ve konum doğrulaması için gerekli çerezleri kullanıyoruz.
             </p>
             <button
               type="button"
               onClick={handleAccept}
-              className="w-full rounded-md bg-slate-100 hover:bg-white text-[#07111f] py-2.5 text-sm font-bold transition-colors uppercase tracking-[0.08em]"
+              className="w-full rounded-md bg-slate-100 py-2.5 text-sm font-bold uppercase tracking-[0.08em] text-[#07111f] transition-colors hover:bg-white"
             >
               Anladım
             </button>

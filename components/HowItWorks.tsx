@@ -1,71 +1,70 @@
 import React from 'react';
-import { UserPlus, Coffee, Trophy, ChevronRight } from 'lucide-react';
+import { ChevronRight, Coffee, Trophy, UserPlus } from 'lucide-react';
 
 const steps = [
   {
     id: '01',
-    icon: <UserPlus size={22} className="text-sky-300" />,
+    icon: <UserPlus size={21} className="text-sky-200" />,
     title: 'Hesabını aç',
-    description: '30 saniyede profilini tamamla ve oyuncu kimliğini aktive et.',
+    description: 'Kısa profilini tamamla ve CafeDuo oyuncu kimliğini hazır hale getir.',
     hint: '20 sn',
   },
   {
     id: '02',
-    icon: <Coffee size={22} className="text-emerald-300" />,
+    icon: <Coffee size={21} className="text-emerald-200" />,
     title: 'Kafeye bağlan',
-    description: 'Kafeni seç, güvenli girişi tamamla ve lobiye gir.',
+    description: 'Kafeni ve masanı seç, aynı ortamdaki oyuncularla lobiye gir.',
     hint: '15 sn',
   },
   {
     id: '03',
-    icon: <Trophy size={22} className="text-amber-300" />,
+    icon: <Trophy size={21} className="text-amber-200" />,
     title: 'Eşleş ve kazan',
-    description: 'Bekleyen oyuncuyla maça gir, turu bitir, puanı hesabına yaz.',
+    description: 'Kısa turu tamamla, puanını cüzdana işle ve ödül hedefine yaklaş.',
     hint: '45 sn',
   },
 ];
 
 export const HowItWorks: React.FC = () => (
-  <section id="features" className="cd-section" aria-label="Nasıl çalışır">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="text-center max-w-3xl mx-auto mb-10">
+  <section id="features" className="cd-section cd-section-band" aria-label="Nasıl çalışır">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto mb-11 max-w-3xl text-center">
         <span className="cd-kicker justify-center">Nasıl çalışır</span>
         <h2
           data-testid="flow-main-heading"
-          className="mt-4 text-3xl md:text-5xl font-display-tr text-white leading-tight"
+          className="mt-4 font-display-tr text-3xl leading-tight text-white md:text-5xl"
         >
           3 adımda eşleş, oyna, ödüle yaklaş.
         </h2>
-        <p className="mt-4 text-lg text-slate-400">
-          Arkadaşını beklerken boşta kalma; bağlan, eşleş ve puanı topla.
+        <p className="mt-4 text-base leading-7 text-slate-400 sm:text-lg">
+          Kullanıcı aynı deneyimi takip eder: bağlanır, eşleşir, oynar ve puanını görür.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {steps.map((step, index) => (
           <article
             key={step.id}
             data-testid={`how-step-${step.id}`}
             className="cd-card relative rounded-md p-6 transition-colors duration-200"
           >
-            <span className="absolute top-4 right-4 text-slate-700/40 font-display text-4xl select-none pointer-events-none">
-              {step.id}
-            </span>
-
-            <div className="w-11 h-11 rounded-md bg-slate-950/50 border border-slate-700/50 flex items-center justify-center mb-4">
-              {step.icon}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex h-11 w-11 items-center justify-center rounded-md border border-white/10 bg-white/[0.04]">
+                {step.icon}
+              </div>
+              <span className="font-display-tr text-4xl leading-none text-white/[0.08]">{step.id}</span>
             </div>
 
-            <h3 className="text-xl font-display-tr text-white mb-2">{step.title}</h3>
-            <p className="text-slate-400 text-sm leading-relaxed">{step.description}</p>
+            <h3 className="mt-5 text-xl font-bold text-white">{step.title}</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-400">{step.description}</p>
 
-            <div className="mt-5 inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-slate-950/45 border border-slate-700/50 text-sm">
-              <span className="text-[10px] tracking-wider text-slate-400 uppercase font-bold">Ortalama</span>
-              <span className="text-white font-semibold">{step.hint}</span>
+            <div className="mt-6 inline-flex items-center gap-2 rounded-md border border-white/10 bg-slate-950/35 px-3 py-1.5 text-sm">
+              <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-500">Ortalama</span>
+              <span className="font-semibold text-white">{step.hint}</span>
             </div>
 
             {index < steps.length - 1 && (
-              <div className="hidden md:flex items-center justify-center absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md bg-[#0a101c] border border-slate-700/50 z-10">
+              <div className="absolute -right-3 top-1/2 z-10 hidden h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md border border-white/10 bg-[#0b111b] md:flex">
                 <ChevronRight size={14} className="text-slate-500" />
               </div>
             )}

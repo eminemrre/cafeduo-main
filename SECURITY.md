@@ -1,20 +1,71 @@
-# Security Policy
+# CafeDuo Security Notes
+
+## Supported Version
+
+| Version | Status |
+| --- | --- |
+| 1.x | Supported MVP |
+
+## Production Security Baseline
+
+Required:
+
+- `JWT_SECRET` must be 64+ random bytes.
+- `BLACKLIST_FAIL_MODE=closed`.
+- `RATE_LIMIT_STORE=redis`.
+- `RATE_LIMIT_PASS_ON_STORE_ERROR=false`.
+- Do not commit `.env`, database dumps, tokens, cookies, or private keys.
+- Keep `BOOTSTRAP_ADMIN_PASSWORD` only in Dokploy/host secrets.
+- Keep `COOKIE_DOMAIN` empty for same-origin deployment.
+- Include the production origin in `CORS_ORIGIN`.
+
+Recommended:
+
+- Use HTTPS only.
+- Keep Redis private to the app network.
+- Keep PostgreSQL private to the app network.
+- Rotate bootstrap admin password after first production verification.
+- Monitor `/readiness`, backend logs, failed auth spikes, and rate-limit errors.
+
+## Authentication
+
+- JWTs are validated on HTTP and Socket.IO paths.
+- Socket.IO checks token revocation before accepting connections.
+- Logout/token blacklist should fail closed in production.
+- Bootstrap admin emails are promoted on startup/login/register.
+
+## Multiplayer Integrity
+
+- Game room joins are checked against the game host/guest or admin role.
+- Move broadcasts require the socket to already be in the game room.
+- State broadcasts reject oversized or unserializable payloads.
+- Final game settlement is handled server-side.
+
+## Database Safety
+
+- Schema changes must be migrations.
+- Production queries must use explicit columns.
+- User-facing lists must have limits.
+- Avoid N+1 query patterns in request paths.
 
 ## Reporting a Vulnerability
 
-We take the security of CafeDuo seriously. If you discover a security vulnerability, please follow these steps:
+Do not open public issues for security reports.
 
-1.  **Do NOT open a public issue** on GitHub.
-2.  Email your findings to `security@cafeduotr.com` (or the maintainer's email).
-3.  Include a description of the vulnerability and steps to reproduce it.
+Send the report privately to the maintainer with:
 
-## Supported Versions
+- affected endpoint or flow
+- reproduction steps
+- expected impact
+- logs/screenshots if available without exposing secrets
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.x.x   | :white_check_mark: |
-| < 1.0   | :x:                |
+## Local Secret Hygiene
 
-## Responsible Disclosure
+Before committing:
 
-We ask that you give us reasonable time to fix the issue before making it public. We will acknowledge your report within 48 hours.
+```powershell
+git status --short
+git diff --cached
+```
+
+Confirm no real `.env` files, passwords, private keys, or production tokens are staged.

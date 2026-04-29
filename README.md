@@ -1,145 +1,142 @@
-<div align="center">
-
 # CafeDuo
 
-**Gamified cafe loyalty platform for university communities.**
+CafeDuo is a production-ready MVP for cafe-based social gaming and loyalty. Users check in at a cafe table, create or join two-player games, earn points, and redeem cafe rewards. Cafe admins manage their own cafe rewards and location data; general admins manage cafes, users, and assignments.
 
-Play real-time games in participating cafes, collect points, and redeem rewards.
+## Current MVP Status
 
-[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript)](https://www.typescriptlang.org/)
-[![Socket.IO](https://img.shields.io/badge/Socket.IO-Real--Time-010101?logo=socket.io)](https://socket.io/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?logo=postgresql)](https://www.postgresql.org/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker)](Dockerfile)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue)](LICENSE)
+Status: MVP-ready after the latest hardening pass.
 
-[Overview](#overview) · [Live](#live) · [Key Features](#key-features) · [Architecture](#architecture-and-tech-stack) · [Quick Start](#quick-start) · [Testing](#testing) · [Roadmap](#roadmap)
+What is complete:
 
-</div>
+- XPatla-inspired dark/red cyber UI across the core user, admin, cafe admin, game, and form flows.
+- Auth, check-in, dashboard, cafe creation, cafe admin assignment, rewards, inventory, leaderboard, and password reset flows.
+- Two-player game integrity for lobby creation, joining, finishing, resignation, and server-side score settlement.
+- Socket.IO room protection: only game participants or admins can join a game room; only joined sockets can broadcast moves or state updates.
+- PostgreSQL migrations for schema evolution, including the cafe/admin schema alignment migration.
+- Dokploy-compatible deployment through GitHub `main`.
+- OpenAPI document loads cleanly and `/api-docs` is served once.
 
----
+## Production Flow
 
-## Overview
+The active deployment flow is:
 
-CafeDuo combines cafe check-ins, multiplayer mini-games, and reward redemption in one full-stack system.
+1. Commit to GitHub `main`.
+2. Dokploy pulls/builds from GitHub.
+3. Backend runs on Node/Express with PostgreSQL and Redis.
+4. Frontend is served from the Vite production build.
 
-The product is designed for:
+Do not commit real `.env` files. Configure production secrets in Dokploy or the host environment.
 
-- increasing repeat visits,
-- creating social engagement in-venue,
-- and turning loyalty into measurable gameplay activity.
+Important production environment values:
 
-## Live
+- `JWT_SECRET`: 64+ random hex characters.
+- `DATABASE_URL`: PostgreSQL connection string.
+- `REDIS_URL`: Redis connection string.
+- `CORS_ORIGIN`: public frontend origin.
+- `BLACKLIST_FAIL_MODE=closed`.
+- `RATE_LIMIT_PASS_ON_STORE_ERROR=false`.
+- `BOOTSTRAP_ADMIN_EMAILS=emin3619@gmail.com`.
+- `BOOTSTRAP_ADMIN_PASSWORD`: set in Dokploy/host env, not in git.
 
-- Production web app: https://cafeduotr.com
+## Tech Stack
 
-## Key Features
-
-- In-cafe check-in flow
-: PIN-based session validation for cafe tables and local engagement.
-
-- Real-time multiplayer gameplay
-: Socket.IO powered game lobbies and live match state.
-
-- Loyalty and rewards
-: Point accumulation, leaderboard logic, and reward redemption flow.
-
-- Cafe discovery and map support
-: Nearby cafe browsing with map integration.
-
-- Full-stack operational tooling
-: Dockerized setup, smoke checks, and deployment documentation.
-
-## Architecture and Tech Stack
-
-| Layer | Technology |
-|---|---|
-| Frontend | React 18 + TypeScript + Vite |
-| Styling | Tailwind CSS + Framer Motion |
-| Backend | Node.js + Express |
-| Real-Time | Socket.IO |
+| Area | Stack |
+| --- | --- |
+| Frontend | React 18, TypeScript, Vite |
+| UI | Tailwind CSS, Framer Motion, lucide-react |
+| Backend | Node.js, Express, CommonJS |
+| Realtime | Socket.IO |
 | Database | PostgreSQL |
 | Cache | Redis |
-| Auth & Security | JWT, bcrypt, Helmet, rate limiting, reCAPTCHA |
-| Testing | Jest + React Testing Library + Playwright |
-| DevOps | Docker + Docker Compose |
+| Auth/Security | JWT, bcrypt, Helmet, CSRF, rate limiting, token blacklist |
+| Testing | Jest, React Testing Library, Playwright |
+| Deploy | Docker, Docker Compose, Dokploy |
 
-## Quick Start
+## Local Development
 
-### Prerequisites
+Use Windows-safe commands in PowerShell:
 
-- Node.js 18+
-- PostgreSQL 15+ (or Docker)
-
-### Option A: Docker (recommended)
-
-```bash
-git clone https://github.com/eminemre35/cafeduo-main.git
-cd cafeduo-main
-cp .env.example .env
-docker-compose up -d
+```powershell
+npm.cmd install
+copy .env.example .env
+npm.cmd run migrate:up
+npm.cmd run dev
 ```
 
-Default local endpoints:
+Local endpoints:
 
-- Frontend: `http://localhost:3000`
+- Frontend: `http://localhost:5173`
 - Backend: `http://localhost:3001`
+- API docs: `http://localhost:3001/api-docs`
+- Readiness: `http://localhost:3001/readiness`
 
-### Option B: Local development
+## Validation
 
-```bash
-npm install
-createdb cafeduo
-psql cafeduo < schema.sql
-cp .env.example .env
-npm run dev
+Run these before shipping behavior changes:
+
+```powershell
+npm.cmd run test:ci
+npm.cmd run build
+npm.cmd run test:e2e
 ```
 
-## Testing
+For database changes:
 
-```bash
-npm test
-npm run test:coverage
-npm run test:e2e
-npm run test:all
-npm run smoke:live
+```powershell
+npm.cmd run migrate:up
+npm.cmd run migrate:down
+npm.cmd run migrate:up
+npm.cmd run migrate:status
 ```
 
-## Deployment Status
+Latest verified local gates:
 
-| Target | Status | Notes |
-|---|---|---|
-| Web App | Live | Served at `https://cafeduotr.com` |
-| API + Realtime | Active | Node/Express + Socket.IO backend |
-| Containerized Deploy | Ready | Docker and deployment docs included |
+- `node --check backend/server.js`
+- OpenAPI YAML parse with `yamljs` and `js-yaml`
+- Targeted Jest for route/socket registry
+- `npm.cmd run test:ci` with 812 passing tests
+- `npm.cmd run build`
+- `npm.cmd run test:e2e` with 14 passing Playwright tests
 
-## Roadmap
+## MVP Acceptance Checklist
 
-- Product roadmap: [ROADMAP.md](ROADMAP.md)
-- Engineering roadmap: [ROADMAP_SENIOR.md](ROADMAP_SENIOR.md)
-- Deployment playbook: [DEPLOYMENT.md](DEPLOYMENT.md)
+- User can register/login/logout.
+- User must check in before regular dashboard/game actions.
+- User can create a game at a normalized table code.
+- A second user can join a waiting game exactly once.
+- Race conditions keep a single guest and consistent game status.
+- Tank battle winner is resolved from server-side scores, not spoofed client finish payloads.
+- Resign/finalize blocks further score writes.
+- Socket game-room traffic is limited to game participants/admins.
+- Cafe can be created by admin.
+- Cafe admin can be assigned and can manage cafe-scoped rewards/location.
+- Rewards can be purchased and inventory can be viewed.
+- Production build and E2E smoke/advanced flows pass.
 
-## Contributing
+## Key Files
 
-Contributions are welcome.
+- Backend entry: `backend/server.js`
+- Game routes: `backend/routes/gameRoutes.js`
+- Game handlers: `backend/handlers/gameHandlers.js`
+- Game services: `backend/services/gameMoveService.js`
+- Socket auth: `backend/middleware/socketAuth.js`
+- Frontend entry: `App.tsx`, `index.tsx`
+- API client: `lib/api.ts`
+- Socket client: `lib/socket.ts`
+- Main progress note: `PROJECT_PROGRESS.md`
+- Deployment guide: `DEPLOYMENT.md`
+- Security notes: `SECURITY.md`
+- Optimization notes: `OPTIMIZATIONS.md`
 
-1. Read [CONTRIBUTING.md](CONTRIBUTING.md).
-2. Open an issue for large features or behavior changes.
-3. Submit a pull request with clear test coverage notes.
+## Repo Rules
 
-Additional project policies:
-
-- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
-- [SECURITY.md](SECURITY.md)
+- Read `PROJECT_PROGRESS.md` before project commands.
+- Follow `AGENTS.md` for database, Socket.IO, frontend, security, and validation constraints.
+- Use explicit SQL columns; never use `SELECT *`.
+- Add limits to user-facing list queries.
+- Use migrations for schema changes.
+- Prefer Socket.IO updates; polling fallbacks must stay at 15 seconds or slower.
 
 ## License
 
-This project is licensed under the MIT License. See [LICENSE](LICENSE).
-
----
-
-<div align="center">
-
-Built for community-driven cafe engagement.
-
-</div>
+MIT.

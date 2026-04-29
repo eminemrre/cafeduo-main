@@ -109,7 +109,7 @@ jobs:
             -e "ssh -p ${DEPLOY_PORT:-22}" \
             ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}"
 
-      - name: Check migration status against production database on VPS
+      - name: Reconcile production migrations on VPS
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
@@ -146,11 +146,33 @@ jobs:
               fi
             fi
 
-            run_compose -f deploy/docker-compose.prod.yml --env-file .env run --rm --build \
-              -e DOTENV_CONFIG_PATH=.env \
-              -e MIGRATION_STATUS_REQUIRE_DB=1 \
-              -e MIGRATION_STATUS_FAIL_ON_PENDING=1 \
-              api npm run migrate:status
+            strict_migration_status() {
+              run_compose -f deploy/docker-compose.prod.yml --env-file .env run --rm --build \
+                -e DOTENV_CONFIG_PATH=.env \
+                -e MIGRATION_STATUS_REQUIRE_DB=1 \
+                -e MIGRATION_STATUS_FAIL_ON_PENDING=1 \
+                api npm run migrate:status
+            }
+
+            migrate_up() {
+              run_compose -f deploy/docker-compose.prod.yml --env-file .env run --rm --build \
+                -e DOTENV_CONFIG_PATH=.env \
+                api npm run migrate:up
+            }
+
+            if strict_migration_status; then
+              echo "Production migrations are already up to date."
+            else
+              echo "Production migrations need reconciliation."
+              if bash deploy/scripts/migration-baseline-vps.sh apply "$DEPLOY_PATH"; then
+                echo "Legacy baseline reconciliation completed."
+              else
+                echo "Legacy baseline was not applicable; running standard migrate:up."
+                migrate_up
+              fi
+
+              strict_migration_status
+            fi
           REMOTE
 
       - name: Deploy containers on VPS

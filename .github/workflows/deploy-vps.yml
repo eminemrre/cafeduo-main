@@ -218,8 +218,54 @@ jobs:
             printf 'APP_VERSION=%s\nAPP_BUILD_TIME=%s\n' "$APP_VERSION" "$APP_BUILD_TIME" >> .env.tmp
             mv .env.tmp .env
 
+            port_in_use() {
+              if command -v ss >/dev/null 2>&1; then
+                ss -ltnH "( sport = :$1 )" 2>/dev/null | grep -q .
+                return
+              fi
+
+              netstat -ltn 2>/dev/null | awk '{print $4}' | grep -Eq "[:.]$1$"
+            }
+
+            first_free_port() {
+              for port in "$@"; do
+                if ! port_in_use "$port"; then
+                  printf '%s\n' "$port"
+                  return 0
+                fi
+              done
+
+              return 1
+            }
+
+            compose_files=(-f deploy/docker-compose.prod.yml --env-file .env)
+            compose_up_extra=()
+            local_smoke_base_url="http://127.0.0.1"
+            rm -f deploy/docker-compose.port-override.yml .deploy-runtime.env
+
+            if port_in_use 80; then
+              web_smoke_port="$(first_free_port 18080 28080 38080)"
+              if [ -z "${web_smoke_port:-}" ]; then
+                echo "No free localhost smoke port found."
+                exit 1
+              fi
+
+              {
+                echo "services:"
+                echo "  web:"
+                echo "    ports:"
+                echo "      - \"127.0.0.1:${web_smoke_port}:80\""
+              } > deploy/docker-compose.port-override.yml
+              compose_files=(-f deploy/docker-compose.prod.yml -f deploy/docker-compose.port-override.yml --env-file .env)
+              compose_up_extra=(--scale caddy=0)
+              local_smoke_base_url="http://127.0.0.1:${web_smoke_port}"
+              echo "Port 80 is already allocated; deploying without Caddy and using ${local_smoke_base_url} for VPS smoke checks."
+            fi
+
+            printf 'LOCAL_SMOKE_BASE_URL=%q\n' "$local_smoke_base_url" > .deploy-runtime.env
+
             try_compose_up() {
-              run_compose -f deploy/docker-compose.prod.yml --env-file .env up -d --build --force-recreate --remove-orphans
+              run_compose "${compose_files[@]}" up -d --build --force-recreate --remove-orphans "${compose_up_extra[@]}"
             }
 
             recover_container_runtime() {
@@ -266,7 +312,7 @@ jobs:
         run: |
           set -euo pipefail
           ssh -p "${DEPLOY_PORT:-22}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
-            "cd '${DEPLOY_PATH}' && SMOKE_EXPECT_COMMIT='${SMOKE_EXPECT_COMMIT}' bash deploy/scripts/smoke-vps.sh http://127.0.0.1"
+            "cd '${DEPLOY_PATH}' && [ -f .deploy-runtime.env ] && . ./.deploy-runtime.env || true; SMOKE_EXPECT_COMMIT='${SMOKE_EXPECT_COMMIT}' bash deploy/scripts/smoke-vps.sh \"\${LOCAL_SMOKE_BASE_URL:-http://127.0.0.1}\""
 
       - name: Run VPS DB explain probes
         continue-on-error: true

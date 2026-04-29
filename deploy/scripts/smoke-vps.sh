@@ -9,7 +9,12 @@ curl_flags=(-sS -L)
 if [[ "${BASE_URL}" == http://127.0.0.1* || "${BASE_URL}" == https://127.0.0.1* || "${BASE_URL}" == http://localhost* || "${BASE_URL}" == https://localhost* ]]; then
   site_address_raw="$(grep -E '^SITE_ADDRESS=' .env 2>/dev/null | head -n1 | cut -d'=' -f2- | tr -d '"' | tr -d "'" | xargs || true)"
   site_address="$(echo "${site_address_raw}" | cut -d',' -f1 | xargs | sed -E 's#^https?://##' | sed -E 's#/.*$##')"
-  if [[ -n "${site_address}" && "${site_address}" != "localhost" ]]; then
+  has_explicit_local_port=0
+  if [[ "${BASE_URL}" =~ ^https?://(127\.0\.0\.1|localhost):[0-9]+(/.*)?$ ]]; then
+    has_explicit_local_port=1
+  fi
+
+  if [[ "${has_explicit_local_port}" -eq 0 && -n "${site_address}" && "${site_address}" != "localhost" ]]; then
     # Caddy TLS sertifikası domain üzerinden çalıştığı için localhost smoke'u SNI resolve ile domain'e yönlendir.
     BASE_URL="https://${site_address}"
     curl_flags+=(--resolve "${site_address}:443:127.0.0.1")

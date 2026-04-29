@@ -10,6 +10,7 @@
 ## Current State
 - CI failure fix done locally: npm audit vulnerabilities were resolved with dependency updates/overrides.
 - Deploy failure fix done locally: VPS workflow reconciles legacy/empty migration state before strict migration status.
+- Deploy port-conflict fix done locally: if port 80 is already owned by Dokploy/another proxy, VPS deploy scales Caddy to 0 and smokes web through a localhost-only port.
 - `main` includes the MVP/socket/OpenAPI hardening work pushed after `a93917b Harden multiplayer socket rooms`.
 - XPatla-inspired dark/red UI is applied.
 - Cafe creation/admin assignment fixes were implemented with migration `20260429123000_align_cafe_schema_columns.js`.
@@ -20,7 +21,7 @@
 - Deploy hardening done: compose defaults fail closed for Redis/rate-limit auth behavior and pass bootstrap admin/build metadata envs explicitly.
 - MVP baseline is complete locally: user auth/check-in, cafe/admin flows, two-player games, rewards, build, and E2E gates pass.
 - Local DB was unreachable during the last migration status check, so migration up/down could not be verified locally.
-- Latest validation: `npm audit --audit-level=moderate`, workflow/OpenAPI/compose YAML parse, backend/migration syntax checks, `test:ci` (812 tests), CI-equivalent `test:coverage` (812 tests), `build`, and `test:e2e` (14 tests) passed.
+- Latest validation: `npm audit --audit-level=moderate`, workflow/OpenAPI/compose YAML parse, backend/migration syntax checks, `test:ci` (812 tests), CI-equivalent `test:coverage` (812 tests), `build`, and `test:e2e` (14 tests) passed; deploy workflow YAML re-checked after port fallback.
 
 ## Active Constraints
 - Do not delete local files without action-time confirmation.

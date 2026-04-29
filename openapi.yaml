@@ -413,6 +413,29 @@ paths:
         404:
           description: Oyun bulunamadı
 
+    delete:
+      tags:
+        - Games
+      summary: Oyunu sil
+      description: Bir oyunu tamamen siler
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: Oyun silindi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+
   /api/games/{id}/join:
     post:
       tags:
@@ -598,30 +621,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameStatusTransitionError'
-
-  /api/games/{id}:
-    delete:
-      tags:
-        - Games
-      summary: Oyunu sil
-      description: Bir oyunu tamamen siler
-      security: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: integer
-      responses:
-        200:
-          description: Oyun silindi
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
 
   # ==========================================
   # SHOP

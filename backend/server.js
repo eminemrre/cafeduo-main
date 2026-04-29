@@ -227,13 +227,90 @@ io.use((socket, next) => {
 // Apply Socket.IO authentication middleware
 io.use(socketAuthMiddleware);
 
+const normalizeSocketGameId = (gameId) => {
+  const normalizedGameId = String(gameId || '').trim();
+  return normalizedGameId && normalizedGameId.length <= 64 ? normalizedGameId : null;
+};
+
+const emitSocketRoomError = (socket, code) => {
+  socket.emit('game_room_error', { code });
+};
+
+const isSocketAdmin = (socket) => Boolean(socket.user?.isAdmin || socket.user?.is_admin || socket.user?.role === 'admin');
+
+const normalizeMemoryGameForSocket = (game) => game && {
+  id: game.id,
+  host_name: game.host_name ?? game.hostName,
+  guest_name: game.guest_name ?? game.guestName,
+  status: game.status,
+};
+
+const findMemorySocketGame = (normalizedGameId) => {
+  if (!Array.isArray(memoryState.games)) {
+    return null;
+  }
+
+  return memoryState.games.find((game) => String(game.id) === normalizedGameId) || null;
+};
+
+const canAccessGameRoom = async (socket, normalizedGameId) => {
+  if (isSocketAdmin(socket)) {
+    return true;
+  }
+
+  const username = socket.username || socket.user?.username;
+  if (!username) {
+    return false;
+  }
+
+  let game = null;
+  if (await isDbConnected()) {
+    const result = await pool.query(
+      `SELECT id, host_name, guest_name, status
+       FROM games
+       WHERE id = $1
+       LIMIT 1`,
+      [normalizedGameId]
+    );
+    game = result.rows[0] || null;
+  } else {
+    game = normalizeMemoryGameForSocket(findMemorySocketGame(normalizedGameId));
+  }
+
+  return Boolean(game && normalizeParticipantName(username, game));
+};
+
+const isSocketInGameRoom = (socket, normalizedGameId) => socket.rooms.has(normalizedGameId);
+
 io.on('connection', (socket) => {
   logger.info(`⚡ Client connected: ${socket.id} (User: ${socket.username})`);
 
   // Genel oyun odasına katılım
-  socket.on('join_game', (gameId) => {
-    const normalizedGameId = String(gameId || '').trim();
-    if (!normalizedGameId || normalizedGameId.length > 64) {
+  socket.on('join_game', async (gameId) => {
+    const normalizedGameId = normalizeSocketGameId(gameId);
+    if (!normalizedGameId) {
+      return;
+    }
+
+    try {
+      const hasRoomAccess = await canAccessGameRoom(socket, normalizedGameId);
+      if (!hasRoomAccess) {
+        emitSocketRoomError(socket, 'forbidden');
+        logger.warn('Blocked socket room join without game access', {
+          socketId: socket.id,
+          userId: socket.userId,
+          gameId: normalizedGameId,
+        });
+        return;
+      }
+    } catch (err) {
+      emitSocketRoomError(socket, 'access_check_failed');
+      logger.error('Socket room access check failed', {
+        socketId: socket.id,
+        userId: socket.userId,
+        gameId: normalizedGameId,
+        error: err.message,
+      });
       return;
     }
 
@@ -243,8 +320,8 @@ io.on('connection', (socket) => {
 
   // Oyun odasından ayrılma
   socket.on('leave_game', (gameId) => {
-    const normalizedGameId = String(gameId || '').trim();
-    if (!normalizedGameId || normalizedGameId.length > 64) {
+    const normalizedGameId = normalizeSocketGameId(gameId);
+    if (!normalizedGameId) {
       return;
     }
 
@@ -259,8 +336,12 @@ io.on('connection', (socket) => {
   ]);
 
   socket.on('game_move', (data) => {
-    const normalizedGameId = String(data?.gameId || '').trim();
-    if (!normalizedGameId || normalizedGameId.length > 64) return;
+    const normalizedGameId = normalizeSocketGameId(data?.gameId);
+    if (!normalizedGameId) return;
+    if (!isSocketInGameRoom(socket, normalizedGameId)) {
+      emitSocketRoomError(socket, 'not_in_room');
+      return;
+    }
 
     const move = data?.move;
     // Validate move data size and structure
@@ -289,9 +370,25 @@ io.on('connection', (socket) => {
 
   // Game state sync
   socket.on('update_game_state', (data) => {
-    const normalizedGameId = String(data?.gameId || '').trim();
-    if (!normalizedGameId || normalizedGameId.length > 64) return;
-    socket.to(normalizedGameId).emit('game_state_updated', data?.state ?? {});
+    const normalizedGameId = normalizeSocketGameId(data?.gameId);
+    if (!normalizedGameId) return;
+    if (!isSocketInGameRoom(socket, normalizedGameId)) {
+      emitSocketRoomError(socket, 'not_in_room');
+      return;
+    }
+
+    const nextState = data?.state ?? {};
+    try {
+      if (JSON.stringify(nextState).length > 10000) {
+        emitSocketRoomError(socket, 'state_too_large');
+        return;
+      }
+    } catch (err) {
+      emitSocketRoomError(socket, 'invalid_state');
+      return;
+    }
+
+    socket.to(normalizedGameId).emit('game_state_updated', nextState);
   });
 
   socket.on('disconnect', () => {
@@ -935,24 +1032,6 @@ app.use(express.static(path.join(__dirname, '../dist')));
 // Duplicate /api/rewards endpoints removed. The secured canonical handlers are defined above.
 
 // NOTE: Duplicate endpoints removed. Protected versions are defined above.
-
-// ==========================================
-// SWAGGER UI - API DOCUMENTATION
-// ==========================================
-try {
-  const swaggerUi = require('swagger-ui-express');
-  const yaml = require('js-yaml');
-  const fs = require('fs');
-  const swaggerDocument = yaml.load(fs.readFileSync('./openapi.yaml', 'utf8'));
-
-  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'CafeDuo API Documentation',
-  }));
-  console.log('✅ Swagger UI available at /api-docs');
-} catch (err) {
-  console.warn('⚠️  Swagger UI could not be loaded:', err.message);
-}
 
 // ==========================================
 // GLOBAL ERROR HANDLING

@@ -112,4 +112,14 @@ describe('backend/server.js route registry', () => {
       expect(routeMap.get(routeKey)).toBe(1);
     }
   });
+
+  it('protects Socket.IO game rooms with participant access checks', () => {
+    expect(serverSource).toContain('const canAccessGameRoom = async');
+    expect(serverSource).toContain('SELECT id, host_name, guest_name, status');
+    expect(serverSource).toContain('LIMIT 1');
+    expect(serverSource).toContain("socket.on('join_game', async");
+    expect(serverSource).toContain('emitSocketRoomError(socket, \'forbidden\')');
+    expect(serverSource).toContain('isSocketInGameRoom(socket, normalizedGameId)');
+    expect(serverSource).toContain("socket.emit('game_room_error'");
+  });
 });

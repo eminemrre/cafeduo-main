@@ -130,8 +130,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     const handleCafeUpdate = async () => {
         if (!selectedCafe) return;
 
-        const latitude = Number(editCafeData.latitude);
-        const longitude = Number(editCafeData.longitude);
+        const latitudeRaw = String(editCafeData.latitude || '').trim();
+        const longitudeRaw = String(editCafeData.longitude || '').trim();
+        const hasPrimaryLocation = Boolean(latitudeRaw) || Boolean(longitudeRaw);
+        const latitude = Number(latitudeRaw);
+        const longitude = Number(longitudeRaw);
         const radius = Number(editCafeData.radius);
         const hasSecondaryInput =
             Boolean(String(editCafeData.secondaryLatitude).trim())

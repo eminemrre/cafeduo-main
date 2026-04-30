@@ -78,6 +78,7 @@ describe('AdminDashboard', () => {
     (apiModule.api.admin.getUsers as jest.Mock).mockResolvedValue(mockUsers);
     (apiModule.api.admin.getGames as jest.Mock).mockResolvedValue(mockGames);
     (apiModule.api.cafes.list as jest.Mock).mockResolvedValue(mockCafes);
+    (apiModule.api.admin.updateCafe as jest.Mock).mockResolvedValue({});
     (apiModule.api.admin.deleteCafe as jest.Mock).mockResolvedValue({
       success: true,
       deletedCafe: { id: 1, name: 'Kafe 1' },
@@ -277,6 +278,54 @@ describe('AdminDashboard', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Kafe Bilgilerini Düzenle')).toBeInTheDocument();
+    });
+  });
+
+  it('updates selected cafe with parsed location values', async () => {
+    (apiModule.api.cafes.list as jest.Mock).mockResolvedValueOnce([
+      {
+        id: 11,
+        name: 'Konumlu Kafe',
+        address: 'Eski adres',
+        total_tables: 12,
+        latitude: '37.739058',
+        longitude: '29.103837',
+        radius: 500,
+        secondary_latitude: '37.739100',
+        secondary_longitude: '29.103900',
+        secondary_radius: 300,
+      },
+      { id: 12, name: 'Yedek Kafe', address: 'Adres', total_tables: 8, pin: '5678' },
+    ]);
+
+    render(<AdminDashboard currentUser={mockCurrentUser} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('user1')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Kafeler/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Kafe Bilgilerini/)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /DE.*KAYDET/i }));
+
+    await waitFor(() => {
+      expect(apiModule.api.admin.updateCafe).toHaveBeenCalledWith(
+        11,
+        expect.objectContaining({
+          address: 'Eski adres',
+          total_tables: 12,
+          latitude: 37.739058,
+          longitude: 29.103837,
+          radius: 500,
+          secondary_latitude: 37.7391,
+          secondary_longitude: 29.1039,
+          secondary_radius: 300,
+        })
+      );
     });
   });
 

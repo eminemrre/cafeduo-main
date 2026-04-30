@@ -20,7 +20,7 @@ const enforceBrowserHttps = (url: string, protocolOverride?: Pick<Location, 'pro
 export const normalizeBaseUrl = (url: string, protocolOverride?: Pick<Location, 'protocol'>): string =>
     enforceBrowserHttps(withProtocol(url.trim()), protocolOverride).replace(/\/+$/, '').replace(/\/api$/, '');
 
-const resolveSocketUrl = () => {
+export const resolveSocketUrl = () => {
     try {
         const envValues = new Function(
             'return {' +
@@ -38,9 +38,7 @@ const resolveSocketUrl = () => {
     }
 
     if (typeof window !== 'undefined' && window.location) {
-        if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-            return window.location.origin;
-        }
+        return window.location.origin;
     }
 
     return 'http://localhost:3001';

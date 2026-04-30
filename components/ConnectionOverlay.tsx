@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { socketService } from '../lib/socket';
 
 interface ConnectionOverlayProps {
@@ -8,20 +8,33 @@ interface ConnectionOverlayProps {
 export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = () => {
   const [isConnected, setIsConnected] = useState(socketService.isConnected());
   const [showReconnecting, setShowReconnecting] = useState(false);
+  const reconnectTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
+    const clearReconnectTimer = () => {
+      if (reconnectTimerRef.current !== null) {
+        window.clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+    };
+
     const unsubscribe = socketService.onConnectionChange((connected) => {
+      clearReconnectTimer();
       setIsConnected(connected);
       if (!connected) {
         // Delay showing the overlay to avoid flickering on brief disconnects
-        window.setTimeout(() => {
+        reconnectTimerRef.current = window.setTimeout(() => {
           setShowReconnecting(true);
+          reconnectTimerRef.current = null;
         }, 2000);
       } else {
         setShowReconnecting(false);
       }
     });
-    return unsubscribe;
+    return () => {
+      clearReconnectTimer();
+      unsubscribe();
+    };
   }, []);
 
   if (isConnected || !showReconnecting) return null;

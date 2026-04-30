@@ -3,7 +3,7 @@
  * Targets uncovered branches: resolveSocketUrl fallback paths, enforceBrowserHttps
  */
 
-import { normalizeBaseUrl } from './socket';
+import { normalizeBaseUrl, resolveSocketUrl } from './socket';
 
 describe('socket.ts branch coverage', () => {
   describe('normalizeBaseUrl', () => {
@@ -67,6 +67,12 @@ describe('socket.ts branch coverage', () => {
     it('does not upgrade https URLs', () => {
       const result = normalizeBaseUrl('https://example.com', { protocol: 'https:' });
       expect(result).toBe('https://example.com');
+    });
+  });
+
+  describe('resolveSocketUrl', () => {
+    it('uses the browser origin as the socket fallback', () => {
+      expect(resolveSocketUrl()).toBe(window.location.origin);
     });
   });
 });

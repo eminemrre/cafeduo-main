@@ -29,6 +29,10 @@ describe('socketService', () => {
     socketService.connect();
 
     expect(io).toHaveBeenCalledTimes(1);
+    expect(io).toHaveBeenCalledWith(window.location.origin, expect.objectContaining({
+      withCredentials: true,
+      transports: ['websocket', 'polling'],
+    }));
     expect(mockSocket.on).toHaveBeenCalledWith('connect', expect.any(Function));
     expect(mockSocket.on).toHaveBeenCalledWith('connect_error', expect.any(Function));
     expect(mockSocket.on).toHaveBeenCalledWith('disconnect', expect.any(Function));

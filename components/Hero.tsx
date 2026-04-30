@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Coffee, Play, Sparkles, Timer, Trophy, Users, WalletCards } from 'lucide-react';
+import { ArrowRight, Play, Sparkles, Timer, Trophy, Users } from 'lucide-react';
 
 interface HeroProps {
   onLogin: () => void;
@@ -9,12 +9,6 @@ interface HeroProps {
   userRole?: string;
   isAdmin?: boolean;
 }
-
-const tableRows = [
-  { label: 'PAÜ Merkez Cafe', value: '4/4 aktif', tone: 'text-[#39ff6a]' },
-  { label: 'Retro Satranç', value: 'Masa 05', tone: 'text-white' },
-  { label: 'Nişancı Düellosu', value: '+120 CP', tone: 'text-[#ff3045]' },
-];
 
 export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, userRole, isAdmin }) => {
   const navigate = useNavigate();
@@ -118,70 +112,18 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
               <div className="cd-spark cd-spark-a"><Sparkles size={18} /></div>
               <div className="cd-spark cd-spark-b"><Sparkles size={14} /></div>
             </div>
-            <div className="cd-active-seat">
-              <div>
-                <p className="font-pixel text-[10px] uppercase text-[#10e7ff]">Senin aktif masan</p>
-                <p className="mt-1 text-sm text-white">Retro Satranç - PAÜ Merkez Cafe</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] uppercase text-[#a5adb8]">Puanın</p>
-                <p className="font-pixel text-lg text-[#ff3045]">350 CP</p>
-              </div>
-            </div>
+            <div className="cd-active-seat cd-active-seat-empty" aria-hidden="true" />
           </div>
 
           <div className="mx-auto w-full max-w-[390px] lg:mx-0 lg:justify-self-end">
             <div className="cd-product-panel p-4 sm:p-5">
-              <div className="cd-product-window overflow-hidden">
-                <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="cd-brand-mark flex h-10 w-10 items-center justify-center">
-                      <Coffee size={20} />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-white">Canlı Masalar</p>
-                      <p className="text-xs text-neutral-500">18 aktif</p>
-                    </div>
-                  </div>
-                  <span className="rounded-full bg-[#ff3045] px-3 py-1 text-[10px] font-bold uppercase text-white">
-                    Aktif
-                  </span>
-                </div>
-
-                <div className="p-4">
-                  <div className="grid grid-cols-[1fr_auto] gap-3">
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-                      <p className="text-xs font-semibold uppercase text-[#10e7ff]">Senin masan</p>
-                      <p className="mt-2 text-5xl font-black leading-none text-white">05</p>
-                      <p className="mt-1 text-sm text-neutral-400">Retro Satranç hazır</p>
-                    </div>
-                    <div className="flex w-28 flex-col justify-between rounded-2xl border border-white/10 bg-white/[0.035] p-3 text-right">
-                      <WalletCards className="ml-auto text-[#ff2d3d]" size={19} />
-                      <div>
-                        <p className="text-3xl font-black text-white">840</p>
-                        <p className="text-xs text-neutral-500">CP</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 space-y-2">
-                    {tableRows.map((row) => (
-                      <div key={row.label} className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/30 px-3 py-3">
-                        <span className="text-sm text-neutral-300">{row.label}</span>
-                        <span className={`text-xs font-bold ${row.tone}`}>{row.value}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-4 rounded-2xl border border-white/10 bg-black/30 p-3">
-                    <div className="mb-2 flex items-center justify-between text-xs font-bold text-neutral-500">
-                      <span>Tur ilerlemesi</span>
-                      <span className="text-white">78%</span>
-                    </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-white/10">
-                      <div className="h-full w-[78%] rounded-full bg-[#ff2d3d]" />
-                    </div>
-                  </div>
+              <div className="cd-product-window cd-product-window-empty overflow-hidden" aria-hidden="true">
+                <div className="cd-empty-panel-grid">
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                  <span />
                 </div>
               </div>
             </div>

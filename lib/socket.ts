@@ -82,7 +82,10 @@ class SocketService {
      * Establish socket connection with authentication
      */
     connect() {
-        if (this.socket) return;
+        if (this.socket) {
+            if (!this.socket.connected) this.socket.connect();
+            return;
+        }
 
         // httpOnly cookie kullanılıyor, withCredentials: true ile otomatik gönderiliyor
         // auth object'i Socket.IO handshake için gerekli değil (cookie backend'de okunacak)
@@ -92,8 +95,10 @@ class SocketService {
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
-            reconnectionAttempts: 5,
-            transports: ['websocket', 'polling'], // Prefer WebSocket over long-polling for lower latency
+            reconnectionAttempts: Infinity,
+            timeout: 10000,
+            transports: ['polling', 'websocket'],
+            upgrade: true,
         });
 
         this.socket.on('connect', () => {
@@ -120,6 +125,11 @@ class SocketService {
                 this.socket?.connect();
             }
         });
+
+        this.socket.io?.on?.('reconnect_failed', () => {
+            console.warn('⚠️ Socket reconnect attempts are still pending');
+            this.notifyListeners();
+        });
     }
 
     /**
@@ -129,6 +139,7 @@ class SocketService {
         if (this.socket) {
             this.socket.disconnect();
             this.socket = null;
+            this.notifyListeners();
         }
     }
 

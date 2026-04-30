@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowRight, Bell, Menu, X, Coffee, LogOut, ChevronRight, ShoppingCart, Wallet } from 'lucide-react';
+import { Bell, Menu, X, Coffee, LogOut, ChevronRight, ShoppingCart, Wallet } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NAV_ITEMS } from '../constants';
 import { BUILD_META } from '../lib/buildMeta';
@@ -15,6 +15,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const isHomePage = location.pathname === '/';
 
   useEffect(() => {
     document.body.style.overflow = isOpen ? 'hidden' : '';
@@ -78,30 +79,10 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                     {item.label}
                   </button>
                 ))}
-                <button
-                  onClick={() => scrollToSection('home')}
-                  className="cd-nav-chip hidden items-center gap-2 px-3 py-2 text-xs font-bold text-white lg:flex"
-                >
-                  <Wallet size={14} className="text-[#ffd338]" />
-                  100 CP
-                </button>
-                <button
-                  onClick={() => scrollToSection('games')}
-                  className="cd-nav-store hidden items-center gap-2 px-4 py-2 text-xs font-bold uppercase lg:flex"
-                >
-                  <ShoppingCart size={14} />
-                  Mağaza
-                </button>
-                <button
-                  onClick={() => scrollToSection('home')}
-                  className="cd-button-primary hidden items-center gap-2 px-4 py-2 text-xs font-bold uppercase lg:flex"
-                >
-                  Kafeye Gir <ArrowRight size={14} />
-                </button>
               </>
             ) : (
               <div className="flex items-center gap-2">
-                {user && (
+                {user && !isHomePage && (
                   <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.035] px-3 py-2">
                     <Wallet size={14} className="text-[#ff2d3d]" />
                     <span className="text-sm font-bold text-white">
@@ -109,13 +90,15 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                     </span>
                   </div>
                 )}
-                <button
-                  onClick={() => navigate('/store')}
-                  className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold text-neutral-300 transition-all hover:bg-white/[0.04] hover:text-white"
-                >
-                  <ShoppingCart size={16} />
-                  <span className="hidden lg:inline">Mağaza</span>
-                </button>
+                {!isHomePage && (
+                  <button
+                    onClick={() => navigate('/store')}
+                    className="flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold text-neutral-300 transition-all hover:bg-white/[0.04] hover:text-white"
+                  >
+                    <ShoppingCart size={16} />
+                    <span className="hidden lg:inline">Mağaza</span>
+                  </button>
+                )}
                 <button
                   onClick={onLogout}
                   data-testid="logout-button"
@@ -170,22 +153,24 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
               ))
             ) : (
               <>
-                {user && (
+                {user && !isHomePage && (
                   <div className="flex items-center justify-between border-b border-white/10 py-3 text-base font-semibold text-white">
                     <span className="flex items-center gap-2"><Wallet size={20} /> Cüzdan</span>
                     <span>{user.points} CP</span>
                   </div>
                 )}
-                <button
-                  onClick={() => {
-                    navigate('/store');
-                    setIsOpen(false);
-                  }}
-                  className="flex items-center justify-between border-b border-white/10 py-3 text-base font-semibold text-neutral-200 transition-colors hover:text-white"
-                >
-                  <span>Mağaza</span>
-                  <ShoppingCart size={20} className="text-neutral-600" />
-                </button>
+                {!isHomePage && (
+                  <button
+                    onClick={() => {
+                      navigate('/store');
+                      setIsOpen(false);
+                    }}
+                    className="flex items-center justify-between border-b border-white/10 py-3 text-base font-semibold text-neutral-200 transition-colors hover:text-white"
+                  >
+                    <span>Mağaza</span>
+                    <ShoppingCart size={20} className="text-neutral-600" />
+                  </button>
+                )}
                 <button
                   onClick={() => {
                     onLogout?.();

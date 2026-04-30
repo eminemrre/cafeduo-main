@@ -112,11 +112,16 @@ const AppContent: React.FC = () => {
 
   // Socket IO Connection
   useEffect(() => {
+    if (!user) {
+      socketService.disconnect();
+      return;
+    }
+
     socketService.connect();
     return () => {
       socketService.disconnect();
     };
-  }, []);
+  }, [user?.id]);
 
   // Handle auth query params
   useEffect(() => {

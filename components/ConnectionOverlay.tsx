@@ -9,6 +9,7 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = () => {
   const [isConnected, setIsConnected] = useState(socketService.isConnected());
   const [showReconnecting, setShowReconnecting] = useState(false);
   const reconnectTimerRef = useRef<number | null>(null);
+  const hasConnectedOnceRef = useRef(socketService.isConnected());
 
   useEffect(() => {
     const clearReconnectTimer = () => {
@@ -21,12 +22,18 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = () => {
     const unsubscribe = socketService.onConnectionChange((connected) => {
       clearReconnectTimer();
       setIsConnected(connected);
-      if (!connected) {
-        // Delay showing the overlay to avoid flickering on brief disconnects
+      if (connected) {
+        hasConnectedOnceRef.current = true;
+        setShowReconnecting(false);
+        return;
+      }
+
+      if (hasConnectedOnceRef.current) {
+        // Only block gameplay after a real connected -> disconnected transition.
         reconnectTimerRef.current = window.setTimeout(() => {
           setShowReconnecting(true);
           reconnectTimerRef.current = null;
-        }, 2000);
+        }, 4500);
       } else {
         setShowReconnecting(false);
       }

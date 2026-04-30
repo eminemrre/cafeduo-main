@@ -2145,6 +2145,21 @@ textarea:focus-visible,
   box-shadow: 7px 7px 0 rgba(0, 0, 0, 0.88), inset 0 0 0 1px rgba(16, 231, 255, 0.2);
 }
 
+.cd-active-seat-empty {
+  min-height: 5.2rem;
+  background:
+    linear-gradient(90deg, rgba(16, 231, 255, 0.12), transparent 24%, transparent 76%, rgba(255, 48, 69, 0.14)),
+    rgba(11, 15, 20, 0.96);
+}
+
+.cd-active-seat-empty::before,
+.cd-active-seat-empty::after {
+  content: "";
+  height: 2px;
+  flex: 1 1 auto;
+  background: linear-gradient(90deg, transparent, rgba(16, 231, 255, 0.55), transparent);
+}
+
 .cd-auth-layer {
   isolation: isolate;
 }
@@ -2186,6 +2201,18 @@ textarea:focus-visible,
 .cd-auth-panel p {
   position: relative;
   z-index: 1;
+}
+
+.cd-auth-panel input,
+.cd-auth-panel select,
+.cd-auth-panel button {
+  transform: none !important;
+}
+
+.cd-auth-panel input,
+.cd-auth-panel select {
+  min-height: 3rem;
+  line-height: 1.35 !important;
 }
 
 .cd-create-layer > .absolute {
@@ -2247,6 +2274,28 @@ textarea:focus-visible,
 
 .cd-create-modal input[type="range"] {
   accent-color: #ff3045 !important;
+}
+
+.cd-product-window-empty {
+  min-height: 32rem;
+  padding: 1rem;
+}
+
+.cd-empty-panel-grid {
+  display: grid;
+  height: 100%;
+  min-height: 30rem;
+  grid-template-rows: 3.6rem 1fr repeat(3, 3.1rem);
+  gap: 0.8rem;
+}
+
+.cd-empty-panel-grid span {
+  display: block;
+  border: 2px solid rgba(16, 231, 255, 0.28);
+  background:
+    linear-gradient(90deg, rgba(16, 231, 255, 0.08), transparent 44%, rgba(255, 48, 69, 0.08)),
+    rgba(5, 6, 8, 0.68);
+  box-shadow: inset 0 0 0 1px rgba(255, 48, 69, 0.12);
 }
 
 @media (min-width: 900px) {

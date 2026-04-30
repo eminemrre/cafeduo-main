@@ -230,13 +230,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   const inputBaseClass =
-    'w-full h-12 bg-black/40 border-2 text-cyan-50 font-body text-base group-[.is-error]:text-red-100 outline-none transition-all duration-200 placeholder:text-cyan-800/60 pl-11 pr-4 skew-x-[-2deg] cursor-text';
+    'w-full min-h-12 bg-black/40 border-2 text-cyan-50 font-body text-base leading-6 group-[.is-error]:text-red-100 outline-none transition-colors duration-200 placeholder:text-cyan-800/60 pl-11 pr-12 cursor-text';
   const inputBorderClass =
-    'border-cyan-900/40 focus:border-cyan-400 focus:shadow-[4px_4px_0_rgba(34,211,238,0.2)] focus:skew-x-0 focus:-translate-y-0.5 focus:-translate-x-0.5';
+    'border-cyan-900/40 focus:border-cyan-400 focus:shadow-[4px_4px_0_rgba(34,211,238,0.2)]';
   const inputErrorClass =
-    'border-red-500/50 focus:border-red-400 focus:shadow-[4px_4px_0_rgba(239,68,68,0.3)] focus:skew-x-0 focus:-translate-y-0.5 focus:-translate-x-0.5';
+    'border-red-500/50 focus:border-red-400 focus:shadow-[4px_4px_0_rgba(239,68,68,0.3)]';
   const iconBaseClass =
-    'absolute left-4 top-1/2 -translate-y-1/2 text-cyan-700 pointer-events-none transition-colors group-focus-within:text-cyan-400 group-[.is-error]:text-red-400 z-10 skew-x-[2deg] group-focus-within:skew-x-0';
+    'absolute left-4 top-1/2 -translate-y-1/2 text-cyan-700 pointer-events-none transition-colors group-focus-within:text-cyan-400 group-[.is-error]:text-red-400 z-10';
 
   const mascotMood: MascotMood = ((error || Object.keys(fieldErrors).length > 0) && hasSubmitted)
     ? 'angry'
@@ -292,11 +292,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
               <motion.button
                 onClick={onClose}
-                className="w-10 h-10 border-2 border-cyan-900/50 text-cyan-400 bg-black/50 hover:border-pink-500 hover:text-pink-500 flex items-center justify-center transition-colors skew-x-[-10deg] group"
-                whileHover={{ scale: 1.05, skewX: 0 }}
+                className="w-10 h-10 border-2 border-cyan-900/50 text-cyan-400 bg-black/50 hover:border-pink-500 hover:text-pink-500 flex items-center justify-center transition-colors group"
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <X size={20} className="skew-x-[10deg] group-hover:skew-x-0" />
+                <X size={20} />
               </motion.button>
             </div>
 
@@ -307,22 +307,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <button
                   type="button"
                   onClick={() => switchMode('login')}
-                  className={`flex-1 h-12 font-display text-lg uppercase tracking-wider transition-all border-b-2 skew-x-[-5deg] ${mode === 'login'
+                  className={`flex-1 h-12 font-display text-lg uppercase tracking-wider transition-colors border-b-2 ${mode === 'login'
                     ? 'text-cyan-400 border-cyan-400 bg-cyan-950/30'
                     : 'text-[var(--rf-muted)] border-cyan-900/45 hover:text-cyan-200 hover:bg-cyan-950/25'
                     }`}
                 >
-                  <span className="block skew-x-[5deg]">GİRİŞ YAP</span>
+                  <span className="block">GİRİŞ YAP</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => switchMode('register')}
-                  className={`flex-1 h-12 font-display text-lg uppercase tracking-wider transition-all border-b-2 skew-x-[5deg] ${mode === 'register'
+                  className={`flex-1 h-12 font-display text-lg uppercase tracking-wider transition-colors border-b-2 ${mode === 'register'
                     ? 'text-pink-400 border-pink-500 bg-pink-950/20'
                     : 'text-[var(--rf-muted)] border-cyan-900/45 hover:text-cyan-200 hover:bg-cyan-950/25'
                     }`}
                 >
-                  <span className="block skew-x-[-5deg]">KAYIT OL</span>
+                  <span className="block">KAYIT OL</span>
                 </button>
               </div>
 

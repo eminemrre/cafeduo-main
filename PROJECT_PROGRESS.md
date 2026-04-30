@@ -31,6 +31,8 @@
 - Local DB was unreachable during the last migration status check, so migration up/down could not be verified locally.
 - Latest validation for the current UI pass: `npm.cmd test -- Hero.test.tsx Navbar.test.tsx AuthModal.test.tsx CreateGameModal.test.tsx --runInBand` passed; `npm.cmd run build` passed with existing font resolution warnings only.
 
+- Deploy attempt `87e605f` reached VPS container deploy, but CI/Playwright/backend startup failed because `backend/server.js` required a misspelled `cafeAdminValidation` module; fixed locally for the next deploy.
+
 ## Active Constraints
 - Do not delete local files without action-time confirmation.
 - Keep AGENTS.md rules: no `SELECT *`, add limits to user-facing queries, schema changes via migrations.

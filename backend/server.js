@@ -112,7 +112,7 @@ const {
 const {
   normalizeCafeCreatePayload,
   normalizeCafeUpdatePayload,
-} = require('./utils/cafeAdminaalidation');
+} = require('./utils/cafeAdminValidation');
 const { createAdminHandlers } = require('./handlers/adminHandlers');
 const { createCommerceHandlers } = require('./handlers/commerceHandlers');
 const { createGameHandlers } = require('./handlers/gameHandlers');

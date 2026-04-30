@@ -5,7 +5,10 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const PACKAGE_JSON_PATH = path.resolve(__dirname, '../../package.json');
-const LOCAL_BINARY = path.resolve(__dirname, '../../node_modules/.bin/node-pg-migrate');
+const LOCAL_BINARY = path.resolve(
+  __dirname,
+  `../../node_modules/.bin/node-pg-migrate${process.platform === 'win32' ? '.cmd' : ''}`
+);
 const command = process.argv[2];
 const extraArgs = process.argv.slice(3);
 
@@ -37,11 +40,11 @@ const shouldUseLocalBinary =
   process.env.NODE_PG_MIGRATE_FORCE_NPX !== '1';
 
 const result = shouldUseLocalBinary
-  ? spawnSync(LOCAL_BINARY, commonArgs, { stdio: 'inherit' })
+  ? spawnSync(LOCAL_BINARY, commonArgs, { stdio: 'inherit', shell: process.platform === 'win32' })
   : spawnSync(
-      'npx',
+      process.platform === 'win32' ? 'npx.cmd' : 'npx',
       ['-y', `node-pg-migrate@${configuredVersion}`, ...commonArgs],
-      { stdio: 'inherit' }
+      { stdio: 'inherit', shell: process.platform === 'win32' }
     );
 
 if (result.error) {

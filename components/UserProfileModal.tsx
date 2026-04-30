@@ -51,7 +51,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
     // Mock history
     const recentHistory = [
-        { result: 'WIN', game: 'Tank Düellosu', points: '+50', time: '10dk önce' },
+        { result: 'WIN', game: 'Nişancı Düellosu', points: '+50', time: '10dk önce' },
         { result: 'LOSS', game: 'Bilgi Yarışı', points: '-20', time: '25dk önce' },
         { result: 'WIN', game: 'Retro Satranç', points: '+100', time: '1sa önce' },
     ];

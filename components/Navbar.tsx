@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Menu, X, Coffee, LogOut, ChevronRight, ShoppingCart, Wallet } from 'lucide-react';
+import { ArrowRight, Bell, Menu, X, Coffee, LogOut, ChevronRight, ShoppingCart, Wallet } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NAV_ITEMS } from '../constants';
 import { BUILD_META } from '../lib/buildMeta';
@@ -41,7 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
   return (
     <>
       <nav
-        className="fixed left-1/2 top-4 z-[100] w-[94%] max-w-5xl -translate-x-1/2 transition-transform duration-300"
+        className="fixed left-1/2 top-4 z-[100] w-[96%] max-w-[1320px] -translate-x-1/2 transition-transform duration-300"
         role="navigation"
         aria-label="Ana navigasyon"
       >
@@ -60,22 +60,45 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
             <div className="cd-brand-mark flex h-9 w-9 items-center justify-center">
               <Coffee size={18} />
             </div>
-            <span className="text-base font-black tracking-[-0.02em] text-white">
-              CafeDuo
+            <span className="font-pixel text-sm font-black text-white">
+              Cafe<span className="text-[#ff3045]">Duo</span>
+              <span className="sr-only">CafeDuo</span>
             </span>
           </div>
 
-          <div className="hidden items-center gap-1 md:flex">
+          <div className="hidden items-center gap-2 md:flex">
             {!isLoggedIn ? (
-              NAV_ITEMS.map((item) => (
+              <>
+                {NAV_ITEMS.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => scrollToSection(item.id)}
+                    className="cd-nav-link px-4 py-2 text-xs font-bold uppercase text-neutral-400 transition-all hover:text-white"
+                  >
+                    {item.label}
+                  </button>
+                ))}
                 <button
-                  key={item.id}
-                  onClick={() => scrollToSection(item.id)}
-                  className="rounded-full px-4 py-2 text-sm font-medium text-neutral-500 transition-all hover:bg-white/[0.04] hover:text-white"
+                  onClick={() => scrollToSection('home')}
+                  className="cd-nav-chip hidden items-center gap-2 px-3 py-2 text-xs font-bold text-white lg:flex"
                 >
-                  {item.label}
+                  <Wallet size={14} className="text-[#ffd338]" />
+                  100 CP
                 </button>
-              ))
+                <button
+                  onClick={() => scrollToSection('games')}
+                  className="cd-nav-store hidden items-center gap-2 px-4 py-2 text-xs font-bold uppercase lg:flex"
+                >
+                  <ShoppingCart size={14} />
+                  Mağaza
+                </button>
+                <button
+                  onClick={() => scrollToSection('home')}
+                  className="cd-button-primary hidden items-center gap-2 px-4 py-2 text-xs font-bold uppercase lg:flex"
+                >
+                  Kafeye Gir <ArrowRight size={14} />
+                </button>
+              </>
             ) : (
               <div className="flex items-center gap-2">
                 {user && (
@@ -116,7 +139,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
             aria-expanded={isOpen}
             aria-controls="mobile-menu"
             aria-label={isOpen ? 'Menüyü kapat' : 'Menüyü aç'}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-white transition-colors hover:bg-white/[0.08] md:hidden"
+            className="flex h-10 w-10 items-center justify-center border border-white/10 bg-white/[0.04] text-white transition-colors hover:bg-white/[0.08] md:hidden"
           >
             {isOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
@@ -130,7 +153,10 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
           aria-hidden={false}
         >
           <div className="flex flex-col gap-3">
-            <span className="text-2xl font-black tracking-[-0.03em] text-white">Menü</span>
+            <div className="flex items-center justify-between">
+              <span className="font-pixel text-lg text-white">MENÜ</span>
+              {!isLoggedIn && <Bell size={18} className="text-[#a5adb8]" />}
+            </div>
             {!isLoggedIn ? (
               NAV_ITEMS.map((item) => (
                 <button

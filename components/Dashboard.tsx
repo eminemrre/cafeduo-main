@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Dashboard Component (Refactored)
  *
  * @description Ana dashboard container - sadece layout ve state dağıtımı
@@ -8,7 +8,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { User, Reward } from '../types';
 import { UserProfileModal } from './UserProfileModal';
-import { TankBattle } from './TankBattle';
+import { ArenaBattle } from './ArenaBattle';
 import { KnowledgeQuiz } from './KnowledgeQuiz';
 import { RetroChess } from './RetroChess';
 import { Leaderboard } from './Leaderboard';
@@ -375,8 +375,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ currentUser, onUpdateUser,
               onGameEnd={handleGameFinish}
               onLeave={handleLeaveGame}
             />
-          ) : activeGameType === 'Tank Düellosu' ? (
-            <TankBattle
+          ) : activeGameType === 'Nişancı Düellosu' ? (
+            <ArenaBattle
               gameId={activeGameId}
               currentUser={currentUser}
               opponentName={opponentName || 'Rakip'}

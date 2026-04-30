@@ -11,7 +11,7 @@ const LOCAL_ALLOWED_ORIGINS = [
 ];
 
 const SUPPORTED_GAME_TYPES = new Set([
-  'Tank Düellosu',
+  'Nişancı Düellosu',
   'Retro Satranç',
   'Bilgi Yarışı',
 ]);
@@ -22,11 +22,19 @@ const normalizeGameType = (value) => {
   if (SUPPORTED_GAME_TYPES.has(raw)) return raw;
 
   const aliasMap = {
-    arena: 'Tank Düellosu',
-    rhythm: 'Tank Düellosu',
-    ritim_kopyala: 'Tank Düellosu',
-    tank: 'Tank Düellosu',
-    tank_duellosu: 'Tank Düellosu',
+    arena: 'Nişancı Düellosu',
+    aim: 'Nişancı Düellosu',
+    hedef: 'Nişancı Düellosu',
+    nisanci: 'Nişancı Düellosu',
+    nisanci_duellosu: 'Nişancı Düellosu',
+    ni_anc_d_ellosu: 'Nişancı Düellosu',
+    nisangah: 'Nişancı Düellosu',
+    nisangah_ustasi: 'Nişancı Düellosu',
+    rhythm: 'Nişancı Düellosu',
+    ritim_kopyala: 'Nişancı Düellosu',
+    tank: 'Nişancı Düellosu',
+    tank_duellosu: 'Nişancı Düellosu',
+    tank_d_ellosu: 'Nişancı Düellosu',
     chess: 'Retro Satranç',
     satranc: 'Retro Satranç',
     retro_satranc: 'Retro Satranç',

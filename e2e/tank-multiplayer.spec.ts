@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+﻿import { test, expect } from '@playwright/test';
 import {
   DEFAULT_E2E_APP_BASE_URL,
   provisionUser,
@@ -12,8 +12,8 @@ const authHeader = (token: string, csrfToken?: string) => ({
   ...(csrfToken ? { 'X-CSRF-Token': csrfToken, Cookie: `csrf_token=${csrfToken}` } : { Cookie: '' }),
 });
 
-test.describe('Tank Multiplayer Sync & Settlement', () => {
-  test('@advanced resolves tank winner from server-side scores despite spoofed finish payload', async ({
+test.describe('Aim Duel Multiplayer Sync & Settlement', () => {
+  test('@advanced resolves aim duel winner from server-side scores despite spoofed finish payload', async ({
     request,
     baseURL,
   }) => {
@@ -21,9 +21,9 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
     const apiRoot = resolveApiBaseUrl(root);
     await waitForApiReady(request, apiRoot);
 
-    const host = await provisionUser(request, root, 'tankhost');
-    const guest = await provisionUser(request, root, 'tankguest');
-    const intruder = await provisionUser(request, root, 'tankx');
+    const host = await provisionUser(request, root, 'aimhost');
+    const guest = await provisionUser(request, root, 'aimguest');
+    const intruder = await provisionUser(request, root, 'aimx');
 
     await checkInUser(request, root, host.token, { tableNumber: 9, csrfToken: host.csrfToken });
     await checkInUser(request, root, guest.token, { tableNumber: 9, csrfToken: guest.csrfToken });
@@ -33,7 +33,7 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
       headers: authHeader(host.token, host.csrfToken),
       data: {
         hostName: host.credentials.username,
-        gameType: 'Tank Düellosu',
+        gameType: 'Nişancı Düellosu',
         points: 0,
         table: 'MASA09',
       },
@@ -53,12 +53,12 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
       headers: authHeader(intruder.token, intruder.csrfToken),
       data: {
         liveSubmission: {
-          mode: 'Tank Düellosu',
+          mode: 'Nişancı Düellosu',
           score: 99,
           roundsWon: 99,
           round: 1,
           done: false,
-          submissionKey: `tank|${gameId}|intruder|1|99|0`,
+          submissionKey: `arena|${gameId}|intruder|1|99|0`,
         },
       },
     });
@@ -68,12 +68,12 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
       headers: authHeader(host.token, host.csrfToken),
       data: {
         liveSubmission: {
-          mode: 'Tank Düellosu',
+          mode: 'Nişancı Düellosu',
           score: 2,
           roundsWon: 2,
           round: 2,
           done: false,
-          submissionKey: `tank|${gameId}|${host.credentials.username}|2|2|0`,
+          submissionKey: `arena|${gameId}|${host.credentials.username}|2|2|0`,
         },
       },
     });
@@ -83,12 +83,12 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
       headers: authHeader(guest.token, guest.csrfToken),
       data: {
         liveSubmission: {
-          mode: 'Tank Düellosu',
+          mode: 'Nişancı Düellosu',
           score: 1,
           roundsWon: 1,
           round: 2,
           done: false,
-          submissionKey: `tank|${gameId}|${guest.credentials.username}|2|1|0`,
+          submissionKey: `arena|${gameId}|${guest.credentials.username}|2|1|0`,
         },
       },
     });
@@ -140,7 +140,7 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
     expect(gameState.winner).toBe(host.user.username);
   });
 
-  test('@advanced resign finalizes tank match and blocks additional score writes', async ({
+  test('@advanced resign finalizes aim duel match and blocks additional score writes', async ({
     request,
     baseURL,
   }) => {
@@ -148,8 +148,8 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
     const apiRoot = resolveApiBaseUrl(root);
     await waitForApiReady(request, apiRoot);
 
-    const host = await provisionUser(request, root, 'tankresh');
-    const guest = await provisionUser(request, root, 'tankresg');
+    const host = await provisionUser(request, root, 'aimresh');
+    const guest = await provisionUser(request, root, 'aimresg');
 
     await checkInUser(request, root, host.token, { tableNumber: 10, csrfToken: host.csrfToken });
     await checkInUser(request, root, guest.token, { tableNumber: 10, csrfToken: guest.csrfToken });
@@ -158,7 +158,7 @@ test.describe('Tank Multiplayer Sync & Settlement', () => {
       headers: authHeader(host.token, host.csrfToken),
       data: {
         hostName: host.credentials.username,
-        gameType: 'Tank Düellosu',
+        gameType: 'Nişancı Düellosu',
         points: 0,
         table: 'MASA10',
       },

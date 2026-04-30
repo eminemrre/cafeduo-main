@@ -1,4 +1,4 @@
-import { api } from './api';
+﻿import { api } from './api';
 
 global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 
@@ -290,7 +290,7 @@ describe('API Layer additional coverage', () => {
       .mockResolvedValueOnce({ ok: true, json: async () => ({ ok: true }) }); // delete
 
     await api.games.get(11);
-    await api.games.create({ gameType: 'Tank Düellosu', points: 50 });
+    await api.games.create({ gameType: 'Nişancı Düellosu', points: 50 });
     await api.games.join(12, 'guest');
     await api.games.move(12, { gameState: { turn: 1 } });
     await api.games.finish(12, 'emin');

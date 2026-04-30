@@ -247,14 +247,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-[110] flex items-end sm:items-center justify-center sm:p-4"
+        className="cd-auth-layer fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
       >
         {/* Backdrop */}
         <motion.div
-          className="absolute inset-0 bg-[#02050f]/85 backdrop-blur-sm noise-bg"
+          className="cd-auth-backdrop absolute inset-0 bg-[#020304]/95 backdrop-blur-md"
           onClick={onClose}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -262,12 +262,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         />
 
         {/* Modal Container Wrapper for absolute positioning */}
-        <div className="relative w-full sm:max-w-[520px]">
+        <div className="cd-auth-shell relative w-full max-w-[520px] max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)]">
           {/* Mascot */}
           <CyberMascot mood={mascotMood} className="hidden sm:block absolute -top-[70px] right-[40px] z-10" />
 
           <motion.div
-            className="relative w-full h-full max-h-[92vh] bg-[#050a19] border-t-2 border-r-4 border-b-4 border-l-2 border-t-cyan-400 border-r-pink-500 border-b-pink-500 border-l-cyan-400 shadow-[10px_10px_0px_rgba(0,0,0,0.8)] sm:rounded-none overflow-hidden flex flex-col noise-bg"
+            className="cd-auth-panel relative w-full max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)] bg-[#050608] border-t-2 border-r-4 border-b-4 border-l-2 border-t-cyan-400 border-r-pink-500 border-b-pink-500 border-l-cyan-400 shadow-[10px_10px_0px_rgba(0,0,0,0.88),12px_12px_0_rgba(16,231,255,0.16)] sm:rounded-none overflow-hidden flex flex-col"
             initial={{ y: 24, opacity: 0.5 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 24, opacity: 0.5 }}

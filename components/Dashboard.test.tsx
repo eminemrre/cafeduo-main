@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Dashboard Integration Tests
  * 
  * @description Dashboard component data flow and integration tests
@@ -74,7 +74,7 @@ jest.mock('./dashboard/GameSection', () => ({
         <span data-testid="games-loading">{gamesLoading ? 'Loading' : 'Loaded'}</span>
         <button
           data-testid="create-game-btn"
-          onClick={() => onCreateGame('Tank Düellosu', 50)}
+          onClick={() => onCreateGame('Nişancı Düellosu', 50)}
           disabled={!isMatched}
         >
           Oyun Kur
@@ -153,10 +153,10 @@ jest.mock('./Achievements', () => ({
 }));
 
 // Mock game components (they use socket internally)
-jest.mock('./TankBattle', () => ({
-  TankBattle: ({ gameId, currentUser, onGameEnd }: any) => (
-    <div data-testid="tank-battle">
-      <span>Tank Düellosu - {currentUser.username}</span>
+jest.mock('./ArenaBattle', () => ({
+  ArenaBattle: ({ gameId, currentUser, onGameEnd }: any) => (
+    <div data-testid="arena-battle">
+      <span>Nişancı Düellosu - {currentUser.username}</span>
       <button onClick={() => onGameEnd?.(currentUser.username, 10)}>Savaşı Bitir</button>
     </div>
   )
@@ -342,7 +342,7 @@ describe('Dashboard Integration', () => {
       mockUseGames.mockReturnValue({
         ...defaultGamesState,
         games: [
-          { id: 1, gameType: 'Tank Düellosu', points: 50, hostName: 'user1', table: 'A1', status: 'waiting' },
+          { id: 1, gameType: 'Nişancı Düellosu', points: 50, hostName: 'user1', table: 'A1', status: 'waiting' },
           { id: 2, gameType: 'Retro Satranç', points: 100, hostName: 'user2', table: 'B2', status: 'waiting' },
         ],
       });
@@ -350,7 +350,7 @@ describe('Dashboard Integration', () => {
       renderDashboard();
 
       expect(screen.getByTestId('games-count')).toHaveTextContent('2');
-      expect(screen.getByTestId('join-game-1')).toHaveTextContent('Katıl: Tank Düellosu');
+      expect(screen.getByTestId('join-game-1')).toHaveTextContent('Katıl: Nişancı Düellosu');
       expect(screen.getByTestId('join-game-2')).toHaveTextContent('Katıl: Retro Satranç');
     });
 
@@ -366,7 +366,7 @@ describe('Dashboard Integration', () => {
       fireEvent.click(screen.getByTestId('create-game-btn'));
 
       await waitFor(() => {
-        expect(mockCreateGame).toHaveBeenCalledWith('Tank Düellosu', 50, undefined);
+        expect(mockCreateGame).toHaveBeenCalledWith('Nişancı Düellosu', 50, undefined);
       });
     });
 
@@ -374,7 +374,7 @@ describe('Dashboard Integration', () => {
       const mockJoinGame = jest.fn().mockResolvedValue(undefined);
       mockUseGames.mockReturnValue({
         ...defaultGamesState,
-        games: [{ id: 1, gameType: 'Tank Düellosu', points: 50, hostName: 'user1', table: 'A1', status: 'waiting' }],
+        games: [{ id: 1, gameType: 'Nişancı Düellosu', points: 50, hostName: 'user1', table: 'A1', status: 'waiting' }],
         joinGame: mockJoinGame,
       });
 
@@ -391,7 +391,7 @@ describe('Dashboard Integration', () => {
       mockUseGames.mockReturnValue({
         ...defaultGamesState,
         activeGameId: 'game123',
-        activeGameType: 'Tank Düellosu',
+        activeGameType: 'Nişancı Düellosu',
         opponentName: 'opponent1',
       });
 
@@ -401,25 +401,25 @@ describe('Dashboard Integration', () => {
       expect(screen.queryByTestId('game-section')).not.toBeInTheDocument();
 
       // Should show the active game component
-      expect(screen.getByTestId('tank-battle')).toBeInTheDocument();
-      expect(screen.getByText(/Tank Düellosu/)).toBeInTheDocument();
+      expect(screen.getByTestId('arena-battle')).toBeInTheDocument();
+      expect(screen.getByText(/Nişancı Düellosu/)).toBeInTheDocument();
 
       // Should show lobby return button (with arrow character ←)
       expect(screen.getByText('← Lobiye Dön')).toBeInTheDocument();
     });
 
-    it('renders Tank Düellosu component when active game type matches', () => {
+    it('renders Nişancı Düellosu component when active game type matches', () => {
       mockUseGames.mockReturnValue({
         ...defaultGamesState,
         activeGameId: 'game456',
-        activeGameType: 'Tank Düellosu',
+        activeGameType: 'Nişancı Düellosu',
         opponentName: 'rakip',
       });
 
       renderDashboard();
 
-      expect(screen.getByTestId('tank-battle')).toBeInTheDocument();
-      expect(screen.getByText(/Tank Düellosu - testuser/)).toBeInTheDocument();
+      expect(screen.getByTestId('arena-battle')).toBeInTheDocument();
+      expect(screen.getByText(/Nişancı Düellosu - testuser/)).toBeInTheDocument();
     });
 
     it('renders Bilgi Yarışı component when active game type matches', () => {
@@ -450,12 +450,12 @@ describe('Dashboard Integration', () => {
       expect(screen.getByText(/Retro Satranç - testuser/)).toBeInTheDocument();
     });
 
-    it('renders Tank Düellosu component and processes finish', async () => {
+    it('renders Nişancı Düellosu component and processes finish', async () => {
       const mockLeaveGame = jest.fn();
       mockUseGames.mockReturnValue({
         ...defaultGamesState,
         activeGameId: 'game789',
-        activeGameType: 'Tank Düellosu',
+        activeGameType: 'Nişancı Düellosu',
         opponentName: 'rakip',
         leaveGame: mockLeaveGame,
       });
@@ -488,7 +488,7 @@ describe('Dashboard Integration', () => {
       mockUseGames.mockReturnValue({
         ...defaultGamesState,
         activeGameId: 'active1',
-        activeGameType: 'Tank Düellosu',
+        activeGameType: 'Nişancı Düellosu',
         opponentName: 'rakip',
         leaveGame: mockLeaveGame,
       });
@@ -681,7 +681,7 @@ describe('Dashboard Integration', () => {
         ...defaultGamesState,
         serverActiveGame: {
           id: 1,
-          gameType: 'Tank Düellosu',
+          gameType: 'Nişancı Düellosu',
           hostName: 'TestHost',
           points: 50,
           table: 'A1',
@@ -702,7 +702,7 @@ describe('Dashboard Integration', () => {
         setActiveGame: mockSetActiveGame,
         serverActiveGame: {
           id: 42,
-          gameType: 'Tank Düellosu',
+          gameType: 'Nişancı Düellosu',
           hostName: 'testuser',
           guestName: 'rakipX',
           points: 50,
@@ -714,7 +714,7 @@ describe('Dashboard Integration', () => {
       renderDashboard();
 
       fireEvent.click(screen.getByText('Oyuna Dön'));
-      expect(mockSetActiveGame).toHaveBeenCalledWith(42, 'Tank Düellosu', 'rakipX');
+      expect(mockSetActiveGame).toHaveBeenCalledWith(42, 'Nişancı Düellosu', 'rakipX');
     });
   });
 });

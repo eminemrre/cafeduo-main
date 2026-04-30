@@ -28,7 +28,7 @@ export const CookieConsent: React.FC = () => {
     <div
       role="region"
       aria-label="Çerez bildirimi"
-      className="pointer-events-none fixed bottom-[calc(6.25rem+env(safe-area-inset-bottom))] left-4 right-4 z-[90] md:bottom-24 md:left-auto md:right-6 md:w-[26rem]"
+      className="cd-cookie-banner pointer-events-none fixed md:left-auto md:right-6 md:w-[26rem]"
     >
       <div className="pointer-events-auto rounded-md border border-white/10 bg-[#0a1018]/95 p-3 shadow-2xl shadow-black/30 backdrop-blur-xl sm:p-3.5">
         <div className="flex items-start gap-3">

@@ -59,6 +59,7 @@ const createGetGamesHandler = (deps) => {
           WHERE status = 'waiting'
             AND game_type = ANY($1::text[])
           ORDER BY created_at DESC
+          LIMIT 100
         `,
         [[...supportedGameTypes]]
       );

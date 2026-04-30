@@ -38,8 +38,8 @@ const games: GameCardData[] = [
     cta: 'Sprinti aç',
   },
   {
-    title: 'Tank Düellosu',
-    subtitle: 'Açı ve güç ayarla, rakip tankı vur. İlk 3 isabet oyunu bitirir.',
+    title: 'Nişancı Düellosu',
+    subtitle: 'Nişangahı merkezde tut, doğru anda ateş et ve isabet serisi yap.',
     duration: '60-90 sn',
     mode: 'Düello',
     accentColor: 'text-rose-200',

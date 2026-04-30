@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { GameSection } from './GameSection';
 import { api } from '../../lib/api';
@@ -48,7 +48,7 @@ jest.mock('../CreateGameModal', () => ({
       <div data-testid="create-game-modal-mock">
         <span data-testid="modal-max-points">{maxPoints}</span>
         <button data-testid="modal-close" onClick={onClose}>Kapat</button>
-        <button data-testid="modal-submit" onClick={() => onSubmit('Tank Düellosu', 100)}>Oluştur</button>
+        <button data-testid="modal-submit" onClick={() => onSubmit('Nişancı Düellosu', 100)}>Oluştur</button>
       </div>
     ) : null,
 }));
@@ -77,7 +77,7 @@ const baseGames: GameRequest[] = [
   {
     id: 1,
     hostName: 'hostuser1',
-    gameType: 'Tank Düellosu',
+    gameType: 'Nişancı Düellosu',
     points: 100,
     table: 'MASA05',
     status: 'waiting',
@@ -163,7 +163,7 @@ describe('GameSection', () => {
         id: 99,
         hostName: 'testuser',
         guestName: 'guest-player',
-        gameType: 'Tank Düellosu',
+        gameType: 'Nişancı Düellosu',
         points: 50,
         table: 'MASA05',
         status: 'active',
@@ -184,7 +184,7 @@ describe('GameSection', () => {
         id: 100,
         hostName: 'other-host',
         guestName: 'testuser',
-        gameType: 'Tank Düellosu',
+        gameType: 'Nişancı Düellosu',
         points: 50,
         table: 'MASA05',
         status: 'active',
@@ -200,7 +200,7 @@ describe('GameSection', () => {
         {
           id: 9,
           hostName: 'testuser',
-          gameType: 'Tank Düellosu',
+          gameType: 'Nişancı Düellosu',
           points: 50,
           table: 'MASA05',
           status: 'waiting',
@@ -208,7 +208,7 @@ describe('GameSection', () => {
         {
           id: 11,
           hostName: 'same-table-host',
-          gameType: 'Tank Düellosu',
+          gameType: 'Nişancı Düellosu',
           points: 75,
           table: 'MASA05',
           status: 'waiting',
@@ -216,7 +216,7 @@ describe('GameSection', () => {
         {
           id: 12,
           hostName: 'other-table-host',
-          gameType: 'Tank Düellosu',
+          gameType: 'Nişancı Düellosu',
           points: 80,
           table: 'MASA09',
           status: 'waiting',
@@ -315,7 +315,7 @@ describe('GameSection', () => {
 
     fireEvent.click(screen.getByTestId('modal-submit'));
     await waitFor(() => {
-      expect(handlers.onCreateGame).toHaveBeenCalledWith('Tank Düellosu', 100);
+      expect(handlers.onCreateGame).toHaveBeenCalledWith('Nişancı Düellosu', 100);
     });
 
     fireEvent.click(screen.getByTestId('modal-close'));

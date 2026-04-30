@@ -1,4 +1,4 @@
-const path = require('path');
+﻿const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 
@@ -48,8 +48,8 @@ if (process.env.SENTRY_DSN) {
 
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
-    environment: process.env.NODE_ENV || 'development',
-    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
+    environment: process.env.NODE_ENa || 'development',
+    tracesSampleRate: process.env.NODE_ENa === 'production' ? 0.1 : 1.0,
     profilesSampleRate: 1.0,
     integrations,
     // Filter out sensitive data
@@ -112,7 +112,7 @@ const {
 const {
   normalizeCafeCreatePayload,
   normalizeCafeUpdatePayload,
-} = require('./utils/cafeAdminValidation');
+} = require('./utils/cafeAdminaalidation');
 const { createAdminHandlers } = require('./handlers/adminHandlers');
 const { createCommerceHandlers } = require('./handlers/commerceHandlers');
 const { createGameHandlers } = require('./handlers/gameHandlers');
@@ -156,8 +156,8 @@ const LEGACY_RATE_LIMIT_MAX_REQUESTS = Number(process.env.RATE_LIMIT_MAX_REQUEST
 const API_RATE_LIMIT_WINDOW_MS = Number(process.env.API_RATE_LIMIT_WINDOW_MS || LEGACY_RATE_LIMIT_WINDOW_MS);
 const API_RATE_LIMIT_MAX_REQUESTS =
   Number(process.env.API_RATE_LIMIT_MAX_REQUESTS || 0) || Math.max(LEGACY_RATE_LIMIT_MAX_REQUESTS, 600);
-const APP_VERSION = String(process.env.APP_VERSION || process.env.VITE_APP_VERSION || 'local').trim();
-const APP_BUILD_TIME = String(process.env.APP_BUILD_TIME || process.env.VITE_BUILD_TIME || '').trim();
+const APP_aERSION = String(process.env.APP_aERSION || process.env.aITE_APP_aERSION || 'local').trim();
+const APP_BUILD_TIME = String(process.env.APP_BUILD_TIME || process.env.aITE_BUILD_TIME || '').trim();
 
 if (process.env.TRUST_PROXY) {
   const trustProxyEnv = process.env.TRUST_PROXY.trim();
@@ -165,7 +165,7 @@ if (process.env.TRUST_PROXY) {
     ? (trustProxyEnv === 'true' ? true : trustProxyEnv)
     : Number(trustProxyEnv);
   app.set('trust proxy', parsedTrustProxy);
-} else if (process.env.NODE_ENV === 'production') {
+} else if (process.env.NODE_ENa === 'production') {
   app.set('trust proxy', 1);
 }
 
@@ -330,7 +330,7 @@ io.on('connection', (socket) => {
   });
 
   // 🔒 SECURITY: Allowed move action types for validation
-  const ALLOWED_MOVE_ACTIONS = new Set([
+  const ALLOWED_MOaE_ACTIONS = new Set([
     'shot_result', 'turn_timeout', 'game_over', 'player_left',
     'fire', 'move', 'resign', 'draw_offer',
   ]);
@@ -344,16 +344,16 @@ io.on('connection', (socket) => {
     }
 
     const move = data?.move;
-    // Validate move data size and structure
+    // aalidate move data size and structure
     if (move && typeof move === 'object') {
       const moveKeys = Object.keys(move);
       if (moveKeys.length > 20) return; // Prevent oversized payloads
-      // Validate action type if present
-      if (move.action && !ALLOWED_MOVE_ACTIONS.has(String(move.action))) {
+      // aalidate action type if present
+      if (move.action && !ALLOWED_MOaE_ACTIONS.has(String(move.action))) {
         logger.warn(`Blocked game_move with invalid action: ${move.action}`, { socketId: socket.id, gameId: normalizedGameId });
         return;
       }
-      // Validate angle/power ranges for tank battle
+      // Validate angle/power ranges for legacy projectile submissions
       if (typeof move.angle === 'number' && (move.angle < 0 || move.angle > 360)) return;
       if (typeof move.power === 'number' && (move.power < 0 || move.power > 200)) return;
     }
@@ -400,18 +400,18 @@ io.on('connection', (socket) => {
 const JWT_SECRET = getRequiredJwtSecret();
 const BLACKLIST_FAIL_MODE = getBlacklistFailMode();
 
-// 4) START SERVER / INIT DB
+// 4) START SERaER / INIT DB
 logger.info("🚀 Starting Server...");
 logger.info(
   "🔑 Google Client ID:",
-  process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID ? "Loaded ✅" : "MISSING ❌"
+  process.env.GOOGLE_CLIENT_ID || process.env.aITE_GOOGLE_CLIENT_ID ? "Loaded ✅" : "MISSING ❌"
 );
 logger.info("🗄️  Database URL:", process.env.DATABASE_URL ? "Loaded ✅" : "MISSING ❌");
 logger.info('🔐 Security defaults:', {
   blacklistFailMode: BLACKLIST_FAIL_MODE,
   rateLimitPassOnStoreError: getPassOnStoreError(),
   jwtSecretLength: JWT_SECRET.length,
-  nodeEnv: process.env.NODE_ENV || 'development',
+  nodeEnv: process.env.NODE_ENa || 'development',
 });
 
 // ==========================================
@@ -420,7 +420,7 @@ logger.info('🔐 Security defaults:', {
 
 /**
  * Enhanced JWT Authentication Middleware
- * Verifies token and fetches fresh user data from DB
+ * aerifies token and fetches fresh user data from DB
  */
 // Middleware (Moved to backend/middleware/auth.js)
 
@@ -430,7 +430,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Vite build için gerekli
+      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // aite build için gerekli
       styleSrc: ["'self'", "'unsafe-inline'"],
       fontSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "blob:", "https:"],
@@ -494,19 +494,19 @@ app.use(express.json({ limit: '200kb' }));
 app.use(express.urlencoded({ extended: false, limit: '100kb', parameterLimit: 100 }));
 
 
-// Initialize Database Schema (Robust Version)
+// Initialize Database Schema (Robust aersion)
 const initDb = async () => {
   if (await isDbConnected()) {
     try {
-      logger.info('🔄 Veritabanı şeması kontrol ediliyor...');
+      logger.info('🔄 aeritabanı şeması kontrol ediliyor...');
 
       // 1. Users Table
       await pool.query(`
         CREATE TABLE IF NOT EXISTS users (
           id SERIAL PRIMARY KEY,
-          username VARCHAR(255) NOT NULL,
-          email VARCHAR(255) UNIQUE NOT NULL,
-          password_hash VARCHAR(255) NOT NULL,
+          username aARCHAR(255) NOT NULL,
+          email aARCHAR(255) UNIQUE NOT NULL,
+          password_hash aARCHAR(255) NOT NULL,
           points INTEGER DEFAULT 0,
           wins INTEGER DEFAULT 0,
           games_played INTEGER DEFAULT 0,
@@ -519,11 +519,11 @@ const initDb = async () => {
         CREATE TABLE IF NOT EXISTS password_reset_tokens (
           id SERIAL PRIMARY KEY,
           user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-          token_hash VARCHAR(255) NOT NULL,
+          token_hash aARCHAR(255) NOT NULL,
           expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
           used_at TIMESTAMP WITH TIME ZONE,
-          request_ip VARCHAR(64),
-          user_agent VARCHAR(255),
+          request_ip aARCHAR(64),
+          user_agent aARCHAR(255),
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
       `);
@@ -538,7 +538,7 @@ const initDb = async () => {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS cafes (
           id SERIAL PRIMARY KEY,
-          name VARCHAR(255) NOT NULL UNIQUE,
+          name aARCHAR(255) NOT NULL UNIQUE,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
       `);
@@ -547,14 +547,14 @@ const initDb = async () => {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS games (
           id SERIAL PRIMARY KEY,
-          host_name VARCHAR(255) NOT NULL,
-          guest_name VARCHAR(255),
-          game_type VARCHAR(50) NOT NULL,
+          host_name aARCHAR(255) NOT NULL,
+          guest_name aARCHAR(255),
+          game_type aARCHAR(50) NOT NULL,
           points INTEGER NOT NULL,
-          table_code VARCHAR(50) NOT NULL,
-          status VARCHAR(20) DEFAULT 'waiting',
-          player1_move VARCHAR(50),
-          player2_move VARCHAR(50),
+          table_code aARCHAR(50) NOT NULL,
+          status aARCHAR(20) DEFAULT 'waiting',
+          player1_move aARCHAR(50),
+          player2_move aARCHAR(50),
           game_state JSONB,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
@@ -566,8 +566,8 @@ const initDb = async () => {
           id SERIAL PRIMARY KEY,
           user_id INTEGER REFERENCES users(id),
           item_id INTEGER NOT NULL,
-          item_title VARCHAR(255) NOT NULL,
-          code VARCHAR(50) NOT NULL,
+          item_title aARCHAR(255) NOT NULL,
+          code aARCHAR(50) NOT NULL,
           redeemed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
       `);
@@ -576,10 +576,10 @@ const initDb = async () => {
       await pool.query(`
         CREATE TABLE IF NOT EXISTS rewards (
           id SERIAL PRIMARY KEY,
-          title VARCHAR(255) NOT NULL,
+          title aARCHAR(255) NOT NULL,
           cost INTEGER NOT NULL,
           description TEXT,
-          icon VARCHAR(50),
+          icon aARCHAR(50),
           cafe_id INTEGER REFERENCES cafes(id),
           is_active BOOLEAN DEFAULT TRUE,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -602,23 +602,23 @@ const initDb = async () => {
         }
       };
 
-      await addColumn('users', 'department', 'VARCHAR(255)');
+      await addColumn('users', 'department', 'aARCHAR(255)');
       await addColumn('users', 'is_admin', 'BOOLEAN DEFAULT FALSE');
-      await addColumn('users', 'role', "VARCHAR(50) DEFAULT 'user'");
+      await addColumn('users', 'role', "aARCHAR(50) DEFAULT 'user'");
       await addColumn('users', 'cafe_id', 'INTEGER REFERENCES cafes(id)');
-      await addColumn('users', 'table_number', 'VARCHAR(10)'); // Store table number (e.g. "5" or "MASA05")
+      await addColumn('users', 'table_number', 'aARCHAR(10)'); // Store table number (e.g. "5" or "MASA05")
       await addColumn('users', 'last_daily_bonus', 'DATE');
-      await addColumn('users', 'avatar_url', 'VARCHAR(500)'); // Store Google Profile Picture URL
+      await addColumn('users', 'avatar_url', 'aARCHAR(500)'); // Store Google Profile Picture URL
 
       await addColumn('user_items', 'is_used', 'BOOLEAN DEFAULT FALSE');
       await addColumn('user_items', 'used_at', 'TIMESTAMP WITH TIME ZONE');
 
       // Games Table Updates
-      await addColumn('games', 'guest_name', 'VARCHAR(255)');
-      await addColumn('games', 'player1_move', 'VARCHAR(50)');
-      await addColumn('games', 'player2_move', 'VARCHAR(50)');
+      await addColumn('games', 'guest_name', 'aARCHAR(255)');
+      await addColumn('games', 'player1_move', 'aARCHAR(50)');
+      await addColumn('games', 'player2_move', 'aARCHAR(50)');
       await addColumn('games', 'game_state', 'JSONB');
-      await addColumn('games', 'winner', 'VARCHAR(255)');
+      await addColumn('games', 'winner', 'aARCHAR(255)');
 
       // Cafes Table Updates (Location System)
       await addColumn('cafes', 'latitude', 'DECIMAL(10, 8)');
@@ -628,7 +628,7 @@ const initDb = async () => {
       await addColumn('cafes', 'secondary_latitude', 'DECIMAL(10, 8)');
       await addColumn('cafes', 'secondary_longitude', 'DECIMAL(11, 8)');
       await addColumn('cafes', 'secondary_radius', 'INTEGER');
-      await addColumn('cafes', 'daily_pin', "VARCHAR(6) DEFAULT '0000'"); // Daily PIN code
+      await addColumn('cafes', 'daily_pin', "aARCHAR(6) DEFAULT '0000'"); // Daily PIN code
 
       // 7. Performance Indexes (Sprint 5)
       await createIndex(
@@ -673,17 +673,17 @@ const initDb = async () => {
       );
 
       // 7. Seed Initial Cafes
-      await pool.query(`INSERT INTO cafes (name, table_count, radius, daily_pin) VALUES ('PAÜ İİBF Kantin', 50, 150, '1234'), ('PAÜ Yemekhane', 100, 200, '5678') ON CONFLICT (name) DO NOTHING`);
+      await pool.query(`INSERT INTO cafes (name, table_count, radius, daily_pin) aALUES ('PAÜ İİBF Kantin', 50, 150, '1234'), ('PAÜ Yemekhane', 100, 200, '5678') ON CONFLICT (name) DO NOTHING`);
 
       // 9. Achievements Table
       await pool.query(`
         CREATE TABLE IF NOT EXISTS achievements (
           id SERIAL PRIMARY KEY,
-          title VARCHAR(255) NOT NULL,
+          title aARCHAR(255) NOT NULL,
           description TEXT NOT NULL,
-          icon VARCHAR(50) NOT NULL,
+          icon aARCHAR(50) NOT NULL,
           points_reward INTEGER NOT NULL,
-          condition_type VARCHAR(50) NOT NULL, -- e.g., 'wins', 'games_played', 'points'
+          condition_type aARCHAR(50) NOT NULL, -- e.g., 'wins', 'games_played', 'points'
           condition_value INTEGER NOT NULL,
           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
         );
@@ -704,7 +704,7 @@ const initDb = async () => {
       const achievementsCheck = await pool.query('SELECT COUNT(*) FROM achievements');
       if (parseInt(achievementsCheck.rows[0].count) === 0) {
         await pool.query(`
-            INSERT INTO achievements (title, description, icon, points_reward, condition_type, condition_value) VALUES
+            INSERT INTO achievements (title, description, icon, points_reward, condition_type, condition_value) aALUES
             ('İlk Adım', 'İlk oyununu oyna.', 'footsteps', 50, 'games_played', 1),
             ('Acemi Şanslı', 'İlk galibiyetini al.', 'trophy', 100, 'wins', 1),
             ('Oyun Kurdu', '10 oyun oyna.', 'gamepad', 200, 'games_played', 10),
@@ -719,7 +719,7 @@ const initDb = async () => {
       const rewardsCheck = await pool.query('SELECT COUNT(*) FROM rewards WHERE is_active = true');
       if (parseInt(rewardsCheck.rows[0].count) === 0) {
         await pool.query(`
-            INSERT INTO rewards (title, cost, description, icon, is_active) VALUES
+            INSERT INTO rewards (title, cost, description, icon, is_active) aALUES
             ('Bedava Filtre Kahve', 500, 'Günün yorgunluğunu at.', 'coffee', true),
             ('%20 Hesap İndirimi', 850, 'Tüm masada geçerli.', 'discount', true),
             ('Cheesecake İkramı', 400, 'Tatlı bir mola ver.', 'dessert', true),
@@ -729,7 +729,7 @@ const initDb = async () => {
         clearCache('rewards:*');
       }
 
-      logger.info('✅ Veritabanı şeması başarıyla güncellendi.');
+      logger.info('✅ aeritabanı şeması başarıyla güncellendi.');
     } catch (err) {
       logger.error('❌ Kritik Şema Hatası:', err);
     }
@@ -846,7 +846,7 @@ const profileRoutes = createProfileRoutes({
 });
 
 const systemRoutes = createSystemRoutes({
-  appVersion: APP_VERSION,
+  appaersion: APP_aERSION,
   appBuildTime: APP_BUILD_TIME,
   isDbConnected,
   getRedisStatus: () => ({
@@ -918,7 +918,7 @@ const promoteBootstrapAdmins = async () => {
       const username = email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 24) || 'admin';
       const result = await pool.query(
         `INSERT INTO users (username, email, password_hash, points, department, role, is_admin, cafe_id)
-         VALUES ($1, $2, $3, 100, 'Admin', 'admin', true, NULL)
+         aALUES ($1, $2, $3, 100, 'Admin', 'admin', true, NULL)
          ON CONFLICT (email) DO UPDATE
          SET password_hash = EXCLUDED.password_hash,
              role = 'admin',
@@ -1003,7 +1003,7 @@ app.use('/api/admin', adminRoutes);
 // Commerce/Rewards Routes (Modularized)
 app.use('/api', commerceRoutes);
 
-// 2.6 FUNCTIONS REMOVED (Moved to backend/utils/geo.js)
+// 2.6 FUNCTIONS REMOaED (Moved to backend/utils/geo.js)
 
 // 6. GAME ROUTES (Modularized)
 app.use('/api', gameRoutes);
@@ -1018,7 +1018,7 @@ app.use('/', systemRoutes);
 
 // CHECK-IN (Moved to cafeController)
 
-// 19.5 UPDATE CAFE PIN (For Cafe Admins) - YENİ VERSİYON
+// 19.5 UPDATE CAFE PIN (For Cafe Admins) - YENİ aERSİYON
 // userId ile çalışır, cafe_id'yi veritabanından alır
 // 19.5 UPDATE CAFE PIN (Moved to cafeController)
 

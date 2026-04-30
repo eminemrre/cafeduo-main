@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Additional branch coverage tests for hooks/useGames.ts
  * Targets uncovered branches: normalizeTableCode, toMessage, isNotFoundError, isSameGameList, cancelGame edge cases
  */
@@ -173,7 +173,7 @@ describe('useGames branch coverage', () => {
 
       await expect(
         act(async () => {
-          await result.current.createGame('Tank Düellosu', 50);
+          await result.current.createGame('Nişancı Düellosu', 50);
         })
       ).rejects.toThrow('Server error');
 
@@ -190,7 +190,7 @@ describe('useGames branch coverage', () => {
 
       await expect(
         act(async () => {
-          await result.current.createGame('Tank Düellosu', 50);
+          await result.current.createGame('Nişancı Düellosu', 50);
         })
       ).rejects.toThrow('Oyun kurulurken hata oluştu');
 
@@ -259,7 +259,7 @@ describe('useGames branch coverage', () => {
       );
 
       act(() => {
-        result.current.setActiveGame(42, 'Tank Düellosu');
+        result.current.setActiveGame(42, 'Nişancı Düellosu');
       });
 
       expect(result.current.activeGameId).toBe(42);
@@ -340,7 +340,7 @@ describe('useGames branch coverage', () => {
       );
 
       act(() => {
-        result.current.setActiveGame(42, 'Tank Düellosu');
+        result.current.setActiveGame(42, 'Nişancı Düellosu');
       });
 
       act(() => {
@@ -372,7 +372,7 @@ describe('useGames branch coverage', () => {
       );
 
       act(() => {
-        result.current.setActiveGame(42, 'Tank Düellosu', 'opponent', true);
+        result.current.setActiveGame(42, 'Nişancı Düellosu', 'opponent', true);
       });
 
       expect(result.current.activeGameId).toBe(42);
@@ -385,7 +385,7 @@ describe('useGames branch coverage', () => {
       );
 
       act(() => {
-        result.current.setActiveGame(42, 'Tank Düellosu');
+        result.current.setActiveGame(42, 'Nişancı Düellosu');
       });
       act(() => {
         result.current.setActiveGame(null);

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * GameLobby Component Tests
  * 
  * @description Game listing and joining functionality tests
@@ -37,7 +37,7 @@ describe('GameLobby', () => {
   const mockGames: GameRequest[] = [
     {
       id: 1,
-      gameType: 'Tank Düellosu',
+      gameType: 'Nişancı Düellosu',
       points: 50,
       hostName: 'host1',
       status: 'waiting',
@@ -92,7 +92,7 @@ describe('GameLobby', () => {
     it('shows game types', () => {
       render(<GameLobby {...defaultProps} />);
 
-      expect(screen.getByText('Tank Düellosu')).toBeInTheDocument();
+      expect(screen.getByText('Nişancı Düellosu')).toBeInTheDocument();
       expect(screen.getByText('Bilgi Yarışı')).toBeInTheDocument();
     });
   });
@@ -170,7 +170,7 @@ describe('GameLobby', () => {
       const { container } = render(<GameLobby {...defaultProps} />);
 
       // Check for game types
-      expect(container.textContent).toContain('Tank Düellosu');
+      expect(container.textContent).toContain('Nişancı Düellosu');
       expect(container.textContent).toContain('Bilgi Yarışı');
     });
   });

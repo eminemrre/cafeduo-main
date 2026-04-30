@@ -1,4 +1,4 @@
-const {
+﻿const {
   DEFAULT_ALLOWED_ORIGINS,
   LOCAL_ALLOWED_ORIGINS,
   SUPPORTED_GAME_TYPES,
@@ -10,11 +10,11 @@ const {
 
 describe('serverConfig helpers', () => {
   test('normalizeGameType resolves canonical names and aliases', () => {
-    expect(normalizeGameType(' tank ')).toBe('Tank Düellosu');
+    expect(normalizeGameType(' tank ')).toBe('Nişancı Düellosu');
     expect(normalizeGameType('retro_satranc')).toBe('Retro Satranç');
     expect(normalizeGameType('bilgi yarisi')).toBe('Bilgi Yarışı');
     expect(normalizeGameType('unknown')).toBeNull();
-    expect(SUPPORTED_GAME_TYPES.has('Tank Düellosu')).toBe(true);
+    expect(SUPPORTED_GAME_TYPES.has('Nişancı Düellosu')).toBe(true);
     expect(SUPPORTED_GAME_TYPES.has('Retro Satranç')).toBe(true);
     expect(SUPPORTED_GAME_TYPES.has('Bilgi Yarışı')).toBe(true);
   });

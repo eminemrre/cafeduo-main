@@ -11,9 +11,9 @@ interface HeroProps {
 }
 
 const tableRows = [
-  { label: 'Bilgi Sprinti', value: '02 oyuncu', tone: 'text-white' },
+  { label: 'PAÜ Merkez Cafe', value: '4/4 aktif', tone: 'text-[#39ff6a]' },
   { label: 'Retro Satranç', value: 'Masa 05', tone: 'text-white' },
-  { label: 'Tank Düellosu', value: '+120 CP', tone: 'text-[#ff2d3d]' },
+  { label: 'Nişancı Düellosu', value: '+120 CP', tone: 'text-[#ff3045]' },
 ];
 
 export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, userRole, isAdmin }) => {
@@ -43,20 +43,20 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
         </div>
       </div>
 
-      <div className="relative z-[2] mx-auto flex min-h-screen w-full max-w-7xl items-center px-4 pb-24 pt-44 sm:px-6 lg:px-8 lg:pb-20">
-        <div className="grid w-full grid-cols-1 items-center gap-14 lg:grid-cols-[minmax(0,1fr)_minmax(390px,0.78fr)]">
-          <div className="max-w-4xl text-center lg:text-left">
+      <div className="relative z-[2] mx-auto flex min-h-screen w-full max-w-[1320px] items-center px-4 pb-24 pt-44 sm:px-6 lg:px-8 lg:pb-20">
+        <div className="grid w-full grid-cols-1 items-center gap-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(320px,0.9fr)_minmax(340px,0.72fr)]">
+          <div className="cd-hero-copy max-w-4xl text-center lg:max-w-[470px] lg:text-left">
             <p className="cd-kicker justify-center lg:justify-start">
-              CafeDuo ile bekleme süresi artık boş zaman değil
+              Gamer ruhunu al, kafeni seç, masanı doğrula
             </p>
 
-            <h1 lang="tr" className="mt-7 text-[3.4rem] font-black leading-[0.95] tracking-[-0.04em] text-white sm:text-7xl lg:text-[5.8rem]">
-              Kafede oyun oynamak artık <span className="font-serif italic text-[#ff2d3d]">kolay.</span>
+            <h1 lang="tr" className="mt-7 text-[3.4rem] font-black uppercase leading-[0.95] text-white sm:text-7xl lg:text-[4.1rem]">
+              Kafede oyun oynamak artık <span className="text-[#ff3045]">efsane <span>kolay.</span></span>
             </h1>
 
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-neutral-400 sm:text-xl lg:mx-0">
-              Aynı kafedeki kullanıcıları hızlı oyunlarda buluştur, puanı görünür kıl,
-              ödülleri tek akışta yönet.
+              Kafeni seç, masanı doğrula ve rekabete katıl. Puan kazan,
+              ödülleri topla, efsaneler arasında yerini al.
             </p>
 
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
@@ -91,22 +91,46 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
             </div>
 
             <div className="mt-10 grid grid-cols-3 gap-3 text-left sm:max-w-xl lg:max-w-lg">
-              <div className="cd-mini-stat">
+              <div className="cd-mini-stat border-[#10e7ff]/45">
                 <Timer size={16} />
-                <span>45 sn tur</span>
+                <span>Hızlı eşleşme</span>
               </div>
-              <div className="cd-mini-stat">
+              <div className="cd-mini-stat border-[#ff3045]/45">
                 <Users size={16} />
-                <span>Anlık eşleşme</span>
+                <span>Canlı masalar</span>
               </div>
-              <div className="cd-mini-stat">
+              <div className="cd-mini-stat border-[#39ff6a]/45">
                 <Trophy size={16} />
-                <span>Ödül akışı</span>
+                <span>Puan & ödül</span>
               </div>
             </div>
           </div>
 
-          <div className="mx-auto w-full max-w-[470px] lg:mx-0 lg:justify-self-end">
+          <div className="cd-arcade-scene mx-auto w-full max-w-[420px] lg:max-w-none">
+            <div className="cd-arcade-screen">
+              <div className="cd-pixel-trophy">
+                <Trophy size={72} />
+              </div>
+              <div className="cd-level-sign">LEVEL<br />UP</div>
+              <div className="cd-player cd-player-left" />
+              <div className="cd-player cd-player-right" />
+              <div className="cd-table-glow" />
+              <div className="cd-spark cd-spark-a"><Sparkles size={18} /></div>
+              <div className="cd-spark cd-spark-b"><Sparkles size={14} /></div>
+            </div>
+            <div className="cd-active-seat">
+              <div>
+                <p className="font-pixel text-[10px] uppercase text-[#10e7ff]">Senin aktif masan</p>
+                <p className="mt-1 text-sm text-white">Retro Satranç - PAÜ Merkez Cafe</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] uppercase text-[#a5adb8]">Puanın</p>
+                <p className="font-pixel text-lg text-[#ff3045]">350 CP</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mx-auto w-full max-w-[390px] lg:mx-0 lg:justify-self-end">
             <div className="cd-product-panel p-4 sm:p-5">
               <div className="cd-product-window overflow-hidden">
                 <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
@@ -115,21 +139,21 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
                       <Coffee size={20} />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-white">CafeDuo Live</p>
-                      <p className="text-xs text-neutral-500">Masa deneyimi aktif</p>
+                      <p className="text-sm font-bold text-white">Canlı Masalar</p>
+                      <p className="text-xs text-neutral-500">18 aktif</p>
                     </div>
                   </div>
-                  <span className="rounded-full bg-[#ff2d3d] px-3 py-1 text-[10px] font-bold text-white">
-                    Online
+                  <span className="rounded-full bg-[#ff3045] px-3 py-1 text-[10px] font-bold uppercase text-white">
+                    Aktif
                   </span>
                 </div>
 
                 <div className="p-4">
                   <div className="grid grid-cols-[1fr_auto] gap-3">
                     <div className="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
-                      <p className="text-xs font-semibold text-neutral-500">Aktif masa</p>
+                      <p className="text-xs font-semibold uppercase text-[#10e7ff]">Senin masan</p>
                       <p className="mt-2 text-5xl font-black leading-none text-white">05</p>
-                      <p className="mt-1 text-sm text-neutral-400">2 oyuncu hazır</p>
+                      <p className="mt-1 text-sm text-neutral-400">Retro Satranç hazır</p>
                     </div>
                     <div className="flex w-28 flex-col justify-between rounded-2xl border border-white/10 bg-white/[0.035] p-3 text-right">
                       <WalletCards className="ml-auto text-[#ff2d3d]" size={19} />

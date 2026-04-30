@@ -1,7 +1,7 @@
-{
+﻿{
     "name": "CafeDuo - Kafe Oyun Platformu",
     "short_name": "CafeDuo",
-    "description": "Kafede arkadaşlarınla oyun oyna, puan kazan, ödüller al. Retro satranç, tank düellosu ve bilgi yarışması.",
+    "description": "Kafede arkadaşlarınla oyun oyna, puan kazan, ödüller al. Retro satranç, nişancı düellosu ve bilgi yarışması.",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#0f141a",

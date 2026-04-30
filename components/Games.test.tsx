@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { Games } from './Games';
 
@@ -15,7 +15,7 @@ describe('Games', () => {
 
     expect(screen.getByText('Retro Satranç')).toBeInTheDocument();
     expect(screen.getByText('Bilgi Sprinti')).toBeInTheDocument();
-    expect(screen.getByText('Tank Düellosu')).toBeInTheDocument();
+    expect(screen.getByText('Nişancı Düellosu')).toBeInTheDocument();
 
     expect(screen.getByText('Tahtaya geç')).toBeInTheDocument();
     expect(screen.getByText('Sprinti aç')).toBeInTheDocument();

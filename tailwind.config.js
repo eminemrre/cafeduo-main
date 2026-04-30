@@ -30,9 +30,10 @@ module.exports = {
         },
       },
       fontFamily: {
-        sans: ['"Chakra Petch"', '"Noto Sans"', "sans-serif"],
-        display: ['"Teko"', '"Noto Sans Display"', "sans-serif"],
-        body: ['"Chakra Petch"', '"Noto Sans"', "sans-serif"],
+        sans: ['"Space Grotesk"', '"Chakra Petch"', '"Noto Sans"', "sans-serif"],
+        display: ['"Press Start 2P"', '"Space Grotesk"', "monospace"],
+        body: ['"Space Grotesk"', '"Chakra Petch"', '"Noto Sans"', "sans-serif"],
+        mono: ['"IBM Plex Mono"', "monospace"],
       },
       boxShadow: {
         soft: "0 10px 30px rgba(15, 17, 21, 0.35)",

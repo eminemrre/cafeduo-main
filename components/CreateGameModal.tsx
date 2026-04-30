@@ -17,7 +17,7 @@ interface CreateGameModalProps {
 const GAME_TYPES = [
   { id: 'chess', name: 'Retro Satranç', category: 'Strateji', description: 'Klasik 2 oyunculu satranç. Gerçek zamanlı ve hamle doğrulamalı.', minPoints: 90 },
   { id: 'knowledge', name: 'Bilgi Yarışı', category: 'Bilgi', description: 'Kısa bilgi sorularında doğru cevabı en hızlı ver', minPoints: 120 },
-  { id: 'tank', name: 'Tank Düellosu', category: 'Savaş', description: 'Açı ve güç ayarla, rakip tankı vur. İlk 3 isabet alan kazanır.', minPoints: 40 },
+  { id: 'aim', name: 'Nişancı Düellosu', category: 'Refleks', description: 'Nişangahı merkeze kilitle, tur tur isabet topla.', minPoints: 40 },
 ];
 
 const CHESS_TEMPO_OPTIONS = [
@@ -38,7 +38,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   onSubmit,
   maxPoints
 }) => {
-  const [gameType, setGameType] = useState('Tank Düellosu');
+  const [gameType, setGameType] = useState('Nişancı Düellosu');
   const [points, setPoints] = useState(40);
   const [chessTempoId, setChessTempoId] = useState<(typeof CHESS_TEMPO_OPTIONS)[number]['id']>('blitz_3_2');
   const [errors, setErrors] = useState<ValidationError>({});
@@ -50,7 +50,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
-      setGameType('Tank Düellosu');
+      setGameType('Nişancı Düellosu');
       setPoints(40);
       setChessTempoId('blitz_3_2');
       setErrors({});
@@ -162,13 +162,13 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center px-3 sm:px-4 py-3 sm:py-6 overflow-y-auto">
+    <div className="cd-create-layer fixed inset-0 z-[120] flex items-start sm:items-center justify-center px-3 sm:px-4 py-3 sm:py-6 overflow-y-auto">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/90 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
 
       {/* Modal Content */}
       <div
-        className="relative bg-[linear-gradient(170deg,rgba(6,13,29,0.98),rgba(8,24,51,0.9))] border-2 border-cyan-400/35 rounded-2xl p-4 sm:p-6 w-full max-w-xl shadow-[0_0_50px_rgba(10,215,255,0.2)] transform transition-all scale-100 opacity-100 max-h-[calc(100vh-1.5rem)] sm:max-h-[min(860px,calc(100vh-3rem))] overflow-y-auto rf-modal-scroll"
+        className="cd-create-modal relative bg-[linear-gradient(170deg,rgba(6,13,29,0.98),rgba(8,24,51,0.9))] border-2 border-cyan-400/35 rounded-2xl p-4 sm:p-6 w-full max-w-5xl shadow-[0_0_50px_rgba(10,215,255,0.2)] transform transition-all scale-100 opacity-100 max-h-[calc(100vh-1.5rem)] sm:max-h-[min(900px,calc(100vh-3rem))] overflow-y-auto rf-modal-scroll"
         data-testid="create-game-modal"
       >
 

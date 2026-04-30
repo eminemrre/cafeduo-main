@@ -17,7 +17,6 @@ import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
-import { TankBattleHarness } from './components/dev/TankBattleHarness';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Lazy Load Components
@@ -296,8 +295,6 @@ const AppContent: React.FC = () => {
               <Route path="/gizlilik" element={<PageTransition><PrivacyPolicy /></PageTransition>} />
               <Route path="/reset-password" element={<PageTransition><ResetPasswordPage /></PageTransition>} />
               <Route path="/store" element={<PageTransition><Store user={user} updateUser={updateUser} onShowToast={toast} /></PageTransition>} />
-              <Route path="/dev/tank-harness" element={<PageTransition><TankBattleHarness /></PageTransition>} />
-
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </AnimatePresence>

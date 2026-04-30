@@ -1,4 +1,4 @@
-const { createGameService } = require('./gameService');
+﻿const { createGameService } = require('./gameService');
 
 describe('gameService', () => {
   it('routes waiting game query to cafe-scoped repository method', async () => {
@@ -14,7 +14,7 @@ describe('gameService', () => {
       gameRepository,
       getMemoryGames: () => [],
       getMemoryUsers: () => [],
-      supportedGameTypes: new Set(['Tank Düellosu']),
+      supportedGameTypes: new Set(['Nişancı Düellosu']),
     });
 
     const result = await service.listWaitingGames({
@@ -35,14 +35,14 @@ describe('gameService', () => {
       isDbConnected: jest.fn().mockResolvedValue(false),
       gameRepository: {},
       getMemoryGames: () => [
-        { id: 1, hostName: 'u1', gameType: 'Tank Düellosu', table: 'MASA05', status: 'waiting' },
-        { id: 2, hostName: 'u2', gameType: 'Tank Düellosu', table: 'MASA07', status: 'waiting' },
+        { id: 1, hostName: 'u1', gameType: 'Nişancı Düellosu', table: 'MASA05', status: 'waiting' },
+        { id: 2, hostName: 'u2', gameType: 'Nişancı Düellosu', table: 'MASA07', status: 'waiting' },
       ],
       getMemoryUsers: () => [
         { username: 'u1', cafe_id: 1 },
         { username: 'u2', cafe_id: 2 },
       ],
-      supportedGameTypes: new Set(['Tank Düellosu']),
+      supportedGameTypes: new Set(['Nişancı Düellosu']),
     });
 
     const result = await service.listWaitingGames({
@@ -63,10 +63,10 @@ describe('gameService', () => {
       isDbConnected: jest.fn().mockResolvedValue(false),
       gameRepository: {},
       getMemoryGames: () => [
-        { id: 10, hostName: 'u1', status: 'active', gameType: 'Tank Düellosu' },
+        { id: 10, hostName: 'u1', status: 'active', gameType: 'Nişancı Düellosu' },
       ],
       getMemoryUsers: () => [],
-      supportedGameTypes: new Set(['Tank Düellosu']),
+      supportedGameTypes: new Set(['Nişancı Düellosu']),
     });
 
     const game = await service.getActiveGameForUser('u1');

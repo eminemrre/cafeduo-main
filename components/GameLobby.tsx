@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'framer-motion';
 import { Gamepad2, Swords } from 'lucide-react';
 import { GameRequest, User } from '../types';
@@ -6,7 +6,7 @@ import { GameRequest, User } from '../types';
 const gameIcon = (gameType: string) => {
   if (gameType === 'Retro Satranç') return '♟️';
   if (gameType === 'Bilgi Yarışı') return '🧠';
-  if (gameType === 'Tank Düellosu') return '🎯';
+  if (gameType === 'Nişancı Düellosu' || gameType === 'Nişancı Düellosu') return '🎯';
   return '🎮';
 };
 

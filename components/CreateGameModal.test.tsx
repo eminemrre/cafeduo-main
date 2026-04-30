@@ -1,4 +1,4 @@
-/**
+﻿/**
  * CreateGameModal Component Tests
  * 
  * @description Game creation modal functionality tests
@@ -61,7 +61,7 @@ describe('CreateGameModal', () => {
       // Game types appear in selection list
       expect(screen.getAllByText('Retro Satranç').length).toBeGreaterThan(0);
       expect(screen.getAllByText('Bilgi Yarışı').length).toBeGreaterThan(0);
-      expect(screen.getAllByText('Tank Düellosu').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Nişancı Düellosu').length).toBeGreaterThan(0);
     });
 
     it('shows game descriptions', () => {
@@ -69,7 +69,7 @@ describe('CreateGameModal', () => {
 
       expect(screen.getByText('Klasik 2 oyunculu satranç. Gerçek zamanlı ve hamle doğrulamalı.')).toBeInTheDocument();
       expect(screen.getByText('Kısa bilgi sorularında doğru cevabı en hızlı ver')).toBeInTheDocument();
-      expect(screen.getByText('Açı ve güç ayarla, rakip tankı vur. İlk 3 isabet alan kazanır.')).toBeInTheDocument();
+      expect(screen.getByText('Nişangahı merkeze kilitle, tur tur isabet topla.')).toBeInTheDocument();
     });
 
     it('renders preset point buttons', () => {
@@ -94,18 +94,18 @@ describe('CreateGameModal', () => {
     it('selects game type when clicked', () => {
       render(<CreateGameModal {...defaultProps} />);
 
-      // Click on Tank Düellosu (first occurrence in game list)
-      const tankButtons = screen.getAllByText('Tank Düellosu');
-      fireEvent.click(tankButtons[0]);
+      // Click on Nişancı Düellosu (first occurrence in game list)
+      const aimButtons = screen.getAllByText('Nişancı Düellosu');
+      fireEvent.click(aimButtons[0]);
 
       // Should show checkmark or be selected
-      expect(screen.getAllByText('Tank Düellosu').length).toBeGreaterThan(0);
+      expect(screen.getAllByText('Nişancı Düellosu').length).toBeGreaterThan(0);
     });
 
     it('shows minimum points requirement for each game type', () => {
       render(<CreateGameModal {...defaultProps} />);
 
-      // Tank Düellosu requires min 40
+      // Nişancı Düellosu requires min 40
       expect(screen.getByText('MIN 40 PUAN')).toBeInTheDocument();
 
       // Retro Satranç requires min 90
@@ -115,7 +115,7 @@ describe('CreateGameModal', () => {
     it('auto-adjusts points when switching to higher minimum game', () => {
       render(<CreateGameModal {...defaultProps} />);
 
-      // Initially Tank Düellosu (min 40)
+      // Initially Nişancı Düellosu (min 40)
       expect((screen.getByTestId('game-points-input') as HTMLInputElement).value).toBe('40');
 
       // Switch to Retro Satranç (min 90)
@@ -164,7 +164,7 @@ describe('CreateGameModal', () => {
     it('auto-adjusts points when switching to higher minimum game', async () => {
       render(<CreateGameModal {...defaultProps} />);
 
-      // Initially Tank Düellosu (min 40), points = 40
+      // Initially Nişancı Düellosu (min 40), points = 40
       // Switch to Retro Satranç (min 90) - should auto-adjust to 90
       fireEvent.click(screen.getByText('Retro Satranç'));
 
@@ -272,8 +272,8 @@ describe('CreateGameModal', () => {
     it('updates summary when game type changes', () => {
       render(<CreateGameModal {...defaultProps} />);
 
-      // Initially Tank Düellosu (summary section)
-      expect(screen.getAllByText('Tank Düellosu')[0]).toBeInTheDocument();
+      // Initially Nişancı Düellosu (summary section)
+      expect(screen.getAllByText('Nişancı Düellosu')[0]).toBeInTheDocument();
 
       // Switch to Retro Satranç
       fireEvent.click(screen.getByText('Retro Satranç'));
@@ -310,7 +310,7 @@ describe('CreateGameModal', () => {
 
       // Should reset to default values
       expect((screen.getByTestId('game-points-input') as HTMLInputElement).value).toBe('40');
-      expect(screen.getAllByText('Tank Düellosu')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('Nişancı Düellosu')[0]).toBeInTheDocument();
     });
 
     it('handles zero max points', () => {

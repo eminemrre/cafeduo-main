@@ -32,6 +32,7 @@
 - Latest validation for the current UI pass: `npm.cmd test -- Hero.test.tsx Navbar.test.tsx AuthModal.test.tsx CreateGameModal.test.tsx --runInBand` passed; `npm.cmd run build` passed with existing font resolution warnings only.
 
 - Deploy attempt `87e605f` reached VPS container deploy, but CI/Playwright/backend startup failed because `backend/server.js` required a misspelled `cafeAdminValidation` module; fixed locally for the next deploy.
+- Deploy attempt `44f9869` passed CI/Playwright and reached healthy VPS API, but smoke failed because backend read `APP_VERSION` as `APP_aERSION`; fixed locally for the next deploy.
 
 ## Active Constraints
 - Do not delete local files without action-time confirmation.

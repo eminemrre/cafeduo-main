@@ -48,8 +48,8 @@ if (process.env.SENTRY_DSN) {
 
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
-    environment: process.env.NODE_ENa || 'development',
-    tracesSampleRate: process.env.NODE_ENa === 'production' ? 0.1 : 1.0,
+    environment: process.env.NODE_ENV || 'development',
+    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
     profilesSampleRate: 1.0,
     integrations,
     // Filter out sensitive data
@@ -156,8 +156,8 @@ const LEGACY_RATE_LIMIT_MAX_REQUESTS = Number(process.env.RATE_LIMIT_MAX_REQUEST
 const API_RATE_LIMIT_WINDOW_MS = Number(process.env.API_RATE_LIMIT_WINDOW_MS || LEGACY_RATE_LIMIT_WINDOW_MS);
 const API_RATE_LIMIT_MAX_REQUESTS =
   Number(process.env.API_RATE_LIMIT_MAX_REQUESTS || 0) || Math.max(LEGACY_RATE_LIMIT_MAX_REQUESTS, 600);
-const APP_aERSION = String(process.env.APP_aERSION || process.env.aITE_APP_aERSION || 'local').trim();
-const APP_BUILD_TIME = String(process.env.APP_BUILD_TIME || process.env.aITE_BUILD_TIME || '').trim();
+const APP_VERSION = String(process.env.APP_VERSION || process.env.VITE_APP_VERSION || 'local').trim();
+const APP_BUILD_TIME = String(process.env.APP_BUILD_TIME || process.env.VITE_BUILD_TIME || '').trim();
 
 if (process.env.TRUST_PROXY) {
   const trustProxyEnv = process.env.TRUST_PROXY.trim();
@@ -165,7 +165,7 @@ if (process.env.TRUST_PROXY) {
     ? (trustProxyEnv === 'true' ? true : trustProxyEnv)
     : Number(trustProxyEnv);
   app.set('trust proxy', parsedTrustProxy);
-} else if (process.env.NODE_ENa === 'production') {
+} else if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', 1);
 }
 
@@ -404,14 +404,14 @@ const BLACKLIST_FAIL_MODE = getBlacklistFailMode();
 logger.info("🚀 Starting Server...");
 logger.info(
   "🔑 Google Client ID:",
-  process.env.GOOGLE_CLIENT_ID || process.env.aITE_GOOGLE_CLIENT_ID ? "Loaded ✅" : "MISSING ❌"
+  process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID ? "Loaded ✅" : "MISSING ❌"
 );
 logger.info("🗄️  Database URL:", process.env.DATABASE_URL ? "Loaded ✅" : "MISSING ❌");
 logger.info('🔐 Security defaults:', {
   blacklistFailMode: BLACKLIST_FAIL_MODE,
   rateLimitPassOnStoreError: getPassOnStoreError(),
   jwtSecretLength: JWT_SECRET.length,
-  nodeEnv: process.env.NODE_ENa || 'development',
+  nodeEnv: process.env.NODE_ENV || 'development',
 });
 
 // ==========================================
@@ -846,7 +846,7 @@ const profileRoutes = createProfileRoutes({
 });
 
 const systemRoutes = createSystemRoutes({
-  appaersion: APP_aERSION,
+  appVersion: APP_VERSION,
   appBuildTime: APP_BUILD_TIME,
   isDbConnected,
   getRedisStatus: () => ({

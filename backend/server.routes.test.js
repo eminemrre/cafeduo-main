@@ -122,4 +122,14 @@ describe('backend/server.js route registry', () => {
     expect(serverSource).toContain('isSocketInGameRoom(socket, normalizedGameId)');
     expect(serverSource).toContain("socket.emit('game_room_error'");
   });
+
+  it('passes production build metadata to system routes', () => {
+    expect(serverSource).toContain('process.env.APP_VERSION');
+    expect(serverSource).toContain('process.env.VITE_APP_VERSION');
+    expect(serverSource).toContain('process.env.NODE_ENV');
+    expect(serverSource).toContain('appVersion: APP_VERSION');
+    expect(serverSource).not.toContain('APP_aERSION');
+    expect(serverSource).not.toContain('NODE_ENa');
+    expect(serverSource).not.toContain('appaersion');
+  });
 });

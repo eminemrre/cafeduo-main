@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Play, Sparkles, Timer, Trophy, Users } from 'lucide-react';
+import { ArrowRight, Play, Timer, Trophy, Users } from 'lucide-react';
 
 interface HeroProps {
   onLogin: () => void;
@@ -29,14 +29,6 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
       aria-label="Ana bölüm"
       className="cd-hero-shell relative min-h-screen overflow-hidden"
     >
-      <div className="cd-topline absolute left-0 right-0 top-24 z-[3] overflow-hidden py-2.5 sm:top-28">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-4 text-sm font-semibold text-white sm:px-6 lg:px-8">
-          <span className="rounded-full border border-white/12 bg-white/[0.035] px-4 py-2">Yüz yüze oyun</span>
-          <span className="rounded-full border border-white/12 bg-white/[0.035] px-4 py-2">Anlık masa eşleşmesi</span>
-          <span className="rounded-full border border-[#ff2d3d]/30 bg-[#ff2d3d]/10 px-4 py-2 text-[#ff4d5a]">ödül ekonomisi</span>
-        </div>
-      </div>
-
       <div className="relative z-[2] mx-auto flex min-h-screen w-full max-w-[1320px] items-center px-4 pb-24 pt-44 sm:px-6 lg:px-8 lg:pb-20">
         <div className="grid w-full grid-cols-1 items-center gap-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(320px,0.9fr)_minmax(340px,0.72fr)]">
           <div className="cd-hero-copy max-w-4xl text-center lg:max-w-[470px] lg:text-left">
@@ -100,34 +92,6 @@ export const Hero: React.FC<HeroProps> = ({ onLogin, onRegister, isLoggedIn, use
             </div>
           </div>
 
-          <div className="cd-arcade-scene mx-auto w-full max-w-[420px] lg:max-w-none">
-            <div className="cd-arcade-screen">
-              <div className="cd-pixel-trophy">
-                <Trophy size={72} />
-              </div>
-              <div className="cd-level-sign">LEVEL<br />UP</div>
-              <div className="cd-player cd-player-left" />
-              <div className="cd-player cd-player-right" />
-              <div className="cd-table-glow" />
-              <div className="cd-spark cd-spark-a"><Sparkles size={18} /></div>
-              <div className="cd-spark cd-spark-b"><Sparkles size={14} /></div>
-            </div>
-            <div className="cd-active-seat cd-active-seat-empty" aria-hidden="true" />
-          </div>
-
-          <div className="mx-auto w-full max-w-[390px] lg:mx-0 lg:justify-self-end">
-            <div className="cd-product-panel p-4 sm:p-5">
-              <div className="cd-product-window cd-product-window-empty overflow-hidden" aria-hidden="true">
-                <div className="cd-empty-panel-grid">
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </section>

@@ -9,6 +9,7 @@
 - Current focus: exact landing/nav/hero, auth, create-game, dashboard/forms, and Nişancı Düellosu polish.
 
 ## Current State
+- Homepage marked components removed locally: the top feature chip strip, center arcade scene, active-seat strip, and right product panel are no longer rendered; those hero regions are intentionally empty.
 - Current stabilization pass done locally: homepage/nav fake CP/store/cafe-entry/demo active-table text removed, auth form skew removed, create-game modal uses page-level scrolling, socket connection overlay only appears after a real connected-to-disconnected transition, and Socket.IO now uses production-tolerant reconnect settings.
 - Latest validation: targeted UI/socket tests passed (6 suites, 60 tests), full `npm.cmd run test:ci` passed (85 suites, 804 tests), `npm.cmd run build` passed, and Edge/Playwright smoke confirmed no unwanted landing text plus desktop/mobile auth panel fits viewport.
 - CI failure fix done locally: npm audit vulnerabilities were resolved with dependency updates/overrides.

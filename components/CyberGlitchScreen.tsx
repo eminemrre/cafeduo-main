@@ -57,7 +57,7 @@ export const CyberGlitchScreen: React.FC<CyberGlitchScreenProps> = ({ isWinner, 
                                     MAĞLUBİYET
                                 </h1>
                                 <p className="mt-4 font-sans text-xl font-bold text-ink-300 border-b-2 border-neon-pink pb-1 uppercase tracking-widest inline-block">
-                                    SİSTEM DIŞI KALDIN
+                                    MAÇ KAYBEDİLDİ
                                 </p>
                             </motion.div>
                         )}

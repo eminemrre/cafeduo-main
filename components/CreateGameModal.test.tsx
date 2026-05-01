@@ -250,8 +250,16 @@ describe('CreateGameModal', () => {
       render(<CreateGameModal {...defaultProps} />);
 
       // Find and click close button (X icon)
-      const closeButton = screen.getByRole('button', { name: '' });
+      const closeButton = screen.getByRole('button', { name: /oyun kurma penceresini kapat/i });
       fireEvent.click(closeButton);
+
+      expect(defaultProps.onClose).toHaveBeenCalled();
+    });
+
+    it('calls onClose when mobile footer close button clicked', () => {
+      render(<CreateGameModal {...defaultProps} />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'KAPAT' }));
 
       expect(defaultProps.onClose).toHaveBeenCalled();
     });

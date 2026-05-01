@@ -2245,9 +2245,9 @@ textarea:focus-visible,
 }
 
 .cd-create-modal {
-  max-height: calc(100dvh - 2rem);
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
+    max-height: min(86dvh, 48rem);
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
   border-radius: 0 !important;
   border-color: rgba(255, 48, 69, 0.58) !important;
   background:
@@ -2277,10 +2277,10 @@ textarea:focus-visible,
 }
 
 .cd-create-modal h3 {
-  font-family: "Press Start 2P", monospace !important;
-  font-size: clamp(1.45rem, 3vw, 2.35rem) !important;
-  line-height: 1.25 !important;
-}
+    font-family: "Press Start 2P", monospace !important;
+    font-size: clamp(1rem, 2vw, 1.45rem) !important;
+    line-height: 1.25 !important;
+  }
 
 .cd-create-modal form {
   display: grid;
@@ -2339,10 +2339,10 @@ textarea:focus-visible,
   }
 }
 
-@media (max-width: 640px) {
+  @media (max-width: 640px) {
   .cd-create-modal {
-    max-height: calc(100dvh - 1rem);
-  }
+      max-height: calc(100dvh - 0.75rem);
+    }
 
   body::before {
     background-size: auto, 22px 22px, 22px 22px, auto, auto, auto;

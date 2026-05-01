@@ -9,6 +9,8 @@
 - Current focus: exact landing/nav/hero, auth, create-game, dashboard/forms, and Nişancı Düellosu polish.
 
 ## Current State
+- Current local fix is ready for deploy: create-game modal is reduced to a compact shell with sticky top close and mobile footer close controls; normal defeat copy now says "MAÇ KAYBEDİLDİ" instead of "system outside" language.
+- Latest local validation for this fix: `npm.cmd test -- CreateGameModal.test.tsx --runInBand` passed and `npm.cmd run build` passed with existing font warnings only.
 - Check-in/create-game UI fixes are deployed: mascot is lifted above the check-in card on all viewport widths, Check-In Gateway strip is visually centered, cafe select dropdown options use dark readable colors, and create-game modal now has a higher overlay z-index plus its own scrollable viewport.
 - Latest Dokploy manual deployment is Done for commit `cd77d87aaabb82478d3e20b8994bfd9c6fceec1b`; `https://cafeduotr.com` now serves the new CSS bundle with the check-in/select/modal fixes, and `/health` plus `/api/readiness` return 200.
 - Homepage marked components removed locally: the top feature chip strip, center arcade scene, active-seat strip, and right product panel are no longer rendered; those hero regions are intentionally empty.

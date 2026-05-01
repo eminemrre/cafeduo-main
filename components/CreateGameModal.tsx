@@ -162,26 +162,31 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="cd-create-layer fixed inset-0 z-[1000] flex h-[100dvh] items-start justify-center overflow-y-auto overscroll-contain px-3 py-4 sm:px-4 sm:py-6">
+    <div className="cd-create-layer fixed inset-0 z-[1000] flex h-[100dvh] items-center justify-center overflow-y-auto overscroll-contain px-3 py-3 sm:px-4 sm:py-5">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/90 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
 
       {/* Modal Content */}
       <div
-        className="cd-create-modal custom-scrollbar relative my-2 w-full max-w-5xl overflow-y-auto bg-[linear-gradient(170deg,rgba(6,13,29,0.98),rgba(8,24,51,0.9))] border-2 border-cyan-400/35 rounded-2xl p-4 sm:my-4 sm:p-6 shadow-[0_0_50px_rgba(10,215,255,0.2)] transform transition-all scale-100 opacity-100"
+        className="cd-create-modal custom-scrollbar relative my-0 w-full max-w-3xl overflow-y-auto bg-[linear-gradient(170deg,rgba(6,13,29,0.98),rgba(8,24,51,0.9))] border-2 border-cyan-400/35 rounded-2xl p-3 sm:p-4 shadow-[0_0_50px_rgba(10,215,255,0.2)] transform transition-all scale-100 opacity-100"
         data-testid="create-game-modal"
       >
 
         {/* Header */}
-        <div className="flex justify-between items-center mb-6 border-b border-cyan-400/20 pb-4">
-          <h3 className="font-pixel text-xl text-white tracking-wider">YENİ OYUN KUR</h3>
-          <button onClick={onClose} className="text-red-300 hover:text-red-200 transition-colors p-1 hover:bg-red-500/10 rounded">
-            <X size={24} />
+        <div className="sticky top-0 z-20 -mx-3 -mt-3 mb-3 flex items-center justify-between border-b border-cyan-400/20 bg-[#06101d]/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:-mt-4 sm:mb-4 sm:px-4">
+          <h3 className="font-pixel text-base text-white tracking-wider sm:text-xl">YENİ OYUN KUR</h3>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Oyun kurma penceresini kapat"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center border border-red-400/50 bg-red-500/10 text-red-200 transition-colors hover:bg-red-500/20 hover:text-white"
+          >
+            <X size={22} />
           </button>
         </div>
 
         {/* Points Info */}
-        <div className="bg-cyan-500/10 border border-cyan-500/30 rounded p-3 mb-6 flex items-center justify-between">
+        <div className="bg-cyan-500/10 border border-cyan-500/30 rounded p-2.5 mb-4 flex items-center justify-between">
           <span className="text-cyan-300 text-sm">Mevcut Puanınız:</span>
           <span className="text-white font-bold text-lg flex items-center gap-1">
             <Trophy size={16} className="text-amber-300" />
@@ -190,21 +195,21 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
 
           {/* Game Type Selection */}
           <div>
-            <label className="block text-cyan-300 font-pixel text-xs mb-3 tracking-widest">
+            <label className="block text-cyan-300 font-pixel text-[11px] mb-2 tracking-widest">
               OYUN TÜRÜ SEÇ
             </label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="cd-game-type-grid custom-scrollbar grid max-h-[34dvh] grid-cols-1 gap-2 overflow-y-auto pr-1 sm:max-h-none sm:grid-cols-3 sm:overflow-visible sm:pr-0">
               {GAME_TYPES.map((game) => (
                 <button
                   key={game.id}
                   type="button"
                   onClick={() => handleGameTypeChange(game.name)}
                   data-testid={`game-type-${game.id}`}
-                  className={`relative group w-full p-4 border-2 rounded-xl transition-all text-left overflow-hidden ${gameType === game.name
+                  className={`relative group w-full p-3 border-2 rounded-xl transition-all text-left overflow-hidden ${gameType === game.name
                       ? 'border-cyan-400 bg-cyan-900/40 shadow-[0_0_20px_rgba(34,211,238,0.4)]'
                       : 'border-cyan-800/40 bg-black/40 hover:border-cyan-500/60 hover:shadow-[0_0_15px_rgba(34,211,238,0.2)]'
                     }`}
@@ -222,7 +227,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                       )}
                     </div>
 
-                    <div className="text-white font-retro text-lg sm:text-lg leading-tight mb-2">
+                    <div className="text-white font-retro text-base sm:text-lg leading-tight mb-1.5">
                       {game.name}
                     </div>
 
@@ -231,7 +236,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                     </div>
 
                     {game.minPoints > 0 && (
-                      <div className="text-amber-300/90 text-xs font-pixel mt-auto pt-2 border-t border-cyan-800/30">
+                      <div className="text-amber-300/90 text-[11px] font-pixel mt-auto pt-2 border-t border-cyan-800/30">
                         MIN {game.minPoints} PUAN
                       </div>
                     )}
@@ -248,12 +253,12 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
 
           {/* Points Input (Energy Bar Style) */}
           <div>
-            <label className="block text-cyan-300 font-pixel text-xs mb-3 tracking-widest flex justify-between">
+            <label className="flex justify-between text-cyan-300 font-pixel text-[11px] mb-2 tracking-widest">
               <span>ENERJİ (PUAN) YATIRIMI</span>
               <span className="text-amber-300">{`${points} / ${maxPoints}`}</span>
             </label>
 
-            <div className="relative p-4 rounded-xl border border-cyan-800/40 bg-[#040a16] shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
+            <div className="relative p-3 rounded-xl border border-cyan-800/40 bg-[#040a16] shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
               <input
                 type="range"
                 min={minPoints}
@@ -272,7 +277,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                   min={minPoints}
                   max={maxPoints}
                   data-testid="game-points-input"
-                  className={`flex-1 bg-black/60 border-2 ${errors.points && touched.points ? 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'border-cyan-500/50 shadow-[0_0_15px_rgba(34,211,238,0.15)]'} text-white p-2 rounded-lg font-pixel text-xl text-center focus:border-cyan-300 focus:shadow-[0_0_15px_rgba(34,211,238,0.4)] outline-none transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50 disabled:cursor-not-allowed`}
+                  className={`flex-1 bg-black/60 border-2 ${errors.points && touched.points ? 'border-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : 'border-cyan-500/50 shadow-[0_0_15px_rgba(34,211,238,0.15)]'} text-white p-2 rounded-lg font-pixel text-lg text-center focus:border-cyan-300 focus:shadow-[0_0_15px_rgba(34,211,238,0.4)] outline-none transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none disabled:opacity-50 disabled:cursor-not-allowed`}
                 />
                 <div className="text-[var(--rf-muted)] text-sm font-pixel pt-1">PUAN</div>
               </div>
@@ -350,21 +355,30 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
             </div>
           </div>
 
-          <RetroButton
-            type="submit"
-            disabled={isSubmitting}
-            data-testid="create-game-submit"
-            className="w-full shadow-blue-900/20 border-blue-400 hover:border-blue-300 disabled:opacity-50"
-          >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center gap-2">
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Oluşturuluyor...
-              </span>
-            ) : (
-              'LOBİYE GÖNDER'
-            )}
-          </RetroButton>
+          <div className="sticky bottom-0 z-20 -mx-3 -mb-3 grid grid-cols-1 gap-2 border-t border-cyan-400/20 bg-[#06101d]/95 px-3 py-3 backdrop-blur sm:-mx-4 sm:-mb-4 sm:grid-cols-[0.38fr_1fr] sm:px-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="min-h-12 border border-red-400/45 bg-black/40 px-4 font-pixel text-xs uppercase tracking-wider text-red-100 transition-colors hover:bg-red-500/15"
+            >
+              KAPAT
+            </button>
+            <RetroButton
+              type="submit"
+              disabled={isSubmitting}
+              data-testid="create-game-submit"
+              className="w-full shadow-blue-900/20 border-blue-400 hover:border-blue-300 disabled:opacity-50"
+            >
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Oluşturuluyor...
+                </span>
+              ) : (
+                'LOBİYE GÖNDER'
+              )}
+            </RetroButton>
+          </div>
         </form>
       </div>
     </div>

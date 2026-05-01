@@ -40,14 +40,16 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
     <div className="min-h-screen rf-page-shell text-[var(--rf-ink)] pt-24 pb-[calc(8rem+env(safe-area-bottom))] px-4 font-sans relative overflow-hidden noise-bg">
       <div className="absolute inset-0 rf-grid opacity-[0.06] pointer-events-none" />
 
-      <div className="relative w-full max-w-md mx-auto">
-        <CyberMascot mood={mascotMood} className="hidden sm:block absolute -top-[70px] right-4 z-10" />
+      <div className="relative w-full max-w-md mx-auto pt-24 sm:pt-28">
+        <div className="absolute left-1/2 top-0 z-[80] -translate-x-1/2">
+          <CyberMascot mood={mascotMood} className="drop-shadow-[0_0_24px_rgba(16,231,255,0.42)]" />
+        </div>
 
-        <div className="w-full rf-screen-card p-6 sm:p-8 relative overflow-hidden rf-elevated">
+        <div className="w-full rf-screen-card p-6 sm:p-8 relative overflow-visible rf-elevated">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-2 bg-gradient-to-r from-transparent via-cyan-400 to-transparent opacity-60 blur-sm" />
 
           <div className="text-center mb-8">
-            <p className="rf-terminal-strip justify-center mb-3">Check-In Gateway</p>
+            <p className="rf-terminal-strip rf-terminal-strip-balanced justify-center mb-3">Check-In Gateway</p>
             <div className="w-16 h-16 bg-black flex items-center justify-center mx-auto mb-4 border-2 border-cyan-400/45 shadow-[4px_4px_0_rgba(255,0,234,0.3)]">
               <MapPin size={32} className="text-cyan-300" />
             </div>
@@ -81,7 +83,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                   value={selectedCafeId || ''}
                   onChange={(event) => setSelectedCafeId(event.target.value)}
                   data-testid="checkin-cafe-select"
-                  className={`${fieldBaseClass} rf-input-icon-double appearance-none cursor-pointer`}
+                  className={`${fieldBaseClass} rf-select rf-input-icon-double appearance-none cursor-pointer`}
                 >
                   {cafes.map((cafe) => (
                     <option key={cafe.id} value={cafe.id}>

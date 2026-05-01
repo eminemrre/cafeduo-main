@@ -162,13 +162,13 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="cd-create-layer fixed inset-0 z-[120] flex min-h-[100dvh] items-start justify-center overflow-y-auto overscroll-contain px-3 py-4 sm:px-4 sm:py-6">
+    <div className="cd-create-layer fixed inset-0 z-[1000] flex h-[100dvh] items-start justify-center overflow-y-auto overscroll-contain px-3 py-4 sm:px-4 sm:py-6">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/90 backdrop-blur-sm transition-opacity" onClick={onClose}></div>
 
       {/* Modal Content */}
       <div
-        className="cd-create-modal relative my-2 w-full max-w-5xl overflow-visible bg-[linear-gradient(170deg,rgba(6,13,29,0.98),rgba(8,24,51,0.9))] border-2 border-cyan-400/35 rounded-2xl p-4 sm:my-4 sm:p-6 shadow-[0_0_50px_rgba(10,215,255,0.2)] transform transition-all scale-100 opacity-100"
+        className="cd-create-modal custom-scrollbar relative my-2 w-full max-w-5xl overflow-y-auto bg-[linear-gradient(170deg,rgba(6,13,29,0.98),rgba(8,24,51,0.9))] border-2 border-cyan-400/35 rounded-2xl p-4 sm:my-4 sm:p-6 shadow-[0_0_50px_rgba(10,215,255,0.2)] transform transition-all scale-100 opacity-100"
         data-testid="create-game-modal"
       >
 

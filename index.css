@@ -351,6 +351,14 @@ body::after {
   box-shadow: 12px 0 0 #00f3ff, 24px 0 0 rgba(0, 243, 255, 0.45);
 }
 
+.rf-terminal-strip-balanced::after {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  visibility: hidden;
+  box-shadow: 12px 0 0 transparent, 24px 0 0 transparent;
+}
+
 .rf-inline-kicker {
   display: inline-flex;
   align-items: center;
@@ -739,6 +747,21 @@ body::after {
   border-color: rgba(56, 189, 248, 0.8);
   box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.3), 0 0 12px rgba(56, 189, 248, 0.1);
   background: rgba(7, 23, 52, 0.94);
+}
+
+.rf-select {
+  color-scheme: dark;
+}
+
+.rf-select option {
+  background: #050608;
+  color: #f6fbff;
+}
+
+.rf-select option:checked,
+.rf-select option:hover {
+  background: #0a6ad8;
+  color: #ffffff;
 }
 
 .rf-control {
@@ -2222,6 +2245,9 @@ textarea:focus-visible,
 }
 
 .cd-create-modal {
+  max-height: calc(100dvh - 2rem);
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   border-radius: 0 !important;
   border-color: rgba(255, 48, 69, 0.58) !important;
   background:
@@ -2314,6 +2340,10 @@ textarea:focus-visible,
 }
 
 @media (max-width: 640px) {
+  .cd-create-modal {
+    max-height: calc(100dvh - 1rem);
+  }
+
   body::before {
     background-size: auto, 22px 22px, 22px 22px, auto, auto, auto;
   }

@@ -9,7 +9,8 @@
 - Current focus: exact landing/nav/hero, auth, create-game, dashboard/forms, and Nişancı Düellosu polish.
 
 ## Current State
-- Check-in/create-game UI fixes are local: mascot is lifted above the check-in card on all viewport widths, Check-In Gateway strip is visually centered, cafe select dropdown options use dark readable colors, and create-game modal now has a higher overlay z-index plus its own scrollable viewport.
+- Check-in/create-game UI fixes are deployed: mascot is lifted above the check-in card on all viewport widths, Check-In Gateway strip is visually centered, cafe select dropdown options use dark readable colors, and create-game modal now has a higher overlay z-index plus its own scrollable viewport.
+- Latest Dokploy manual deployment is Done for commit `cd77d87aaabb82478d3e20b8994bfd9c6fceec1b`; `https://cafeduotr.com` now serves the new CSS bundle with the check-in/select/modal fixes, and `/health` plus `/api/readiness` return 200.
 - Homepage marked components removed locally: the top feature chip strip, center arcade scene, active-seat strip, and right product panel are no longer rendered; those hero regions are intentionally empty.
 - Current stabilization pass done locally: homepage/nav fake CP/store/cafe-entry/demo active-table text removed, auth form skew removed, create-game modal uses page-level scrolling, socket connection overlay only appears after a real connected-to-disconnected transition, and Socket.IO now uses production-tolerant reconnect settings.
 - Latest validation: targeted UI/socket tests passed (6 suites, 60 tests), full `npm.cmd run test:ci` passed (85 suites, 804 tests), `npm.cmd run build` passed, and Edge/Playwright smoke confirmed no unwanted landing text plus desktop/mobile auth panel fits viewport.

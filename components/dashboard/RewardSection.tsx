@@ -78,10 +78,10 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
   const [selectedCoupon, setSelectedCoupon] = useState<RedeemedReward | null>(null);
 
   return (
-    <div className="border-2 border-carbon bg-paper riso-shadow-md p-4 sm:p-6">
+    <div className="duo-card border border-carbon/20 bg-paper p-4 sm:p-6">
       {/* Tab + balance header */}
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex border-2 border-carbon self-start">
+        <div className="duo-reward-tabs flex self-start">
           <button
             type="button"
             onClick={() => onTabChange('shop')}
@@ -138,7 +138,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                     style={{ transform: `rotate(${rotate}deg)` }}
                   >
                     <div
-                      className={`relative flex min-h-[200px] flex-col justify-between border-2 border-carbon p-4 sm:p-5 transition-colors ${
+                      className={`duo-card relative flex min-h-[200px] flex-col justify-between border border-carbon/20 p-4 sm:p-5 transition-colors ${
                         affordable ? 'bg-paper riso-shadow-sm' : 'bg-paper-deep opacity-65'
                       }`}
                     >

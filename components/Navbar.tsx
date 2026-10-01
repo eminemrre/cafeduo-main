@@ -1,18 +1,9 @@
-/**
- * Navbar — Riso Kantin redesign (PR #24).
- *
- * Fixed top nav. Bordered paper bar with offset shadow + pinned at the top
- * with subtle backdrop blur over scrolled content. Brand mark is an
- * ink-bordered pink chip; menu items use the printed-zine type system.
- *
- * Handler signatures + data-testid attributes preserved (logout-button).
- */
-import React, { useEffect, useState } from 'react';
+/** Floating CafeDuo navigation; touch targets and native keyboard controls. */
+import React, { useEffect, useState, useRef } from 'react';
 import { Bell, Menu, X, Coffee, LogOut, ChevronRight, Wallet, Store } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NAV_ITEMS } from '../constants';
-import { BUILD_META } from '../lib/buildMeta';
 import type { User } from '../types';
 
 interface NavbarProps {
@@ -23,15 +14,26 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogout }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const menuToggleRef = useRef<HTMLButtonElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const isHomePage = location.pathname === '/';
   const isBusinessPage = location.pathname === '/kafeler';
 
   useEffect(() => {
-    document.body.style.overflow = isOpen ? 'hidden' : '';
+    if (!isOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+        menuToggleRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', closeOnEscape);
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', closeOnEscape);
     };
   }, [isOpen]);
 
@@ -57,34 +59,25 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
 
   return (
     <>
-      <nav
-        className="riso-kantin fixed left-1/2 top-4 z-[100] w-[96%] max-w-[1320px] -translate-x-1/2 transition-transform duration-300"
-        role="navigation"
-        aria-label="Ana navigasyon"
-      >
-        <div className="flex items-center justify-between gap-4 border-2 border-carbon bg-paper/95  px-4 py-2.5 md:px-5 md:py-3 riso-shadow-sm">
-          <div
-            className="flex cursor-pointer items-center gap-2.5 transition-opacity hover:opacity-85"
+      <nav className="duo-nav riso-kantin" role="navigation" aria-label="Ana navigasyon">
+        <div className="duo-nav-bar">
+          <button
+            type="button"
+            className="duo-brand riso-focus transition-opacity hover:opacity-85"
             onClick={() => {
               if (isLoggedIn) navigate('/dashboard');
               else scrollToSection('home');
             }}
-            role="button"
-            tabIndex={0}
             aria-label="Ana sayfa"
-            onKeyDown={(event) =>
-              event.key === 'Enter' &&
-              (isLoggedIn ? navigate('/dashboard') : scrollToSection('home'))
-            }
           >
-            <div className="flex h-9 w-9 items-center justify-center border-2 border-carbon bg-riso-pink text-carbon">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-carbon bg-riso-pink text-carbon">
               <Coffee size={18} strokeWidth={2.5} />
             </div>
             <span className="font-riso-display text-lg sm:text-xl font-bold text-carbon">
               Cafe<span className="text-riso-pink-deep">Duo</span>
               <span className="sr-only">CafeDuo</span>
             </span>
-          </div>
+          </button>
 
           <div className="hidden items-center gap-2 md:flex">
             {!isLoggedIn ? (
@@ -93,7 +86,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                   <button
                     key={item.id}
                     onClick={() => scrollToSection(item.id)}
-                    className="riso-focus px-3 py-2 font-riso-body text-xs font-bold uppercase tracking-[0.1em] text-carbon-soft transition-colors hover:text-riso-pink-deep"
+                    className="duo-nav-link riso-focus"
                   >
                     {item.label}
                   </button>
@@ -101,7 +94,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                 <button
                   onClick={goToBusiness}
                   aria-current={isBusinessPage ? 'page' : undefined}
-                  className={`riso-focus inline-flex items-center gap-1.5 border-2 border-carbon px-3 py-1.5 font-riso-body text-xs font-bold uppercase tracking-[0.1em] transition-all ${
+                  className={`duo-nav-link duo-nav-business riso-focus transition-all ${
                     isBusinessPage
                       ? 'bg-riso-mustard text-carbon riso-shadow-sm'
                       : 'bg-paper text-carbon hover:bg-riso-mustard hover:translate-x-[-1px] hover:translate-y-[-1px]'
@@ -134,20 +127,15 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                 </button>
               </div>
             )}
-            <span
-              className="ml-2 hidden font-riso-mono text-[10px] uppercase tracking-widest text-carbon-muted lg:block"
-              title={BUILD_META.buildTime !== 'unknown' ? `Build: ${BUILD_META.buildTime}` : ''}
-            >
-              V-{BUILD_META.shortVersion}
-            </span>
           </div>
 
           <button
+            ref={menuToggleRef}
             onClick={() => setIsOpen(!isOpen)}
             aria-expanded={isOpen}
             aria-controls="mobile-menu"
             aria-label={isOpen ? 'Menüyü kapat' : 'Menüyü aç'}
-            className="riso-focus flex h-10 w-10 items-center justify-center border-2 border-carbon bg-paper text-carbon transition-colors hover:bg-paper-deep md:hidden"
+            className="duo-menu-toggle riso-focus md:hidden"
           >
             {isOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
@@ -162,7 +150,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.15 }}
-            className="riso-kantin fixed left-4 right-4 top-20 z-[90] border-2 border-carbon bg-paper p-5 riso-shadow-md md:hidden"
+            className="duo-mobile-menu riso-kantin md:hidden"
             aria-hidden={false}
           >
             <div className="flex flex-col gap-3">

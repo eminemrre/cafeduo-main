@@ -297,7 +297,7 @@ describe('Dashboard Integration', () => {
       renderDashboard();
 
       expect(screen.getByTestId('game-section')).toBeInTheDocument();
-      expect(screen.getAllByText('OYUNLAR')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('Oyunlar')[0]).toBeInTheDocument();
     });
 
     it('renders reward section', () => {
@@ -331,7 +331,7 @@ describe('Dashboard Integration', () => {
     it('switches to leaderboard tab', () => {
       renderDashboard();
 
-      fireEvent.click(screen.getAllByText('SIRALAMA')[0]);
+      fireEvent.click(screen.getAllByText('Sıralama')[0]);
 
       expect(screen.getByTestId('leaderboard')).toBeInTheDocument();
       expect(screen.queryByTestId('game-section')).not.toBeInTheDocument();
@@ -340,7 +340,7 @@ describe('Dashboard Integration', () => {
     it('switches to achievements tab', () => {
       renderDashboard();
 
-      fireEvent.click(screen.getAllByText('BAŞARI')[0]);
+      fireEvent.click(screen.getAllByText('Başarılar')[0]);
 
       expect(screen.getByTestId('achievements')).toBeInTheDocument();
       expect(screen.getByText('Başarımlar - Kullanıcı #1')).toBeInTheDocument();
@@ -350,11 +350,11 @@ describe('Dashboard Integration', () => {
       renderDashboard();
 
       // First go to leaderboard
-      fireEvent.click(screen.getAllByText('SIRALAMA')[0]);
+      fireEvent.click(screen.getAllByText('Sıralama')[0]);
       expect(screen.getByTestId('leaderboard')).toBeInTheDocument();
 
       // Then go back to games
-      fireEvent.click(screen.getAllByText('OYUNLAR')[0]);
+      fireEvent.click(screen.getAllByText('Oyunlar')[0]);
       expect(screen.getByTestId('game-section')).toBeInTheDocument();
     });
   });

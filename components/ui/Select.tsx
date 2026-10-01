@@ -65,7 +65,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
             hasError ? `${fieldId}-err` : helperText ? `${fieldId}-help` : undefined
           }
           className={[
-            'block w-full appearance-none font-riso-body text-base text-carbon',
+            'duo-input block w-full appearance-none font-riso-body text-base text-carbon',
             'bg-paper border-2 border-carbon',
             'pl-3.5 pr-10 py-2.5',
             'riso-focus',

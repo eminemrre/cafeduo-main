@@ -82,7 +82,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
 
   return (
     <div
-      className="riso-kantin-app relative min-h-screen overflow-hidden px-4 py-16 sm:py-20"
+      className="duo-checkin riso-kantin-app relative min-h-screen overflow-hidden px-4"
       data-testid="cafe-selection-shell"
     >
       {/* Decorative riso confetti — subtle, behind everything */}
@@ -103,9 +103,9 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
           className="mb-8 text-center"
         >
           <p className="mb-3 inline-block font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
-            // Check-In Gateway
+            Oyuna bir adım kaldı
           </p>
-          <h1 className="riso-squiggle mb-2 inline-block font-riso-display text-5xl leading-none text-carbon sm:text-6xl">
+          <h1 className="duo-checkin-heading mb-2 inline-block font-riso-display text-carbon">
             Kafeye Giriş
           </h1>
           <p className="mt-3 text-sm text-carbon-muted">
@@ -118,7 +118,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: 'easeOut', delay: 0.1 }}
         >
-          <Card tone="paper" shadow="md" data-testid="cafe-selection-card">
+          <Card tone="paper" shadow="md" halftone={false} data-testid="cafe-selection-card">
             {/* Error banner */}
             {error && (
               <div

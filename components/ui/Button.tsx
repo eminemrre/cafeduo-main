@@ -62,7 +62,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       disabled={disabled}
       className={[
         // Base
-        'relative inline-flex items-center justify-center',
+        'duo-button relative inline-flex items-center justify-center',
         'font-riso-body font-semibold tracking-wide',
         'border-2 border-carbon',
         'transition-[box-shadow,transform,background-color] duration-150 ease-out',

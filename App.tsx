@@ -5,7 +5,6 @@ import { Hero } from './components/Hero';
 import { HowItWorks } from './components/HowItWorks';
 import { About } from './components/About';
 import { Footer } from './components/Footer';
-import { CursorInk } from './components/ui';
 import { AuthModal } from './components/AuthModal';
 
 import { User } from './types';
@@ -69,9 +68,9 @@ interface ProtectedRouteProps {
 // Page Transition Wrapper
 const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <motion.div
-    initial={{ opacity: 0, filter: 'blur(8px)', y: 10 }}
-    animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
-    exit={{ opacity: 0, filter: 'blur(8px)', y: -10 }}
+    initial={{ opacity: 1 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
     transition={{ duration: 0.3, ease: 'easeOut' }}
     className="h-full w-full"
   >
@@ -241,12 +240,13 @@ const AppContent: React.FC = () => {
       };
       updateUser(updatedUser);
       setHasSessionCheckIn(true);
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       navigate('/dashboard');
     }
   };
 
   return (
-    <div className="riso-kantin riso-kantin-app min-h-screen font-riso-body selection:bg-riso-pink selection:text-carbon">
+    <div className="duo-app riso-kantin riso-kantin-app min-h-screen font-riso-body selection:bg-riso-pink selection:text-carbon">
       <Navbar isLoggedIn={!!user} user={user} onLogout={handleLogout} />
 
       <main>
@@ -353,10 +353,6 @@ const AppContent: React.FC = () => {
       </main>
 
       <Footer />
-
-      {['/', '/kafeler', '/gizlilik', '/reset-password'].includes(location.pathname) && (
-        <CursorInk />
-      )}
 
       <AuthModal
         isOpen={isAuthOpen}

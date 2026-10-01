@@ -6,12 +6,8 @@ describe('Games', () => {
   it('renders featured games and supporting highlights', () => {
     render(<Games />);
 
-    expect(
-      screen.getByTestId('games-main-heading')
-    ).toBeInTheDocument();
-    expect(screen.getByTestId('games-main-heading')).toHaveTextContent(
-      'Bekleme dakikalarını oyuna çeviren kısa tur kütüphanesi.'
-    );
+    expect(screen.getByTestId('games-main-heading')).toBeInTheDocument();
+    expect(screen.getByTestId('games-main-heading')).toHaveTextContent('Bugün hangi moddasın?');
 
     expect(screen.getByText('Retro Satranç')).toBeInTheDocument();
     expect(screen.getByText('Bilgi Sprinti')).toBeInTheDocument();

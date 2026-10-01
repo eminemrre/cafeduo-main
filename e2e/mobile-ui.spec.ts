@@ -33,6 +33,8 @@ test.describe('Mobile UI Stability', () => {
       await expect(authInput).toBeVisible();
     }
 
+    await page.getByRole('button', { name: 'Kapat', exact: true }).click();
+
     // Akış kartları mobilde kaybolmamalı: 3 adım da görünür olmalı.
     const flowHeading = page.locator('[data-testid="flow-main-heading"]');
     await flowHeading.scrollIntoViewIfNeeded();
@@ -60,6 +62,9 @@ test.describe('Mobile UI Stability', () => {
     });
 
     await expect(page.locator('[data-testid="dashboard-tab-games"]')).toBeVisible();
+    for (const label of ['Oyunlar', 'Sıralama', 'Başarılar']) {
+      await expect(page.getByRole('button', { name: label, exact: true }).getByText(label)).toBeVisible();
+    }
     await expect(page.locator('[data-testid="user-points"]')).toBeVisible();
     await expect(page.getByRole('button', { name: /Oyun Kur/i })).toBeEnabled();
 
@@ -67,7 +72,7 @@ test.describe('Mobile UI Stability', () => {
     const menuButton = page.getByRole('button', { name: /Menüyü aç|Menüyü kapat/i }).first();
     await expect(menuButton).toBeVisible();
     await menuButton.click();
-    await expect(page.getByText('MENÜ')).toBeVisible();
+    await expect(page.getByText('Menü', { exact: true })).toBeVisible();
     await menuButton.click();
 
     // Tab geçişleri mobilde çalışmalı.

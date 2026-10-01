@@ -29,7 +29,7 @@ export const Footer: React.FC = () => {
 
   return (
     <footer
-      className="riso-kantin relative mt-8 border-t-2 border-carbon bg-paper-deep"
+      className="duo-footer riso-kantin relative mt-8 border-t-2 border-carbon bg-paper-deep"
       role="contentinfo"
     >
       {/* Halftone strip across the footer */}
@@ -52,8 +52,7 @@ export const Footer: React.FC = () => {
               <span className="font-riso-display text-3xl text-carbon">CafeDuo</span>
             </div>
             <p className="mt-3 font-riso-body text-sm leading-6 text-carbon-soft">
-              Kafede bekleyen kullanıcıları eşleştirip oyun ve ödül döngüsüne bağlayan sosyal
-              deneyim altyapısı.
+              Kahve molana oyun, yeni karşılaşmalar ve güzel ödüller ekle.
             </p>
             <p className="mt-4 font-riso-mono text-[0.7rem] tracking-wider uppercase text-carbon-muted">
               © {year} tüm hakları saklıdır

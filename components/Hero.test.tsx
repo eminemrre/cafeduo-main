@@ -21,11 +21,12 @@ describe('Hero', () => {
     expect(squares.every((square) => square.getAttribute('aria-hidden') === 'true')).toBe(true);
   });
 
-  it('renders the XPatla-inspired slogan', () => {
+  it('renders the CafeDuo headline', () => {
     render(<Hero onLogin={jest.fn()} onRegister={jest.fn()} isLoggedIn={false} />);
 
-    expect(screen.getByText(/Kafede oyun oynamak artık/i)).toBeInTheDocument();
-    expect(screen.getByText('kolay.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
+      'Kahve hazır. Oyun başlasın.'
+    );
   });
 
   it('renders logged-out CTAs and triggers register/login callbacks', () => {

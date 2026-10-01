@@ -48,8 +48,7 @@ jobs:
           [[ "$DEPLOY_USER" =~ ^[a-zA-Z0-9_-]+$ ]]
           [[ "${DEPLOY_PORT:-22}" =~ ^[0-9]+$ ]]
           install -d -m 700 ~/.ssh
-          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
+          python3 deploy/scripts/prepare-ssh-key.py ~/.ssh/deploy_key
           install -m 600 deploy/ssh_known_hosts ~/.ssh/known_hosts
           ssh-keygen -F "$DEPLOY_HOST" -f ~/.ssh/known_hosts >/dev/null
           cat > ~/.ssh/config <<CONFIG

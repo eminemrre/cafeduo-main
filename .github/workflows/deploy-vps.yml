@@ -17,9 +17,9 @@ concurrency:
 jobs:
   deploy:
     if: (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
-      image: mcr.microsoft.com/playwright:v1.58.1-jammy
+      image: mcr.microsoft.com/playwright:v1.58.1-noble
     defaults:
       run:
         shell: bash

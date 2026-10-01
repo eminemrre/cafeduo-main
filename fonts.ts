@@ -23,6 +23,7 @@ import '@fontsource/ibm-plex-mono/400.css';
 import '@fontsource/ibm-plex-mono/500.css';
 import '@fontsource/ibm-plex-mono/700.css';
 import '@fontsource-variable/fraunces';
+import '@fontsource-variable/fraunces/wght-italic.css';
 import '@fontsource-variable/dm-sans';
 import '@fontsource-variable/unbounded';
 import '@fontsource/familjen-grotesk/400.css';

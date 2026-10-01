@@ -59,7 +59,11 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
 
   return (
     <>
-      <nav className="duo-nav riso-kantin" role="navigation" aria-label="Ana navigasyon">
+      <nav
+        className={`duo-nav ${isHomePage ? 'club-nav' : ''} riso-kantin`}
+        role="navigation"
+        aria-label="Ana navigasyon"
+      >
         <div className="duo-nav-bar">
           <button
             type="button"

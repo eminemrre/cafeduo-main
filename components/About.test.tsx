@@ -3,19 +3,16 @@ import { render, screen } from '@testing-library/react';
 import { About } from './About';
 
 describe('About', () => {
-  it('renders player benefits and cafe positioning', () => {
+  it('explains the same-cafe games and cafe-defined rewards', () => {
     render(<About />);
-
-    expect(screen.getByTestId('about-main-heading')).toBeInTheDocument();
     expect(screen.getByTestId('about-main-heading')).toHaveTextContent(
-      'Biraz rekabet. Bolca iyi vakit.'
+      'Bir sonraki masada kim var?'
     );
-
-    expect(screen.getByText('Anlık Eşleşme')).toBeInTheDocument();
-    expect(screen.getByText('Kısa Tur Dinamiği')).toBeInTheDocument();
-    expect(screen.getByText('Güvenli Giriş')).toBeInTheDocument();
-    expect(screen.getByText('Ödül Döngüsü')).toBeInTheDocument();
-
-    expect(screen.getByText(/Yeni bir buluşma sebebi/)).toBeInTheDocument();
+    expect(screen.getByText(/aynı kafedeki açık oyunları/)).toBeInTheDocument();
+    expect(screen.getByText(/ödülleri kafen belirler/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Hesaptan ilk oyuna/ })).toHaveAttribute(
+      'href',
+      '#features'
+    );
   });
 });

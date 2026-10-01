@@ -6,9 +6,7 @@ describe('HowItWorks', () => {
   it('renders three-step flow in the correct order', () => {
     render(<HowItWorks />);
 
-    expect(screen.getByTestId('flow-main-heading')).toHaveTextContent(
-      '3 adımda eşleş, oyna, ödüle yaklaş.'
-    );
+    expect(screen.getByTestId('flow-main-heading')).toHaveTextContent('Masaya nasıl oturulur?');
 
     expect(screen.getAllByText('Hesabını aç').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Kafeye bağlan').length).toBeGreaterThan(0);

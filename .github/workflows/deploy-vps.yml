@@ -18,24 +18,21 @@ jobs:
   deploy:
     if: (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository)
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.1-jammy
+    defaults:
+      run:
+        shell: bash
     timeout-minutes: 45
     environment: production
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
-          node-version: 22
-          cache: npm
-      - run: npm ci
-      - name: Validate dependencies and application
-        run: npm run verify
-      - name: Verify smoke flows before deployment
-        run: |
-          npx playwright install --with-deps chromium
-          npm run test:e2e:smoke -- --reporter=line
-      - name: Configure pinned SSH connection
+          python-version: '3.12'
+      - name: Verify pinned SSH connection
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
@@ -61,6 +58,18 @@ jobs:
             StrictHostKeyChecking yes
             BatchMode yes
           CONFIG
+          ssh -o ConnectTimeout=15 production true
+          echo "[deploy] SSH authentication verified."
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Validate dependencies and application
+        run: npm run verify
+      - name: Verify smoke flows before deployment
+        run: |
+          npm run test:e2e:smoke -- --reporter=line
       - name: Transfer the verified source and deploy
         env:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
@@ -79,8 +88,15 @@ jobs:
         env:
           PRODUCTION_URL: ${{ vars.PRODUCTION_URL || 'https://cafeduotr.com' }}
         run: |
-          sha="$(git rev-parse HEAD)"
-          curl --fail --silent --show-error "$PRODUCTION_URL/api/readiness" | jq -e --arg sha "$sha" '.status == "ready" and .version == $sha and .checks.database == true and .checks.redis.ready == true'
+          EXPECTED_SHA="$(git rev-parse HEAD)" python3 - <<'PYVERIFY'
+          import json,os,urllib.request
+          url=os.environ['PRODUCTION_URL'].rstrip('/')+'/api/readiness'
+          with urllib.request.urlopen(url,timeout=20) as response:
+              body=json.load(response)
+          assert body['status']=='ready' and body['version']==os.environ['EXPECTED_SHA']
+          assert body['checks']['database'] is True and body['checks']['redis']['ready'] is True
+          print('[deploy] Public deployed revision and readiness verified.')
+          PYVERIFY
       - name: Upload verification evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7

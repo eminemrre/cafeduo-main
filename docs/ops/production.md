@@ -11,6 +11,11 @@ CafeDuo runs at `https://cafeduotr.com` on a standalone Docker Compose stack nam
 lint, type, unit, build and Chromium smoke checks, pins the SSH host key, transfers
 that exact Git revision, and executes `deploy/scripts/deploy-production.sh`.
 Production deployments are serialized in GitHub and with a server-side file lock.
+The job verifies SSH authentication with a read-only command before dependency
+installation and tests. Browser checks use the official Playwright container
+matching the locked test version (currently 1.58.1), with browsers and operating
+system dependencies already installed. Keep that container version in sync when
+updating Playwright. Python 3.12 is explicitly provisioned; shell steps use Bash.
 
 Configure the `production` GitHub environment with `DEPLOY_HOST`, `DEPLOY_USER`,
 `DEPLOY_SSH_KEY`, optionally `DEPLOY_PORT` (22) and `DEPLOY_PATH`

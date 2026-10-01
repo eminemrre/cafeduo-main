@@ -286,7 +286,6 @@ export const bootstrapAuthenticatedPage = async (
     : baseUser;
   const root = normalizeBaseUrl(baseURL);
   const rootUrl = new URL(root);
-  await page.goto(root);
 
   await page.context().addCookies([
     {
@@ -309,8 +308,13 @@ export const bootstrapAuthenticatedPage = async (
     },
   ]);
 
-  await page.evaluate(
+  // Seed storage before the first navigation so an anonymous auth/me request
+  // cannot clear the newly installed session while bootstrap reloads.
+  await page.addInitScript(
     ({ userData, checkedIn }) => {
+      const marker = `cafeduo_e2e_bootstrap_${userData.id}_${checkedIn}`;
+      if (sessionStorage.getItem(marker)) return;
+      sessionStorage.setItem(marker, '1');
       localStorage.setItem('cafe_user', JSON.stringify(userData));
       localStorage.setItem('cookie_consent', 'true');
       if (checkedIn) {
@@ -322,8 +326,6 @@ export const bootstrapAuthenticatedPage = async (
       checkedIn: Boolean(options.checkedIn),
     }
   );
-  // Session restore effect'i cookie + local cache ile çalıştığı için reload gerekir.
-  await page.reload();
   await page.goto(`${root}/dashboard`);
 
   // App initially redirects to "/" while async session restore runs.

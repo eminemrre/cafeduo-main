@@ -30,7 +30,12 @@ test.describe('Public Landing Pages', () => {
     await page.goto(root);
 
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await expect(page.locator('[data-testid="footer-version-pill"]').first()).toBeVisible();
+    const versionPill = page.locator('[data-testid="footer-version-pill"]').first();
+    await expect(versionPill).toBeVisible();
+    const version = await page.locator('meta[name="cafeduo:app-version"]').getAttribute('content');
+    expect(version).toBeTruthy();
+    const shortVersion = /^[a-f0-9]{8,}$/i.test(version!) ? version!.slice(0, 7) : version!.slice(0, 12);
+    await expect(versionPill).toContainText(shortVersion);
     await expect(page.getByRole('link', { name: 'Instagram' }).first()).toHaveAttribute(
       'href',
       /instagram\.com/

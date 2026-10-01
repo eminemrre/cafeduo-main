@@ -79,6 +79,11 @@ export default defineConfig(({ mode }) => {
       }),
     ],
     define: {
+      __CAFE_VITE_ENV__: JSON.stringify({
+        ...Object.fromEntries(Object.entries(_env).filter(([key]) => key.startsWith('VITE_'))),
+        VITE_APP_VERSION: buildVersion,
+        VITE_BUILD_TIME: buildTime,
+      }),
       'import.meta.env.VITE_APP_VERSION': JSON.stringify(buildVersion),
       'import.meta.env.VITE_BUILD_TIME': JSON.stringify(buildTime),
     },

@@ -28,6 +28,7 @@ services:
       retries: 5
 
   api:
+    image: 'cafeduo-api:${APP_VERSION:-local}'
     build:
       context: ..
       dockerfile: Dockerfile
@@ -67,19 +68,16 @@ services:
       SENTRY_DSN: '${SENTRY_DSN:-}'
       BOOTSTRAP_ADMIN_EMAILS: '${BOOTSTRAP_ADMIN_EMAILS:-}'
       BOOTSTRAP_ADMIN_PASSWORD: '${BOOTSTRAP_ADMIN_PASSWORD:-}'
-      # PR #36+ — password reset via Resend HTTPS API. The deploy workflow
-      # writes these into .env so docker compose --env-file picks them up
-      # when substituting here. Without these lines the container never saw
-      # the API key and the email service silently fell back to log-only.
+      # Email credentials come from the server-managed environment.
       RESEND_API_KEY: '${RESEND_API_KEY:-}'
       RESEND_FROM: '${RESEND_FROM:-CafeDuo <noreply@cafeduotr.com>}'
-      # Surfaces pg error metadata in 500 responses while we're debugging.
-      # Temporary — remove once the wheel/email issues are confirmed resolved.
+      # Keep internal database error details out of public responses.
       EXPOSE_API_ERRORS: '${EXPOSE_API_ERRORS:-false}'
     expose:
       - '3001'
 
   web:
+    image: 'cafeduo-web:${APP_VERSION:-local}'
     build:
       context: ..
       dockerfile: Dockerfile.web
@@ -97,6 +95,13 @@ services:
 
   caddy:
     image: caddy:2-alpine
+    mem_limit: 128m
+    cpus: 0.5
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
     restart: unless-stopped
     depends_on:
       - web

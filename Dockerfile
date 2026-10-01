@@ -3,7 +3,7 @@
 # ==========================================
 
 # Stage 1: Dependencies
-FROM node:20-alpine AS dependencies
+FROM node:22-alpine AS dependencies
 
 WORKDIR /app
 
@@ -11,10 +11,10 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install production dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Stage 2: Build (for TypeScript if we migrate later)
-FROM node:20-alpine AS build
+FROM node:22-alpine AS build
 
 WORKDIR /app
 
@@ -24,7 +24,7 @@ RUN npm ci
 COPY . .
 
 # Stage 3: Production
-FROM node:20-alpine AS production
+FROM node:22-alpine AS production
 
 # Security: Create non-root user
 RUN addgroup -g 1001 -S nodejs && \

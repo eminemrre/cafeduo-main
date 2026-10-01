@@ -20,6 +20,15 @@ Never store passwords or private keys in the repository. The checked-in
 `deploy/ssh_known_hosts` was verified against the running server; replace it only
 after verifying a deliberate host-key change through an independent channel.
 
+The SSH preparation step accepts the complete private key copied from its file,
+including CRLF, escaped newlines, flattened whitespace, JSON quoting or base64
+encoding of the entire file. It reconstructs line wrapping and validates the
+result with OpenSSH before any connection. It never prints private key material.
+Missing headers, truncated keys and passphrase-protected keys fail with a clear
+message; formatting normalization cannot recover missing key data. CI tests use
+disposable generated keys and verify that the public key is unchanged and the
+private file permissions are 600.
+
 The application environment stays on the server in `/opt/cafeduo-main/.env` with
 mode 600. Releases live in `/opt/cafeduo-releases/<commit>`; successful releases
 are recorded in `/var/lib/cafeduo/current-source`, `current-commit` and

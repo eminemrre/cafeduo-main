@@ -45,6 +45,9 @@ jobs:
       - name: Run security audit (allowlist gate)
         run: node scripts/automation/audit-gate.mjs
 
+      - name: Validate deployment SSH key handling
+        run: python3 -m unittest discover -s deploy/scripts -p 'test_*.py' -v
+
       - name: Lint & Typecheck
         run: npm run quality
 

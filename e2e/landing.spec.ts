@@ -2,6 +2,22 @@ import { test, expect } from '@playwright/test';
 import { DEFAULT_E2E_APP_BASE_URL } from './helpers/session';
 
 test.describe('Public Landing Pages', () => {
+  test('@smoke loads the self-hosted brand fonts with Turkish characters', async ({ page, baseURL }) => {
+    await page.goto(baseURL || DEFAULT_E2E_APP_BASE_URL);
+    const fonts = await page.evaluate(async () => {
+      const families = ['Familjen Grotesk', 'Unbounded Variable', 'JetBrains Mono Variable'];
+      return Promise.all(families.map(async (family) => {
+        const faces = await document.fonts.load(`400 16px "${family}"`, 'CafeDuo ıİşŞğĞçÇöÖüÜ');
+        return { family, loaded: faces.length > 0 && faces.every((face) => face.status === 'loaded') };
+      }));
+    });
+    expect(fonts).toEqual([
+      { family: 'Familjen Grotesk', loaded: true },
+      { family: 'Unbounded Variable', loaded: true },
+      { family: 'JetBrains Mono Variable', loaded: true },
+    ]);
+  });
+
   test('@smoke renders the home hero with CTA actions', async ({ page, baseURL }) => {
     const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     await page.goto(root);

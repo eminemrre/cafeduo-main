@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router';
 import * as Sentry from '@sentry/react';
 import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import './fonts';
 import './index.css';
 
 // Initialize Sentry for frontend error tracking

@@ -53,12 +53,14 @@ jobs:
             HostName $DEPLOY_HOST
             User $DEPLOY_USER
             Port ${DEPLOY_PORT:-22}
-            IdentityFile ~/.ssh/deploy_key
+            IdentityFile $HOME/.ssh/deploy_key
+            UserKnownHostsFile $HOME/.ssh/known_hosts
             IdentitiesOnly yes
             StrictHostKeyChecking yes
             BatchMode yes
           CONFIG
-          ssh -o ConnectTimeout=15 production true
+          chmod 600 ~/.ssh/config
+          ssh -F "$HOME/.ssh/config" -o ConnectTimeout=15 production true
           echo "[deploy] SSH authentication verified."
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
@@ -81,9 +83,9 @@ jobs:
           [[ "$PRODUCTION_URL" =~ ^https://[a-zA-Z0-9.-]+$ ]]
           sha="$(git rev-parse HEAD)"
           release="/opt/cafeduo-releases/$sha"
-          ssh production "umask 077; mkdir -p '$release'"
-          git archive HEAD | ssh production "tar -xf - -C '$release'"
-          ssh production "bash '$release/deploy/scripts/deploy-production.sh' '$path' '$sha' '$PRODUCTION_URL'"
+          ssh -F "$HOME/.ssh/config" production "umask 077; mkdir -p '$release'"
+          git archive HEAD | ssh -F "$HOME/.ssh/config" production "tar -xf - -C '$release'"
+          ssh -F "$HOME/.ssh/config" production "bash '$release/deploy/scripts/deploy-production.sh' '$path' '$sha' '$PRODUCTION_URL'"
       - name: Verify the public deployed revision
         env:
           PRODUCTION_URL: ${{ vars.PRODUCTION_URL || 'https://cafeduotr.com' }}

@@ -1,0 +1,464 @@
+/* CafeDuo identity: component styles, never broad legacy element overrides. */
+html {
+  background: #fbf7ee;
+  scroll-padding-top: 7rem;
+}
+body {
+  image-rendering: auto;
+}
+.duo-app {
+  isolation: isolate;
+}
+.duo-app main {
+  min-width: 0;
+}
+.duo-button {
+  min-height: 44px;
+  border-radius: 11px;
+  border-width: 1.5px;
+  letter-spacing: 0;
+  box-shadow: 0 3px 0 #141413;
+}
+.duo-button:hover {
+  transform: translateY(-2px);
+}
+.duo-button:active {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 #141413;
+}
+.duo-card {
+  border-radius: 18px;
+  border-width: 1px;
+  border-color: #14141330;
+}
+.duo-input {
+  border-radius: 10px;
+  border-width: 1px;
+  min-height: 48px;
+}
+.duo-nav {
+  position: fixed;
+  z-index: 100;
+  top: max(18px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(1280px, calc(100% - 48px));
+}
+.duo-nav-bar {
+  border: 1px solid #14141325;
+  background: #fbf7eeef;
+  backdrop-filter: blur(14px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 13px 20px;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px #14141308;
+}
+.duo-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #141413;
+  font-family: 'Unbounded Variable', sans-serif;
+  font-size: 18px;
+  font-weight: 750;
+  letter-spacing: -0.055em;
+}
+.duo-brand > span:first-child {
+  width: 37px;
+  height: 37px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid #141413;
+  border-radius: 10px;
+  background: #ff3e94;
+  box-shadow: 2px 2px 0 #141413;
+}
+.duo-brand em {
+  font-style: normal;
+  color: #d8246f;
+}
+.duo-nav-link {
+  padding: 11px 13px;
+  color: #555550;
+  font-size: 13px;
+  font-weight: 550;
+  border-radius: 8px;
+}
+.duo-nav-link:hover {
+  background: #ede5d5;
+  color: #141413;
+}
+.duo-nav-business {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border-left: 1px solid #14141320;
+  margin-left: 8px;
+  border-radius: 0;
+}
+.duo-mobile-menu {
+  position: fixed;
+  top: 90px;
+  left: 16px;
+  right: 16px;
+  z-index: 100;
+  border: 1px solid #14141330;
+  background: #fbf7ee;
+  padding: 24px;
+  border-radius: 18px;
+  box-shadow: 0 15px 40px #14141320;
+}
+.duo-menu-toggle {
+  height: 44px;
+  width: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: #141413;
+  background: #f2ead8;
+}
+.duo-auth-panel {
+  border-radius: 22px;
+  border-width: 1px;
+  box-shadow: 0 24px 90px #14141325;
+}
+.duo-auth-header {
+  border-bottom-width: 1px;
+  padding: 28px 28px 22px;
+}
+.duo-auth-header h2 {
+  font-size: 25px;
+  letter-spacing: -0.04em;
+  text-transform: none;
+}
+.duo-auth-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #2a2a28;
+}
+.duo-auth-tabs {
+  display: flex;
+  padding: 4px;
+  border: 1px solid #14141318;
+  background: #f2ead8;
+  border-radius: 11px;
+  gap: 4px;
+}
+.duo-auth-tabs button {
+  border: 0;
+  border-radius: 8px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: 'Familjen Grotesk', sans-serif;
+  font-size: 15px;
+}
+.duo-auth-close {
+  border: 0;
+  border-radius: 10px;
+  background: #f2ead8;
+  width: 44px;
+  height: 44px;
+}
+.duo-dashboard {
+  max-width: 1240px;
+  margin: auto;
+}
+.duo-dashboard-tabs {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid #14141320;
+  padding-bottom: 12px;
+}
+.duo-dashboard-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  color: #6a6a66;
+  font-size: 15px;
+  font-weight: 600;
+}
+.duo-dashboard-tab[aria-pressed='true'] {
+  background: #141413;
+  color: #fbf7ee;
+}
+.duo-dashboard-tab:hover:not([aria-pressed='true']) {
+  background: #f2ead8;
+  color: #141413;
+}
+.duo-status {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 24px;
+  padding: 26px 0;
+}
+.duo-status-profile {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  min-width: 0;
+  text-align: left;
+}
+.duo-status-avatar {
+  height: 55px;
+  width: 55px;
+  border-radius: 16px;
+  background: #1e3fb5;
+  color: #fbf7ee;
+  display: grid;
+  place-items: center;
+  font-family: 'Unbounded Variable', sans-serif;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+.duo-status-profile h3 {
+  font-size: 24px;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+}
+.duo-status-profile p {
+  color: #6a6a66;
+  font-size: 13px;
+  margin-top: 3px;
+}
+.duo-status-stats {
+  display: flex;
+  gap: 26px;
+}
+.duo-status-stats > div {
+  min-width: 65px;
+}
+.duo-status-stats span {
+  font-size: 11px;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  color: #6a6a66;
+  margin-bottom: 5px;
+}
+.duo-status-stats strong {
+  font-family: 'Unbounded Variable', sans-serif;
+  font-size: 21px;
+  letter-spacing: -0.03em;
+}
+.duo-table-status {
+  font-size: 11px;
+  font-weight: 550;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  color: #1e3fb5;
+}
+.duo-lobby-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+.duo-lobby-action {
+  min-height: 86px;
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 13px;
+  border-radius: 14px;
+  border: 1px solid #141413;
+  box-shadow: 0 3px 0 #141413;
+  font-weight: 650;
+  font-size: 16px;
+}
+.duo-lobby-action svg {
+  width: 24px;
+}
+.duo-lobby-action:disabled {
+  box-shadow: none;
+  opacity: 0.45;
+}
+.duo-lobby-heading {
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+}
+.duo-lobby-row {
+  border-radius: 15px;
+  border-width: 1px;
+  box-shadow: none;
+  margin: 0 0 12px;
+}
+.duo-lobby-row:hover {
+  box-shadow: 0 6px 18px #14141308;
+}
+.duo-lobby-empty {
+  opacity: 1;
+  border-color: #14141325;
+  border-radius: 18px;
+  background: #f2ead850;
+  padding: 38px 18px;
+  margin: 6px 0;
+}
+.duo-lobby-empty h4 {
+  font-size: 20px;
+  font-weight: 600;
+}
+.duo-lobby-empty p {
+  max-width: 310px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #6a6a66;
+  margin-top: 10px;
+  text-align: center;
+}
+.duo-checkin-heading {
+  font-size: clamp(29px, 6vw, 40px);
+  line-height: 1.2;
+  letter-spacing: -0.045em;
+}
+.duo-cookie-card {
+  border-radius: 16px;
+  border-width: 1px;
+  box-shadow: 0 10px 40px #14141318;
+}
+.duo-cookie-card h3 {
+  text-transform: none;
+  letter-spacing: -0.02em;
+  font-size: 15px;
+}
+.duo-cookie-card button {
+  min-height: 44px;
+  border-radius: 8px;
+}
+.duo-cookie-card button[aria-label] {
+  min-height: 36px;
+  min-width: 36px;
+}
+.duo-footer {
+  border-top-width: 1px;
+  border-color: #14141320;
+}
+.duo-footer p {
+  text-transform: none;
+  letter-spacing: 0;
+}
+@media (max-width: 767px) {
+  .duo-nav {
+    top: max(12px, env(safe-area-inset-top));
+    width: calc(100% - 28px);
+  }
+  .duo-nav-bar {
+    padding: 10px 12px;
+    border-radius: 14px;
+  }
+  .duo-brand {
+    font-size: 17px;
+  }
+  .duo-status {
+    grid-template-columns: 1fr;
+    gap: 22px;
+    padding: 12px 0 4px;
+  }
+  .duo-status-profile h3 {
+    font-size: 22px;
+  }
+  .duo-status-stats {
+    width: 100%;
+    gap: 0;
+    border-top: 1px solid #14141320;
+    padding-top: 18px;
+  }
+  .duo-status-stats > div {
+    flex: 1;
+    padding-left: 18px;
+    border-left: 1px solid #14141315;
+  }
+  .duo-status-stats > div:first-child {
+    padding-left: 0;
+    border-left: 0;
+  }
+  .duo-dashboard-tab {
+    flex: 1;
+    padding: 11px 8px;
+    gap: 5px;
+    font-size: 12px;
+  }
+  .duo-dashboard-tab svg {
+    width: 17px;
+  }
+  .duo-lobby-action {
+    min-height: 70px;
+    padding: 14px;
+    font-size: 13px;
+    gap: 8px;
+  }
+  .duo-auth-header {
+    padding: 24px 21px 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  .duo-button {
+    transition: none;
+  }
+  .duo-button:hover {
+    transform: none;
+  }
+}
+
+html::-webkit-scrollbar {
+  width: 8px;
+}
+html::-webkit-scrollbar-track {
+  background: #fbf7ee;
+}
+html::-webkit-scrollbar-thumb {
+  background: #14141330;
+  border: 0;
+  border-radius: 8px;
+}
+@media (min-width: 768px) {
+  .duo-menu-toggle {
+    display: none;
+  }
+}
+
+.duo-reward-tabs {
+  padding: 4px;
+  border-radius: 10px;
+  background: #f2ead8;
+  gap: 3px;
+}
+.duo-reward-tabs button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 7px;
+}
+
+.duo-auth-shell {
+  background: transparent;
+}
+
+.duo-checkin {
+  padding-top: calc(128px + env(safe-area-inset-top));
+  padding-bottom: 56px;
+}
+.duo-checkin .duo-card {
+  background-image: none;
+}
+
+.duo-app .riso-focus:focus-visible {
+  outline: 2px solid #1e3fb5;
+  outline-offset: 3px;
+  box-shadow: none;
+}

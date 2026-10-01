@@ -4,29 +4,40 @@ import { AuthModal } from './AuthModal';
 
 // AuthModal uses AnimatePresence to conditionally mount content.
 // Replace with a transparent wrapper so fireEvent.blur triggers properly.
-jest.mock('framer-motion', () => ({
-  motion: new Proxy(
-    {},
-    {
-      get: (_t, tag: string) =>
-        React.forwardRef(({ children, ...props }: any, ref: any) => {
-          const {
-            initial: _i,
-            animate: _a,
-            exit: _e,
-            transition: _t2,
-            variants: _v,
-            whileHover: _wh,
-            whileTap: _wt,
-            ...rest
-          } = props;
-          return React.createElement(tag, { ...rest, ref }, children);
-        }),
-    }
-  ),
-  AnimatePresence: ({ children }: any) => <>{children}</>,
-  useReducedMotion: () => false,
-}));
+jest.mock('framer-motion', () => {
+  // Match real motion's stable component identities so re-renders retain focus.
+  const components = new Map<string, React.ComponentType<any>>();
+  return {
+    motion: new Proxy(
+      {},
+      {
+        get: (_target, tag: string) => {
+          if (!components.has(tag)) {
+            components.set(
+              tag,
+              React.forwardRef(({ children, ...props }: any, ref: any) => {
+                const {
+                  initial: _i,
+                  animate: _a,
+                  exit: _e,
+                  transition: _t,
+                  variants: _v,
+                  whileHover: _wh,
+                  whileTap: _wt,
+                  ...rest
+                } = props;
+                return React.createElement(tag, { ...rest, ref }, children);
+              })
+            );
+          }
+          return components.get(tag);
+        },
+      }
+    ),
+    AnimatePresence: ({ children }: any) => <>{children}</>,
+    useReducedMotion: () => false,
+  };
+});
 
 const mockToastSuccess = jest.fn();
 const mockToastError = jest.fn();
@@ -72,6 +83,57 @@ describe('AuthModal', () => {
     (window.localStorage.getItem as jest.Mock).mockImplementation((key: string) =>
       key === 'cookie_consent' ? 'accepted' : null
     );
+  });
+
+  it('keeps keyboard focus inside the dialog, closes with Escape, and returns focus', () => {
+    const trigger = document.createElement('button');
+    document.body.appendChild(trigger);
+    trigger.focus();
+    const props = {
+      isOpen: true,
+      onClose: mockOnClose,
+      initialMode: 'login' as const,
+      onLoginSuccess: mockOnLoginSuccess,
+    };
+    const { rerender } = render(<AuthModal {...props} />);
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toHaveFocus();
+    expect(document.body.style.overflow).toBe('hidden');
+    const close = screen.getByRole('button', { name: 'Kapat' });
+    close.focus();
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).not.toBe(close);
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(close).toHaveFocus();
+    trigger.focus();
+    expect(dialog).toHaveFocus();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(mockOnClose).toHaveBeenCalledTimes(1);
+    rerender(<AuthModal {...props} isOpen={false} />);
+    expect(trigger).toHaveFocus();
+    expect(document.body.style.overflow).not.toBe('hidden');
+    trigger.remove();
+  });
+
+  it('allows keyboard access to the separate cookie-consent portal', () => {
+    render(
+      <>
+        <AuthModal
+          isOpen={true}
+          onClose={mockOnClose}
+          initialMode="login"
+          onLoginSuccess={mockOnLoginSuccess}
+        />
+        <section aria-label="Çerez bildirimi">
+          <button>Consent choice</button>
+        </section>
+      </>
+    );
+    const consent = screen.getByRole('button', { name: 'Consent choice' });
+    consent.focus();
+    expect(consent).toHaveFocus();
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(screen.getByRole('button', { name: 'Kapat' })).toHaveFocus();
   });
 
   it('renders login form by default', () => {

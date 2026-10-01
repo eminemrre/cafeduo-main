@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -63,6 +63,81 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   initialMode,
   onLoginSuccess,
 }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    dialogRef.current?.focus({ preventScroll: true });
+
+    // Consent is a separate portal and must remain reachable while signing in.
+    const roots = () =>
+      [
+        dialogRef.current,
+        document.querySelector<HTMLElement>('[aria-label="Çerez bildirimi"]'),
+      ].filter((node): node is HTMLElement => Boolean(node));
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeRef.current();
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const elements = roots()
+        .flatMap((root) =>
+          Array.from(
+            root.querySelectorAll<HTMLElement>(
+              'button:not(:disabled), input:not(:disabled), select:not(:disabled), a[href], [tabindex="0"]'
+            )
+          )
+        )
+        .filter(
+          (node) =>
+            !node.closest('[hidden], [aria-hidden="true"]') &&
+            getComputedStyle(node).display !== 'none' &&
+            getComputedStyle(node).visibility !== 'hidden'
+        );
+      const first = elements[0];
+      const last = elements[elements.length - 1];
+      if (!first) {
+        event.preventDefault();
+        dialogRef.current?.focus();
+        return;
+      }
+      if (
+        event.shiftKey &&
+        (document.activeElement === first || document.activeElement === dialogRef.current)
+      ) {
+        event.preventDefault();
+        last.focus();
+      } else if (
+        !event.shiftKey &&
+        (document.activeElement === last || document.activeElement === dialogRef.current)
+      ) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    const onFocusIn = (event: FocusEvent) => {
+      if (!roots().some((root) => root.contains(event.target as Node)))
+        dialogRef.current?.focus({ preventScroll: true });
+    };
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('focusin', onFocusIn);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('focusin', onFocusIn);
+      document.body.style.overflow = previousOverflow;
+      if (previousFocus?.isConnected) previousFocus.focus({ preventScroll: true });
+    };
+  }, [isOpen]);
+
   const [mode, setMode] = useState(initialMode);
   const [isForgotPasswordMode, setIsForgotPasswordMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -261,7 +336,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   /** Riso Kantin: ink-bordered paper input with focus ring. No neon glow. */
   const inputBaseClass =
-    'w-full min-h-12 bg-paper-deep border-2 text-carbon font-riso-body text-base leading-6 outline-none transition-all duration-150 placeholder:text-carbon-muted pl-11 pr-12 cursor-text focus:bg-paper focus:ring-2 focus:ring-offset-2 focus:ring-offset-paper';
+    'w-full min-h-12 duo-input bg-paper border border-carbon/25 text-carbon font-riso-body text-base leading-6 outline-none transition-all duration-150 placeholder:text-carbon-muted pl-11 pr-12 cursor-text focus:bg-paper focus:ring-2 focus:ring-offset-2 focus:ring-offset-paper';
   const inputBorderClass = 'border-carbon focus:ring-riso-blue';
   const inputErrorClass = 'border-riso-redox focus:ring-riso-redox';
   const iconBaseClass =
@@ -298,9 +373,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         />
 
         {/* Modal Container */}
-        <div className="riso-kantin relative w-full max-w-[480px] max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100vh-2rem)]">
+        <div className="duo-auth-shell riso-kantin relative w-full max-w-[480px] max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100vh-2rem)]">
           <motion.div
-            className="relative w-full max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100vh-2rem)] bg-paper border-2 border-carbon riso-shadow-md overflow-hidden flex flex-col"
+            ref={dialogRef}
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="auth-dialog-title"
+            className="duo-auth-panel relative w-full max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100vh-2rem)] bg-paper border-2 border-carbon riso-shadow-md overflow-hidden flex flex-col"
             initial={{ y: 24, opacity: 0.5 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 24, opacity: 0.5 }}
@@ -317,12 +397,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             />
 
             {/* Header */}
-            <div className="px-5 md:px-7 pt-5 md:pt-6 pb-3 flex justify-between items-start border-b-2 border-carbon shrink-0 bg-paper">
+            <div className="duo-auth-header px-5 md:px-7 pt-5 md:pt-6 pb-3 flex justify-between items-start border-b-2 border-carbon shrink-0 bg-paper">
               <div className="min-w-0">
                 <p className="font-riso-mono text-[10px] tracking-[0.22em] uppercase text-carbon-muted font-bold mb-1">
-                  CafeDuo // Auth
+                  Oyuna hoş geldin
                 </p>
-                <h2 className="font-riso-display text-carbon text-2xl md:text-3xl uppercase tracking-[0.06em]">
+                <h2
+                  id="auth-dialog-title"
+                  className="font-riso-display text-carbon text-2xl md:text-3xl uppercase tracking-[0.06em]"
+                >
                   {title}
                 </h2>
                 <p className="font-riso-body text-sm text-carbon-soft mt-1">{subtitle}</p>
@@ -330,7 +413,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 onClick={onClose}
                 aria-label="Kapat"
-                className="riso-focus shrink-0 w-9 h-9 border-2 border-carbon bg-paper text-carbon hover:bg-riso-redox hover:text-paper flex items-center justify-center transition-colors"
+                className="duo-auth-close riso-focus shrink-0 w-9 h-9 border-2 border-carbon bg-paper text-carbon hover:bg-riso-redox hover:text-paper flex items-center justify-center transition-colors"
               >
                 <X size={18} />
               </button>
@@ -340,7 +423,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             <div className="p-4 sm:p-6 md:p-7 flex-1 overflow-y-auto overscroll-contain flex flex-col gap-5">
               {/* Mode switch — ink-bordered tab pair (hidden in forgot mode) */}
               {!isForgotPasswordMode && (
-                <div className="flex border-2 border-carbon">
+                <div className="duo-auth-tabs">
                   <button
                     type="button"
                     onClick={() => switchMode('login')}
@@ -381,6 +464,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <form className="space-y-4" onSubmit={handleSubmit}>
                 {mode === 'register' && !isForgotPasswordMode && (
                   <>
+                    <label className="duo-auth-label" htmlFor="auth-username">
+                      Kullanıcı adı
+                    </label>
                     <div
                       className={`relative group ${
                         fieldErrors.username && touched.username ? 'is-error' : ''
@@ -392,6 +478,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         value={username}
                         onChange={(e) => handleChange('username', e.target.value)}
                         onBlur={() => handleBlur('username')}
+                        id="auth-username"
+                        autoComplete="username"
                         placeholder="Kullanıcı adı"
                         className={`${inputBaseClass} ${
                           fieldErrors.username && touched.username
@@ -407,7 +495,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       )}
                     </div>
                     {fieldErrors.username && touched.username && (
-                      <p className="text-riso-redox text-xs flex items-center gap-1 font-riso-body">
+                      <p
+                        role="alert"
+                        className="text-riso-redox text-xs flex items-center gap-1 font-riso-body"
+                      >
                         <AlertTriangle size={12} /> {fieldErrors.username}
                       </p>
                     )}
@@ -415,6 +506,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <div className="relative group">
                       <Briefcase className={iconBaseClass} size={18} />
                       <select
+                        id="auth-department"
+                        aria-label="Bölüm (isteğe bağlı)"
                         value={department}
                         onChange={(e) => setDepartment(e.target.value)}
                         className={`${inputBaseClass} ${inputBorderClass} appearance-none cursor-pointer pr-10`}
@@ -434,6 +527,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </>
                 )}
 
+                <label className="duo-auth-label" htmlFor="auth-email">
+                  E-posta
+                </label>
                 <div
                   className={`relative group ${
                     fieldErrors.email && touched.email ? 'is-error' : ''
@@ -445,6 +541,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     value={email}
                     onChange={(e) => handleChange('email', e.target.value)}
                     onBlur={() => handleBlur('email')}
+                    id="auth-email"
+                    autoComplete="email"
                     placeholder="E-posta"
                     data-testid="auth-email-input"
                     className={`${inputBaseClass} ${
@@ -459,13 +557,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   )}
                 </div>
                 {fieldErrors.email && touched.email && (
-                  <p className="text-riso-redox text-xs flex items-center gap-1 font-riso-body">
+                  <p
+                    role="alert"
+                    className="text-riso-redox text-xs flex items-center gap-1 font-riso-body"
+                  >
                     <AlertTriangle size={12} /> {fieldErrors.email}
                   </p>
                 )}
 
                 {!isForgotPasswordMode && (
                   <>
+                    <label className="duo-auth-label" htmlFor="auth-password">
+                      Şifre
+                    </label>
                     <div
                       className={`relative group ${
                         fieldErrors.password && touched.password ? 'is-error' : ''
@@ -477,6 +581,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         value={password}
                         onChange={(e) => handleChange('password', e.target.value)}
                         onBlur={() => handleBlur('password')}
+                        id="auth-password"
+                        autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
                         placeholder="Şifre"
                         data-testid="auth-password-input"
                         className={`${inputBaseClass} ${
@@ -495,7 +601,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       </button>
                     </div>
                     {fieldErrors.password && touched.password && (
-                      <p className="text-riso-redox text-xs flex items-center gap-1 font-riso-body">
+                      <p
+                        role="alert"
+                        className="text-riso-redox text-xs flex items-center gap-1 font-riso-body"
+                      >
                         <AlertTriangle size={12} /> {fieldErrors.password}
                       </p>
                     )}
@@ -586,7 +695,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </p>
                 )}
                 <p className="text-[11px] text-carbon-muted font-riso-mono uppercase tracking-wider">
-                  Giriş sonrası rolünüze göre yönlendirilirsiniz.
+                  Kafeni seç, masanı doğrula, oyuna katıl.
                 </p>
               </div>
             </div>

@@ -16,9 +16,7 @@ describe('Footer', () => {
       screen.getByText(`© ${new Date().getFullYear()} tüm hakları saklıdır`)
     ).toBeInTheDocument();
     expect(
-      screen.getByText(
-        'Kafede bekleyen kullanıcıları eşleştirip oyun ve ödül döngüsüne bağlayan sosyal deneyim altyapısı.'
-      )
+      screen.getByText('Kahve molana oyun, yeni karşılaşmalar ve güzel ödüller ekle.')
     ).toBeInTheDocument();
     expect(screen.getByTestId('footer-version-pill')).toHaveTextContent(/^v-/);
 

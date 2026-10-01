@@ -35,7 +35,7 @@ content = """export default {
   transformIgnorePatterns: ['node_modules/(?!(react-router)/)'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
-    '%s.(css|less|scss|sass)$': 'identity-obj-proxy',
+    '%s.(css|less|scss|sass)$': '<rootDir>/__mocks__/styles.cjs',
     // cookie-es ESM-only (.mjs) — jest CJS pipeline'inda yuklenemez; react-router'in
     // server-runtime'inda kullanilir ve testlerde cagrilmaz, minimal stub yeterli.
     '^cookie-es$': '<rootDir>/__mocks__/cookie-es.cjs',

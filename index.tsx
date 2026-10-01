@@ -6,6 +6,8 @@ import App from './App';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import './fonts';
 import './index.css';
+import './styles/identity.css';
+import './styles/club.css';
 
 // Initialize Sentry for frontend error tracking
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN || '';

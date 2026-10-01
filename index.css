@@ -53,9 +53,6 @@ body,
 
 body {
   margin: 0;
-  font-family: 'Chakra Petch', 'Noto Sans', sans-serif;
-  background: #02030a;
-  color: var(--rf-ink);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   text-rendering: optimizeLegibility;
@@ -63,44 +60,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
-}
-
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(
-      180px circle at var(--cursor-x) var(--cursor-y),
-      rgba(0, 243, 255, 0.18),
-      rgba(255, 0, 234, 0.08) 36%,
-      transparent 68%
-    ),
-    linear-gradient(90deg, rgba(0, 243, 255, 0.035) 1px, transparent 1px),
-    linear-gradient(rgba(255, 0, 234, 0.03) 1px, transparent 1px);
-  background-size:
-    auto,
-    24px 24px,
-    24px 24px;
-  mix-blend-mode: screen;
-}
-
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.12;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(255, 255, 255, 0.12) 0,
-    rgba(255, 255, 255, 0.12) 1px,
-    transparent 1px,
-    transparent 4px
-  );
+  font-family: 'Familjen Grotesk', system-ui, sans-serif;
+  background: #fbf7ee;
+  color: #141413;
 }
 
 /* ── Utility: Glassmorphism ── */
@@ -1178,15 +1140,13 @@ select.rf-select-dark {
 }
 
 select.rf-input option,
-select.rf-select-dark option,
-select option {
+select.rf-select-dark option {
   background-color: #06132b;
   color: white;
 }
 
 select.rf-input optgroup,
-select.rf-select-dark optgroup,
-select optgroup {
+select.rf-select-dark optgroup {
   background-color: #06132b;
   color: #93c5fd;
   font-weight: 600;
@@ -1296,15 +1256,6 @@ select optgroup {
 }
 
 /* Cyber-brutalist override layer */
-html {
-  background: #02030a;
-}
-
-body {
-  color: var(--rf-ink);
-  text-rendering: geometricPrecision;
-  image-rendering: pixelated;
-}
 
 ::selection {
   background: var(--rf-primary);
@@ -1436,9 +1387,7 @@ body {
 .rf-button,
 .rf-button-primary,
 .rf-button-secondary,
-.rf-tab-button,
-button[class*='bg-'],
-a[class*='bg-'] {
+.rf-tab-button {
   border: 2px solid rgba(248, 251, 255, 0.88) !important;
   border-radius: 0 !important;
   box-shadow:
@@ -1448,9 +1397,7 @@ a[class*='bg-'] {
 }
 
 .cd-button-primary,
-.rf-button-primary,
-button[class*='from-'],
-button[class*='bg-slate-100'] {
+.rf-button-primary {
   background: linear-gradient(90deg, var(--rf-primary), var(--rf-accent)) !important;
   color: #02030a !important;
 }
@@ -1465,9 +1412,7 @@ button[class*='bg-slate-100'] {
 .cd-button-primary:hover,
 .cd-button-secondary:hover,
 .rf-button:hover,
-.rf-tab-button:hover,
-button:hover,
-a[class*='bg-']:hover {
+.rf-tab-button:hover {
   transform: translate(-2px, -2px) !important;
   box-shadow:
     7px 7px 0 rgba(0, 0, 0, 0.92),
@@ -1485,10 +1430,7 @@ a[class*='bg-']:hover {
   input:not([type='range']):not([type='checkbox']):not([type='radio']):not([type='color']),
 .rf-page-shell select,
 .rf-page-shell textarea,
-.rf-input,
-input:not([type='range']):not([type='checkbox']):not([type='radio']):not([type='color']),
-select,
-textarea {
+.rf-input {
   border: 2px solid rgba(0, 243, 255, 0.46) !important;
   border-radius: 0 !important;
   background: rgba(1, 4, 13, 0.92) !important;
@@ -1499,10 +1441,7 @@ textarea {
 .rf-page-shell input:focus-visible,
 .rf-page-shell select:focus-visible,
 .rf-page-shell textarea:focus-visible,
-.rf-input:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
+.rf-input:focus-visible {
   outline: 2px solid var(--rf-accent) !important;
   outline-offset: 3px;
   border-color: var(--rf-primary) !important;
@@ -1530,14 +1469,12 @@ textarea:focus-visible {
   border-bottom: 1px solid rgba(0, 243, 255, 0.18) !important;
 }
 
-.rf-modal-scroll::-webkit-scrollbar-thumb,
-*::-webkit-scrollbar-thumb {
+.rf-modal-scroll::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, var(--rf-primary), var(--rf-secondary)) !important;
   border-radius: 0 !important;
 }
 
-.rf-modal-scroll::-webkit-scrollbar-track,
-*::-webkit-scrollbar-track {
+.rf-modal-scroll::-webkit-scrollbar-track {
   background: #050714 !important;
 }
 
@@ -1593,20 +1530,6 @@ textarea:focus-visible {
   --rf-card-shadow-pink: none;
 }
 
-body {
-  font-family:
-    Inter,
-    'Noto Sans',
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    sans-serif !important;
-  background: #050505 !important;
-  color: #ffffff !important;
-  image-rendering: auto !important;
-}
-
 .rf-app-shell,
 .cd-hero-shell,
 .rf-page-shell,
@@ -1637,8 +1560,6 @@ body {
     sans-serif !important;
 }
 
-body::before,
-body::after,
 .cd-hero-shell::before,
 .cd-hero-shell::after,
 .rf-page-shell::before,
@@ -1765,12 +1686,7 @@ body::after,
 }
 
 .cd-button-primary,
-.rf-button-primary,
-button[class*='from-'],
-button[class*='bg-green'],
-button[class*='bg-cyan'],
-button[class*='bg-blue'],
-button[class*='bg-slate-100'] {
+.rf-button-primary {
   border: 0 !important;
   border-radius: 10px !important;
   background: #ff2d3d !important;
@@ -1780,10 +1696,7 @@ button[class*='bg-slate-100'] {
 
 .cd-button-secondary,
 .rf-button-secondary,
-.rf-tab-button,
-button[class*='bg-black'],
-button[class*='bg-red'],
-a[class*='bg-'] {
+.rf-tab-button {
   border: 1px solid rgba(255, 255, 255, 0.14) !important;
   border-radius: 999px !important;
   background: rgba(255, 255, 255, 0.035) !important;
@@ -1794,9 +1707,7 @@ a[class*='bg-'] {
 .cd-button-primary:hover,
 .cd-button-secondary:hover,
 .rf-button:hover,
-.rf-tab-button:hover,
-button:hover,
-a[class*='bg-']:hover {
+.rf-tab-button:hover {
   transform: translateY(-1px) !important;
   box-shadow: none !important;
   filter: brightness(1.05);
@@ -1814,10 +1725,7 @@ a[class*='bg-']:hover {
   input:not([type='range']):not([type='checkbox']):not([type='radio']):not([type='color']),
 .rf-page-shell select,
 .rf-page-shell textarea,
-.rf-input,
-input:not([type='range']):not([type='checkbox']):not([type='radio']):not([type='color']),
-select,
-textarea {
+.rf-input {
   border: 1px solid rgba(255, 255, 255, 0.12) !important;
   border-radius: 14px !important;
   background: rgba(255, 255, 255, 0.045) !important;
@@ -1828,10 +1736,7 @@ textarea {
 .rf-page-shell input:focus-visible,
 .rf-page-shell select:focus-visible,
 .rf-page-shell textarea:focus-visible,
-.rf-input:focus-visible,
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
+.rf-input:focus-visible {
   outline: 2px solid rgba(255, 45, 61, 0.7) !important;
   outline-offset: 2px;
   border-color: rgba(255, 45, 61, 0.8) !important;
@@ -1849,11 +1754,6 @@ textarea:focus-visible {
 .rf-table-shell td,
 .rf-table-shell th {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-}
-
-*::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.22) !important;
-  border-radius: 999px !important;
 }
 
 /* CafeDuo final pixel/cyber layer */
@@ -1883,60 +1783,6 @@ textarea:focus-visible {
   --rf-card-shadow: 8px 8px 0 rgba(0, 0, 0, 0.9), 10px 10px 0 rgba(255, 48, 69, 0.28);
   --rf-card-shadow-cyan: 7px 7px 0 rgba(16, 231, 255, 0.2);
   --rf-card-shadow-pink: 7px 7px 0 rgba(255, 48, 69, 0.28);
-}
-
-html {
-  background: #050608 !important;
-}
-
-body {
-  font-family: 'Space Grotesk', 'Chakra Petch', 'Noto Sans', system-ui, sans-serif !important;
-  background: #050608 !important;
-  color: var(--rf-ink) !important;
-  image-rendering: pixelated !important;
-}
-
-body::before {
-  content: '' !important;
-  display: block !important;
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(
-      220px circle at var(--cursor-x) var(--cursor-y),
-      rgba(16, 231, 255, 0.2),
-      rgba(255, 48, 69, 0.13) 42%,
-      transparent 72%
-    ),
-    linear-gradient(90deg, rgba(16, 231, 255, 0.055) 1px, transparent 1px),
-    linear-gradient(rgba(255, 48, 69, 0.045) 1px, transparent 1px),
-    radial-gradient(circle at 18% 18%, rgba(255, 48, 69, 0.16), transparent 28rem),
-    radial-gradient(circle at 80% 12%, rgba(16, 231, 255, 0.12), transparent 22rem),
-    linear-gradient(180deg, #050608 0%, #070a0f 48%, #050608 100%);
-  background-size:
-    auto,
-    28px 28px,
-    28px 28px,
-    auto,
-    auto,
-    auto;
-  mix-blend-mode: normal;
-  opacity: 1;
-}
-
-body::after {
-  content: '' !important;
-  display: block !important;
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 5px),
-    radial-gradient(circle at 50% 50%, transparent 0, rgba(0, 0, 0, 0.36) 78%);
-  opacity: 0.65;
 }
 
 #root,
@@ -2118,12 +1964,7 @@ main {
 }
 
 .cd-button-primary,
-.rf-button-primary,
-button[class*='from-'],
-button[class*='bg-green'],
-button[class*='bg-cyan'],
-button[class*='bg-blue'],
-button[class*='bg-slate-100'] {
+.rf-button-primary {
   border: 2px solid rgba(255, 48, 69, 0.96) !important;
   border-radius: 0 !important;
   background: linear-gradient(180deg, #ff3045, #d9152a) !important;
@@ -2134,8 +1975,7 @@ button[class*='bg-slate-100'] {
 }
 
 .cd-button-primary::before,
-.rf-button-primary::before,
-button[class*='bg-slate-100']::before {
+.rf-button-primary::before {
   content: '';
   position: absolute;
   inset: 4px;
@@ -2148,10 +1988,7 @@ button[class*='bg-slate-100']::before {
 
 .cd-button-secondary,
 .rf-button-secondary,
-.rf-tab-button,
-button[class*='bg-black'],
-button[class*='bg-red'],
-a[class*='bg-'] {
+.rf-tab-button {
   border: 2px solid rgba(165, 173, 184, 0.25) !important;
   border-radius: 0 !important;
   background: rgba(5, 6, 8, 0.84) !important;
@@ -2162,9 +1999,7 @@ a[class*='bg-'] {
 .cd-button-primary:hover,
 .cd-button-secondary:hover,
 .rf-button:hover,
-.rf-tab-button:hover,
-button:hover,
-a[class*='bg-']:hover {
+.rf-tab-button:hover {
   transform: translate(-2px, -2px) !important;
   box-shadow:
     7px 7px 0 rgba(0, 0, 0, 0.94),
@@ -2179,9 +2014,6 @@ a[class*='bg-']:hover {
   border-color: #10e7ff !important;
 }
 
-input:not([type='range']):not([type='checkbox']):not([type='radio']):not([type='color']),
-select,
-textarea,
 .rf-input {
   border: 2px solid rgba(165, 173, 184, 0.22) !important;
   border-radius: 0 !important;
@@ -2190,18 +2022,10 @@ textarea,
   box-shadow: inset 4px 4px 0 rgba(0, 0, 0, 0.38) !important;
 }
 
-input::placeholder,
-textarea::placeholder {
-  color: rgba(165, 173, 184, 0.62) !important;
-}
-
 /* Legacy .cd-cookie-banner cyber-dark styles removed in PR #32 —
  * CookieConsent now renders its own ink-bordered paper modal with
  * Tailwind utilities and no longer carries the legacy class. */
 
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible,
 .rf-input:focus-visible {
   outline: 2px solid #ffd338 !important;
   outline-offset: 3px;
@@ -2303,11 +2127,6 @@ textarea:focus-visible,
   transform: translate(-50%, -50%);
   filter: drop-shadow(0 0 14px rgba(16, 231, 255, 0.58));
   transition: left 46ms linear;
-}
-
-*::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #ff3045, #10e7ff) !important;
-  border-radius: 0 !important;
 }
 
 .cd-nav-link,
@@ -2682,16 +2501,6 @@ textarea:focus-visible,
     max-height: calc(100dvh - 0.75rem);
   }
 
-  body::before {
-    background-size:
-      auto,
-      22px 22px,
-      22px 22px,
-      auto,
-      auto,
-      auto;
-  }
-
   .cd-topline {
     position: relative !important;
     top: auto !important;
@@ -2895,13 +2704,11 @@ textarea:focus-visible,
  * Used by Card + Button primitives via Tailwind shadow utility. */
 .riso-shadow-md {
   box-shadow:
-    4px 4px 0 var(--riso-blue),
-    8px 8px 0 var(--riso-pink);
+    0 4px 0 rgba(20, 20, 19, 0.08),
+    0 12px 28px rgba(20, 20, 19, 0.04);
 }
 .riso-shadow-sm {
-  box-shadow:
-    3px 3px 0 var(--riso-blue),
-    6px 6px 0 var(--riso-pink);
+  box-shadow: 0 3px 0 rgba(20, 20, 19, 0.08);
 }
 .riso-shadow-pink-only {
   box-shadow: 5px 5px 0 var(--riso-pink);

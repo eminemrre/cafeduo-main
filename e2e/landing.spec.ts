@@ -5,17 +5,38 @@ test.describe('Public Landing Pages', () => {
   test('@smoke loads the self-hosted brand fonts with Turkish characters', async ({ page, baseURL }) => {
     await page.goto(baseURL || DEFAULT_E2E_APP_BASE_URL);
     const fonts = await page.evaluate(async () => {
-      const families = ['Familjen Grotesk', 'Unbounded Variable', 'JetBrains Mono Variable'];
-      return Promise.all(families.map(async (family) => {
-        const faces = await document.fonts.load(`400 16px "${family}"`, 'CafeDuo ıİşŞğĞçÇöÖüÜ');
-        return { family, loaded: faces.length > 0 && faces.every((face) => face.status === 'loaded') };
+      const fonts = [
+        { family: 'Familjen Grotesk', style: 'normal' },
+        { family: 'Unbounded Variable', style: 'normal' },
+        { family: 'JetBrains Mono Variable', style: 'normal' },
+        { family: 'Fraunces Variable', style: 'normal' },
+        { family: 'Fraunces Variable', style: 'italic' },
+      ];
+      return Promise.all(fonts.map(async ({ family, style }) => {
+        const faces = await document.fonts.load(`${style} 400 16px "${family}"`, 'CafeDuo ıİşŞğĞçÇöÖüÜ');
+        return { family, style, loaded: faces.length > 0 && faces.every((face) => face.status === 'loaded' && face.style === style) };
       }));
     });
     expect(fonts).toEqual([
-      { family: 'Familjen Grotesk', loaded: true },
-      { family: 'Unbounded Variable', loaded: true },
-      { family: 'JetBrains Mono Variable', loaded: true },
+      { family: 'Familjen Grotesk', style: 'normal', loaded: true },
+      { family: 'Unbounded Variable', style: 'normal', loaded: true },
+      { family: 'JetBrains Mono Variable', style: 'normal', loaded: true },
+      { family: 'Fraunces Variable', style: 'normal', loaded: true },
+      { family: 'Fraunces Variable', style: 'italic', loaded: true },
     ]);
+  });
+
+  test('@smoke plays a legal move on the public demo board without logging in', async ({ page, baseURL }) => {
+    await page.goto(baseURL || DEFAULT_E2E_APP_BASE_URL);
+    await page.getByTestId('preview-square-g1').click();
+    await expect(page.getByTestId('preview-square-g1')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('preview-square-g1')).toBeFocused();
+    await page.getByTestId('preview-square-f3').click();
+    await expect(page.getByTestId('preview-square-f3')).toHaveAttribute('aria-label', 'f3, beyaz at');
+    await expect(page.getByLabel('Oynanan hamleler')).toContainText('2. Nf3 d6');
+    await page.getByRole('button', { name: 'Baştan', exact: true }).click();
+    await expect(page.getByTestId('preview-square-g1')).toHaveAttribute('aria-label', 'g1, beyaz at');
+    await expect(page.getByRole('button', { name: 'Kayıt ol ve oyuna başla' })).toBeVisible();
   });
 
   test('@smoke renders the home hero with CTA actions', async ({ page, baseURL }) => {

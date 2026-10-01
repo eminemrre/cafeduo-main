@@ -36,7 +36,7 @@ export const PAU_DEPARTMENTS = [
 ].sort();
 
 export const NAV_ITEMS = [
-  { id: 'home', label: 'ANA SAYFA' },
-  { id: 'features', label: 'ÖZELLİKLER' },
-  { id: 'games', label: 'OYUNLAR' },
+  { id: 'home', label: 'Kulüp' },
+  { id: 'features', label: 'Nasıl katılırım?' },
+  { id: 'games', label: 'Oyunlar' },
 ];

@@ -77,7 +77,7 @@ export const CookieConsent: React.FC = () => {
       aria-label="Çerez bildirimi"
       className="riso-kantin pointer-events-none fixed bottom-4 left-4 right-4 z-[130] sm:left-auto sm:right-6 sm:bottom-6 sm:w-[24rem]"
     >
-      <div className="pointer-events-auto relative border-2 border-carbon bg-paper p-4 riso-shadow-md">
+      <div className="duo-cookie-card pointer-events-auto relative border-2 border-carbon bg-paper p-4 riso-shadow-md">
         {/* Sticker accent */}
         <div
           aria-hidden="true"
@@ -97,7 +97,7 @@ export const CookieConsent: React.FC = () => {
           </div>
           <div className="min-w-0 flex-1 pr-6">
             <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-carbon-muted font-riso-mono">
-              Sistem bilgisi
+              Küçük bir bilgi
             </p>
             <h3 className="mb-1 text-sm font-bold uppercase tracking-[0.06em] text-carbon font-riso-display">
               Çerez Kullanımı

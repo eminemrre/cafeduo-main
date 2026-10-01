@@ -41,7 +41,7 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
   };
 
   const baseStyles =
-    'font-riso-display tracking-[0.12em] uppercase rounded-none select-none touch-manipulation ' +
+    'duo-button font-riso-body font-semibold tracking-normal select-none touch-manipulation ' +
     'border-2 border-carbon relative transition-all duration-150 ease-out ' +
     'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-paper focus:ring-carbon';
 

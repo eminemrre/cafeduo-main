@@ -62,7 +62,8 @@
     "migrate:redo": "node scripts/migrations/run-node-pg-migrate.js redo",
     "migrate:status": "node scripts/migrations/status.js",
     "migrate:baseline:report": "node scripts/migrations/legacy-baseline.js report",
-    "migrate:baseline:apply": "node scripts/migrations/legacy-baseline.js apply"
+    "migrate:baseline:apply": "node scripts/migrations/legacy-baseline.js apply",
+    "migrate:adopt": "node scripts/migrations/adopt-bootstrap.js"
   },
   "dependencies": {
     "@fontsource-variable/dm-sans": "^5.2.8",
@@ -95,11 +96,12 @@
     "framer-motion": "^12.31.0",
     "helmet": "^8.1.0",
     "ioredis": "^5.9.2",
-    "js-yaml": "4.3.0",
+    "js-yaml": "^4.3.2",
     "jsonwebtoken": "^9.0.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.28.0",
-    "nodemailer": "^9.0.3",
+    "node-pg-migrate": "^8.0.4",
+    "nodemailer": "^10.0.13",
     "pg": "^8.11.3",
     "pixi.js": "^8.6.0",
     "qrcode.react": "^4.2.0",
@@ -149,7 +151,6 @@
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
     "lint-staged": "^16.4.0",
-    "node-pg-migrate": "^8.0.4",
     "nodemon": "^3.1.14",
     "postcss": "8.5.25",
     "prettier": "^3.8.3",

@@ -1,0 +1,26 @@
+# Apply together with docker-compose.prod.yml or docker-compose.dokploy.yml.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '3'
+
+services:
+  api:
+    mem_limit: 512m
+    cpus: 1.0
+    init: true
+    logging: *logging
+  web:
+    mem_limit: 128m
+    cpus: 0.5
+    logging: *logging
+  postgres:
+    mem_limit: 768m
+    cpus: 1.0
+    logging: *logging
+  redis:
+    mem_limit: 192m
+    cpus: 0.5
+    command: ['redis-server', '--appendonly', 'yes', '--maxmemory', '128mb', '--maxmemory-policy', 'noeviction']
+    logging: *logging

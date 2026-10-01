@@ -1,7 +1,7 @@
 {$SITE_ADDRESS} {
   encode zstd gzip
 
-  @api path /api* /socket.io* /health
+  @api path /api /api/* /socket.io /socket.io/* /health /readiness
   @spa path / *.html
   reverse_proxy @api api:3001
   reverse_proxy web:8080
@@ -13,6 +13,7 @@
   }
 
   header {
+    Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://unpkg.com; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' wss: https://nominatim.openstreetmap.org https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io; worker-src 'self' blob:; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests"
     X-Content-Type-Options "nosniff"
     X-Frame-Options "SAMEORIGIN"
     Referrer-Policy "strict-origin-when-cross-origin"

@@ -259,6 +259,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
     setProfileUser(updatedUser);
   };
 
+  const handleSaveAvatar = async (avatarUrl: string) => {
+    if (!isOwnProfile) return;
+    await onUpdateUser({ ...currentUser, avatar_url: avatarUrl }, { throwOnError: true });
+  };
+
   const handleCancelGame = async (gameId: number | string) => {
     try {
       await cancelGame(gameId);
@@ -542,6 +547,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           isEditable={isOwnProfile}
           isPreview={!isOwnProfile}
           onSaveProfile={handleSaveProfile}
+          onSaveAvatar={handleSaveAvatar}
         />
       </div>
       {activeTournament && (

@@ -296,6 +296,38 @@ describe('API branch coverage', () => {
     });
   });
 
+  describe('strict profile history reads', () => {
+    it('propagates server errors rather than turning them into empty history', async () => {
+      (fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: async () => ({ error: 'History unavailable' }),
+      });
+      await expect(api.users.getGameHistory('testuser', { throwOnError: true })).rejects.toThrow(
+        'History unavailable'
+      );
+    });
+    it('rejects malformed successful responses', async () => {
+      (fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => [{}] });
+      await expect(api.users.getGameHistory('testuser', { throwOnError: true })).rejects.toThrow(
+        'Oyun geçmişi yanıtı geçersiz'
+      );
+    });
+    it('accepts genuine empty history and safely encodes the username', async () => {
+      (fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async (): Promise<unknown> => [],
+      });
+      await expect(api.users.getGameHistory('user/name', { throwOnError: true })).resolves.toEqual(
+        []
+      );
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('user%2Fname/game-history'),
+        expect.any(Object)
+      );
+    });
+  });
+
   describe('api.achievements.list', () => {
     it('returns empty array when response is not an array', async () => {
       (fetch as jest.Mock).mockResolvedValueOnce({

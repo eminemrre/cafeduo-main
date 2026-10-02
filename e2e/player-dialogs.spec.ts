@@ -145,7 +145,7 @@ test('@smoke department failures keep the edit and successful retry restores key
   const department = profile.getByRole('combobox', { name: 'Bölüm' });
   await department.selectOption('İşletme');
   await profile.getByRole('button', { name: 'Bölümü kaydet' }).click();
-  await expect(profile.getByRole('alert')).toContainText('Bölüm güncellenemedi');
+  await expect(profile.getByRole('alert').filter({ hasText: 'Bölüm güncellenemedi' })).toContainText('Bölüm güncellenemedi');
   await expect(department).toHaveValue('İşletme');
   await expect(department).toBeEnabled();
   await profile.getByRole('button', { name: 'Bölümü kaydet' }).click();

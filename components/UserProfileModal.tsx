@@ -9,39 +9,22 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { DialogLayer } from './ui/DialogLayer';
-import {
-  X,
-  Trophy,
-  Gamepad2,
-  Star,
-  Clock,
-  Edit2,
-  Save,
-  Briefcase,
-  Package,
-  ImageIcon,
-} from 'lucide-react';
+import { X, Trophy, Gamepad2, Star, Edit2, Save, Briefcase, ImageIcon } from 'lucide-react';
 import { User } from '../types';
 import { api } from '../lib/api';
 import { PAU_DEPARTMENTS } from '../constants';
 import { getAvatarUrl, seedFromAvatarUrl, type AvatarSeed } from '../lib/avatars';
 import { AvatarPickerModal } from './AvatarPickerModal';
 import { useToast } from '../contexts/ToastContext';
-
-interface UserInventoryItem {
-  id: number;
-  user_id: number;
-  item_id: number;
-  item_title: string;
-  code: string;
-  is_used: boolean;
-}
+import { useProfileData } from '../hooks/useProfileData';
+import { ProfileActivity } from './profile/ProfileActivity';
 
 interface UserProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User | null;
   isEditable?: boolean;
+  isPreview?: boolean;
   onSaveProfile?: (department: string) => Promise<void> | void;
 }
 
@@ -50,6 +33,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onClose,
   user,
   isEditable = false,
+  isPreview = false,
   onSaveProfile,
 }) => {
   const toast = useToast();
@@ -58,7 +42,11 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [department, setDepartment] = useState(user?.department || '');
   const [loading, setLoading] = useState(false);
-  const [inventory, setInventory] = useState<UserInventoryItem[]>([]);
+  const profileData = useProfileData(
+    user?.id,
+    user?.username || '',
+    isOpen && isEditable && !isPreview
+  );
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
   const [savingAvatar, setSavingAvatar] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -74,14 +62,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       setAvatarPickerOpen(false);
       setAvatarError(null);
     }
-    if (isOpen && user) {
-      api.store
-        .inventory()
-        .then((res) => {
-          if (res.success) setInventory(res.inventory);
-        })
-        .catch((err) => console.error('Inventory fetch error', err));
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, user?.department, isOpen]);
 
@@ -95,13 +75,6 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   // Simple level math (1 level per 500 points)
   const level = Math.floor(user.points / 500) + 1;
   const nextLevelProgress = ((user.points % 500) / 500) * 100;
-
-  // Mock activity feed — actual feed will come from useGames in a later pass
-  const recentHistory = [
-    { result: 'WIN' as const, game: 'Nişancı Düellosu', points: '+50', time: '10dk önce' },
-    { result: 'LOSS' as const, game: 'Bilgi Yarışı', points: '-20', time: '25dk önce' },
-    { result: 'WIN' as const, game: 'Retro Satranç', points: '+100', time: '1sa önce' },
-  ];
 
   const handleSave = async () => {
     setLoading(true);
@@ -159,7 +132,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     {(user.username || '?').substring(0, 2).toUpperCase()}
                   </span>
                 </div>
-                {isEditable && (
+                {isEditable && !isPreview && (
                   <button
                     type="button"
                     onClick={() => {
@@ -180,7 +153,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               <div className="min-w-0 flex-1">
                 <h2 className="font-riso-display text-2xl text-carbon truncate">{user.username}</h2>
                 <span className="block mt-0.5 font-riso-mono text-[0.7rem] uppercase tracking-[0.16em] text-carbon-muted">
-                  ID: #{user.id.toString().padStart(6, '0')}
+                  {isPreview ? 'CafeDuo oyuncusu' : `ID: #${user.id.toString().padStart(6, '0')}`}
                 </span>
               </div>
 
@@ -194,194 +167,145 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               </button>
             </div>
             {/* Department row */}
-            <div className="relative mt-3">
-              {isEditable && isEditing ? (
-                <div className="flex items-center gap-2">
-                  <select
-                    aria-label="Bölüm"
-                    autoFocus
-                    disabled={loading}
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    className="riso-focus min-h-11 min-w-0 flex-1 bg-paper border-2 border-carbon px-2 py-1 font-riso-body text-base text-carbon"
-                  >
-                    <option value="">Bölüm Seçiniz</option>
-                    {PAU_DEPARTMENTS.map((dept) => (
-                      <option key={dept} value={dept}>
-                        {dept}
-                      </option>
-                    ))}
-                  </select>
+            {!isPreview && (
+              <div className="relative mt-3">
+                {isEditable && isEditing ? (
+                  <div className="flex items-center gap-2">
+                    <select
+                      aria-label="Bölüm"
+                      autoFocus
+                      disabled={loading}
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                      className="riso-focus min-h-11 min-w-0 flex-1 bg-paper border-2 border-carbon px-2 py-1 font-riso-body text-base text-carbon"
+                    >
+                      <option value="">Bölüm Seçiniz</option>
+                      {PAU_DEPARTMENTS.map((dept) => (
+                        <option key={dept} value={dept}>
+                          {dept}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={handleSave}
+                      disabled={loading}
+                      aria-label="Bölümü kaydet"
+                      className="riso-focus shrink-0 inline-flex h-11 w-11 items-center justify-center border-2 border-carbon bg-paper text-riso-spring hover:bg-riso-spring hover:text-carbon transition-colors"
+                    >
+                      <Save size={14} strokeWidth={2.5} />
+                    </button>
+                  </div>
+                ) : (
                   <button
                     type="button"
-                    onClick={handleSave}
-                    disabled={loading}
-                    aria-label="Bölümü kaydet"
-                    className="riso-focus shrink-0 inline-flex h-11 w-11 items-center justify-center border-2 border-carbon bg-paper text-riso-spring hover:bg-riso-spring hover:text-carbon transition-colors"
+                    ref={departmentTrigger}
+                    disabled={!isEditable}
+                    aria-label={isEditable ? 'Bölümü düzenle' : undefined}
+                    className={`inline-flex max-w-full min-w-0 items-center gap-1.5 border-2 border-carbon bg-paper-deep px-2 py-0.5 text-left ${
+                      isEditable ? 'group cursor-pointer hover:bg-riso-mustard/40' : ''
+                    }`}
+                    onClick={() => {
+                      if (!isEditable) return;
+                      setDepartment(user.department || '');
+                      setIsEditing(true);
+                    }}
                   >
-                    <Save size={14} strokeWidth={2.5} />
+                    <Briefcase size={11} strokeWidth={2.4} className="text-carbon-muted" />
+                    <span className="min-w-0 truncate font-riso-mono text-[0.7rem] uppercase tracking-wider text-carbon">
+                      {user.department || 'Bölüm Girilmedi'}
+                    </span>
+                    {isEditable && !isPreview && (
+                      <Edit2
+                        size={10}
+                        strokeWidth={2.5}
+                        className="text-riso-pink-deep opacity-0 group-hover:opacity-100 transition-opacity"
+                      />
+                    )}
                   </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  ref={departmentTrigger}
-                  disabled={!isEditable}
-                  aria-label={isEditable ? 'Bölümü düzenle' : undefined}
-                  className={`inline-flex max-w-full min-w-0 items-center gap-1.5 border-2 border-carbon bg-paper-deep px-2 py-0.5 text-left ${
-                    isEditable ? 'group cursor-pointer hover:bg-riso-mustard/40' : ''
-                  }`}
-                  onClick={() => {
-                    if (!isEditable) return;
-                    setDepartment(user.department || '');
-                    setIsEditing(true);
-                  }}
-                >
-                  <Briefcase size={11} strokeWidth={2.4} className="text-carbon-muted" />
-                  <span className="min-w-0 truncate font-riso-mono text-[0.7rem] uppercase tracking-wider text-carbon">
-                    {user.department || 'Bölüm Girilmedi'}
-                  </span>
-                  {isEditable && (
-                    <Edit2
-                      size={10}
-                      strokeWidth={2.5}
-                      className="text-riso-pink-deep opacity-0 group-hover:opacity-100 transition-opacity"
-                    />
-                  )}
-                </button>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
 
           {profileError && (
-            <p role="alert" className="shrink-0 px-5 py-3 text-sm text-riso-redox">
+            <p
+              role="alert"
+              className="shrink-0 border-l-4 border-riso-redox bg-paper-deep px-5 py-3 text-sm text-carbon"
+            >
               {profileError}
             </p>
           )}
           <div className="min-h-0 overflow-y-auto overscroll-contain">
-            {/* Stats grid */}
-            <div className="grid grid-cols-3 border-b-2 border-carbon">
-              <StatCell
-                icon={<Trophy size={18} strokeWidth={2.5} />}
-                label="Galibiyet"
-                value={String(user.wins)}
-                tone="mustard"
-              />
-              <StatCell
-                icon={<Gamepad2 size={18} strokeWidth={2.5} />}
-                label="Oyun"
-                value={String(user.gamesPlayed)}
-                tone="blue"
-                borderLeft
-              />
-              <StatCell
-                icon={<Star size={18} strokeWidth={2.5} />}
-                label="Oran"
-                value={`${user.gamesPlayed > 0 ? Math.floor((user.wins / user.gamesPlayed) * 100) : 0}%`}
-                tone="pink"
-                borderLeft
-              />
-            </div>
-
-            {/* Level progress */}
-            <div className="p-5 border-b-2 border-carbon bg-paper">
-              <div className="flex items-baseline justify-between font-riso-mono text-xs font-bold uppercase tracking-[0.16em] mb-2">
-                <span className="text-carbon">LEVEL {level}</span>
-                <span className="text-carbon-muted">LEVEL {level + 1}</span>
-              </div>
-              <div className="relative h-4 border-2 border-carbon bg-paper-deep overflow-hidden">
-                <div
-                  className="h-full bg-riso-pink transition-[width] duration-500"
-                  style={{ width: `${nextLevelProgress}%` }}
-                />
-                {/* Diagonal stripe sticker pattern over the fill */}
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 opacity-25"
-                  style={{
-                    backgroundImage:
-                      'repeating-linear-gradient(135deg, transparent 0 4px, var(--ink) 4px 5px)',
-                    width: `${nextLevelProgress}%`,
-                  }}
-                />
-              </div>
-              <p className="mt-1.5 text-right font-riso-mono text-[0.65rem] uppercase tracking-wider text-carbon-muted">
-                {user.points} CP
+            {isPreview ? (
+              <p className="p-5 font-riso-body text-sm leading-6 text-carbon-soft">
+                Bu oyuncunun ayrıntılı profili paylaşılmıyor.
               </p>
-            </div>
-
-            {/* Inventory */}
-            {inventory.length > 0 && (
-              <div className="p-5 border-b-2 border-carbon bg-paper-deep">
-                <h3 className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.16em] mb-3 flex items-center gap-1.5 text-carbon-soft">
-                  <Package size={11} strokeWidth={2.5} />
-                  Envanter
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {inventory.map((item) => (
-                    <span
-                      key={item.id}
-                      className="inline-flex items-center gap-1.5 border-2 border-carbon bg-paper px-2 py-0.5 font-riso-mono text-[0.65rem] font-bold uppercase tracking-wider text-carbon"
-                    >
-                      <span className="h-1.5 w-1.5 bg-riso-spring" />
-                      {item.item_title}
-                    </span>
-                  ))}
+            ) : (
+              <>
+                {/* Stats grid */}
+                <div className="grid grid-cols-3 border-b-2 border-carbon">
+                  <StatCell
+                    icon={<Trophy size={18} strokeWidth={2.5} />}
+                    label="Galibiyet"
+                    value={String(user.wins)}
+                    tone="mustard"
+                  />
+                  <StatCell
+                    icon={<Gamepad2 size={18} strokeWidth={2.5} />}
+                    label="Oyun"
+                    value={String(user.gamesPlayed)}
+                    tone="blue"
+                    borderLeft
+                  />
+                  <StatCell
+                    icon={<Star size={18} strokeWidth={2.5} />}
+                    label="Oran"
+                    value={`${user.gamesPlayed > 0 ? Math.floor((user.wins / user.gamesPlayed) * 100) : 0}%`}
+                    tone="pink"
+                    borderLeft
+                  />
                 </div>
-              </div>
-            )}
 
-            {/* Recent activity */}
-            <div className="p-5 bg-paper overflow-y-auto">
-              <h3 className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.16em] mb-3 flex items-center gap-1.5 text-carbon-soft">
-                <Clock size={11} strokeWidth={2.5} />
-                Son Aktivite
-              </h3>
-              <div className="space-y-2">
-                {recentHistory.map((item, idx) => {
-                  const win = item.result === 'WIN';
-                  return (
+                {/* Level progress */}
+                <div className="p-5 border-b-2 border-carbon bg-paper">
+                  <div className="flex items-baseline justify-between font-riso-mono text-xs font-bold uppercase tracking-[0.16em] mb-2">
+                    <span className="text-carbon">LEVEL {level}</span>
+                    <span className="text-carbon-muted">LEVEL {level + 1}</span>
+                  </div>
+                  <div className="relative h-4 border-2 border-carbon bg-paper-deep overflow-hidden">
                     <div
-                      key={idx}
-                      className={`flex items-center justify-between border-2 border-carbon p-2.5 ${
-                        win ? 'bg-riso-spring/15' : 'bg-riso-pink/10'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span
-                          className={`h-2 w-2 shrink-0 ${win ? 'bg-riso-spring' : 'bg-riso-pink'}`}
-                        />
-                        <span className="font-riso-body text-sm text-carbon truncate">
-                          {item.game}
-                        </span>
-                      </div>
-                      <div className="text-right shrink-0 ml-3">
-                        <span
-                          className={`block font-riso-mono text-sm font-bold ${
-                            win ? 'text-riso-spring' : 'text-riso-redox'
-                          }`}
-                        >
-                          {item.points}
-                        </span>
-                        <span className="block font-riso-mono text-[0.6rem] uppercase tracking-wider text-carbon-muted">
-                          {item.time}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+                      className="h-full bg-riso-pink transition-[width] duration-500"
+                      style={{ width: `${nextLevelProgress}%` }}
+                    />
+                    {/* Diagonal stripe sticker pattern over the fill */}
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 opacity-25"
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(135deg, transparent 0 4px, var(--ink) 4px 5px)',
+                        width: `${nextLevelProgress}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="mt-1.5 text-right font-riso-mono text-[0.65rem] uppercase tracking-wider text-carbon-muted">
+                    {user.points} CP
+                  </p>
+                </div>
+              </>
+            )}
+            {isEditable && !isPreview && <ProfileActivity {...profileData} />}
           </div>
           {/* Footer strip */}
           <div className="shrink-0 border-t-2 border-carbon bg-riso-mustard px-4 py-2 text-center">
             <span className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.2em] text-carbon">
-              CafeDuo Üye Kartı · Güncel
+              {isPreview ? 'CafeDuo · Oyuncu' : 'CafeDuo Üye Kartı · Güncel'}
             </span>
           </div>
         </div>
         <AvatarPickerModal
-          isOpen={avatarPickerOpen}
+          isOpen={avatarPickerOpen && isEditable && !isPreview}
           onClose={() => setAvatarPickerOpen(false)}
           currentSeed={seedFromAvatarUrl(avatarUrl)}
           saving={savingAvatar}

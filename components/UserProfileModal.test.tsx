@@ -2,11 +2,13 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { UserProfileModal } from './UserProfileModal';
 import { User } from '../types';
+import { api } from '../lib/api';
 
 jest.mock('../lib/api', () => ({
   api: {
     users: {
       update: jest.fn(),
+      getGameHistory: jest.fn().mockResolvedValue([]),
     },
     store: {
       inventory: jest.fn().mockResolvedValue({ success: true, inventory: [] }),
@@ -114,6 +116,26 @@ describe('UserProfileModal', () => {
       expect(mockToast.error).toHaveBeenCalledWith('Güncelleme başarısız.');
       expect(screen.getByRole('alert')).toHaveTextContent('Bölüm güncellenemedi');
     });
+  });
+
+  it('does not invent stats or fetch private data for an opponent preview', () => {
+    const user = { ...createUser(), id: 0, username: 'other', points: 0, wins: 0, gamesPlayed: 0 };
+    render(<UserProfileModal isOpen onClose={jest.fn()} user={user} isPreview />);
+    expect(screen.getByText('Bu oyuncunun ayrıntılı profili paylaşılmıyor.')).toBeInTheDocument();
+    expect(screen.queryByText('ID: #000000')).not.toBeInTheDocument();
+    expect(screen.queryByText('LEVEL 1')).not.toBeInTheDocument();
+    expect(screen.queryByText('Galibiyet')).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Envanterin' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Son oyunların' })).not.toBeInTheDocument();
+    expect(api.store.inventory).not.toHaveBeenCalled();
+    expect(api.users.getGameHistory).not.toHaveBeenCalled();
+  });
+
+  it('keeps supplied read-only stats while withholding private history and inventory', () => {
+    render(<UserProfileModal isOpen onClose={jest.fn()} user={createUser()} />);
+    expect(screen.getByText('75%')).toBeInTheDocument();
+    expect(api.store.inventory).not.toHaveBeenCalled();
+    expect(api.users.getGameHistory).not.toHaveBeenCalled();
   });
 
   it('calls onClose from close button and backdrop', () => {

@@ -357,11 +357,30 @@ export const api = {
       }
     },
 
-    getGameHistory: async (username: string): Promise<GameHistoryEntry[]> => {
+    getGameHistory: async (
+      username: string,
+      options?: { throwOnError?: boolean }
+    ): Promise<GameHistoryEntry[]> => {
       try {
         const payload = await fetchAPI(`/users/${encodeURIComponent(username)}/game-history`);
-        return Array.isArray(payload) ? payload : [];
-      } catch {
+        const valid =
+          Array.isArray(payload) &&
+          (!options?.throwOnError ||
+            payload.every(
+              (row) =>
+                isRecord(row) &&
+                (typeof row.id === 'string' || typeof row.id === 'number') &&
+                typeof row.gameType === 'string' &&
+                typeof row.opponentName === 'string' &&
+                typeof row.createdAt === 'string' &&
+                typeof row.didWin === 'boolean' &&
+                (row.winner === null || typeof row.winner === 'string') &&
+                row.status === 'finished'
+            ));
+        if (!valid) throw new Error('Oyun geçmişi yanıtı geçersiz.');
+        return payload as GameHistoryEntry[];
+      } catch (error) {
+        if (options?.throwOnError) throw error;
         return [];
       }
     },

@@ -79,6 +79,7 @@ const cors = require('cors');
 const cookie = require('cookie');
 const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
+const { buildSecurityHeadersOptions } = require('./middleware/securityHeaders');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcrypt');
 const { Server } = require('socket.io');
@@ -458,24 +459,7 @@ logger.info('🔐 Security defaults:', {
 // Middleware (Moved to backend/middleware/auth.js)
 
 // Security Middleware
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // aite build için gerekli
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        fontSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
-        connectSrc: ["'self'", 'wss:', 'ws:'],
-        frameSrc: ["'none'"],
-        objectSrc: ["'none'"],
-        upgradeInsecureRequests: [],
-      },
-    },
-    crossOriginEmbedderPolicy: false, // Socket.IO uyumluluğu
-  })
-); // Secure HTTP headers with CSP
+app.use(helmet(buildSecurityHeadersOptions({ production: process.env.NODE_ENV === 'production' })));
 
 // Sentry Request and Tracing Handlers (must be before other middleware)
 // In Sentry v10+, request/tracing is automatic via instrumentation

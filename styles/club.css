@@ -690,3 +690,505 @@
     transition: none;
   }
 }
+
+/* Landing motion is an enhancement: content and hit targets remain stable. */
+.club-landing {
+  --club-progress: 0;
+}
+.club-reading-progress {
+  position: fixed;
+  inset: 0 0 auto;
+  height: 3px;
+  z-index: 101;
+  background: linear-gradient(90deg, #be3469, #234a9b);
+  transform: scaleX(var(--club-progress));
+  transform-origin: left;
+  pointer-events: none;
+}
+.club-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+}
+.club-motion-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 11px;
+  border: 1px solid #24282430;
+  border-radius: 24px;
+  font-size: 11px;
+  color: #50534c;
+  background: #fbf7ee;
+}
+.club-motion-control:hover:not(:disabled) {
+  border-color: #be3469;
+}
+.club-motion-control:disabled {
+  cursor: default;
+}
+.club-motion-control > span {
+  font-size: 16px;
+  line-height: 1;
+}
+.club-intro h1 {
+  margin-top: 25px;
+}
+.club-intro h1 em {
+  display: inline-block;
+  position: relative;
+}
+.club-headline-underline {
+  position: absolute;
+  width: 98%;
+  left: 0;
+  bottom: -15px;
+  height: 25px;
+  overflow: visible;
+  pointer-events: none;
+  fill: none;
+  stroke: #d75a85;
+  stroke-width: 2.5px;
+  stroke-linecap: round;
+}
+.club-board-scene {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+  justify-self: end;
+  padding: 36px 25px 110px;
+  margin-top: 74px;
+  isolation: isolate;
+}
+.club-board-scene .club-board-preview {
+  position: relative;
+  z-index: 1;
+}
+.club-scene-halo {
+  position: absolute;
+  inset: 6px 0 20px;
+  border-radius: 48% 44% 40% 45%;
+  background: #dbe4f3;
+  transform: rotate(-4deg);
+  z-index: -1;
+}
+.club-scene-halo::after {
+  content: '';
+  position: absolute;
+  inset: 12px;
+  border: 1px solid #234a9b25;
+  border-radius: inherit;
+}
+.club-scene-stamp {
+  position: absolute;
+  width: 94px;
+  height: 94px;
+  top: -64px;
+  right: 3px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #edb0c4;
+  color: #242824;
+  border: 1px solid #be3469;
+  border-radius: 50%;
+  z-index: 2;
+  pointer-events: none;
+}
+.club-scene-stamp::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1px dashed #be346975;
+  border-radius: 50%;
+}
+.club-scene-stamp > span {
+  font-family: 'Fraunces Variable', Georgia, serif;
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -0.09em;
+}
+.club-scene-stamp > small {
+  font-size: 9px;
+  line-height: 1.2;
+  text-align: center;
+}
+.club-scene-ticket {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  left: -16px;
+  bottom: 7px;
+  padding: 15px 21px;
+  background: #fbf7ee;
+  border: 1px solid #242824;
+  box-shadow: 4px 4px 0 #234a9b15;
+  transform: rotate(-5deg);
+  z-index: 2;
+  pointer-events: none;
+}
+.club-scene-ticket > span:first-child {
+  font-size: 30px;
+}
+.club-scene-ticket > span:last-child {
+  font-size: 12px;
+  line-height: 1.5;
+}
+.club-scene-ticket em {
+  font-family: 'Fraunces Variable', Georgia, serif;
+  color: #be3469;
+  font-size: 20px;
+}
+.club-join-button {
+  transition:
+    background 0.2s,
+    box-shadow 0.2s;
+}
+.club-join-button:hover {
+  box-shadow: 4px 4px 0 #242824;
+}
+.club-join-button:active {
+  box-shadow: 1px 1px 0 #242824;
+}
+.club-join-button > span {
+  transition: transform 0.2s;
+}
+.club-join-button:hover > span,
+.club-join-button:focus-visible > span {
+  transform: translate(3px, -3px);
+}
+.club-flow {
+  background: #f4efe3;
+}
+.club-journey-art {
+  position: relative;
+  width: 270px;
+  height: 180px;
+  margin: 45px 0 0 20px;
+}
+.club-journey-table {
+  position: absolute;
+  top: 14px;
+  left: 0;
+  padding: 16px 25px;
+  background: #234a9b;
+  color: #fff;
+  font-family: 'Fraunces Variable', Georgia, serif;
+  font-size: 24px;
+  transform: rotate(-6deg);
+}
+.club-journey-table i {
+  margin-left: 20px;
+  font-style: normal;
+}
+.club-journey-token {
+  position: absolute;
+  top: 92px;
+  left: 22px;
+  border: 1px solid #be3469;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  width: 67px;
+  height: 67px;
+  background: #edb0c4;
+  color: #242824;
+  font-size: 40px;
+}
+.club-journey-reward {
+  position: absolute;
+  top: 52px;
+  right: 0;
+  padding: 21px;
+  border: 1px solid #242824;
+  background: #fbf7ee;
+  transform: rotate(4deg);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.club-journey-reward em {
+  color: #be3469;
+}
+.club-steps li {
+  position: relative;
+  transition: border-color 0.2s;
+}
+.club-steps li:hover {
+  border-top-color: #be3469;
+}
+.club-steps li:hover .club-step-number {
+  color: #be3469;
+}
+.club-games {
+  background: #dbe4f3;
+}
+.club-game-row {
+  position: relative;
+  transition: background 0.2s;
+}
+.club-game-row::before {
+  content: '';
+  position: absolute;
+  inset: auto 0 -1px;
+  height: 2px;
+  background: #234a9b;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s;
+}
+.club-game-row:nth-child(2)::before {
+  background: #be3469;
+}
+.club-game-row:hover,
+.club-game-row:focus-visible {
+  background: #fbf7ee55;
+}
+.club-game-row:hover::before,
+.club-game-row:focus-visible::before {
+  transform: scaleX(1);
+}
+.club-game-mark,
+.club-game-action > span {
+  transition: transform 0.3s;
+}
+.club-game-row:hover .club-game-mark,
+.club-game-row:focus-visible .club-game-mark {
+  transform: rotate(-8deg) translateY(-3px);
+}
+.club-game-row:hover .club-game-action > span,
+.club-game-row:focus-visible .club-game-action > span {
+  transform: translateX(5px);
+}
+.club-members-note {
+  background: #edb0c4;
+}
+.club-last-call {
+  margin-top: 75px;
+  padding-top: 48px;
+  border-top: 1px solid #24282430;
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  justify-content: space-between;
+}
+.club-last-call > p {
+  font-family: 'Fraunces Variable', Georgia, serif;
+  font-size: clamp(32px, 3.6vw, 48px);
+  letter-spacing: -0.045em;
+  line-height: 1.2;
+}
+.club-last-call > p em {
+  color: #be3469;
+}
+.club-last-call > div {
+  display: grid;
+  gap: 13px;
+}
+.club-last-call > div > span {
+  font-size: 11px;
+  color: #65695f;
+}
+.club-piece {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.club-piece > svg {
+  width: 87%;
+  height: 87%;
+  max-width: 50px;
+  max-height: 50px;
+}
+.club-square-recent {
+  background: #d0dcee;
+}
+.club-square-selected {
+  background: #edb0c4;
+}
+@keyframes club-ticket-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-5deg);
+  }
+  50% {
+    transform: translateY(-7px) rotate(-3deg);
+  }
+}
+@keyframes club-stamp-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes club-reveal {
+  from {
+    opacity: 0.3;
+    transform: translateY(22px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes club-ink {
+  from {
+    stroke-dashoffset: 530;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes club-piece-move {
+  from {
+    transform: translate(var(--move-x), var(--move-y));
+  }
+  to {
+    transform: translate(0, 0);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .club-landing[data-motion='on'] .club-scene-ticket {
+    animation: club-ticket-float 7s ease-in-out infinite;
+  }
+  .club-landing[data-motion='on'] .club-scene-stamp::before {
+    animation: club-stamp-turn 35s linear infinite;
+  }
+  .club-landing[data-motion='on'] .club-headline-underline path {
+    stroke-dasharray: 530;
+    animation: club-ink 1s ease-out both;
+  }
+  .club-landing[data-motion='on'] [data-landing-revealed='true'] {
+    animation: club-reveal 0.65s cubic-bezier(0.2, 0.65, 0.2, 1) both;
+  }
+  .club-landing[data-motion='on'] [data-landing-revealed='true']:focus-within {
+    animation: none;
+  }
+  .club-landing[data-motion='on'] .club-piece-arriving {
+    animation: club-piece-move 0.28s cubic-bezier(0.2, 0.65, 0.2, 1) both;
+  }
+  .club-landing[data-motion='on'] .club-piece-reply {
+    animation-delay: 0.2s;
+  }
+}
+.club-board-scene:focus-within .club-scene-ticket,
+.club-board-scene:focus-within .club-scene-stamp::before {
+  animation-play-state: paused !important;
+}
+.club-landing[data-motion='off'] .club-reading-progress {
+  visibility: hidden;
+}
+.club-landing[data-motion='off'] *,
+.club-landing[data-motion='off'] *::before,
+.club-landing[data-motion='off'] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+.club-landing[data-motion='off'] .club-game-mark,
+.club-landing[data-motion='off'] .club-game-action > span,
+.club-landing[data-motion='off'] .club-join-button > span {
+  transform: none;
+}
+html[data-landing-motion='off'] {
+  scroll-behavior: auto;
+}
+@media (max-width: 1080px) {
+  .club-board-scene {
+    padding-inline: 15px;
+  }
+  .club-scene-ticket {
+    left: -8px;
+  }
+  .club-hero-meta {
+    gap: 8px;
+  }
+}
+@media (max-width: 767px) {
+  .club-spread {
+    gap: 34px;
+  }
+  .club-hero-meta {
+    justify-content: space-between;
+  }
+  .club-hero-meta .club-kicker {
+    max-width: 130px;
+    line-height: 1.5;
+  }
+  .club-motion-control {
+    font-size: 11px;
+    padding-inline: 8px;
+    gap: 5px;
+  }
+  .club-board-scene {
+    justify-self: center;
+    max-width: 500px;
+    margin-top: 50px;
+    padding: 29px 14px 94px;
+  }
+  .club-scene-stamp {
+    width: 76px;
+    height: 76px;
+    top: -54px;
+    right: 0;
+  }
+  .club-scene-stamp > span {
+    font-size: 26px;
+  }
+  .club-scene-stamp > small {
+    font-size: 8px;
+  }
+  .club-scene-ticket {
+    left: 0;
+    padding: 10px 15px;
+    gap: 12px;
+    bottom: 2px;
+  }
+  .club-scene-ticket > span:first-child {
+    font-size: 25px;
+  }
+  .club-scene-ticket em {
+    font-size: 17px;
+  }
+  .club-headline-underline {
+    bottom: -12px;
+    height: 21px;
+  }
+  .club-journey-art {
+    margin-top: 26px;
+    height: 160px;
+    transform: scale(0.9);
+    transform-origin: left top;
+  }
+  .club-last-call {
+    flex-direction: column;
+    align-items: flex-start;
+    margin-top: 45px;
+    padding-top: 35px;
+    gap: 25px;
+  }
+  .club-last-call > div {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .club-landing *,
+  .club-landing *::before,
+  .club-landing *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .club-reading-progress {
+    display: none;
+  }
+  .club-game-mark,
+  .club-game-action > span,
+  .club-join-button > span {
+    transform: none !important;
+  }
+}

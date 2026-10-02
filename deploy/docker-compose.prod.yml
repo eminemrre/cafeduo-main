@@ -4,7 +4,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: '${DB_USER:-postgres}'
-      POSTGRES_PASSWORD: '${DB_PASSWORD:-change-me}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD:?DB_PASSWORD must be set for production}'
       POSTGRES_DB: '${DB_NAME:-cafeduo}'
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -41,7 +41,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      DATABASE_URL: 'postgres://${DB_USER:-postgres}:${DB_PASSWORD:-change-me}@postgres:5432/${DB_NAME:-cafeduo}'
+      DATABASE_URL: 'postgres://${DB_USER:-postgres}:${DB_PASSWORD:?DB_PASSWORD must be set for production}@postgres:5432/${DB_NAME:-cafeduo}'
       REDIS_URL: 'redis://redis:6379'
       DB_SSL: '${DB_SSL:-false}'
       DB_SSL_REJECT_UNAUTHORIZED: '${DB_SSL_REJECT_UNAUTHORIZED:-false}'

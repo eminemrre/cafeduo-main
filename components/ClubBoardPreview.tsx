@@ -45,6 +45,9 @@ export const ClubBoardPreview: React.FC = () => {
   const [targets, setTargets] = useState<Square[]>([]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('Beyaz taşlar sende. Bir taş seç.');
+  const [lastMoves, setLastMoves] = useState<Array<{ from: Square; to: Square; reply: boolean }>>(
+    []
+  );
   const [notation, setNotation] = useState('1. e4 c5');
 
   const chooseSquare = async (square: Square) => {
@@ -70,6 +73,10 @@ export const ClubBoardPreview: React.FC = () => {
         setNotation(
           `1. e4 c5 ${history.map((san, i) => `${i % 2 === 0 ? `${Math.floor(i / 2) + 2}. ` : ''}${san}`).join(' ')}`
         );
+        setLastMoves([
+          { from: move.from, to: move.to, reply: false },
+          ...(response ? [{ from: response.from, to: response.to, reply: true }] : []),
+        ]);
         setPosition(readPosition(game.fen()));
         setSelected(null);
         setTargets([]);
@@ -104,6 +111,7 @@ export const ClubBoardPreview: React.FC = () => {
     setPosition(readPosition(INITIAL_FEN));
     setSelected(null);
     setTargets([]);
+    setLastMoves([]);
     setNotation('1. e4 c5');
     setMessage('Beyaz taşlar sende. Bir taş seç.');
   };
@@ -126,7 +134,7 @@ export const ClubBoardPreview: React.FC = () => {
             key={square}
             type="button"
             data-testid={`preview-square-${square}`}
-            className={`club-square ${(Math.floor(i / 8) + i) % 2 ? 'club-square-dark' : ''} ${selected === square ? 'club-square-selected' : ''}`}
+            className={`club-square ${(Math.floor(i / 8) + i) % 2 ? 'club-square-dark' : ''} ${selected === square ? 'club-square-selected' : ''} ${lastMoves.some((move) => move.from === square || move.to === square) ? 'club-square-recent' : ''}`}
             aria-label={`${square}${piece ? `, ${color === 'w' ? 'beyaz' : 'siyah'} ${NAMES[piece]}` : ', boş'}`}
             aria-pressed={selected === square}
             tabIndex={activeSquare === square ? 0 : -1}
@@ -165,7 +173,25 @@ export const ClubBoardPreview: React.FC = () => {
                 {'abcdefgh'[i % 8]}
               </span>
             )}
-            {piece && <ChessPieceIcon type={piece} color={color} />}
+            {piece &&
+              (() => {
+                const arrival = lastMoves.find((move) => move.to === square);
+                return (
+                  <span
+                    className={`club-piece ${arrival ? 'club-piece-arriving' : ''} ${arrival?.reply ? 'club-piece-reply' : ''}`}
+                    style={
+                      arrival
+                        ? ({
+                            '--move-x': `${(arrival.from.charCodeAt(0) - square.charCodeAt(0)) * 100}%`,
+                            '--move-y': `${(Number(square[1]) - Number(arrival.from[1])) * 100}%`,
+                          } as React.CSSProperties)
+                        : undefined
+                    }
+                  >
+                    <ChessPieceIcon type={piece} color={color} />
+                  </span>
+                );
+              })()}
             {targets.includes(square) && <span className="club-move-dot" aria-hidden="true" />}
           </button>
         ))}

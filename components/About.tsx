@@ -1,8 +1,11 @@
 import React from 'react';
 
-export const About: React.FC = () => (
+export const About: React.FC<{ onJoin?: () => void; isLoggedIn?: boolean }> = ({
+  onJoin,
+  isLoggedIn,
+}) => (
   <section id="about" className="club-about" aria-label="Hakkımızda">
-    <div className="club-container club-about-layout">
+    <div className="club-container club-about-layout" data-landing-reveal>
       <span className="club-kicker">Küçük bir kulüp notu</span>
       <div>
         <h2 data-testid="about-main-heading">
@@ -30,5 +33,21 @@ export const About: React.FC = () => (
         </p>
       </aside>
     </div>
+    {onJoin && (
+      <div className="club-container club-last-call" data-landing-reveal>
+        <p>
+          Bir kahve molası.
+          <br />
+          <em>Bir sonraki karşılaşma.</em>
+        </p>
+        <div>
+          <button type="button" className="club-join-button riso-focus" onClick={onJoin}>
+            {isLoggedIn ? 'Paneline geç' : 'Masaya katıl'}
+            <span aria-hidden="true">↗</span>
+          </button>
+          <span>Hesabınla başla. Kafede buluşalım.</span>
+        </div>
+      </div>
+    )}
   </section>
 );

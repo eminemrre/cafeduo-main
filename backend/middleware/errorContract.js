@@ -105,7 +105,16 @@ const createErrorHandler = ({ logger } = {}) => {
       timestamp: new Date().toISOString(),
     });
 
-    const payload = formatErrorResponse(req, normalized);
+    const publicError =
+      normalized.status >= 500
+        ? {
+            status: normalized.status,
+            code: 'INTERNAL_ERROR',
+            message: 'Internal server error',
+            details: null,
+          }
+        : normalized;
+    const payload = formatErrorResponse(req, publicError);
     return res.status(normalized.status).json(payload);
   };
 };

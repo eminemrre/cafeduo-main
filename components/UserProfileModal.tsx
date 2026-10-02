@@ -13,6 +13,7 @@ import { X, Trophy, Gamepad2, Star, Edit2, Save, Briefcase, ImageIcon } from 'lu
 import { User } from '../types';
 import { api } from '../lib/api';
 import { PAU_DEPARTMENTS } from '../constants';
+import { AvatarImage } from './ui/AvatarImage';
 import { getAvatarUrl, seedFromAvatarUrl, type AvatarSeed } from '../lib/avatars';
 import { AvatarPickerModal } from './AvatarPickerModal';
 import { useToast } from '../contexts/ToastContext';
@@ -117,20 +118,12 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               {/* Avatar tile — DiceBear pixel-art if picked, initials fallback otherwise */}
               <div className="relative shrink-0">
                 <div className="relative h-16 w-16 overflow-hidden border-2 border-carbon bg-riso-blue text-paper">
-                  {avatarUrl ? (
-                    <img
-                      src={avatarUrl}
-                      alt=""
-                      aria-hidden="true"
-                      className="absolute inset-0 h-full w-full object-contain"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).style.display = 'none';
-                      }}
-                    />
-                  ) : null}
-                  <span className="absolute inset-0 flex items-center justify-center font-riso-display text-2xl font-bold tracking-tight">
-                    {(user.username || '?').substring(0, 2).toUpperCase()}
-                  </span>
+                  <AvatarImage
+                    src={avatarUrl}
+                    initials={(user.username || '?').substring(0, 2).toUpperCase()}
+                    initialsClassName="font-riso-display text-2xl font-bold tracking-tight"
+                    loading="eager"
+                  />
                 </div>
                 {isEditable && !isPreview && (
                   <button

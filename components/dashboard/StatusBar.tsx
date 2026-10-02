@@ -1,4 +1,5 @@
 import React from 'react';
+import { AvatarImage } from '../ui/AvatarImage';
 import { User } from '../../types';
 import { Trophy, Star, Gamepad2, Wifi, MapPin } from 'lucide-react';
 
@@ -24,17 +25,11 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         aria-label="Profilini aç"
       >
         <div className="duo-status-avatar">
-          <span aria-hidden="true">{user.username.charAt(0).toUpperCase()}</span>
-          {user.avatar_url && (
-            <img
-              src={user.avatar_url}
-              alt=""
-              className="absolute inset-0 h-full w-full object-contain"
-              onError={(event) => {
-                event.currentTarget.style.display = 'none';
-              }}
-            />
-          )}
+          <AvatarImage
+            src={user.avatar_url}
+            initials={user.username.charAt(0).toUpperCase()}
+            loading="eager"
+          />
         </div>
         <div className="min-w-0">
           <h3 className="truncate">{user.username}</h3>

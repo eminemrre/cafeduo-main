@@ -10,7 +10,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Trophy, Medal } from 'lucide-react';
 import { api } from '../lib/api';
-import { getAvatarUrl } from '../lib/avatars';
+import { AvatarImage } from './ui/AvatarImage';
 import type { Tournament, TournamentLeaderboardResponse } from '../types';
 
 const POLL_MS = 15_000;
@@ -137,8 +137,6 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
               {data.leaderboard.map((row, idx) => {
                 const rank = idx + 1;
                 const prize = prizeByRank.get(rank);
-                const avatarSrc =
-                  row.avatar_url || getAvatarUrl(row.username || `user-${row.id}`);
                 return (
                   <li
                     key={row.id}
@@ -155,18 +153,13 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
                       )}
                     </div>
                     <div className="relative h-9 w-9 shrink-0 overflow-hidden border-2 border-carbon bg-riso-blue text-paper">
-                      <img
-                        src={avatarSrc}
-                        alt=""
-                        aria-hidden="true"
-                        className="absolute inset-0 h-full w-full object-contain"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display = 'none';
-                        }}
+                      <AvatarImage
+                        src={row.avatar_url}
+                        initials={String(row.username || '?')
+                          .substring(0, 2)
+                          .toUpperCase()}
+                        initialsClassName="font-riso-display text-[0.65rem] font-bold"
                       />
-                      <span className="absolute inset-0 flex items-center justify-center font-riso-display text-[0.65rem] font-bold">
-                        {String(row.username || '?').substring(0, 2).toUpperCase()}
-                      </span>
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-riso-body font-bold text-carbon truncate">

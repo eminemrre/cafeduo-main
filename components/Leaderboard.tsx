@@ -1,3 +1,4 @@
+import { AvatarImage } from './ui/AvatarImage';
 /**
  * Leaderboard — Riso Kantin redesign (PR #25).
  *
@@ -189,18 +190,10 @@ export const Leaderboard: React.FC = () => {
                   <td className="px-3 py-2.5">
                     <div className="flex items-center gap-3">
                       <div className="relative flex h-9 w-9 items-center justify-center border-2 border-carbon bg-riso-blue font-riso-display text-xs font-bold text-paper overflow-hidden">
-                        {user.avatar_url ? (
-                          <img
-                            src={user.avatar_url}
-                            alt=""
-                            aria-hidden="true"
-                            className="absolute inset-0 h-full w-full object-contain"
-                            onError={(e) => {
-                              (e.currentTarget as HTMLImageElement).style.display = 'none';
-                            }}
-                          />
-                        ) : null}
-                        <span>{user.username.substring(0, 2).toUpperCase()}</span>
+                        <AvatarImage
+                          src={user.avatar_url}
+                          initials={user.username.substring(0, 2).toUpperCase()}
+                        />
                       </div>
                       <span className="font-riso-body font-bold text-carbon">{user.username}</span>
                     </div>

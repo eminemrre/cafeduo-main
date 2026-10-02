@@ -1,5 +1,5 @@
 /**
- * AvatarPickerModal — 4×4 DiceBear pixel-art grid.
+ * AvatarPickerModal — 4×4 locally served pixel-art grid.
  *
  * Surface matches the Riso Kantin redesign: paper ground, ink border, double
  * offset shadow. Each tile is a 2px-bordered square; the currently selected
@@ -11,6 +11,7 @@
  * `onPick(seed)` callback that fires the PUT /users/:id request upstream.
  */
 import React from 'react';
+import { AvatarImage } from './ui/AvatarImage';
 import { DialogLayer } from './ui/DialogLayer';
 import { X } from 'lucide-react';
 import { AVATAR_SEEDS, getAvatarUrl, type AvatarSeed } from '../lib/avatars';
@@ -56,13 +57,16 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
           </div>
 
           {error && (
-            <p role="alert" className="shrink-0 px-5 py-3 text-sm text-riso-redox">
+            <p
+              role="alert"
+              className="shrink-0 px-5 py-3 text-sm text-carbon border-l-2 border-riso-redox"
+            >
               {error}
             </p>
           )}
           <div className="min-h-0 overflow-y-auto overscroll-contain p-5" aria-busy={saving}>
             <p className="mb-3 font-riso-mono text-[0.7rem] uppercase tracking-[0.16em] text-carbon-soft">
-              16 seçenek · DiceBear pixel-art
+              16 avatar · Kendine birini seç
             </p>
             <div className="grid grid-cols-4 gap-2 sm:gap-3" data-testid="avatar-grid">
               {AVATAR_SEEDS.map((seed) => {
@@ -80,12 +84,12 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
                       isCurrent ? 'ring-2 ring-riso-pink ring-offset-2 ring-offset-paper' : ''
                     }`}
                   >
-                    <img
+                    <AvatarImage
                       src={getAvatarUrl(seed)}
-                      alt=""
-                      aria-hidden="true"
-                      className="absolute inset-0 h-full w-full object-contain p-1"
-                      loading="lazy"
+                      initials={seed.substring(0, 2).toUpperCase()}
+                      initialsClassName="font-riso-display font-bold text-carbon"
+                      imageClassName="p-1"
+                      loading="eager"
                     />
                   </button>
                 );

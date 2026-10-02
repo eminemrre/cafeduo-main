@@ -69,7 +69,7 @@ describe('UserProfileModal', () => {
     const user = createUser();
     const onSaveProfile = jest.fn().mockResolvedValueOnce(undefined);
 
-    const { container } = render(
+    render(
       <UserProfileModal
         isOpen={true}
         onClose={jest.fn()}
@@ -83,11 +83,7 @@ describe('UserProfileModal', () => {
     const select = screen.getByRole('combobox');
     fireEvent.change(select, { target: { value: 'Bilgisayar Mühendisliği' } });
 
-    const saveButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.className.includes('text-riso-spring')
-    );
-    expect(saveButton).toBeTruthy();
-    fireEvent.click(saveButton as HTMLButtonElement);
+    fireEvent.click(screen.getByRole('button', { name: 'Bölümü kaydet' }));
 
     await waitFor(() => {
       expect(onSaveProfile).toHaveBeenCalledWith('Bilgisayar Mühendisliği');
@@ -99,7 +95,7 @@ describe('UserProfileModal', () => {
     const user = createUser();
     const onSaveProfile = jest.fn().mockRejectedValueOnce(new Error('db down'));
 
-    const { container } = render(
+    render(
       <UserProfileModal
         isOpen={true}
         onClose={jest.fn()}
@@ -112,26 +108,25 @@ describe('UserProfileModal', () => {
     fireEvent.change(screen.getByRole('combobox'), {
       target: { value: 'İşletme' },
     });
-    const saveButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.className.includes('text-riso-spring')
-    );
-    expect(saveButton).toBeTruthy();
-    fireEvent.click(saveButton as HTMLButtonElement);
+    fireEvent.click(screen.getByRole('button', { name: 'Bölümü kaydet' }));
 
     await waitFor(() => {
       expect(mockToast.error).toHaveBeenCalledWith('Güncelleme başarısız.');
+      expect(screen.getByRole('alert')).toHaveTextContent('Bölüm güncellenemedi');
     });
   });
 
   it('calls onClose from close button and backdrop', () => {
     const user = createUser();
     const onClose = jest.fn();
-    const { container } = render(<UserProfileModal isOpen={true} onClose={onClose} user={user} />);
+    render(<UserProfileModal isOpen={true} onClose={onClose} user={user} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Profili kapat' }));
     expect(onClose).toHaveBeenCalledTimes(1);
 
-    const backdrop = container.querySelector('.absolute.inset-0');
+    const backdrop = screen
+      .getByRole('dialog', { name: 'emin profili' })
+      .querySelector('.absolute.inset-0');
     expect(backdrop).toBeTruthy();
     fireEvent.click(backdrop as HTMLDivElement);
     expect(onClose).toHaveBeenCalledTimes(2);

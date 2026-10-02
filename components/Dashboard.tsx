@@ -38,7 +38,7 @@ import { api } from '../lib/api';
 
 interface DashboardProps {
   currentUser: User;
-  onUpdateUser: (user: User) => void;
+  onUpdateUser: (user: User, options?: { throwOnError?: boolean }) => Promise<void> | void;
   onRefreshUser?: () => Promise<void> | void;
 }
 
@@ -177,17 +177,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
     options?: { chessClock?: { baseSeconds: number; incrementSeconds: number; label: string } }
   ) => {
     if (!isMatched) {
-      toast.warning('Oyun kurmak için önce bir masaya bağlanmalısın!');
-      setIsCreateModalOpen(false);
-      return;
+      throw new Error('Oyun kurmak için önce bir masaya bağlanmalısın!');
     }
-
-    try {
-      await createGame(gameType, points, options);
-      setIsCreateModalOpen(false);
-    } catch {
-      toast.error('Oyun kurulurken hata oluştu.');
-    }
+    // The dialog owns pending/error feedback. Propagate rejection so it does
+    // not interpret a failed request as a successful game creation.
+    await createGame(gameType, points, options);
+    setIsCreateModalOpen(false);
   };
 
   // Oyuna katılma
@@ -260,7 +255,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       ...currentUser,
       department,
     };
-    await onUpdateUser(updatedUser);
+    await onUpdateUser(updatedUser, { throwOnError: true });
     setProfileUser(updatedUser);
   };
 

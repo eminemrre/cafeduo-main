@@ -1,5 +1,12 @@
 const { executeDataMode, sendApiError, sendApiProblem } = require('../utils/routeHelpers');
 
+const AVATAR_URL_PATTERN =
+  /^https:\/\/api\.dicebear\.com\/9\.x\/pixel-art\/svg\?seed=[A-Za-z0-9_-]{1,32}$/;
+const isValidAvatarUrl = (value) =>
+  value === null || value === '' || (typeof value === 'string' && AVATAR_URL_PATTERN.test(value));
+const USER_RETURNING_COLUMNS =
+  'id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number, avatar_url';
+
 const createProfileHandlers = ({
   pool,
   isDbConnected,
@@ -155,13 +162,12 @@ const createProfileHandlers = ({
     // (reset to initials) or an https://api.dicebear.com/9.x/pixel-art/svg?seed=…
     // URL whose seed is alphanumeric / dash / underscore. Any other shape is
     // rejected so a hostile client can't store an arbitrary src= on every user.
-    const AVATAR_URL_PATTERN = /^https:\/\/api\.dicebear\.com\/9\.x\/pixel-art\/svg\?seed=[A-Za-z0-9_-]{1,32}$/;
     const avatarUrlProvided = Object.prototype.hasOwnProperty.call(req.body || {}, 'avatar_url');
     let nextAvatarUrl = null;
     if (avatarUrlProvided) {
       if (rawAvatarUrl === null || rawAvatarUrl === '') {
         nextAvatarUrl = null;
-      } else if (typeof rawAvatarUrl === 'string' && AVATAR_URL_PATTERN.test(rawAvatarUrl)) {
+      } else if (isValidAvatarUrl(rawAvatarUrl)) {
         nextAvatarUrl = rawAvatarUrl;
       } else {
         return sendApiProblem(res, {
@@ -194,12 +200,7 @@ const createProfileHandlers = ({
           // Build SET clause dynamically so avatar_url only updates when supplied —
           // otherwise calling PUT /users/:id from the stats path would clobber a
           // user's avatar to NULL on every game finish.
-          const setClauses = [
-            'points = $1',
-            'wins = $2',
-            'games_played = $3',
-            'department = $4',
-          ];
+          const setClauses = ['points = $1', 'wins = $2', 'games_played = $3', 'department = $4'];
           const params = [nextPoints, nextWins, nextGamesPlayed, safeDepartment];
           if (avatarUrlProvided) {
             params.push(nextAvatarUrl);
@@ -210,7 +211,7 @@ const createProfileHandlers = ({
             `UPDATE users
              SET ${setClauses.join(', ')}
              WHERE id = $${params.length}
-             RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number, avatar_url`,
+             RETURNING ${USER_RETURNING_COLUMNS}`,
             params
           );
 
@@ -274,10 +275,88 @@ const createProfileHandlers = ({
     });
   };
 
+  // Profile edits must never carry an old game-statistics snapshot.
+  const updateUserProfile = async (req, res) => {
+    const body = req.body;
+    const invalid = () =>
+      sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'Yalnızca bölüm veya avatar güncellenebilir.',
+      });
+    if (!body || typeof body !== 'object' || Array.isArray(body)) return invalid();
+    const keys = Object.keys(body);
+    if (!keys.length || keys.some((key) => !['department', 'avatar_url'].includes(key))) {
+      return invalid();
+    }
+    const updates = {};
+    if (Object.prototype.hasOwnProperty.call(body, 'department')) {
+      if (typeof body.department !== 'string' || body.department.length > 120) return invalid();
+      updates.department = body.department;
+    }
+    if (Object.prototype.hasOwnProperty.call(body, 'avatar_url')) {
+      if (!isValidAvatarUrl(body.avatar_url)) {
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'INVALID_AVATAR_URL',
+          message: 'Avatar URL hatalı. Sadece curated DiceBear pixel-art avatarları kabul edilir.',
+        });
+      }
+      updates.avatar_url = body.avatar_url || null;
+    }
+    const { id } = req.params;
+    const notFound = () =>
+      sendApiProblem(res, {
+        status: 404,
+        code: 'USER_NOT_FOUND',
+        message: 'User not found',
+      });
+    return executeDataMode(isDbConnected, {
+      db: async () => {
+        try {
+          // Column names come exclusively from the validated allowlist above.
+          const fields = Object.keys(updates);
+          const params = fields.map((field) => updates[field]);
+          params.push(id);
+          const result = await pool.query(
+            `UPDATE users SET ${fields.map((field, index) => `${field} = $${index + 1}`).join(', ')}
+             WHERE id = $${params.length} RETURNING ${USER_RETURNING_COLUMNS}`,
+            params
+          );
+          if (!result.rows.length) return notFound();
+          const user = result.rows[0];
+          if (user.cafe_id) {
+            const cafe = await pool.query('SELECT name FROM cafes WHERE id = $1', [user.cafe_id]);
+            if (cafe.rows.length) user.cafe_name = cafe.rows[0].name;
+          }
+          return res.json(user);
+        } catch (error) {
+          return sendApiError(
+            res,
+            logger,
+            'User profile update error',
+            error,
+            'Kullanıcı güncellenemedi.'
+          );
+        }
+      },
+      memory: async () => {
+        const users = getMemoryUsers();
+        const index = users.findIndex((user) => Number(user.id) === Number(id));
+        if (index === -1) return notFound();
+        const nextUsers = [...users];
+        nextUsers[index] = { ...users[index], ...updates };
+        setMemoryUsers(nextUsers);
+        return res.json(nextUsers[index]);
+      },
+    });
+  };
+
   return {
     getLeaderboard,
     getAchievements,
     updateUserStats,
+    updateUserProfile,
   };
 };
 

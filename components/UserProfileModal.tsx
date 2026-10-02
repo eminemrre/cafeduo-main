@@ -88,7 +88,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
       if (onSaveProfile) {
         await onSaveProfile(department);
       } else {
-        await api.users.update({ ...user, department });
+        await api.users.updateProfile(user.id, { department });
       }
       setIsEditing(false);
     } catch {
@@ -315,7 +315,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               if (onSaveAvatar) {
                 await onSaveAvatar(nextUrl);
               } else {
-                await api.users.update({ ...user, avatar_url: nextUrl });
+                await api.users.updateProfile(user.id, { avatar_url: nextUrl });
               }
               setAvatarUrl(nextUrl);
               setAvatarPickerOpen(false);

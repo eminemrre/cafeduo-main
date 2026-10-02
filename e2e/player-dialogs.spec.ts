@@ -107,8 +107,8 @@ test('@smoke a failed game creation stays open with an inline error and can retr
 test('@smoke avatar save errors remain visible and restore focus after a successful retry', async ({ page, request, baseURL }) => {
   await openDashboard(page, request, baseURL || DEFAULT_E2E_APP_BASE_URL);
   let attempts = 0;
-  await page.route('**/api/users/*', async route => {
-    if (route.request().method() !== 'PUT') return route.continue();
+  await page.route('**/api/users/*/profile', async route => {
+    if (route.request().method() !== 'PATCH') return route.continue();
     attempts += 1;
     if (attempts === 1) return route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Temporary failure' }) });
     await route.continue();
@@ -133,8 +133,8 @@ test('@smoke avatar save errors remain visible and restore focus after a success
 test('@smoke department failures keep the edit and successful retry restores keyboard focus', async ({ page, request, baseURL }) => {
   await openDashboard(page, request, baseURL || DEFAULT_E2E_APP_BASE_URL);
   let attempts = 0;
-  await page.route('**/api/users/*', async route => {
-    if (route.request().method() !== 'PUT') return route.continue();
+  await page.route('**/api/users/*/profile', async route => {
+    if (route.request().method() !== 'PATCH') return route.continue();
     attempts += 1;
     if (attempts === 1) return route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Temporary failure' }) });
     await route.continue();

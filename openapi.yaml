@@ -256,6 +256,60 @@ paths:
         404:
           description: Kullanıcı bulunamadı
 
+  /api/users/{id}/profile:
+    patch:
+      tags: [Users]
+      summary: Bölüm veya avatar tercihini güncelle
+      description: |
+        Yalnızca gönderilen profil alanlarını değiştirir; puan, galibiyet ve oyun
+        sayısını korur. Oturum ve kaynak sahipliği kontrol edilir. X-CSRF-Token
+        başlığı csrf_token cookie değeriyle eşleşmelidir.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: X-CSRF-Token
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              additionalProperties: false
+              properties:
+                department:
+                  type: string
+                  maxLength: 120
+                avatar_url:
+                  type: string
+                  nullable: true
+                  pattern: '^https://api\.dicebear\.com/9\.x/pixel-art/svg\?seed=[A-Za-z0-9_-]{1,32}$|^$'
+                  description: DiceBear v9 pixel-art URL; null veya boş string baş harflere sıfırlar.
+      responses:
+        200:
+          description: Güncel istatistikleri de içeren sunucu onaylı kullanıcı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        400:
+          description: Boş payload, ilgisiz alan veya geçersiz bölüm/avatar
+        401:
+          description: Oturum gerekli
+        403:
+          description: Kaynak sahipliği veya CSRF kontrolü başarısız
+        404:
+          description: Kullanıcı bulunamadı
+        500:
+          description: Kayıt başarısız; onaylı kullanıcı bilgisi korunmalıdır
+
   /api/users/{id}/items:
     get:
       tags:

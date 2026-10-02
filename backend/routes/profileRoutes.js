@@ -1,11 +1,6 @@
 const express = require('express');
 
-const createProfileRoutes = ({
-  cache,
-  authenticateToken,
-  requireOwnership,
-  profileHandlers,
-}) => {
+const createProfileRoutes = ({ cache, authenticateToken, requireOwnership, profileHandlers }) => {
   const router = express.Router();
 
   router.get('/leaderboard', cache(60), profileHandlers.getLeaderboard);
@@ -20,6 +15,12 @@ const createProfileRoutes = ({
     authenticateToken,
     requireOwnership('id'),
     profileHandlers.updateUserStats
+  );
+  router.patch(
+    '/users/:id/profile',
+    authenticateToken,
+    requireOwnership('id'),
+    profileHandlers.updateUserProfile
   );
 
   return router;

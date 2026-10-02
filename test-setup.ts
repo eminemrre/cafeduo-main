@@ -39,6 +39,21 @@ if (typeof window !== 'undefined') {
   });
 }
 
+// jsdom has no native dialog lifecycle. Real focus/inert/Escape behavior is
+// verified in Playwright; these shims only expose open state to component tests.
+if (typeof HTMLDialogElement !== 'undefined') {
+  if (typeof HTMLDialogElement.prototype.showModal !== 'function') {
+    HTMLDialogElement.prototype.showModal = function () {
+      this.open = true;
+    };
+  }
+  if (typeof HTMLDialogElement.prototype.close !== 'function') {
+    HTMLDialogElement.prototype.close = function () {
+      this.open = false;
+    };
+  }
+}
+
 // Mock IntersectionObserver
 class MockIntersectionObserver {
   observe = jest.fn();

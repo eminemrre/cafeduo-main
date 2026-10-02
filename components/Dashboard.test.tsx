@@ -53,6 +53,8 @@ jest.mock('./dashboard/StatusBar', () => ({
   ),
 }));
 
+const mockCreateRejected = jest.fn();
+
 jest.mock('./dashboard/GameSection', () => ({
   GameSection: ({
     currentUser: _currentUser,
@@ -80,7 +82,7 @@ jest.mock('./dashboard/GameSection', () => ({
         <span data-testid="games-loading">{gamesLoading ? 'Loading' : 'Loaded'}</span>
         <button
           data-testid="create-game-btn"
-          onClick={() => onCreateGame('Nişancı Düellosu', 50)}
+          onClick={() => void onCreateGame('Nişancı Düellosu', 50).catch(mockCreateRejected)}
           disabled={!isMatched}
         >
           Oyun Kur
@@ -727,7 +729,9 @@ describe('Dashboard Integration', () => {
       fireEvent.click(screen.getByTestId('create-game-btn'));
 
       await waitFor(() => {
-        expect(screen.getByText('Oyun kurulurken hata oluştu.')).toBeInTheDocument();
+        expect(mockCreateRejected).toHaveBeenCalledWith(
+          expect.objectContaining({ message: 'Failed' })
+        );
       });
     });
 

@@ -209,15 +209,16 @@ const AppContent: React.FC = () => {
     navigate('/');
   };
 
-  const handleUpdateUser = async (updatedUser: User) => {
+  const handleUpdateUser = async (updatedUser: User, options?: { throwOnError?: boolean }) => {
     try {
-      // Optimistic update
-      updateUser(updatedUser);
+      // Profile forms wait for confirmation so a rejected edit stays editable.
+      if (!options?.throwOnError) updateUser(updatedUser);
       // Server update
       const serverUser = await api.users.update(updatedUser);
       updateUser(serverUser);
     } catch (error) {
       console.error('Failed to update user', error);
+      if (options?.throwOnError) throw error;
       toast.error('Kullanıcı güncellenirken hata oluştu');
     }
   };

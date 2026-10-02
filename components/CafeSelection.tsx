@@ -1,9 +1,8 @@
 /**
- * CafeSelection — Riso Kantin redesign (PR #24).
+ * CafeSelection — cafe/table verification before entering the game dashboard.
  *
  * The first big surface a user hits after login. Hosts the GPS check-in flow
- * (cafe picker + table number + optional verification code). State + handlers
- * are unchanged — only the presentational layer was rewritten.
+ * (cafe picker + table number + optional verification code).
  *
  * `data-testid` attributes preserved so existing tests still pass.
  */
@@ -18,7 +17,7 @@ import {
   Hash,
   KeyRound,
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import type { User } from '../types';
 import { useCafeSelection } from '../hooks/useCafeSelection';
 import { Card, Button, Input, Select, Squiggle } from './ui';
@@ -49,14 +48,22 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
 
   const [hasSubmitted, setHasSubmitted] = React.useState(false);
   const [showVerificationField, setShowVerificationField] = React.useState(false);
+  const shouldReduceMotion = useReducedMotion();
 
   const locationLabel = (() => {
+    if (tableVerificationCode.trim()) {
+      return {
+        color: 'text-riso-blue',
+        icon: <KeyRound size={14} />,
+        text: 'Masa koduyla doğrulanacak',
+      };
+    }
     switch (locationStatus) {
       case 'ready':
         return {
           color: 'text-riso-spring',
           icon: <CheckCircle size={14} />,
-          text: 'Konum doğrulandı',
+          text: 'Konum alındı',
         };
       case 'requesting':
         return {
@@ -68,7 +75,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
         return {
           color: 'text-riso-redox',
           icon: <AlertTriangle size={14} />,
-          text: 'Konum izni gerekli',
+          text: 'Konum alınamadı',
         };
       default:
         return { color: 'text-carbon-muted', icon: <MapPin size={14} />, text: 'Konum bekleniyor' };
@@ -97,9 +104,9 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
       <div className="mx-auto w-full max-w-md">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: -8 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.4, ease: 'easeOut' }}
           className="mb-8 text-center"
         >
           <p className="mb-3 inline-block font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
@@ -109,14 +116,18 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
             Kafeye Giriş
           </h1>
           <p className="mt-3 text-sm text-carbon-muted">
-            Hangi masadasın? Konum doğrulamasıyla oyuna katıl.
+            Hangi masadasın? Konumun veya masa kodunla oyuna katıl.
           </p>
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 12 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: 'easeOut', delay: 0.1 }}
+          transition={{
+            duration: shouldReduceMotion ? 0 : 0.5,
+            ease: 'easeOut',
+            delay: shouldReduceMotion ? 0 : 0.1,
+          }}
         >
           <Card tone="paper" shadow="md" halftone={false} data-testid="cafe-selection-card">
             {/* Error banner */}
@@ -139,7 +150,16 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
               </div>
             )}
 
-            <div className="space-y-5" aria-busy={loading} aria-live="polite">
+            <form
+              className="space-y-5"
+              aria-busy={loading}
+              noValidate
+              onSubmit={(event) => {
+                event.preventDefault();
+                setHasSubmitted(true);
+                void checkIn();
+              }}
+            >
               <Select
                 label="Kafe Seçimi"
                 value={selectedCafeId || ''}
@@ -159,6 +179,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                 onChange={(e) => setTableNumber(e.target.value)}
                 min={1}
                 max={maxTableCount}
+                disabled={loading}
                 data-testid="checkin-table-input"
               />
 
@@ -166,6 +187,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
               {!showVerificationField && (
                 <button
                   type="button"
+                  disabled={loading}
                   onClick={() => setShowVerificationField(true)}
                   className="riso-focus inline-flex w-full items-center justify-between gap-2 border-2 border-dashed border-carbon-muted bg-paper-deep px-3 py-2.5 text-left text-sm font-medium text-carbon hover:border-carbon hover:bg-paper-dim transition-colors"
                   data-testid="checkin-show-verification"
@@ -189,6 +211,8 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                   value={tableVerificationCode}
                   onChange={(e) => setTableVerificationCode(e.target.value)}
                   autoComplete="one-time-code"
+                  autoFocus
+                  disabled={loading}
                   helperText="Konum izni vermek istemezsen bu kodla devam edebilirsin."
                 />
               )}
@@ -197,6 +221,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                 tone="blue"
                 size="md"
                 block
+                disabled={loading || locationStatus === 'requesting'}
                 onClick={() => void requestLocationAccess()}
                 onFocus={clearError}
                 leadingIcon={<LocateFixed size={18} />}
@@ -206,6 +231,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
 
               {/* Location status indicator */}
               <div
+                role="status"
                 className={`flex items-center justify-center gap-2 text-sm font-medium ${locationLabel.color}`}
               >
                 {locationLabel.icon}
@@ -219,15 +245,12 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
               </div>
 
               <Button
+                type="submit"
                 tone="pink"
                 size="lg"
                 block
                 disabled={loading || !tableNumber}
                 data-testid="checkin-submit-button"
-                onClick={() => {
-                  setHasSubmitted(true);
-                  void checkIn();
-                }}
                 leadingIcon={
                   loading ? (
                     <span className="h-4 w-4 animate-spin border-2 border-carbon/30 border-t-carbon rounded-full" />
@@ -238,7 +261,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
               >
                 {loading ? 'Doğrulanıyor...' : 'Kafeye Gir & Oyna'}
               </Button>
-            </div>
+            </form>
           </Card>
         </motion.div>
 

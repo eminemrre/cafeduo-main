@@ -20,13 +20,26 @@ const steps = [
 
 export const HowItWorks: React.FC = () => (
   <section id="features" className="club-flow" aria-label="Nasıl çalışır">
-    <div className="club-container club-flow-layout">
+    <div className="club-container club-flow-layout" data-landing-reveal>
       <div>
         <span className="club-kicker">Kulübe giriş</span>
         <h2 data-testid="flow-main-heading">
           Masaya nasıl <br />
           <em>oturulur?</em>
         </h2>
+        <div className="club-journey-art" aria-hidden="true">
+          <span className="club-journey-table">
+            Masa 07 <i>↗</i>
+          </span>
+          <span className="club-journey-token">♞</span>
+          <span className="club-journey-reward">
+            Oyna.
+            <br />
+            <em>Puan biriktir.</em>
+            <br />
+            Ödülünü seç.
+          </span>
+        </div>
       </div>
       <ol className="club-steps">
         {steps.map(({ id, title, description }) => (

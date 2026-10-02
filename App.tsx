@@ -2,7 +2,9 @@ import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
+import { LandingExperience } from './components/LandingExperience';
 import { HowItWorks } from './components/HowItWorks';
+import { Games } from './components/Games';
 import { About } from './components/About';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
@@ -17,13 +19,9 @@ import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
 // Lazy Load Components
-const Games = lazyWithRetry(
-  () => import('./components/Games').then((module) => ({ default: module.Games })),
-  'Games'
-);
 const Dashboard = lazyWithRetry(
   () => import('./components/Dashboard').then((module) => ({ default: module.Dashboard })),
   'Dashboard'
@@ -66,17 +64,20 @@ interface ProtectedRouteProps {
 }
 
 // Page Transition Wrapper
-const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <motion.div
-    initial={{ opacity: 1 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    transition={{ duration: 0.3, ease: 'easeOut' }}
-    className="h-full w-full"
-  >
-    {children}
-  </motion.div>
-);
+const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const reduced = useReducedMotion();
+  return (
+    <motion.div
+      initial={false}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: reduced ? 1 : 0 }}
+      transition={{ duration: reduced ? 0 : 0.3, ease: 'easeOut' }}
+      className="h-full w-full"
+    >
+      {children}
+    </motion.div>
+  );
+};
 
 // Protected Route Component
 const ProtectedRoute = ({ children, isAdminRoute = false, requiredRole }: ProtectedRouteProps) => {
@@ -203,6 +204,11 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const enterClub = () => {
+    if (!user) return openRegister();
+    navigate(user.isAdmin ? '/admin' : user.role === 'cafe_admin' ? '/cafe-admin' : '/dashboard');
+  };
+
   const handleLogout = async () => {
     await logout();
     toast.success('Çıkış yapıldı. Görüşmek üzere!');
@@ -264,16 +270,18 @@ const AppContent: React.FC = () => {
                 path="/"
                 element={
                   <PageTransition>
-                    <Hero
-                      onLogin={openLogin}
-                      onRegister={openRegister}
-                      isLoggedIn={!!user}
-                      userRole={user?.role}
-                      isAdmin={user?.isAdmin}
-                    />
-                    <HowItWorks />
-                    <Games onPlayClick={openRegister} />
-                    <About />
+                    <LandingExperience>
+                      <Hero
+                        onLogin={openLogin}
+                        onRegister={openRegister}
+                        isLoggedIn={!!user}
+                        userRole={user?.role}
+                        isAdmin={user?.isAdmin}
+                      />
+                      <HowItWorks />
+                      <Games onPlayClick={enterClub} />
+                      <About onJoin={enterClub} isLoggedIn={!!user} />
+                    </LandingExperience>
                   </PageTransition>
                 }
               />

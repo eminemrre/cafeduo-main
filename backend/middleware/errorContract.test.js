@@ -60,8 +60,38 @@ describe('errorContract middleware', () => {
     expect(logger.error).toHaveBeenCalled();
   });
 
+  it.each([
+    new Error('private exception'),
+    new ApiError({
+      status: 503,
+      code: 'DB_INTERNAL',
+      message: 'private exception',
+      details: { query: 'private SQL' },
+    }),
+  ])(
+    'sanitizes unexpected and explicit server errors while preserving request correlation',
+    (err) => {
+      const req = { originalUrl: '/api/test', method: 'GET', requestId: 'req-safe' },
+        res = createMockRes();
+      createErrorHandler({ logger: { error: jest.fn() } })(err, req, res, () => {});
+      expect(res.payload).toMatchObject({
+        code: 'INTERNAL_ERROR',
+        message: 'Internal server error',
+        details: null,
+        requestId: 'req-safe',
+      });
+      expect(JSON.stringify(res.payload)).not.toContain('private');
+      expect(res.statusCode).toBe(err.status || 500);
+    }
+  );
+
   it('preserves custom status/code for non-ApiError inputs', () => {
-    const req = { originalUrl: '/api/shop/buy', method: 'POST', requestId: 'req-3', ip: '127.0.0.1' };
+    const req = {
+      originalUrl: '/api/shop/buy',
+      method: 'POST',
+      requestId: 'req-3',
+      ip: '127.0.0.1',
+    };
     const res = createMockRes();
     const logger = { error: jest.fn() };
     const handler = createErrorHandler({ logger });

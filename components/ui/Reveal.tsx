@@ -39,6 +39,10 @@ export const Reveal: React.FC<RevealProps> = ({
   ...rest
 }) => {
   const reduce = useReducedMotion();
+  if (reduce || typeof IntersectionObserver !== 'function') {
+    const Tag = as;
+    return <Tag {...rest}>{children}</Tag>;
+  }
   const MotionTag = motion[as] as React.ElementType;
   const base = variants ?? (reduce ? reducedFade : fadeUp);
   const hoverProps = hover && !reduce ? hoverShift : {};
@@ -74,6 +78,10 @@ export const RevealGroup: React.FC<GroupProps> = ({
   ...rest
 }) => {
   const reduce = useReducedMotion();
+  if (reduce || typeof IntersectionObserver !== 'function') {
+    const Tag = as;
+    return <Tag {...rest}>{children}</Tag>;
+  }
   const MotionTag = motion[as] as React.ElementType;
   return (
     <MotionTag
@@ -99,6 +107,10 @@ export const RevealItem: React.FC<ItemProps> = ({
   ...rest
 }) => {
   const reduce = useReducedMotion();
+  if (reduce || typeof IntersectionObserver !== 'function') {
+    const Tag = as;
+    return <Tag {...rest}>{children}</Tag>;
+  }
   const MotionTag = motion[as] as React.ElementType;
   const hoverProps = hover && !reduce ? hoverShift : {};
   return (

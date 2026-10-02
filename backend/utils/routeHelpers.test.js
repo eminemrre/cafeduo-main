@@ -39,20 +39,39 @@ describe('routeHelpers', () => {
   it('sendApiError writes unified payload to response', () => {
     const res = createMockRes();
     const logger = { error: jest.fn() };
-    sendApiError(
-      res,
-      logger,
-      'unit_test',
-      { code: 'INTERNAL_FAILURE' },
-      'İşlem başarısız.',
-      500
-    );
+    sendApiError(res, logger, 'unit_test', { code: 'INTERNAL_FAILURE' }, 'İşlem başarısız.', 500);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.payload.code).toBe('INTERNAL_FAILURE');
+    expect(res.payload.code).toBe('INTERNAL_ERROR');
     expect(res.payload.message).toBe('İşlem başarısız.');
     expect(res.payload.error).toBe('İşlem başarısız.');
     expect(res.payload.requestId).toBe('req-123');
+  });
+
+  it('keeps database diagnostics and credential-like error text out of responses and helper logs', () => {
+    const res = createMockRes(),
+      logger = { error: jest.fn() };
+    const err = Object.assign(new Error('private connection text'), {
+      code: '23502',
+      position: '42',
+      table: 'internal_table',
+      detail: 'private row detail',
+      hint: 'internal hint',
+    });
+    sendApiError(res, logger, 'Profile save error', err, 'Profil kaydedilemedi.');
+    expect(res.payload).toMatchObject({
+      code: 'INTERNAL_ERROR',
+      details: null,
+      message: 'Profil kaydedilemedi.',
+      requestId: 'req-123',
+    });
+    expect(JSON.stringify(res.payload)).not.toMatch(/private|23502|internal_table|internal hint/);
+    expect(JSON.stringify(logger.error.mock.calls)).not.toMatch(
+      /private connection|private row|internal hint/
+    );
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ errorCode: '23502', requestId: 'req-123' })
+    );
   });
 
   it('sendApiProblem writes unified payload with explicit status/code', () => {

@@ -33,7 +33,7 @@ const games = [
 export const Games: React.FC<{ onPlayClick?: () => void }> = ({ onPlayClick }) => (
   <section id="games" className="club-games" aria-label="Oyunlar">
     <div className="club-container">
-      <div className="club-games-heading">
+      <div className="club-games-heading" data-landing-reveal>
         <div>
           <span className="club-kicker">Oyun listesi</span>
           <h2 data-testid="games-main-heading">
@@ -50,6 +50,7 @@ export const Games: React.FC<{ onPlayClick?: () => void }> = ({ onPlayClick }) =
         {games.map(({ number, title, tag, text, detail, cta, mark }) => (
           <button
             key={title}
+            data-landing-reveal
             type="button"
             className="club-game-row riso-focus"
             onClick={onPlayClick}

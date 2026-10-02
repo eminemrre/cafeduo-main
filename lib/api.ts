@@ -4,6 +4,7 @@
  */
 import type {
   User,
+  UserProfileUpdates,
   GameRequest,
   Reward,
   Cafe,
@@ -346,6 +347,13 @@ export const api = {
       return await fetchAPI(`/users/${userData.id}`, {
         method: 'PUT',
         body: JSON.stringify(userData),
+      });
+    },
+
+    updateProfile: async (userId: string | number, updates: UserProfileUpdates): Promise<User> => {
+      return await fetchAPI(`/users/${userId}/profile`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates),
       });
     },
 

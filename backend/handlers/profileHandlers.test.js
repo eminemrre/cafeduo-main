@@ -510,3 +510,126 @@ describe('profileHandlers', () => {
     });
   });
 });
+
+describe('partial profile edits', () => {
+  let users, pool, handlers;
+  const avatar = 'https://api.dicebear.com/9.x/pixel-art/svg?seed=duo';
+  const setup = (db = false) => {
+    users = [
+      {
+        id: 1,
+        points: 1450,
+        wins: 8,
+        gamesPlayed: 12,
+        department: 'Fen',
+        avatar_url: avatar,
+        cafe_id: 3,
+      },
+    ];
+    pool = { query: jest.fn() };
+    handlers = createProfileHandlers({
+      pool,
+      isDbConnected: async () => db,
+      logger: { error: jest.fn() },
+      getMemoryUsers: () => users,
+      setMemoryUsers: (next) => {
+        users = next;
+      },
+    });
+  };
+  beforeEach(() => setup());
+  it.each([{ department: 'İşletme' }, { avatar_url: null }, { department: '', avatar_url: '' }])(
+    'preserves current statistics and unspecified fields in memory: %j',
+    async (body) => {
+      const before = { ...users[0] },
+        res = createMockRes();
+      await handlers.updateUserProfile({ params: { id: '1' }, body }, res);
+      expect(res.statusCode).toBe(200);
+      expect(users[0]).toEqual({
+        ...before,
+        ...body,
+        ...(Object.hasOwn(body, 'avatar_url') ? { avatar_url: body.avatar_url || null } : {}),
+      });
+      expect(res.payload).toEqual(users[0]);
+    }
+  );
+  it.each([
+    null,
+    [],
+    {},
+    { points: 1 },
+    { department: 'Fen', wins: 0 },
+    { department: null },
+    { department: 'a'.repeat(121) },
+  ])('rejects invalid or unrelated fields without a write: %j', async (body) => {
+    const before = [...users],
+      res = createMockRes();
+    await handlers.updateUserProfile({ params: { id: '1' }, body }, res);
+    expect(res.statusCode).toBe(400);
+    expect(users).toEqual(before);
+    expect(pool.query).not.toHaveBeenCalled();
+  });
+  it('rejects invalid avatars', async () => {
+    const res = createMockRes();
+    await handlers.updateUserProfile({ params: { id: '1' }, body: { avatar_url: 'invalid' } }, res);
+    expect(res.statusCode).toBe(400);
+    expect(res.payload.code).toBe('INVALID_AVATAR_URL');
+    expect(users[0].avatar_url).toBe(avatar);
+  });
+  it('returns 404 for absent memory users', async () => {
+    const res = createMockRes();
+    await handlers.updateUserProfile({ params: { id: '404' }, body: { department: '' } }, res);
+    expect(res.statusCode).toBe(404);
+  });
+  it.each([
+    { department: 'İşletme' },
+    { avatar_url: avatar },
+    { department: '', avatar_url: null },
+  ])('updates only supplied DB columns and returns current stats and cafe: %j', async (body) => {
+    setup(true);
+    pool.query
+      .mockResolvedValueOnce({ rows: [{ ...users[0], ...body }] })
+      .mockResolvedValueOnce({ rows: [{ name: 'Cafe' }] });
+    const res = createMockRes();
+    await handlers.updateUserProfile({ params: { id: '1' }, body }, res);
+    const [sql, params] = pool.query.mock.calls[0];
+    const set = sql.split('SET ')[1].split('WHERE ')[0];
+    expect(set).not.toMatch(/points|wins|games_played/);
+    for (const field of ['department', 'avatar_url'])
+      expect(set.includes(field)).toBe(Object.hasOwn(body, field));
+    expect(params).toEqual([...Object.values(body), '1']);
+    expect(sql).toContain('RETURNING id, username');
+    expect(res.payload).toMatchObject({
+      points: 1450,
+      wins: 8,
+      gamesPlayed: 12,
+      cafe_name: 'Cafe',
+      ...body,
+    });
+    expect(pool.query).toHaveBeenCalledTimes(2);
+  });
+  it('returns current DB user when there is no cafe', async () => {
+    setup(true);
+    pool.query.mockResolvedValue({ rows: [{ ...users[0], cafe_id: null }] });
+    const res = createMockRes();
+    await handlers.updateUserProfile({ params: { id: '1' }, body: { department: '' } }, res);
+    expect(res.statusCode).toBe(200);
+    expect(pool.query).toHaveBeenCalledTimes(1);
+  });
+  it('returns 404 for absent DB users', async () => {
+    setup(true);
+    pool.query.mockResolvedValue({ rows: [] });
+    const res = createMockRes();
+    await handlers.updateUserProfile({ params: { id: '404' }, body: { department: '' } }, res);
+    expect(res.statusCode).toBe(404);
+  });
+  it('reports DB failure without falling back to a memory write', async () => {
+    setup(true);
+    pool.query.mockRejectedValue(new Error('Database unavailable'));
+    const before = [...users],
+      res = createMockRes();
+    await handlers.updateUserProfile({ params: { id: '1' }, body: { department: '' } }, res);
+    expect(res.statusCode).toBe(500);
+    expect(users).toEqual(before);
+  });
+});

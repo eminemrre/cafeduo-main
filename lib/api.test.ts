@@ -57,6 +57,22 @@ describe('API Layer', () => {
     // Error handling and network failure tests work in real browser environment
   });
 
+  it('patches only profile fields with credentials and CSRF, returning the confirmed user', async () => {
+    document.cookie = 'csrf_token=profile-token';
+    const user = { id: 1, points: 1500, wins: 8, gamesPlayed: 12, department: 'İşletme' };
+    (fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => user });
+    expect(await api.users.updateProfile(1, { department: 'İşletme' })).toEqual(user);
+    expect(fetch).toHaveBeenCalledWith(
+      expect.stringContaining('/users/1/profile'),
+      expect.objectContaining({
+        method: 'PATCH',
+        credentials: 'include',
+        body: JSON.stringify({ department: 'İşletme' }),
+        headers: expect.objectContaining({ 'X-CSRF-Token': 'profile-token' }),
+      })
+    );
+  });
+
   describe('Auth API', () => {
     describe('login', () => {
       it('sends correct login request', async () => {

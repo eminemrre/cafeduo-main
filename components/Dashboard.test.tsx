@@ -269,7 +269,12 @@ describe('Dashboard Integration', () => {
     return render(
       <ToastProvider>
         <AuthProvider>
-          <Dashboard currentUser={mockUser} onUpdateUser={mockOnUpdateUser} {...props} />
+          <Dashboard
+            currentUser={mockUser}
+            onUpdateUser={mockOnUpdateUser}
+            onUpdateProfile={jest.fn()}
+            {...props}
+          />
         </AuthProvider>
       </ToastProvider>
     );
@@ -321,6 +326,7 @@ describe('Dashboard Integration', () => {
             <Dashboard
               currentUser={{ ...mockUser, cafe_id: undefined }}
               onUpdateUser={mockOnUpdateUser}
+              onUpdateProfile={jest.fn()}
             />
           </AuthProvider>
         </ToastProvider>
@@ -698,7 +704,11 @@ describe('Dashboard Integration', () => {
     it('shows not connected status', () => {
       render(
         <ToastProvider>
-          <Dashboard currentUser={userWithoutTable} onUpdateUser={mockOnUpdateUser} />
+          <Dashboard
+            currentUser={userWithoutTable}
+            onUpdateUser={mockOnUpdateUser}
+            onUpdateProfile={jest.fn()}
+          />
         </ToastProvider>
       );
 
@@ -708,7 +718,11 @@ describe('Dashboard Integration', () => {
     it('disables game buttons when not connected', () => {
       render(
         <ToastProvider>
-          <Dashboard currentUser={userWithoutTable} onUpdateUser={mockOnUpdateUser} />
+          <Dashboard
+            currentUser={userWithoutTable}
+            onUpdateUser={mockOnUpdateUser}
+            onUpdateProfile={jest.fn()}
+          />
         </ToastProvider>
       );
 

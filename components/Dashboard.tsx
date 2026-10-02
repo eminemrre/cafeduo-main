@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { User, Reward } from '../types';
+import { User, Reward, UserProfileUpdates } from '../types';
 import { UserProfileModal } from './UserProfileModal';
 import { ArenaBattle } from './ArenaBattle';
 import { KnowledgeQuiz } from './KnowledgeQuiz';
@@ -39,12 +39,14 @@ import { api } from '../lib/api';
 interface DashboardProps {
   currentUser: User;
   onUpdateUser: (user: User, options?: { throwOnError?: boolean }) => Promise<void> | void;
+  onUpdateProfile: (updates: UserProfileUpdates) => Promise<void> | void;
   onRefreshUser?: () => Promise<void> | void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
   currentUser,
   onUpdateUser,
+  onUpdateProfile,
   onRefreshUser,
 }) => {
   const toast = useToast();
@@ -251,17 +253,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const handleSaveProfile = async (department: string) => {
     if (!isOwnProfile) return;
-    const updatedUser = {
-      ...currentUser,
-      department,
-    };
-    await onUpdateUser(updatedUser, { throwOnError: true });
-    setProfileUser(updatedUser);
+    await onUpdateProfile({ department });
   };
 
   const handleSaveAvatar = async (avatarUrl: string) => {
     if (!isOwnProfile) return;
-    await onUpdateUser({ ...currentUser, avatar_url: avatarUrl }, { throwOnError: true });
+    await onUpdateProfile({ avatar_url: avatarUrl });
   };
 
   const handleCancelGame = async (gameId: number | string) => {

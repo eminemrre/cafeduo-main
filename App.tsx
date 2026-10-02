@@ -7,7 +7,7 @@ import { About } from './components/About';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
 
-import { User } from './types';
+import { User, UserProfileUpdates } from './types';
 import { api } from './lib/api';
 import { socketService } from './lib/socket';
 import { lazyWithRetry } from './lib/lazyWithRetry';
@@ -209,6 +209,12 @@ const AppContent: React.FC = () => {
     navigate('/');
   };
 
+  const handleUpdateProfile = async (updates: UserProfileUpdates) => {
+    if (!user) throw new Error('Profil kaydı için oturum gerekli.');
+    const serverUser = await api.users.updateProfile(user.id, updates);
+    updateUser(serverUser);
+  };
+
   const handleUpdateUser = async (updatedUser: User, options?: { throwOnError?: boolean }) => {
     try {
       // Profile forms wait for confirmation so a rejected edit stays editable.
@@ -296,6 +302,7 @@ const AppContent: React.FC = () => {
                           <Dashboard
                             currentUser={user!}
                             onUpdateUser={handleUpdateUser}
+                            onUpdateProfile={handleUpdateProfile}
                             onRefreshUser={handleRefreshUser}
                           />
                         )}

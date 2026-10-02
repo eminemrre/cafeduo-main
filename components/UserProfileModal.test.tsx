@@ -7,7 +7,7 @@ import { api } from '../lib/api';
 jest.mock('../lib/api', () => ({
   api: {
     users: {
-      update: jest.fn(),
+      updateProfile: jest.fn(),
       getGameHistory: jest.fn().mockResolvedValue([]),
     },
     store: {
@@ -177,7 +177,7 @@ describe('UserProfileModal', () => {
     expect(onSaveAvatar).toHaveBeenLastCalledWith(
       'https://api.dicebear.com/9.x/pixel-art/svg?seed=duo'
     );
-    expect(api.users.update).not.toHaveBeenCalled();
+    expect(api.users.updateProfile).not.toHaveBeenCalled();
   });
 
   it('syncs external avatar changes without clearing an in-progress department edit', () => {
@@ -204,7 +204,7 @@ describe('UserProfileModal', () => {
 
   it('keeps the standalone API fallback when no shared avatar callback is supplied', async () => {
     const user = createUser();
-    (api.users.update as jest.Mock).mockResolvedValueOnce({
+    (api.users.updateProfile as jest.Mock).mockResolvedValueOnce({
       ...user,
       avatar_url: 'https://api.dicebear.com/9.x/pixel-art/svg?seed=duo',
     });
@@ -214,10 +214,23 @@ describe('UserProfileModal', () => {
     await waitFor(() =>
       expect(screen.queryByRole('dialog', { name: 'Avatar seçimi' })).not.toBeInTheDocument()
     );
-    expect(api.users.update).toHaveBeenCalledWith({
-      ...user,
+    expect(api.users.updateProfile).toHaveBeenCalledWith(user.id, {
       avatar_url: 'https://api.dicebear.com/9.x/pixel-art/svg?seed=duo',
     });
+  });
+
+  it('sends only the department in the standalone fallback', async () => {
+    const user = createUser();
+    (api.users.updateProfile as jest.Mock).mockResolvedValueOnce({
+      ...user,
+      department: 'İşletme',
+    });
+    render(<UserProfileModal isOpen onClose={jest.fn()} user={user} isEditable />);
+    fireEvent.click(screen.getByRole('button', { name: 'Bölümü düzenle' }));
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'İşletme' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Bölümü kaydet' }));
+    await waitFor(() => expect(screen.queryByRole('combobox')).not.toBeInTheDocument());
+    expect(api.users.updateProfile).toHaveBeenCalledWith(user.id, { department: 'İşletme' });
   });
 
   it('calls onClose from close button and backdrop', () => {

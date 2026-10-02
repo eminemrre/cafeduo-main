@@ -91,8 +91,8 @@ test('@smoke pending and failed avatar saves preserve the confirmed shared profi
   let release!: () => void;
   const held = new Promise<void>(done => { release = done; });
   let attempts = 0;
-  await page.route('**/api/users/*', async route => {
-    if (route.request().method() !== 'PUT') return route.continue();
+  await page.route('**/api/users/*/profile', async route => {
+    if (route.request().method() !== 'PATCH') return route.continue();
     attempts++;
     if (attempts === 1) {
       await held;

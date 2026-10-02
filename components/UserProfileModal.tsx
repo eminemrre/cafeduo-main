@@ -27,6 +27,7 @@ interface UserProfileModalProps {
   isEditable?: boolean;
   isPreview?: boolean;
   onSaveProfile?: (department: string) => Promise<void> | void;
+  onSaveAvatar?: (avatarUrl: string) => Promise<void> | void;
 }
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({
@@ -36,6 +37,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   isEditable = false,
   isPreview = false,
   onSaveProfile,
+  onSaveAvatar,
 }) => {
   const toast = useToast();
   const departmentTrigger = useRef<HTMLButtonElement>(null);
@@ -56,15 +58,17 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
   useEffect(() => {
     setDepartment(user?.department || '');
-    setAvatarUrl(user?.avatar_url ?? null);
     setIsEditing(false);
     setProfileError(null);
     if (!isOpen) {
       setAvatarPickerOpen(false);
       setAvatarError(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, user?.department, isOpen]);
+
+  useEffect(() => {
+    setAvatarUrl(user?.avatar_url ?? null);
+  }, [user?.id, user?.avatar_url, isOpen]);
 
   useEffect(() => {
     if (isOpen && wasEditing.current && !isEditing) departmentTrigger.current?.focus();
@@ -308,15 +312,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             setSavingAvatar(true);
             setAvatarError(null);
             try {
-              // Optimistic update so the picker closes feeling instant.
+              if (onSaveAvatar) {
+                await onSaveAvatar(nextUrl);
+              } else {
+                await api.users.update({ ...user, avatar_url: nextUrl });
+              }
               setAvatarUrl(nextUrl);
-              await api.users.update({ ...user, avatar_url: nextUrl });
               setAvatarPickerOpen(false);
             } catch {
               setAvatarError('Avatar kaydedilemedi. Tekrar deneyebilirsin.');
-              // Roll back on failure and surface a generic warning — the
-              // backend rejects malformed URLs, so this is rare in normal flow.
-              setAvatarUrl(user.avatar_url ?? null);
               toast.error('Avatar kaydedilemedi.');
             } finally {
               setSavingAvatar(false);

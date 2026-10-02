@@ -10,7 +10,7 @@
  * pass `currentSeed` (already parsed from `user.avatar_url`) and an
  * `onPick(seed)` callback that fires the PUT /users/:id request upstream.
  */
-import React from 'react';
+import React, { useRef } from 'react';
 import { AvatarImage } from './ui/AvatarImage';
 import { DialogLayer } from './ui/DialogLayer';
 import { X } from 'lucide-react';
@@ -33,6 +33,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
   saving = false,
   error,
 }) => {
+  const closeButton = useRef<HTMLButtonElement>(null);
   if (!isOpen) return null;
   if (typeof document === 'undefined') return null;
 
@@ -47,6 +48,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
               Avatar Seç
             </h3>
             <button
+              ref={closeButton}
               type="button"
               onClick={onClose}
               aria-label="Kapat"
@@ -65,8 +67,11 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
             </p>
           )}
           <div className="min-h-0 overflow-y-auto overscroll-contain p-5" aria-busy={saving}>
-            <p className="mb-3 font-riso-mono text-[0.7rem] uppercase tracking-[0.16em] text-carbon-soft">
-              16 avatar · Kendine birini seç
+            <p
+              role={saving ? 'status' : undefined}
+              className="mb-3 min-h-8 font-riso-mono text-[0.7rem] uppercase tracking-[0.16em] text-carbon-soft"
+            >
+              {saving ? 'Avatar kaydediliyor…' : '16 avatar · Kendine birini seç'}
             </p>
             <div className="grid grid-cols-4 gap-2 sm:gap-3" data-testid="avatar-grid">
               {AVATAR_SEEDS.map((seed) => {
@@ -75,7 +80,12 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
                   <button
                     key={seed}
                     type="button"
-                    onClick={() => void onPick(seed)}
+                    onClick={() => {
+                      // The options become disabled during a save. Keep keyboard
+                      // focus on an enabled control in the active dialog.
+                      closeButton.current?.focus();
+                      void onPick(seed);
+                    }}
                     disabled={saving}
                     aria-label={`Avatar: ${seed}`}
                     aria-pressed={isCurrent}

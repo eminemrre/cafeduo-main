@@ -540,6 +540,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           onClose={() => setIsProfileOpen(false)}
           user={profileUser}
           isEditable={isOwnProfile}
+          isPreview={!isOwnProfile}
           onSaveProfile={handleSaveProfile}
         />
       </div>

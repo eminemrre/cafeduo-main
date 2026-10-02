@@ -1,9 +1,8 @@
 /**
  * Avatar catalog for CafeDuo profiles.
  *
- * We render avatars via the DiceBear v9 HTTP API (`https://api.dicebear.com`).
- * It returns deterministic SVGs keyed by a `seed` string — same seed always
- * produces the same image, the CDN caches them, and we pay nothing.
+ * The curated DiceBear v9 images are served locally. Stored profile URLs keep
+ * the existing HTTP API format for compatibility with the backend.
  *
  * The picker exposes a curated set of seeds (`AVATAR_SEEDS`) so users can't
  * mint arbitrary URLs. The backend (`profileHandlers.updateUserStats`) also
@@ -50,7 +49,10 @@ export type AvatarSeed = (typeof AVATAR_SEEDS)[number];
  * a wider charset).
  */
 export const getAvatarUrl = (seed: string | null | undefined): string => {
-  const safe = String(seed ?? 'duo').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 32) || 'duo';
+  const safe =
+    String(seed ?? 'duo')
+      .replace(/[^A-Za-z0-9_-]/g, '')
+      .slice(0, 32) || 'duo';
   return `https://api.dicebear.com/9.x/${AVATAR_STYLE}/svg?seed=${safe}`;
 };
 
@@ -60,6 +62,16 @@ export const getAvatarUrl = (seed: string | null | undefined): string => {
  */
 export const seedFromAvatarUrl = (url: string | null | undefined): string | null => {
   if (!url) return null;
-  const match = /^https:\/\/api\.dicebear\.com\/9\.x\/pixel-art\/svg\?seed=([A-Za-z0-9_-]{1,32})$/.exec(url);
+  const match =
+    /^https:\/\/api\.dicebear\.com\/9\.x\/pixel-art\/svg\?seed=([A-Za-z0-9_-]{1,32})$/.exec(url);
   return match ? match[1] : null;
+};
+
+/** Curated images work without contacting DiceBear; existing custom seeds stay compatible. */
+export const getAvatarImageSrc = (url: string | null | undefined): string | null => {
+  if (!url) return null;
+  const seed = seedFromAvatarUrl(url);
+  return seed && AVATAR_SEEDS.some((option) => option === seed)
+    ? `/avatars/pixel-art-v9/${seed}.svg`
+    : url;
 };

@@ -14,6 +14,7 @@ jest.mock('../utils/logger', () => ({
 const {
   RedisRateLimitStore,
   buildRateLimiterOptions,
+  createRateLimitStore,
   parseBooleanEnv,
   getPassOnStoreError,
 } = require('./rateLimit');
@@ -29,11 +30,72 @@ const buildMulti = (response) => {
 };
 
 describe('rateLimit middleware helpers', () => {
+  const originalEnv = {
+    NODE_ENV: process.env.NODE_ENV,
+    RATE_LIMIT_STORE: process.env.RATE_LIMIT_STORE,
+    RATE_LIMIT_REDIS_PREFIX: process.env.RATE_LIMIT_REDIS_PREFIX,
+    RATE_LIMIT_PASS_ON_STORE_ERROR: process.env.RATE_LIMIT_PASS_ON_STORE_ERROR,
+  };
+  afterEach(() => {
+    for (const [key, value] of Object.entries(originalEnv)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
+    mockRedis.status = 'ready';
+    process.env.NODE_ENV = 'test';
     delete process.env.RATE_LIMIT_STORE;
     delete process.env.RATE_LIMIT_REDIS_PREFIX;
     delete process.env.RATE_LIMIT_PASS_ON_STORE_ERROR;
+  });
+
+  it.each(['connecting', 'reconnecting', 'wait', 'end'])(
+    'retains the production Redis store while the client is %s',
+    (status) => {
+      process.env.NODE_ENV = 'production';
+      mockRedis.status = status;
+      const options = buildRateLimiterOptions({ scope: 'api', windowMs: 60_000, limit: 10 });
+      expect(options.store).toBeInstanceOf(RedisRateLimitStore);
+      expect(options.store.redis).toBe(mockRedis);
+      expect(options.passOnStoreError).toBe(false);
+    }
+  );
+
+  it('refuses production Redis mode when the client is unavailable', () => {
+    process.env.NODE_ENV = 'production';
+    const evalMethod = mockRedis.eval;
+    mockRedis.eval = undefined;
+    try {
+      expect(() => createRateLimitStore({ scope: 'api', windowMs: 60_000 })).toThrow(
+        'Redis rate limiting requires a configured Redis client in production.'
+      );
+    } finally {
+      mockRedis.eval = evalMethod;
+    }
+  });
+
+  it('preserves development memory fallback while Redis is not ready', () => {
+    mockRedis.status = 'connecting';
+    expect(createRateLimitStore({ scope: 'api', windowMs: 60_000 })).toBeUndefined();
+  });
+
+  it('rejects unavailable Redis immediately and resumes with the same store when ready', async () => {
+    const store = new RedisRateLimitStore({
+      redisClient: mockRedis,
+      windowMs: 60_000,
+      prefix: 'test',
+    });
+    mockRedis.status = 'reconnecting';
+    await expect(store.increment('client')).rejects.toMatchObject({
+      status: 503,
+      code: 'RATE_LIMIT_STORE_UNAVAILABLE',
+    });
+    expect(mockRedis.eval).not.toHaveBeenCalled();
+    mockRedis.status = 'ready';
+    mockRedis.eval.mockResolvedValueOnce([2, 60_000]);
+    await expect(store.increment('client')).resolves.toMatchObject({ totalHits: 2 });
   });
 
   it('parses boolean environment values safely', () => {
@@ -70,11 +132,21 @@ describe('rateLimit middleware helpers', () => {
       prefix: 'cafeduo:ratelimit:auth',
     });
 
-    mockRedis.multi.mockReturnValueOnce(buildMulti([[null, null], [null, -2]]));
+    mockRedis.multi.mockReturnValueOnce(
+      buildMulti([
+        [null, null],
+        [null, -2],
+      ])
+    );
     const missing = await store.get('client-a');
     expect(missing).toBeUndefined();
 
-    mockRedis.multi.mockReturnValueOnce(buildMulti([[null, '5'], [null, 10_000]]));
+    mockRedis.multi.mockReturnValueOnce(
+      buildMulti([
+        [null, '5'],
+        [null, 10_000],
+      ])
+    );
     const existing = await store.get('client-b');
     expect(existing).toEqual(
       expect.objectContaining({
@@ -106,7 +178,11 @@ describe('rateLimit middleware helpers', () => {
       'COUNT',
       250
     );
-    expect(mockRedis.del).toHaveBeenNthCalledWith(1, 'cafeduo:ratelimit:api:a', 'cafeduo:ratelimit:api:b');
+    expect(mockRedis.del).toHaveBeenNthCalledWith(
+      1,
+      'cafeduo:ratelimit:api:a',
+      'cafeduo:ratelimit:api:b'
+    );
     expect(mockRedis.del).toHaveBeenNthCalledWith(2, 'cafeduo:ratelimit:api:c');
   });
 

@@ -13,13 +13,16 @@ const parseBooleanEnv = (value, fallback) => {
   return fallback;
 };
 
-const getStoreMode = () => String(process.env.RATE_LIMIT_STORE || 'redis').trim().toLowerCase();
+const getStoreMode = () =>
+  String(process.env.RATE_LIMIT_STORE || 'redis')
+    .trim()
+    .toLowerCase();
 
 const getPassOnStoreError = () =>
   parseBooleanEnv(process.env.RATE_LIMIT_PASS_ON_STORE_ERROR, isProductionEnv() ? false : true);
 
 const getPrefixBase = () =>
-  (String(process.env.RATE_LIMIT_REDIS_PREFIX || 'cafeduo:ratelimit').trim() || 'cafeduo:ratelimit');
+  String(process.env.RATE_LIMIT_REDIS_PREFIX || 'cafeduo:ratelimit').trim() || 'cafeduo:ratelimit';
 
 const INCREMENT_SCRIPT = `
 local current = redis.call("INCR", KEYS[1])
@@ -62,6 +65,12 @@ class RedisRateLimitStore {
   }
 
   async increment(key) {
+    if (this.redis.status !== 'ready') {
+      const unavailable = new Error('Rate-limit storage is temporarily unavailable');
+      unavailable.status = 503;
+      unavailable.code = 'RATE_LIMIT_STORE_UNAVAILABLE';
+      throw unavailable;
+    }
     const storeKey = this.buildKey(key);
     const [totalHitsRaw, ttlRaw] = await this.redis.eval(
       INCREMENT_SCRIPT,
@@ -121,11 +130,16 @@ const createRateLimitStore = ({ scope, windowMs }) => {
   }
 
   if (!redis || typeof redis.eval !== 'function') {
+    if (isProductionEnv()) {
+      throw new Error('Redis rate limiting requires a configured Redis client in production.');
+    }
     logger.warn('Redis client unavailable, falling back to in-memory rate-limit store.', { scope });
     return undefined;
   }
 
-  if (redis.status !== 'ready') {
+  // Production must retain the shared store through startup and reconnects.
+  // Readiness is checked per request; it must not choose a permanent local fallback.
+  if (redis.status !== 'ready' && !isProductionEnv()) {
     logger.warn('Redis client is not ready, using in-memory rate-limit store.', {
       scope,
       redisStatus: redis.status,

@@ -7,6 +7,7 @@ import { User } from './types';
 const mockVerifyToken = jest.fn();
 const mockLogout = jest.fn();
 const mockUserUpdate = jest.fn();
+const mockUserGet = jest.fn();
 const mockSocketConnect = jest.fn();
 const mockSocketDisconnect = jest.fn();
 
@@ -20,6 +21,7 @@ jest.mock('./lib/api', () => ({
     },
     users: {
       update: (...args: any[]) => mockUserUpdate(...args),
+      get: (...args: any[]) => mockUserGet(...args),
     },
   },
 }));
@@ -116,8 +118,20 @@ jest.mock('./components/CafeSelection', () => ({
 }));
 
 jest.mock('./components/Dashboard', () => ({
-  Dashboard: ({ currentUser }: { currentUser: User }) => (
-    <div data-testid="dashboard-view">{currentUser.username}</div>
+  Dashboard: ({
+    currentUser,
+    onUpdateUser,
+  }: {
+    currentUser: User;
+    onUpdateUser: (user: User) => void;
+  }) => (
+    <div data-testid="dashboard-view">
+      {currentUser.username}
+      <span data-testid="confirmed-points">{currentUser.points}</span>
+      <button onClick={() => onUpdateUser({ ...currentUser, points: 70 })}>
+        Purchase completed
+      </button>
+    </div>
   ),
 }));
 
@@ -164,6 +178,7 @@ describe('App critical session and routing integration', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockVerifyToken.mockResolvedValue(null);
     nextAuthUser = null;
     sessionStorage.clear();
 
@@ -232,6 +247,31 @@ describe('App critical session and routing integration', () => {
     await waitFor(() => {
       expect(screen.getByTestId('dashboard-view')).toBeInTheDocument();
     });
+  });
+
+  it('reads confirmed server statistics after purchase without writing a client snapshot', async () => {
+    let confirm!: (user: User) => void;
+    renderAt('/');
+    await loginFromHero(baseUser);
+    fireEvent.click(await screen.findByTestId('mock-check-in'));
+    const purchase = await screen.findByRole('button', { name: 'Purchase completed' });
+    mockVerifyToken.mockImplementationOnce(
+      () =>
+        new Promise<User>((resolve) => {
+          confirm = resolve;
+        })
+    );
+    fireEvent.click(purchase);
+    await waitFor(() => expect(mockVerifyToken).toHaveBeenCalledTimes(2));
+    expect(screen.getByTestId('confirmed-points')).toHaveTextContent('120');
+    confirm({ ...baseUser, cafe_id: 1, table_number: 'MASA05', points: 1700, wins: 9 });
+    await waitFor(() => expect(screen.getByTestId('confirmed-points')).toHaveTextContent('1700'));
+    expect(mockUserUpdate).not.toHaveBeenCalled();
+    expect(mockUserGet).not.toHaveBeenCalled();
+    expect(localStorage.setItem).toHaveBeenCalledWith(
+      'cafe_user',
+      expect.stringContaining('"points":1700')
+    );
   });
 
   it('returns user to landing view on logout', async () => {

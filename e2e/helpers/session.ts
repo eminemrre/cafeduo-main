@@ -1,5 +1,5 @@
 import type { APIRequestContext, Page } from '@playwright/test';
-import { expect } from '@playwright/test';
+import { expect, request as playwrightRequest } from '@playwright/test';
 
 export interface E2ECredentials {
   username: string;
@@ -124,6 +124,32 @@ const extractCsrfTokenFromCookies = (setCookieHeader: string | string[] | undefi
   }
 
   return 'test-csrf-token-for-e2e';
+};
+
+// Test data must be seeded by an authorized administrator, never by player stat writes.
+// Use a separate cookie jar so fixture login cannot change the browser/player session.
+export const getLocalAdminHeaders = async (baseURL: string) => {
+  const apiRoot = resolveApiBaseUrl(baseURL);
+  if (!['localhost', '127.0.0.1', '[::1]'].includes(new URL(apiRoot).hostname)) {
+    throw new Error('Admin fixtures are restricted to the local E2E server.');
+  }
+  const context = await playwrightRequest.newContext();
+  try {
+    const response = await context.post(`${apiRoot}/api/auth/login`, {
+      data: { email: 'e2e.admin@example.com', password: 'E2eAdmin!2026' },
+    });
+    expect(response.ok()).toBeTruthy();
+    const body = await response.json();
+    expect(body.user.role === 'admin' || body.user.isAdmin).toBeTruthy();
+    const csrfToken = extractCsrfTokenFromCookies(response.headers()['set-cookie']);
+    return {
+      Authorization: `Bearer ${body.token}`,
+      'X-CSRF-Token': csrfToken,
+      Cookie: `csrf_token=${csrfToken}`,
+    };
+  } finally {
+    await context.dispose();
+  }
 };
 
 export const provisionUser = async (

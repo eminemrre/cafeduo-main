@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { provisionUser, checkInUser, fetchCurrentUser, bootstrapAuthenticatedPage, resolveApiBaseUrl, DEFAULT_E2E_APP_BASE_URL } from './helpers/session';
+import { provisionUser, checkInUser, fetchCurrentUser, bootstrapAuthenticatedPage, resolveApiBaseUrl, getLocalAdminHeaders, DEFAULT_E2E_APP_BASE_URL } from './helpers/session';
 
 for (const field of ['department', 'avatar_url'] as const) {
   test(`@smoke ${field} edits preserve statistics updated while the profile request is pending`, async ({ page, request, baseURL }) => {
@@ -34,7 +34,7 @@ for (const field of ['department', 'avatar_url'] as const) {
     const stats = { points: 1700, wins: 9, gamesPlayed: 15 };
     // Change only this disposable local test user's statistics after the form snapshot.
     const updated = await request.put(`${apiRoot}/api/users/${user.id}`, {
-      headers: { Authorization: `Bearer ${session.token}`, 'X-CSRF-Token': session.csrfToken, Cookie: `csrf_token=${session.csrfToken}` },
+      headers: await getLocalAdminHeaders(root),
       data: { ...stats, department: user.department || '' },
     });
     expect(updated.ok()).toBeTruthy();

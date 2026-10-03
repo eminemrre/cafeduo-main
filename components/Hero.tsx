@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router';
 import { LandingMotionControl } from './LandingExperience';
 import { ClubBoardPreview } from './ClubBoardPreview';
+import { CafeScene3D } from './CafeScene3D';
 
 interface HeroProps {
   onLogin: () => void;
@@ -25,7 +26,7 @@ export const Hero: React.FC<HeroProps> = ({
   };
   return (
     <section id="home" aria-label="Ana bölüm" className="club-home">
-      <div className="club-spread">
+      <div className="club-spread club-spread-3d">
         <div className="club-intro">
           <div className="club-hero-meta">
             <p className="club-kicker">CafeDuo · Kafenin oyun kulübü</p>
@@ -66,15 +67,24 @@ export const Hero: React.FC<HeroProps> = ({
               </button>
             )}
           </div>
-          <p className="club-entry-note">Önce hesabın, sonra kafen ve masan.</p>
-          <div className="club-table-note">
-            <span aria-hidden="true">↳</span>
-            <p>
-              Oyunlar aynı kafedeki oyuncular arasında.
-              <br />
-              Tahtayı denemek için üye olman gerekmiyor.
-            </p>
-          </div>
+        </div>
+        <CafeScene3D />
+      </div>
+      <div className="club-index">
+        <span>Bu masada</span>
+        <span>Satranç / Bilgi Yarışı / Nişancı Düellosu</span>
+        <a href="#games" className="riso-focus">
+          Oyunlara bak ↓
+        </a>
+      </div>
+      <div className="club-demo-section">
+        <div className="club-demo-copy">
+          <h2>
+            Tahta açık.
+            <br />
+            <em>Sıra sende.</em>
+          </h2>
+          <p>Kahven soğumadan bir açılış yap. İlk hamleni burada dene; kafende oyuna devam et.</p>
         </div>
         <div className="club-board-scene">
           <div className="club-scene-halo" aria-hidden="true" />
@@ -96,13 +106,6 @@ export const Hero: React.FC<HeroProps> = ({
           </div>
           <ClubBoardPreview />
         </div>
-      </div>
-      <div className="club-index">
-        <span>Bu masada</span>
-        <span>Satranç / Bilgi Yarışı / Nişancı Düellosu</span>
-        <a href="#games" className="riso-focus">
-          Oyunlara bak ↓
-        </a>
       </div>
     </section>
   );

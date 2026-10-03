@@ -1,12 +1,16 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
+import { Pause, Play } from 'lucide-react';
 
 interface LandingMotionState {
   enabled: boolean;
+  running: boolean;
   reduced: boolean;
   toggle: () => void;
 }
 const LandingMotionContext = createContext<LandingMotionState | null>(null);
 const MOTION_PREFERENCE = 'cafeduo_landing_motion';
+
+export const useLandingMotion = () => useContext(LandingMotionContext);
 
 export const LandingMotionControl: React.FC = () => {
   const motion = useContext(LandingMotionContext);
@@ -17,11 +21,16 @@ export const LandingMotionControl: React.FC = () => {
       className="club-motion-control riso-focus"
       onClick={motion.toggle}
       aria-pressed={motion.enabled}
+      aria-label={
+        motion.reduced ? 'Hareket azaltıldı' : motion.enabled ? 'Hareketi durdur' : 'Hareketi aç'
+      }
       disabled={motion.reduced}
-      title={motion.reduced ? 'Cihazının azaltılmış hareket tercihi uygulanıyor.' : undefined}
     >
-      <span aria-hidden="true">{motion.enabled ? 'Ⅱ' : '▷'}</span>
-      {motion.reduced ? 'Hareket azaltıldı' : motion.enabled ? 'Hareketi durdur' : 'Hareketi aç'}
+      {motion.enabled ? (
+        <Pause size={16} aria-hidden="true" />
+      ) : (
+        <Play size={16} aria-hidden="true" />
+      )}
     </button>
   );
 };
@@ -115,7 +124,7 @@ export const LandingExperience: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   return (
-    <LandingMotionContext.Provider value={{ enabled, reduced, toggle }}>
+    <LandingMotionContext.Provider value={{ enabled, running, reduced, toggle }}>
       <div ref={root} className="club-landing" data-motion={running ? 'on' : 'off'}>
         <div className="club-reading-progress" aria-hidden="true" />
         {children}

@@ -62,17 +62,15 @@ test.describe('Public Landing Pages', () => {
     await expect(whatsapp).toBeVisible();
   });
 
-  test('@smoke shows footer social links and version pill', async ({ page, baseURL }) => {
+  test('@smoke shows footer social links and keeps build diagnostics in metadata', async ({ page, baseURL }) => {
     const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     await page.goto(root);
 
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    const versionPill = page.locator('[data-testid="footer-version-pill"]').first();
-    await expect(versionPill).toBeVisible();
+    await expect(page.getByTestId('footer-version-pill')).toHaveCount(0);
     const version = await page.locator('meta[name="cafeduo:app-version"]').getAttribute('content');
     expect(version).toBeTruthy();
-    const shortVersion = /^[a-f0-9]{8,}$/i.test(version!) ? version!.slice(0, 7) : version!.slice(0, 12);
-    await expect(versionPill).toContainText(shortVersion);
+
     await expect(page.getByRole('link', { name: 'Instagram' }).first()).toHaveAttribute(
       'href',
       /instagram\.com/

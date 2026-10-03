@@ -19,7 +19,6 @@ import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
 // Lazy Load Components
 const Dashboard = lazyWithRetry(
@@ -51,8 +50,15 @@ const BusinessLanding = lazyWithRetry(
 );
 // Loading Component
 const PageLoader = () => (
-  <div className="min-h-[60vh] flex flex-col items-center justify-center text-carbon">
-    <div className="w-14 h-14 border-4 border-carbon border-t-transparent rounded-full animate-spin"></div>
+  <div
+    role="status"
+    aria-label="Sayfa yükleniyor"
+    className="min-h-screen flex flex-col items-center justify-center text-carbon"
+  >
+    <div
+      aria-hidden="true"
+      className="w-14 h-14 border-4 border-carbon border-t-transparent rounded-full animate-spin"
+    ></div>
   </div>
 );
 
@@ -63,21 +69,10 @@ interface ProtectedRouteProps {
   requiredRole?: string;
 }
 
-// Page Transition Wrapper
-const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const reduced = useReducedMotion();
-  return (
-    <motion.div
-      initial={false}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: reduced ? 1 : 0 }}
-      transition={{ duration: reduced ? 0 : 0.3, ease: 'easeOut' }}
-      className="h-full w-full"
-    >
-      {children}
-    </motion.div>
-  );
-};
+// Route content commits immediately; navigation never waits for an exiting animation.
+const PageFrame: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="h-full w-full">{children}</div>
+);
 
 // Protected Route Component
 const ProtectedRoute = ({ children, isAdminRoute = false, requiredRole }: ProtectedRouteProps) => {
@@ -251,107 +246,105 @@ const AppContent: React.FC = () => {
 
       <main>
         <Suspense fallback={<PageLoader />}>
-          <AnimatePresence mode="wait">
-            <Routes location={location} key={location.pathname}>
-              <Route
-                path="/"
-                element={
-                  <PageTransition>
-                    <LandingExperience>
-                      <Hero
-                        onLogin={openLogin}
-                        onRegister={openRegister}
-                        isLoggedIn={!!user}
-                        userRole={user?.role}
-                        isAdmin={user?.isAdmin}
-                      />
-                      <HowItWorks />
-                      <Games onPlayClick={enterClub} />
-                      <About onJoin={enterClub} isLoggedIn={!!user} />
-                    </LandingExperience>
-                  </PageTransition>
-                }
-              />
+          <Routes location={location} key={location.pathname}>
+            <Route
+              path="/"
+              element={
+                <PageFrame>
+                  <LandingExperience>
+                    <Hero
+                      onLogin={openLogin}
+                      onRegister={openRegister}
+                      isLoggedIn={!!user}
+                      userRole={user?.role}
+                      isAdmin={user?.isAdmin}
+                    />
+                    <HowItWorks />
+                    <Games onPlayClick={enterClub} />
+                    <About onJoin={enterClub} isLoggedIn={!!user} />
+                  </LandingExperience>
+                </PageFrame>
+              }
+            />
 
-              <Route
-                path="/kafeler"
-                element={
-                  <PageTransition>
-                    <BusinessLanding />
-                  </PageTransition>
-                }
-              />
+            <Route
+              path="/kafeler"
+              element={
+                <PageFrame>
+                  <BusinessLanding />
+                </PageFrame>
+              }
+            />
 
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <PageTransition>
-                      <ErrorBoundary>
-                        {requiresCheckIn() ? (
-                          <CafeSelection
-                            currentUser={user!}
-                            onCheckInSuccess={handleCheckInSuccess}
-                          />
-                        ) : (
-                          <Dashboard
-                            currentUser={user!}
-                            onUpdateUser={handleRefreshUser}
-                            onUpdateProfile={handleUpdateProfile}
-                            onRefreshUser={handleRefreshUser}
-                          />
-                        )}
-                      </ErrorBoundary>
-                    </PageTransition>
-                  </ProtectedRoute>
-                }
-              />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <PageFrame>
+                    <ErrorBoundary>
+                      {requiresCheckIn() ? (
+                        <CafeSelection
+                          currentUser={user!}
+                          onCheckInSuccess={handleCheckInSuccess}
+                        />
+                      ) : (
+                        <Dashboard
+                          currentUser={user!}
+                          onUpdateUser={handleRefreshUser}
+                          onUpdateProfile={handleUpdateProfile}
+                          onRefreshUser={handleRefreshUser}
+                        />
+                      )}
+                    </ErrorBoundary>
+                  </PageFrame>
+                </ProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute isAdminRoute={true}>
-                    <PageTransition>
-                      <ErrorBoundary>
-                        <AdminDashboard currentUser={user!} />
-                      </ErrorBoundary>
-                    </PageTransition>
-                  </ProtectedRoute>
-                }
-              />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute isAdminRoute={true}>
+                  <PageFrame>
+                    <ErrorBoundary>
+                      <AdminDashboard currentUser={user!} />
+                    </ErrorBoundary>
+                  </PageFrame>
+                </ProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/cafe-admin"
-                element={
-                  <ProtectedRoute requiredRole="cafe_admin">
-                    <PageTransition>
-                      <ErrorBoundary>
-                        <CafeDashboard currentUser={user!} />
-                      </ErrorBoundary>
-                    </PageTransition>
-                  </ProtectedRoute>
-                }
-              />
+            <Route
+              path="/cafe-admin"
+              element={
+                <ProtectedRoute requiredRole="cafe_admin">
+                  <PageFrame>
+                    <ErrorBoundary>
+                      <CafeDashboard currentUser={user!} />
+                    </ErrorBoundary>
+                  </PageFrame>
+                </ProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/gizlilik"
-                element={
-                  <PageTransition>
-                    <PrivacyPolicy />
-                  </PageTransition>
-                }
-              />
-              <Route
-                path="/reset-password"
-                element={
-                  <PageTransition>
-                    <ResetPasswordPage />
-                  </PageTransition>
-                }
-              />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </AnimatePresence>
+            <Route
+              path="/gizlilik"
+              element={
+                <PageFrame>
+                  <PrivacyPolicy />
+                </PageFrame>
+              }
+            />
+            <Route
+              path="/reset-password"
+              element={
+                <PageFrame>
+                  <ResetPasswordPage />
+                </PageFrame>
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </Suspense>
       </main>
 

@@ -112,6 +112,7 @@
     "socket.io": "^4.7.4",
     "socket.io-client": "^4.7.4",
     "swagger-ui-express": "^5.0.1",
+    "three": "^0.186.1",
     "winston": "^3.19.0",
     "yamljs": "^0.3.0"
   },
@@ -139,6 +140,7 @@
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@types/socket.io-client": "^3.0.0",
+    "@types/three": "^0.186.0",
     "@vitejs/plugin-react": "5.2.0",
     "autoprefixer": "^10.4.22",
     "concurrently": "^9.2.1",

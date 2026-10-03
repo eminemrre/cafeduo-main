@@ -1,14 +1,7 @@
-/**
- * Footer — Riso Kantin redesign (PR #24).
- *
- * Three-column footer pinned at the bottom of public pages. Keeps the
- * KVKK link, social icons, and `data-testid="footer-version-pill"` so
- * BUILD_META smoke checks still work.
- */
+/** Public footer: brand, privacy and contact links. Build diagnostics live in metadata. */
 import React from 'react';
 import { Mail, Shield, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router';
-import { BUILD_META } from '../lib/buildMeta';
 import { RevealGroup, RevealItem } from './ui';
 
 // lucide v1 marka ikonlarini kaldirdi; sosyal linkler icin inline SVG (simple-icons)
@@ -57,17 +50,6 @@ export const Footer: React.FC = () => {
             <p className="mt-4 font-riso-mono text-[0.7rem] tracking-wider uppercase text-carbon-muted">
               © {year} tüm hakları saklıdır
             </p>
-            <span
-              className="mt-2 inline-block border-2 border-carbon bg-paper px-2 py-0.5 font-riso-mono text-[0.65rem] font-bold uppercase tracking-wider text-carbon"
-              data-testid="footer-version-pill"
-              title={
-                BUILD_META.buildTime !== 'unknown'
-                  ? `Build: ${BUILD_META.buildTime}`
-                  : 'Build bilgisi yok'
-              }
-            >
-              v-{BUILD_META.shortVersion}
-            </span>
           </RevealItem>
 
           <RevealItem>
@@ -94,7 +76,7 @@ export const Footer: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
-                className="riso-focus inline-flex h-10 w-10 items-center justify-center border-2 border-carbon bg-paper text-carbon hover:bg-riso-pink transition-colors"
+                className="riso-focus inline-flex h-11 w-11 items-center justify-center border-2 border-carbon bg-paper text-carbon hover:bg-riso-pink transition-colors"
               >
                 <InstagramIcon />
               </a>
@@ -103,14 +85,14 @@ export const Footer: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Twitter"
-                className="riso-focus inline-flex h-10 w-10 items-center justify-center border-2 border-carbon bg-paper text-carbon hover:bg-riso-blue hover:text-paper transition-colors"
+                className="riso-focus inline-flex h-11 w-11 items-center justify-center border-2 border-carbon bg-paper text-carbon hover:bg-riso-blue hover:text-paper transition-colors"
               >
                 <XIcon />
               </a>
               <a
                 href="mailto:cafeduotr@gmail.com"
                 aria-label="E-posta"
-                className="riso-focus inline-flex h-10 w-10 items-center justify-center border-2 border-carbon bg-paper text-carbon hover:bg-riso-mustard transition-colors"
+                className="riso-focus inline-flex h-11 w-11 items-center justify-center border-2 border-carbon bg-paper text-carbon hover:bg-riso-mustard transition-colors"
               >
                 <Mail size={18} />
               </a>

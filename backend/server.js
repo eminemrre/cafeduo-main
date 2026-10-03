@@ -96,6 +96,7 @@ const { buildRateLimiterOptions, getPassOnStoreError } = require('./middleware/r
 const { notFoundHandler, createErrorHandler } = require('./middleware/errorContract');
 const { csrfMiddleware } = require('./middleware/csrf');
 const authRoutes = require('./routes/authRoutes');
+const { prepareLogout } = require('./middleware/logoutCleanup');
 const cafeRoutes = require('./routes/cafeRoutes'); // Cafe Routes Import
 const storeRoutes = require('./routes/storeRoutes'); // Store Routes Import
 const { createAdminRoutes } = require('./routes/adminRoutes');
@@ -464,6 +465,9 @@ app.use(helmet(buildSecurityHeadersOptions({ production: process.env.NODE_ENV ==
 // Sentry Request and Tracing Handlers (must be before other middleware)
 // In Sentry v10+, request/tracing is automatic via instrumentation
 // No need for explicit requestHandler/tracingHandler
+
+// Device logout cleanup requires a valid CSRF token; API limits still apply afterward.
+app.post('/api/auth/logout', ...prepareLogout);
 
 // Apply a higher baseline limiter only to API routes.
 // Auth brute-force protection is handled separately in authRoutes.

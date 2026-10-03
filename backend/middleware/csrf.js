@@ -93,6 +93,20 @@ function setCsrfCookie(res) {
   return token;
 }
 
+const hasValidCsrfToken = (req) => {
+  const cookieToken = req.cookies?.[CSRF_COOKIE_NAME];
+  const headerToken = req.headers?.[CSRF_HEADER_NAME];
+  if (!cookieToken || !headerToken) return false;
+  const cookieBuf = Buffer.from(String(cookieToken));
+  const headerBuf = Buffer.from(String(headerToken));
+  if (cookieBuf.length !== headerBuf.length) return false;
+  try {
+    return crypto.timingSafeEqual(cookieBuf, headerBuf);
+  } catch {
+    return false;
+  }
+};
+
 /**
  * CSRF Protection Middleware
  *
@@ -128,21 +142,8 @@ function csrfMiddleware(req, res, next) {
   // Get CSRF token from header
   const headerToken = req.headers?.[CSRF_HEADER_NAME];
 
-  // Constant-time compare. A naive `cookieToken !== headerToken` leaks token
-  // bytes through response-time differences; an on-path attacker could refine
-  // a victim's token through repeated XHRs. crypto.timingSafeEqual requires
-  // equal-length Buffers, so we length-check first.
-  const tokensMatch = (() => {
-    if (!cookieToken || !headerToken) return false;
-    const cookieBuf = Buffer.from(String(cookieToken));
-    const headerBuf = Buffer.from(String(headerToken));
-    if (cookieBuf.length !== headerBuf.length) return false;
-    try {
-      return crypto.timingSafeEqual(cookieBuf, headerBuf);
-    } catch {
-      return false;
-    }
-  })();
+  // Reuse the constant-time validation for early, CSRF-protected logout cleanup.
+  const tokensMatch = hasValidCsrfToken(req);
 
   if (!tokensMatch) {
     logger.warn('CSRF token validation failed', {
@@ -182,6 +183,7 @@ function getCsrfToken(req, res) {
 
 module.exports = {
   csrfMiddleware,
+  hasValidCsrfToken,
   generateCsrfToken,
   setCsrfCookie,
   clearCsrfCookie,

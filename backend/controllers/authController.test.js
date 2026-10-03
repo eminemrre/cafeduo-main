@@ -5,7 +5,7 @@ jest.mock('bcrypt', () => ({
 
 jest.mock('jsonwebtoken', () => ({
   sign: jest.fn(() => 'signed-jwt-token'),
-  decode: jest.fn(() => ({ id: 1, exp: Math.floor(Date.now() / 1000) + 300 })),
+  verify: jest.fn(() => ({ id: 1, exp: Math.floor(Date.now() / 1000) + 300 })),
 }));
 
 jest.mock('../db', () => ({
@@ -457,5 +457,10 @@ describe('authController security-critical auth flows', () => {
       })
     );
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    expect(jwt.verify).toHaveBeenCalledWith('signed-jwt-token', 'test-secret');
+    expect(global.tokenBlacklist.get('signed-jwt-token')).toBeGreaterThan(
+      Math.floor(Date.now() / 1000)
+    );
+    global.tokenBlacklist.delete('signed-jwt-token');
   });
 });

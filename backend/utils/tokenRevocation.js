@@ -34,4 +34,23 @@ const isTokenRevoked = async (token, { failMode = 'closed' } = {}) => {
   return false;
 };
 
-module.exports = { isTokenRevoked, TokenRevocationUnavailableError };
+// Only a confirmed shared write can acknowledge logout when Redis is configured.
+const revokeToken = async (token, expiresAt) => {
+  const ttl = Math.ceil(expiresAt - Date.now() / 1000);
+  if (!Number.isFinite(ttl)) throw new TokenRevocationUnavailableError();
+  if (ttl <= 0) return;
+  if (redisClient?.status === 'ready') {
+    try {
+      const result = await redisClient.setex(`blacklist:token:${token}`, ttl, '1');
+      if (result !== 'OK') throw new TokenRevocationUnavailableError();
+      return;
+    } catch {
+      throw new TokenRevocationUnavailableError();
+    }
+  }
+  if (redisClient || isProductionEnv()) throw new TokenRevocationUnavailableError();
+  if (!global.tokenBlacklist) global.tokenBlacklist = new Map();
+  global.tokenBlacklist.set(token, expiresAt);
+};
+
+module.exports = { isTokenRevoked, revokeToken, TokenRevocationUnavailableError };

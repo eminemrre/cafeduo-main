@@ -107,7 +107,7 @@ const HeroSection: React.FC = () => {
 };
 
 const NUMBERS = [
-  { icon: <Clock size={18} />, label: 'Kurulum', value: '30 dakika' },
+  { icon: <Clock size={18} />, label: 'Kurulum', value: 'Birlikte hazırlıyoruz' },
   { icon: <Repeat size={18} />, label: 'Sözleşme', value: 'İstediğin an iptal' },
   { icon: <Sparkles size={18} />, label: 'Pilot', value: '1 ay ücretsiz' },
 ];
@@ -146,12 +146,12 @@ const STEPS = [
   {
     n: '01',
     title: 'Kafenizi tanıtın',
-    body: "Konum, masa sayısı ve 3 ödül seçeneği girin. Setup'ı bizzat birlikte yapıyoruz.",
+    body: 'Kafenizin konumunu, masalarını ve sunmak istediğiniz ödülleri birlikte hazırlıyoruz.',
   },
   {
     n: '02',
     title: 'Müşteriler oynar',
-    body: 'Masadan QR ile giriş yaparlar, 5 dakikalık oyunlar oynarlar, puan biriktirirler.',
+    body: 'Masa QR koduyla CafeDuo’yu açar, oyunlara katılır ve puan biriktirirler.',
   },
   {
     n: '03',
@@ -170,7 +170,7 @@ const HowItWorksOwner: React.FC = () => (
       <header className="mb-14 max-w-2xl">
         <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">Akış</p>
         <h2 className="mt-3 font-riso-display text-[2rem] leading-tight tracking-tight text-carbon sm:text-[2.6rem]">
-          Üç adımda kafe içinde dönen ufak bir ekonomi.
+          Bir masadan başlayan oyun.
         </h2>
       </header>
 
@@ -199,22 +199,22 @@ const BENEFITS = [
   {
     icon: <Repeat size={20} />,
     title: 'Geri dönen müşteri',
-    body: 'Puan biriktiren öğrenci ödülünü kullanmaya geri gelir. Sadakat kartı doğal hâliyle çalışır.',
+    body: 'Müşterilerinize, biriktirdikleri puanları kafenizin ödüllerinde kullanma fırsatı sunun.',
   },
   {
     icon: <TrendingUp size={20} />,
-    title: 'Daha uzun oturum, daha çok sipariş',
-    body: 'Oyun = 15–30 dk ek masa süresi. Doluluk saatleri dışında en hissedilir fark burada.',
+    title: 'Masada birlikte geçirilen zaman',
+    body: 'Kahvenin yanına satranç, bilgi yarışması ve düello ekleyin. Etkisini pilotta birlikte değerlendirelim.',
   },
   {
     icon: <Users size={20} />,
     title: 'Arkadaş getiren müşteri',
-    body: 'Liderlik tablosu ve düello mekaniği = öğrenciler arkadaşlarını kafenize çağırır.',
+    body: 'Liderlik tablosu ve düellolarla arkadaşların birlikte oynayabileceği bir buluşma noktası oluşturun.',
   },
   {
     icon: <Sparkles size={20} />,
-    title: 'Ücretsiz Instagram görünürlüğü',
-    body: "Kazanılan ödüller story'lere giriyor — lokasyon etiketi ve marka adı doğal yoldan paylaşılır.",
+    title: 'Kafenize ait ödüller',
+    body: 'Ödül seçeneklerini ve puanlarını siz belirleyin; müşterileriniz oyun deneyimini kafenizle ilişkilendirsin.',
   },
 ];
 
@@ -263,7 +263,7 @@ const PricingSection: React.FC = () => (
           Önce deneyin, sonra konuşuruz.
         </h2>
         <p className="mt-3 font-riso-body text-[15px] leading-relaxed text-carbon-soft">
-          Tek bir plan, gizli madde yok. Pilotu memnun bitirirseniz aynı plana geçersiniz.
+          Pilot sonunda birlikte değerlendirelim. Devam etmek isterseniz planınızı konuşalım.
         </p>
       </header>
 
@@ -339,28 +339,37 @@ const PricingSection: React.FC = () => (
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// FAQ — substantive answers (no one-liners)
+// FAQ — concise answers grounded in the current product.
 // ─────────────────────────────────────────────────────────────────────────────
 const FAQS = [
   {
-    q: 'Müşterilerimin telefonlarına uygulama yüklemesi gerekiyor mu?',
-    a: "Hayır. CafeDuo modern bir Progressive Web App (PWA) olarak çalışır — kafenizdeki masa QR kodunu tarayan müşteri saniyeler içinde tarayıcıdan sisteme giriş yapar; App Store veya Play Store sürtüşmesi yoktur. Sık gelen müşteri isterse tek dokunuşla CafeDuo'yu ana ekranına ekleyebilir, ancak bu zorunlu değildir. Oturum başına yaklaşık 3–5 MB veri kullanır, üç beş yıllık telefonlarda dahi akıcı çalışır.",
+    q: 'Uygulama yüklemek gerekiyor mu?',
+    a: 'Hayır. Müşterileriniz masa QR koduyla CafeDuo’yu telefonlarının tarayıcısında açabilir. Dileyenler ana ekranına da ekleyebilir.',
   },
   {
-    q: 'Pilot programının sonunda ne oluyor, otomatik ödeme alınıyor mu?',
-    a: 'Hayır, otomatik ödeme yok. Pilot bitmeden 5 gün önce WhatsApp üzerinden sizinle iletişime geçer, birlikte ölçümlere bakarız: gerçekleşen oturum sayısı, kullanılan kuponlar, müşteri akışının değiştiği saatler. Devam etmek istiyorsanız Pro plana açık rızanızla geçeriz; istemiyorsanız hesap sessizce kapanır ve pilot süresince oluşmuş kafe verileri KVKK gereği size raporlanır, ardından silinir. Hiçbir gizli ücret veya iptal cezası işletilmez.',
+    q: 'Pilot bittikten sonra ne olur?',
+    a: 'İlk ayın sonunda deneyimi birlikte değerlendiririz. Devam etmek isterseniz Pro planın koşullarını konuşuruz; pilot başvurusu otomatik bir ödeme başlatmaz.',
   },
   {
-    q: 'KVKK ve veri güvenliği konusunda nasıl bir altyapı kullanılıyor?',
-    a: "CafeDuo, KVKK ve GDPR çerçevesine uygun olarak tasarlandı. Müşteriden işin yürümesi için zorunlu olan minimum veri (kullanıcı adı, e-posta, opsiyonel avatar) alınır; konum verisi yalnızca masa check-in anında doğrulama amacıyla kullanılır ve sunucuda saklanmaz. Aydınlatma metni, açık rıza akışları ve veri silme talebi süreçleri sistemin içine gömülüdür. Parolalar bcrypt cost=12 ile hash'lenir, SQL enjeksiyon koruması için tüm sorgular parametrelidir. Detaylı politika /gizlilik sayfasında, denetim için resmi belge setine WhatsApp'tan ulaşabilirsiniz.",
+    q: 'Müşteri verileri nasıl korunur?',
+    a: (
+      <>
+        Parolalar açık metin olarak saklanmaz; yönetim işlemleri yetkili hesaplarla yapılır. Hangi
+        verilerin işlendiğini ve taleplerinizi nasıl iletebileceğinizi{' '}
+        <a href="/gizlilik" className="riso-focus underline decoration-current underline-offset-4">
+          Gizlilik Politikası
+        </a>{' '}
+        sayfasında bulabilirsiniz.
+      </>
+    ),
   },
   {
-    q: 'Kuponların sahteleştirilmesi veya iki kez kullanılması mümkün mü?',
-    a: 'Hayır. Her kupon, müşteri uygulamasında benzersiz bir QR kod olarak görünür; siz kasada CafeDuo panelinin doğrulama ekranıyla bunu tararsınız ve sistem atomik bir veritabanı işlemiyle kuponu o anda iptal eder. Aynı kupon tekrar gösterilse bile geçersiz çıkar, ekran görüntüsü ile sahteleme yapılamaz. İsterseniz personeliniz için ayrı bir "kasiyer" rolü oluşturup yetkilerini kısıtlayabilir, günlük kupon kullanım raporlarını panelden inceleyebilirsiniz.',
+    q: 'Kuponu kasada nasıl doğrularım?',
+    a: 'Müşterinin kupon kodunu kafe panelinizden kontrol edersiniz. Sistem kuponun geçerliliğini ve kullanılıp kullanılmadığını denetler; kullanım onaylandığında kupon tekrar kullanılamaz.',
   },
   {
-    q: 'Kurulum süreci nasıl ilerliyor, benden ne kadar vakit isteniyor?',
-    a: "Ortalama 30 dakikada birlikte tamamlıyoruz. WhatsApp video görüşmesinde önce kafenizin GPS koordinatını sabitleyip masalarınız için günlük dönen güvenlik PIN'lerini tanımlıyoruz. Ardından müşterilerinize sunacağınız 3 başlangıç ödülünü panelden giriyoruz — örneğin: 250 puan = filtre kahve, 500 puan = %10 indirim kuponu, 1000 puan = ev tatlısı. Görüşme sonunda masalara koyacağınız QR kodlarını PDF olarak elinize ulaştırıyoruz; ertesi gün masalara yerleştirmek dışında sizden bir aksiyon beklenmiyor.",
+    q: 'Başlamak için ne hazırlamalıyım?',
+    a: 'Kafenizin konumu, masa sayısı ve sunmak istediğiniz ödüller yeterli. WhatsApp üzerinden iletişime geçin; paneli ve masa QR kodlarını birlikte hazırlayalım.',
   },
 ];
 
@@ -384,7 +393,10 @@ const FaqSection: React.FC = () => (
           <details key={i} className="group py-5">
             <summary className="riso-focus flex cursor-pointer list-none items-start justify-between gap-4 font-riso-body text-base font-semibold text-carbon">
               <span className="flex-1">{f.q}</span>
-              <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-carbon text-carbon transition-transform group-open:rotate-45">
+              <span
+                aria-hidden="true"
+                className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-carbon text-carbon transition-transform group-open:rotate-45"
+              >
                 +
               </span>
             </summary>

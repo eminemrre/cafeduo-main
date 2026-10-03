@@ -65,7 +65,7 @@ const resetPasswordLimiter = buildAuthLimiter(
 
 router.post('/register', registerLimiter, authController.register);
 router.post('/login', loginLimiter, authController.login);
-router.post('/logout', authenticateToken, authController.logout);
+router.post('/logout', authController.clearLogoutCookies, authenticateToken, authController.logout);
 router.post('/forgot-password', forgotPasswordLimiter, authController.forgotPassword);
 router.post('/reset-password', resetPasswordLimiter, authController.resetPassword);
 router.get(

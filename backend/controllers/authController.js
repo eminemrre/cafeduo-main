@@ -6,7 +6,7 @@ const { pool, isDbConnected } = require('../db');
 const logger = require('../utils/logger');
 const memoryState = require('../store/memoryState');
 const { sendPasswordResetEmail } = require('../services/emailService');
-const redisClient = require('../config/redis');
+const { revokeToken } = require('../utils/tokenRevocation');
 const { getRequiredJwtSecret } = require('../utils/securityConfig');
 const { setCsrfCookie, clearCsrfCookie } = require('../middleware/csrf');
 
@@ -189,7 +189,8 @@ const setAuthCookie = (res, token) => {
 };
 
 const clearAuthCookie = (res) => {
-  res.clearCookie(AUTH_COOKIE_NAME, buildAuthCookieOptions());
+  const { maxAge: _maxAge, ...options } = buildAuthCookieOptions();
+  res.clearCookie(AUTH_COOKIE_NAME, options);
   clearCsrfCookie(res);
 };
 
@@ -595,8 +596,19 @@ const authController = {
     }
   },
 
+  // Clear device cookies even if authentication cannot consult the shared store.
+  // Global CSRF validation still runs before this route-specific middleware.
+  clearLogoutCookies(_req, res, next) {
+    if (!res.locals.logoutCookiesCleared) {
+      clearAuthCookie(res);
+      res.locals.logoutCookiesCleared = true;
+    }
+    next();
+  },
+
   // LOGOUT
   async logout(req, res) {
+    if (!res.locals?.logoutCookiesCleared) clearAuthCookie(res);
     const cookieToken = req.cookies?.[AUTH_COOKIE_NAME];
     const authHeader = req.headers['authorization'];
     const isBearer = typeof authHeader === 'string' && authHeader.startsWith('Bearer ');
@@ -607,49 +619,25 @@ const authController = {
     }
 
     try {
-      // Verify token (signature already validated by authenticateToken middleware, but defensive verify per Aikido AIK_js_jwt_unsafe_decode)
       const decoded = jwt.verify(token, JWT_SECRET);
-
-      if (decoded && decoded.exp) {
-        const expiresIn = decoded.exp - Math.floor(Date.now() / 1000);
-
-        // Only blacklist if token hasn't expired yet
-        if (expiresIn > 0) {
-          if (redisClient && redisClient.status === 'ready') {
-            // Add to Redis blacklist with TTL = token's remaining lifetime
-            await redisClient.setex(`blacklist:token:${token}`, expiresIn, '1');
-            logger.info('Token blacklisted', {
-              userId: decoded.id,
-              expiresIn,
-              method: 'redis',
-            });
-          } else {
-            // Fallback: in-memory blacklist (not recommended for production)
-            if (!global.tokenBlacklist) {
-              global.tokenBlacklist = new Map();
-            }
-            global.tokenBlacklist.set(token, decoded.exp);
-            logger.info('Token blacklisted (in-memory)', {
-              userId: decoded.id,
-              expiresIn,
-              method: 'memory',
-            });
-          }
-        }
-      }
-
-      clearAuthCookie(res);
-      return res.json({
-        success: true,
-        message: 'Logged out successfully.',
-      });
+      await revokeToken(token, decoded.exp);
+      logger.info('Session revoked', { userId: decoded.id });
+      return res.json({ success: true, message: 'Logged out successfully.' });
     } catch (error) {
-      logger.error('Logout error:', error);
-      clearAuthCookie(res);
-      // Still return success - client should clear local token regardless
-      return res.json({
-        success: true,
-        message: 'Logged out successfully.',
+      if (error.name === 'TokenExpiredError') {
+        return res.json({ success: true, message: 'Logged out successfully.' });
+      }
+      if (error.name === 'JsonWebTokenError' || error.name === 'NotBeforeError') {
+        return res
+          .status(401)
+          .json({ success: false, code: 'TOKEN_INVALID', error: 'Invalid token.' });
+      }
+      // Never include Redis commands/keys, JWTs or connection errors in logs or responses.
+      logger.error('Logout revocation unavailable', { code: 'LOGOUT_REVOCATION_FAILED' });
+      return res.status(503).json({
+        success: false,
+        code: 'LOGOUT_REVOCATION_FAILED',
+        error: 'Sunucu oturumu kapatılamadı. Oturum hizmeti geçici olarak kullanılamıyor.',
       });
     }
   },

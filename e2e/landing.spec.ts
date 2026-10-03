@@ -62,6 +62,23 @@ test.describe('Public Landing Pages', () => {
     await expect(whatsapp).toBeVisible();
   });
 
+  test('@smoke opens the privacy policy from the cafe FAQ using the keyboard on mobile', async ({ page, baseURL }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(`${baseURL || DEFAULT_E2E_APP_BASE_URL}/kafeler`);
+    const question = page.locator('summary').filter({ hasText: 'Müşteri verileri nasıl korunur?' });
+    await question.scrollIntoViewIfNeeded();
+    await question.focus();
+    await page.keyboard.press('Enter');
+    await expect(question.locator('..')).toHaveAttribute('open', '');
+    const privacy = question.locator('..').getByRole('link', { name: 'Gizlilik Politikası' });
+    await expect(privacy).toHaveAttribute('href', '/gizlilik');
+    await privacy.focus();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/gizlilik$/);
+    await expect(page.getByRole('heading', { level: 1, name: /Gizlilik Politikası ve KVKK Aydınlatma Metni/i })).toBeVisible();
+  });
+
   test('@smoke shows footer social links and keeps build diagnostics in metadata', async ({ page, baseURL }) => {
     const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     await page.goto(root);

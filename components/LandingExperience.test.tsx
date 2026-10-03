@@ -39,9 +39,12 @@ afterEach(() => {
 test('motion can be paused, persists across remount, and resumes without hiding the content', () => {
   const view = render(content);
   const pause = screen.getByRole('button', { name: 'Hareketi durdur' });
+  expect(pause.textContent).toBe('');
+  expect(pause).not.toHaveAttribute('title');
   pause.focus();
   fireEvent.click(pause);
   expect(screen.getByRole('button', { name: 'Hareketi aç' })).toHaveFocus();
+  expect(screen.getByRole('button', { name: 'Hareketi aç' }).textContent).toBe('');
   expect(document.documentElement.dataset.landingMotion).toBe('off');
   expect(sessionStorage.getItem('cafeduo_landing_motion')).toBe('off');
   expect(screen.getByRole('heading')).toBeVisible();

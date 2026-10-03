@@ -6,8 +6,8 @@
 
 [![Production](https://img.shields.io/badge/canlı-cafeduotr.com-success?style=flat-square&logo=googlechrome&logoColor=white)](https://cafeduotr.com)
 [![CI](https://img.shields.io/github/actions/workflow/status/eminemrre/cafeduo-main/ci.yml?branch=main&style=flat-square&logo=githubactions&logoColor=white&label=CI)](https://github.com/eminemrre/cafeduo-main/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-81.51%25-brightgreen?style=flat-square)](https://github.com/eminemrre/cafeduo-main)
-[![Tests](https://img.shields.io/badge/tests-1395%20passing-brightgreen?style=flat-square&logo=jest&logoColor=white)](https://github.com/eminemrre/cafeduo-main)
+[![Coverage](https://img.shields.io/badge/coverage-81.55%25-brightgreen?style=flat-square)](https://github.com/eminemrre/cafeduo-main)
+[![Tests](https://img.shields.io/badge/tests-1402%20passing-brightgreen?style=flat-square&logo=jest&logoColor=white)](https://github.com/eminemrre/cafeduo-main)
 [![License](https://img.shields.io/badge/license-MIT-blue?style=flat-square)](LICENSE)
 [![Node](https://img.shields.io/badge/Node.js-20%2B-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)

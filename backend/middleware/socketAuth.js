@@ -18,7 +18,7 @@ const jwt = require('jsonwebtoken');
 const { pool, isDbConnected } = require('../db');
 const memoryState = require('../store/memoryState');
 const logger = require('../utils/logger');
-const redisClient = require('../config/redis');
+const { isTokenRevoked, TokenRevocationUnavailableError } = require('../utils/tokenRevocation');
 const { getRequiredJwtSecret } = require('../utils/securityConfig');
 
 const JWT_SECRET = getRequiredJwtSecret();
@@ -72,36 +72,8 @@ const socketAuthMiddleware = async (socket, next) => {
             throw err;
         }
 
-        // SECURITY: Check token blacklist to prevent logged-out users from maintaining connections
-        let isBlacklisted = false;
-        
-        // Check Redis blacklist first
-        if (redisClient && redisClient.status === 'ready') {
-            try {
-                isBlacklisted = await redisClient.get(`blacklist:token:${token}`);
-            } catch (redisErr) {
-                logger.error('Socket.IO: Redis blacklist check failed', {
-                    socketId: socket.id,
-                    error: redisErr.message
-                });
-                // Fail-closed for Socket.IO: reject connection when blacklist check fails
-                return next(new Error('Authentication service temporarily unavailable'));
-            }
-        }
-        
-        // Fallback to in-memory blacklist
-        if (!isBlacklisted && global.tokenBlacklist) {
-            const entry = global.tokenBlacklist.get(token);
-            if (entry) {
-                const now = Math.floor(Date.now() / 1000);
-                if (entry < now) {
-                    global.tokenBlacklist.delete(token);
-                } else {
-                    isBlacklisted = true;
-                }
-            }
-        }
-        
+        const isBlacklisted = await isTokenRevoked(token);
+
         if (isBlacklisted) {
             logger.warn('Socket connection rejected: Token has been revoked', {
                 socketId: socket.id,
@@ -172,6 +144,9 @@ const socketAuthMiddleware = async (socket, next) => {
 
         next();
     } catch (err) {
+        if (err instanceof TokenRevocationUnavailableError) {
+            return next(new Error('Authentication service temporarily unavailable'));
+        }
         logger.error('Socket authentication error', {
             socketId: socket.id,
             error: err.message,

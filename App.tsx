@@ -221,20 +221,7 @@ const AppContent: React.FC = () => {
     updateUser(serverUser);
   };
 
-  const handleUpdateUser = async (updatedUser: User, options?: { throwOnError?: boolean }) => {
-    try {
-      // Profile forms wait for confirmation so a rejected edit stays editable.
-      if (!options?.throwOnError) updateUser(updatedUser);
-      // Server update
-      const serverUser = await api.users.update(updatedUser);
-      updateUser(serverUser);
-    } catch (error) {
-      console.error('Failed to update user', error);
-      if (options?.throwOnError) throw error;
-      toast.error('Kullanıcı güncellenirken hata oluştu');
-    }
-  };
-
+  // Purchases, spins and settlement write on the server; only read the confirmed balance.
   const handleRefreshUser = async () => {
     try {
       await refreshUser();
@@ -309,7 +296,7 @@ const AppContent: React.FC = () => {
                         ) : (
                           <Dashboard
                             currentUser={user!}
-                            onUpdateUser={handleUpdateUser}
+                            onUpdateUser={handleRefreshUser}
                             onUpdateProfile={handleUpdateProfile}
                             onRefreshUser={handleRefreshUser}
                           />

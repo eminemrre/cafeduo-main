@@ -145,14 +145,15 @@ describe('AuthContext', () => {
     });
 
     fireEvent.click(screen.getByRole('button', { name: 'login' }));
-    mockGetUser.mockResolvedValue(refreshedUser);
+    mockVerifyToken.mockResolvedValue(refreshedUser);
 
     fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
 
     await waitFor(() => {
-      expect(mockGetUser).toHaveBeenCalledWith(baseUser.id.toString());
+      expect(mockVerifyToken).toHaveBeenCalledTimes(2);
       expect(screen.getByTestId('username')).toHaveTextContent('emin-refreshed');
     });
+    expect(mockGetUser).not.toHaveBeenCalled();
     expect(window.localStorage.setItem).toHaveBeenCalledWith(
       'cafe_user',
       JSON.stringify(refreshedUser)

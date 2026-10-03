@@ -299,11 +299,11 @@ describe('AuthContext branch coverage', () => {
 
       fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
 
-      expect(mockGetUser).not.toHaveBeenCalled();
+      expect(mockVerifyToken).toHaveBeenCalledTimes(1); // Initial session check only.
     });
 
-    it('does nothing when users.get returns null', async () => {
-      mockGetUser.mockResolvedValue(null);
+    it('retains the confirmed user when the session refresh returns null', async () => {
+      mockVerifyToken.mockResolvedValue(null);
 
       renderWithProvider();
       await waitFor(() => {
@@ -314,7 +314,7 @@ describe('AuthContext branch coverage', () => {
       fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
 
       await waitFor(() => {
-        expect(mockGetUser).toHaveBeenCalled();
+        expect(mockVerifyToken).toHaveBeenCalledTimes(2);
       });
 
       // Username should remain unchanged since get returned null
@@ -322,7 +322,6 @@ describe('AuthContext branch coverage', () => {
     });
 
     it('handles refreshUser API error', async () => {
-      mockGetUser.mockRejectedValue(new Error('API error'));
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
       renderWithProvider();
@@ -331,6 +330,7 @@ describe('AuthContext branch coverage', () => {
       });
 
       fireEvent.click(screen.getByRole('button', { name: 'login-user' }));
+      mockVerifyToken.mockRejectedValueOnce(new Error('API error'));
       fireEvent.click(screen.getByRole('button', { name: 'refresh' }));
 
       await waitFor(() => {

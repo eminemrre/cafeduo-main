@@ -298,11 +298,20 @@ describe('createGameHandler (DB path)', () => {
     );
   });
 
-  it('returns 500 and rolls back on insertWaitingGame failure', async () => {
+  it('returns a safe correlated 500, rolls back, and never publishes database details', async () => {
     const client = makeDbClient();
+    const failure = Object.assign(new Error('private SQL failure'), {
+      code: '23503',
+      detail: 'private row content',
+      hint: 'private hint',
+      column: 'private_column',
+      table: 'private_table',
+      routine: 'private_routine',
+      position: '42',
+    });
     const gameService = {
       findParticipantPendingOrActiveGameForUpdate: jest.fn().mockResolvedValue(null),
-      insertWaitingGame: jest.fn().mockRejectedValue(new Error('db blew up')),
+      insertWaitingGame: jest.fn().mockRejectedValue(failure),
     };
     const deps = makeDeps({ dbConnected: true, client, gameService });
     const handler = createCreateGameHandler(deps);
@@ -312,11 +321,28 @@ describe('createGameHandler (DB path)', () => {
     };
     const res = createMockRes();
 
+    res.req = { requestId: 'game-error-test' };
     await handler(req, res);
 
     expect(res.statusCode).toBe(500);
+    expect(res.payload).toEqual({
+      error: 'Oyun kurulamadı.',
+      code: 'INTERNAL_ERROR',
+      message: 'Oyun kurulamadı.',
+      details: null,
+      requestId: 'game-error-test',
+      status: 500,
+    });
+    expect(JSON.stringify(res.payload)).not.toMatch(/private|23503|debug|routine|column/);
+    expect(JSON.stringify(deps.logger.error.mock.calls)).not.toMatch(
+      /private|debug|routine|column/
+    );
+    expect(deps.emitLobbyUpdate).not.toHaveBeenCalled();
+    expect(deps.lobbyCacheService.onGameCreated).not.toHaveBeenCalled();
     expect(client.calls.some((c) => /ROLLBACK/.test(c.sql))).toBe(true);
-    expect(deps.logger.error).toHaveBeenCalled();
+    expect(deps.logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({ requestId: 'game-error-test' })
+    );
     expect(client.release).toHaveBeenCalled();
   });
 

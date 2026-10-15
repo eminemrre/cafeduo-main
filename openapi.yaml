@@ -984,23 +984,56 @@ paths:
       tags:
         - Achievements
       summary: Kullanıcı başarımlarını getir
-      description: Tüm başarımları ve kullanıcının kazandıklarını listeler
-      security: []
+      description: |
+        Başarımları points_reward ve id artan sırasıyla sayfalar.
+        Kullanıcı yalnızca kendi başarımlarına erişebilir (admin hariç).
+        Tüm kataloğu almak için nextOffset null olana kadar aynı limit ile
+        sonraki offset değerini isteyin. Son sayfa tam doluysa bir sonraki
+        istek boş items ve null nextOffset döndürür.
       parameters:
         - name: userId
           in: path
           required: true
           schema:
             type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Negatif olmayan güvenli tam sayı; offset + limit güvenli tam sayı aralığında olmalıdır.
       responses:
         200:
-          description: Başarım listesi
+          description: Başarım sayfası; bellek modunda items boş ve nextOffset null olur
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Achievement'
+                type: object
+                required: [items, nextOffset]
+                properties:
+                  items:
+                    type: array
+                    maxItems: 100
+                    items:
+                      $ref: '#/components/schemas/Achievement'
+                  nextOffset:
+                    type: integer
+                    minimum: 1
+                    nullable: true
+        400:
+          description: Geçersiz limit veya offset
+        401:
+          description: Kimlik doğrulaması gerekli
+        403:
+          description: Başka bir kullanıcının başarımlarına erişim yasak
 
   # ==========================================
   # COUPONS

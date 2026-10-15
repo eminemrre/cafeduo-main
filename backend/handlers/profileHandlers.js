@@ -110,28 +110,46 @@ const createProfileHandlers = ({
 
   const getAchievements = async (req, res) => {
     const { userId } = req.params;
+    const { limit: rawLimit = '100', offset: rawOffset = '0' } = req.query || {};
+    const limit = typeof rawLimit === 'string' && /^\d+$/.test(rawLimit) ? Number(rawLimit) : NaN;
+    const offset = typeof rawOffset === 'string' && /^\d+$/.test(rawOffset) ? Number(rawOffset) : NaN;
+    if (
+      !Number.isSafeInteger(limit) || limit < 1 || limit > 100 ||
+      !Number.isSafeInteger(offset) || offset < 0 || offset > Number.MAX_SAFE_INTEGER - limit
+    ) {
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'INVALID_PAGINATION',
+        message: 'limit 1-100 arasında, offset ise negatif olmayan bir tam sayı olmalıdır.',
+      });
+    }
 
     return executeDataMode(isDbConnected, {
       db: async () => {
         try {
-          const allAchievements = await pool.query(
-            'SELECT id, title, description, condition_type, condition_value, points_reward FROM achievements ORDER BY points_reward ASC'
+          const result = await pool.query(
+            `WITH page AS (
+              SELECT id, title, description, icon, condition_type, condition_value, points_reward
+              FROM achievements
+              ORDER BY points_reward ASC, id ASC
+              LIMIT $2 OFFSET $3
+            )
+            SELECT page.id, page.title, page.description, page.icon,
+              page.condition_type, page.condition_value, page.points_reward,
+              (ua.achievement_id IS NOT NULL) AS unlocked,
+              ua.unlocked_at AS "unlockedAt"
+            FROM page
+            LEFT JOIN user_achievements ua ON ua.achievement_id = page.id AND ua.user_id = $1
+            ORDER BY page.points_reward ASC, page.id ASC
+            LIMIT $2`,
+            [userId, limit, offset]
           );
-          const userUnlocked = await pool.query(
-            'SELECT achievement_id, unlocked_at FROM user_achievements WHERE user_id = $1',
-            [userId]
-          );
 
-          const unlockedMap = new Map();
-          userUnlocked.rows.forEach((row) => unlockedMap.set(row.achievement_id, row.unlocked_at));
-
-          const result = allAchievements.rows.map((achievement) => ({
-            ...achievement,
-            unlocked: unlockedMap.has(achievement.id),
-            unlockedAt: unlockedMap.get(achievement.id) || null,
-          }));
-
-          return res.json(result);
+          // A full final page is followed by one empty page, avoiding an unbounded count.
+          return res.json({
+            items: result.rows,
+            nextOffset: result.rows.length === limit ? offset + limit : null,
+          });
         } catch (err) {
           return sendApiError(
             res,
@@ -142,7 +160,7 @@ const createProfileHandlers = ({
           );
         }
       },
-      memory: async () => res.json([]),
+      memory: async () => res.json({ items: [], nextOffset: null }),
     });
   };
 

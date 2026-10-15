@@ -30,7 +30,6 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: useSsl ? { rejectUnauthorized: sslRejectUnauthorized } : false,
 
-  // Pool size configuration (OPTIMIZATIONS.md Finding 7)
   max: Number(process.env.DB_POOL_MAX || 20), // Maximum connections
   min: Number(process.env.DB_POOL_MIN || 2), // Minimum idle connections
 

@@ -22,7 +22,6 @@ export default [
       'backend/services/storeService.legacy.js',
       '_*.mjs',
       'scripts/dev/**',
-      '.agent/**',
     ],
   },
   js.configs.recommended,

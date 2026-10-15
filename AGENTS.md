@@ -1,98 +1,144 @@
 # AGENTS.md
 
-## Must-follow constraints
+CafeDuo is a gamified loyalty platform for university cafés: users check in at a café, play
+two-player games, earn points and redeem them for rewards.
 
-### Database
+Stack: Node + Express (CommonJS), React + Vite + TypeScript, PostgreSQL, Redis, Socket.IO.
 
-- **Never use `SELECT *`** - Always specify explicit columns. See `OPTIMIZATIONS.md` Finding 1.
-- **Always add `LIMIT` clauses** to user-facing queries (leaderboard, inventory, history). Default to 100 for lists, 50 for leaderboards.
-- **Use `node-pg-migrate` for ALL schema changes** - Never hand-edit `backend/server.js` initDb schema.
-- **Test migrations both ways**: `npm run migrate:up && npm run migrate:down && npm run migrate:up` before committing.
+## Commands
 
-### Backend queries
+- `npm run dev` — backend (nodemon) and frontend (Vite) together
+- `npm test` — Jest unit tests; `npm run test:ci` adds coverage
+- `npm run quality` — lint + typecheck
+- `npm run build` — Vite production build
+- `npm run test:e2e:smoke` — Playwright smoke suite (Chromium)
+- `npm run migrate:create <name>` / `migrate:up` / `migrate:down` / `migrate:status`
+- `npm run smoke:live` — production health probe
 
-- **Avoid N+1 patterns** - Use CTEs or JOINs instead of loops with queries. See `OPTIMIZATIONS.md` Finding 3.
-- **Never use `redis.keys(pattern)`** - Use `redis.scan()` with cursor. See `OPTIMIZATIONS.md` Finding 5.
-- **Cache invalidation must use SCAN** - `clearCache()` functions must iterate, not KEYS.
+## Workflow
 
-### Frontend
-
-- **No 4-second polling** - Use Socket.IO `lobby_updated` event for real-time updates. Polling fallback max 15s.
-- **Never call `localStorage` in render path** - Batch reads in useEffect, defer JSON parsing with `await Promise.resolve()`.
-- **Use `lazyWithRetry()` for all route components** - Never direct imports for Games, Dashboard, AdminDashboard, CafeDashboard, Store, ResetPasswordPage.
-
-### Security
-
-- **\***REMOVED**\* must be 64+ chars** - Generate with `openssl rand -hex 64`. Server will refuse to start otherwise.
-- **Never log password_hash or tokens** - Use redacted fields in logs.
-- **BLACKLIST_FAIL_MODE=closed** in production - Reject auth when Redis blacklist check fails.
+- Work on a branch and open a pull request. A push to `main` deploys to production through
+  Dokploy, so `main` only receives reviewed merges.
+- `.github/workflows/deploy-vps.yml` is the retired pipeline; Dokploy pulls `main` and runs
+  `deploy/docker-compose.dokploy.yml`.
+- Husky's pre-commit hook runs lint-staged (eslint --fix + prettier --write on staged files).
+- Production: https://cafeduotr.com, health check `/api/health`.
 
 ## Validation before finishing
 
 ```bash
-# Backend
-npm run test                    # Unit tests
-npm run migrate:status          # Check migrations
-
-# Frontend
-npm run test:ci                 # Jest with coverage
-npm run build                   # Vite build must succeed
-
-# E2E (if touching user flows)
-npm run test:e2e                # Playwright
-
-# Full check
-npm run test:all                # Unit + E2E
+npm run quality          # lint + typecheck
+npm test                 # unit tests
+npm run build            # Vite build must succeed
+npm run test:e2e:smoke   # when touching user flows
+npm run migrate:status   # when touching migrations
 ```
 
-## Repo-specific conventions
-
-### File structure
-
-- **Backend is CommonJS** (`.js`), **Frontend is TypeScript** (`.ts/.tsx`)
-- **Backend entry**: `backend/server.js`
-- **Frontend entry**: `index.tsx`, `App.tsx`
-- **Components**: Co-located with `.test.tsx` files
-- **Hooks**: `hooks/` with `.test.ts` files
-- **Types**: Root-level `types.ts` (not `src/types.ts`)
-
-### Module resolution
-
-- **Frontend**: `@/*` alias maps to root (not `src/`)
-- **Backend**: Relative paths only, no path aliases
+## Must-follow constraints
 
 ### Database
 
-- **Connection pool**: Default 10, configure via `DB_POOL_MAX` env var (recommend 20 for production)
-- **Migrations**: Use `npm run migrate:create <name>` - files go to `migrations/`
-- **Indexes**: See `migrations/20240224000002_add_performance_indexes.js` for patterns
+- **Never use `SELECT *`** — always list columns; it keeps payloads small and survives schema
+  changes.
+- **Always add `LIMIT`** to user-facing queries (leaderboard, inventory, history). Default 100 for
+  lists, 50 for leaderboards.
+- **Use `node-pg-migrate` for all schema changes** — never extend the `initDb` DDL in
+  `backend/server.js`.
+- **Test migrations both ways**: `npm run migrate:up && npm run migrate:down && npm run migrate:up`.
+- **No N+1 queries** — no queries inside loops; batch with `ANY($1)`, `UNNEST`, CTEs or JOINs.
 
-### Socket.IO
+### Redis
 
-- **Auth**: Socket uses JWT via `socket.auth.token` - see `backend/middleware/socketAuth.js`
-- **Events**: `join_game`, `game_move`, `update_game_state`, `lobby_updated`
-- **Broadcast**: Call `emitLobbyUpdate(tableCode)` after game mutations
+- **Never use `redis.keys(pattern)`** — it blocks Redis; iterate with `scan()`. `clearCache()`
+  already does.
+
+### Frontend
+
+- **No 4-second polling** — use the Socket.IO `lobby_updated` event; polling fallback is at most
+  15s.
+- **Never read `localStorage` in the render path** — batch reads in `useEffect`.
+- **Load route components with `lazyWithRetry()`** — never import Games, Dashboard,
+  AdminDashboard, CafeDashboard, Store or ResetPasswordPage directly.
+- **All `import.meta.env` access goes through `lib/viteEnv.ts`** (`getViteEnvVar()`), because
+  Jest's CommonJS output cannot parse `import.meta`. That module holds the only `no-new-func`
+  exception.
+
+### Security
+
+- **`JWT_SECRET` must be at least 64 characters in production** — generate it with
+  `openssl rand -hex 64`; the server refuses to start otherwise.
+- **Never log `password_hash` or tokens.**
+- **`BLACKLIST_FAIL_MODE=closed` in production** — reject auth when the Redis blacklist check
+  fails.
+- **Never return database error details to clients** — 5xx responses are generic; diagnostics
+  go to the logger.
+
+## Repo conventions
+
+### Layout
+
+- Backend is CommonJS (`.js`); frontend is TypeScript (`.ts`/`.tsx`).
+- Backend entry `backend/server.js`; frontend entry `index.tsx`, `App.tsx`.
+- Tests are co-located (`*.test.ts(x)`, `*.test.js`). Shared types live in root `types.ts`.
+- Frontend `@/*` maps to the repo root (not `src/`); the backend uses relative paths only.
+- `shared/gameRegistry.js` is CommonJS and read by both backend and frontend.
+
+### Architecture
+
+- HTTP: `backend/routes/` → handlers/controllers → services/repositories; middleware includes
+  `authenticateToken`, `csrfMiddleware` and Redis-backed rate limiting.
+- Realtime: Socket.IO authenticates with the JWT in `socket.auth.token`
+  (`backend/middleware/socketAuth.js`). Events: `join_game`, `game_move`, `update_game_state`,
+  `game_state_updated`, `lobby_updated`. Call `emitLobbyUpdate(tableCode)` after game
+  mutations, and emit only after the DB commit.
+- Game state changes go through the game handlers; chess moves use `gameMoveService.js` with
+  transaction locking.
+- Settlement (`backend/handlers/game/settlementUtils.js`): the winner receives
+  `min(stake, loser.points)`.
+- Live submissions are deduplicated by
+  `submissionKey = "{prefix}|{gameId}|{user}|{round}|{score}|{done}"`.
+
+### Database
+
+- Pool size comes from `DB_POOL_MAX` (default 20) and `DB_POOL_MIN` (default 2).
+- Migrations live in `migrations/`; see `20240224000002_add_performance_indexes.js` for index
+  patterns.
+- Breaking changes need multi-step migrations: add nullable → backfill → make non-nullable →
+  deploy code. Never remove, rename or lossily retype a column in one step.
+
+### Caching
+
+- Invalidate the lobby cache through `lobbyCacheService.onGameCreated/onGameJoined/onGameDeleted/onGameFinished`.
+- Clear patterns with `clearCache('pattern:*')` (SCAN-based).
 
 ### Environment variables
 
-- **Frontend vars**: Must be prefixed `VITE_` to be available in browser
-- **Backend vars**: Standard `process.env.VAR_NAME`
-- **Never commit** `.env` files - use `.env.example` and `.env.production.example` as templates
-- **E2E admin**: `scripts/e2e/run-with-env.cjs` boots a fixed admin (`e2e.admin@example.com` / `E2eAdmin!2026`) via `BOOTSTRAP_ADMIN_EMAILS/PASSWORD` — used by tournament/admin e2e specs
+- Frontend variables need the `VITE_` prefix.
+- Never commit `.env` files; templates are `.env.example` and `.env.production.example`.
+- E2E: `scripts/e2e/run-with-env.cjs` boots a fixed admin (`e2e.admin@example.com` /
+  `E2eAdmin!2026`) through `BOOTSTRAP_ADMIN_EMAILS`/`BOOTSTRAP_ADMIN_PASSWORD`.
 
-### Testing (jest)
+### Testing (Jest)
 
-- **jest.config.js is generated** by `scripts/automation/gen-jest-config.py` — edit the generator, not the config directly (regex escaping is easy to break by hand)
-- **react-router 8 is ESM-only**: `jest.transform.js` strips `import.meta.hot` and emits CJS for `node_modules/react-router`
-- **cookie-es** (react-router dep) is ESM-only too — mapped to `__mocks__/cookie-es.cjs` via moduleNameMapper; keep the stub in sync with whatever `server-runtime/cookies.js` imports
-- **Audit gate**: CI runs `scripts/automation/audit-gate.mjs` (strict, no allowlist) — keep `npm audit` at 0
-- Coverage exclusions (WebGL/Pixi overlays, barrels) live in the jest config generator — do not "fix" them by removing tests
+- `jest.config.js` is generated by `scripts/automation/gen-jest-config.py` — edit the generator.
+- react-router 8 and `cookie-es` are ESM-only: `jest.transform.js` emits CJS for react-router and
+  `cookie-es` maps to `__mocks__/cookie-es.cjs`.
+- The config key is `setupFilesAfterEnv`; a misspelling silently skips the setup file.
+- Mock `lib/api`, `lib/multiplayer` and `lib/socket` with `jest.mock` (see
+  `hooks/useLiveScoreGame.test.ts`).
+- With fake timers, assert that a timer was armed via a `setTimeout` spy instead of invoking the
+  callback directly.
+- Coverage exclusions (WebGL/Pixi overlays, barrels) live in the config generator; do not remove
+  tests to change them.
+- CI runs `scripts/automation/audit-gate.mjs` (no allowlist): keep `npm audit` at zero.
 
 ### E2E (Playwright)
 
-- **@smoke** runs on every push (ci.yml); **@advanced** runs nightly (playwright.yml) — tag new specs accordingly
-- `bootstrapAuthenticatedPage` has `skipCheckInRecovery` for flows where check-in already happened via API (avoid cold-start flake)
-- Check-in recovery timeouts are intentionally generous (8s/15s) — don't shrink them
+- `@smoke` specs run on every push (`ci.yml`), `@advanced` nightly (`playwright.yml`); tag new
+  specs accordingly.
+- `bootstrapAuthenticatedPage` takes `skipCheckInRecovery` for flows that already checked in via
+  the API.
+- Check-in recovery timeouts (8s/15s) are deliberately generous; do not shrink them.
 
 ## Important locations
 
@@ -105,61 +151,25 @@ npm run test:all                # Unit + E2E
 | Lobby cache        | `backend/services/lobbyCacheService.js` |
 | API client         | `lib/api.ts`                            |
 | Socket client      | `lib/socket.ts`                         |
-| Type definitions   | `types.ts` (root)                       |
+| Type definitions   | `types.ts`                              |
 | Test setup         | `test-setup.ts`                         |
-
-## Change safety rules
-
-### Breaking changes require migration
-
-- Adding non-nullable columns to existing tables
-- Removing or renaming columns
-- Changing column types that lose data
-- Use multi-step migrations: add nullable → backfill → make non-nullable → deploy code
-
-### Cache coordination
-
-- **Invalidating lobby cache**: Call `lobbyCacheService.onGameCreated/onGameJoined/onGameDeleted/onGameFinished`
-- **Clearing pattern cache**: Use `clearCache('pattern:*')` - it now uses SCAN internally
-
-### Game state mutations
-
-- All game state changes must go through `gameHandlers.js` - never direct DB writes
-- Chess moves use `gameMoveService.js` with transaction locking
-- Emit Socket.IO events after successful DB commit
 
 ## Known gotchas
 
-### Memory fallback mode
-
-- When DB is unavailable, app falls back to `backend/store/memoryState.js`
-- Test both paths: set invalid `***REMOVED***` to verify memory mode works
-- Never assume DB is connected - always check `await isDbConnected()`
-
-### Email canonicalization
-
-- Gmail addresses are canonicalized (`user+tag@gmail.com` → `user@gmail.com`)
-- See `backend/controllers/authController.js:66-101` for logic
-- Affects login, registration, password reset lookups
-
-### Table code normalization
-
-- Table codes must be format `MASA##` (e.g., `MASA05`)
-- Both `5` and `MASA05` normalize to `MASA05`
-- Normalization logic duplicated in frontend (`hooks/useGames.ts:59-68`) and backend (`backend/server.js:149-158`)
-
-### Bootstrap admins
-
-- Emails in `BOOTSTRAP_ADMIN_EMAILS` env var auto-promote to admin role on login/register
-- Also promoted on server startup via `promoteBootstrapAdmins()` in `backend/server.js`
-
-### Rate limiting
-
-- Auth endpoints have stricter limits than general API
-- Redis-backed rate limiting requires `***REMOVED***` - falls back to in-memory if unavailable
-- `RATE_LIMIT_PASS_ON_STORE_ERROR=false` means reject requests when Redis fails (recommended for prod)
-
-### PWA disabled
-
-- Vite 7 incompatibility - `vite-plugin-pwa` commented out in `vite.config.ts`
-- Do not add PWA-related code until plugin is updated
+- **Memory fallback mode**: without a database the app runs on `backend/store/memoryState.js`.
+  Never assume the DB is connected — check `await isDbConnected()`. Test the memory path by
+  pointing `DATABASE_URL` at an unreachable database.
+- **Email canonicalization**: Gmail addresses are canonicalized (`user+tag@gmail.com` →
+  `user@gmail.com`) for login, registration and password reset; see
+  `backend/controllers/authController.js`.
+- **Table codes** normalize to `MASA##` (`5` and `MASA05` → `MASA05`). The logic exists in both
+  `hooks/useGames.ts` and `backend/server.js`; change both.
+- **Bootstrap admins**: emails in `BOOTSTRAP_ADMIN_EMAILS` are promoted to admin on login,
+  registration and server start (`promoteBootstrapAdmins()`).
+- **Rate limiting**: auth endpoints are stricter than the general API. Redis-backed limits need
+  `REDIS_URL` and fall back to memory without it; `RATE_LIMIT_PASS_ON_STORE_ERROR=false` rejects
+  requests when Redis fails (recommended in production).
+- **PWA is enabled**: `vite-plugin-pwa` generates a service worker with `registerType:
+  'autoUpdate'` (`vite.config.ts`), so a deploy reaches open clients on their next load.
+- **Production images install without dev dependencies**, so `prepare` must stay
+  `husky || true`.

@@ -1,9 +1,19 @@
-/** Floating CafeDuo navigation; touch targets and native keyboard controls. */
+/**
+ * Floating CafeDuo navigation; touch targets and native keyboard controls.
+ *
+ * Motion (plan step 17): panel rows enter in 20 ms steps and leave in reverse
+ * order through the shared variants, the toggle icon rotates through the swap,
+ * desktop links draw an ink underline on hover, and a backdrop click or
+ * Escape closes the panel.
+ */
 import React, { useEffect, useState, useRef } from 'react';
 import { Bell, Menu, X, Coffee, LogOut, ChevronRight, Wallet, Store } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NAV_ITEMS } from '../constants';
+import { DURATION, EASE } from '../lib/motion';
+import { HoverUnderline } from './ui/HoverUnderline';
+import { menuBackdrop, menuItem, menuPanel } from './ui/motionVariants';
 import type { User } from '../types';
 
 interface NavbarProps {
@@ -92,7 +102,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                     onClick={() => scrollToSection(item.id)}
                     className="duo-nav-link riso-focus"
                   >
-                    {item.label}
+                    <HoverUnderline>{item.label}</HoverUnderline>
                   </button>
                 ))}
                 <button
@@ -141,40 +151,68 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
             aria-label={isOpen ? 'Menüyü kapat' : 'Menüyü aç'}
             className="duo-menu-toggle riso-focus md:hidden"
           >
-            {isOpen ? <X size={22} /> : <Menu size={22} />}
+            <AnimatePresence initial={false} mode="wait">
+              <motion.span
+                key={isOpen ? 'close' : 'open'}
+                initial={{ rotate: -30, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: 30, opacity: 0 }}
+                transition={{ duration: DURATION.fast, ease: EASE.brand }}
+                className="flex items-center justify-center"
+              >
+                {isOpen ? <X size={22} /> : <Menu size={22} />}
+              </motion.span>
+            </AnimatePresence>
           </button>
         </div>
       </nav>
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            id="mobile-menu"
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.15 }}
-            className="duo-mobile-menu riso-kantin md:hidden"
-            aria-hidden={false}
-          >
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center justify-between">
+          <>
+            <motion.div
+              key="mobile-menu-backdrop"
+              data-testid="mobile-menu-backdrop"
+              variants={menuBackdrop}
+              initial="hidden"
+              animate="show"
+              exit="exit"
+              onClick={() => {
+                setIsOpen(false);
+                menuToggleRef.current?.focus();
+              }}
+              className="fixed inset-0 z-[85] bg-carbon/25 md:hidden"
+              aria-hidden="true"
+            />
+            <motion.div
+              key="mobile-menu"
+              id="mobile-menu"
+              variants={menuPanel}
+              initial="hidden"
+              animate="show"
+              exit="exit"
+              className="duo-mobile-menu riso-kantin flex flex-col gap-3 md:hidden"
+              aria-hidden={false}
+            >
+              <motion.div variants={menuItem} className="flex items-center justify-between">
                 <span className="font-riso-display text-lg text-carbon">Menü</span>
                 {!isLoggedIn && <Bell size={18} className="text-carbon-muted" />}
-              </div>
+              </motion.div>
               {!isLoggedIn ? (
                 <>
                   {NAV_ITEMS.map((item) => (
-                    <button
+                    <motion.button
                       key={item.id}
+                      variants={menuItem}
                       onClick={() => scrollToSection(item.id)}
                       className="riso-focus flex items-center justify-between border-b-2 border-paper-dim py-3 font-riso-body text-base font-semibold text-carbon transition-colors hover:text-riso-pink-deep"
                     >
                       {item.label}
                       <ChevronRight size={20} className="text-carbon-muted" />
-                    </button>
+                    </motion.button>
                   ))}
-                  <button
+                  <motion.button
+                    variants={menuItem}
                     onClick={goToBusiness}
                     aria-current={isBusinessPage ? 'page' : undefined}
                     className="riso-focus mt-2 flex items-center justify-between border-2 border-carbon bg-riso-mustard px-3 py-3 font-riso-body text-base font-bold uppercase tracking-[0.08em] text-carbon riso-shadow-sm"
@@ -183,19 +221,23 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                       <Store size={20} /> Kafe Sahipleri
                     </span>
                     <ChevronRight size={20} />
-                  </button>
+                  </motion.button>
                 </>
               ) : (
                 <>
                   {user && !isHomePage && (
-                    <div className="flex items-center justify-between border-b-2 border-paper-dim py-3 font-riso-body text-base font-semibold text-carbon">
+                    <motion.div
+                      variants={menuItem}
+                      className="flex items-center justify-between border-b-2 border-paper-dim py-3 font-riso-body text-base font-semibold text-carbon"
+                    >
                       <span className="flex items-center gap-2">
                         <Wallet size={20} /> Cüzdan
                       </span>
                       <span className="font-riso-mono">{user.points} CP</span>
-                    </div>
+                    </motion.div>
                   )}
-                  <button
+                  <motion.button
+                    variants={menuItem}
                     onClick={() => {
                       onLogout?.();
                       setIsOpen(false);
@@ -203,11 +245,11 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                     className="riso-focus riso-press mt-3 flex w-full items-center justify-center gap-3 border-2 border-carbon bg-riso-redox py-3 font-riso-body text-base font-bold text-paper riso-shadow-sm"
                   >
                     <LogOut size={20} /> Çıkış Yap
-                  </button>
+                  </motion.button>
                 </>
               )}
-            </div>
-          </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>

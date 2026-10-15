@@ -71,4 +71,24 @@ describe('Navbar', () => {
     fireEvent.click(screen.getByTestId('logout-button'));
     expect(onLogout).toHaveBeenCalledTimes(1);
   });
+
+  it('closes the mobile menu when the backdrop is clicked', () => {
+    render(<Navbar isLoggedIn={false} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Menüyü aç' }));
+    expect(screen.getByTestId('mobile-menu-backdrop')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('mobile-menu-backdrop'));
+    expect(screen.queryByTestId('mobile-menu-backdrop')).not.toBeInTheDocument();
+  });
+
+  it('closes the mobile menu on Escape', () => {
+    render(<Navbar isLoggedIn={false} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Menüyü aç' }));
+    expect(screen.getByTestId('mobile-menu-backdrop')).toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByTestId('mobile-menu-backdrop')).not.toBeInTheDocument();
+  });
 });

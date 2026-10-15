@@ -10,10 +10,8 @@ public
 package-lock.json
 *.log
 *.lock
-.agent/local
 backend/services/storeService.legacy.js
 .github
-docs/presentation/data
 deploy/monitoring
 e2e
 playwright.config.ts

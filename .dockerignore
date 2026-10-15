@@ -1,7 +1,6 @@
 .git
 .github
 .vscode
-.agent
 node_modules
 coverage
 dist

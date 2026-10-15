@@ -29,11 +29,11 @@ npm run migrate:create my_migration_name
 
 ## Configuration
 
-Migration system is configured via `***REMOVED***` environment variable or individual DB connection variables:
+Migration system is configured via `DATABASE_URL` environment variable or individual DB connection variables:
 
 ```bash
 # Option 1: Connection string
-***REMOVED***=postgres://user:password@localhost:5432/cafeduo
+DATABASE_URL=postgres://user:password@localhost:5432/cafeduo
 
 # Option 2: Individual variables
 DB_HOST=localhost
@@ -129,16 +129,16 @@ docker-compose exec api npm run migrate:up
 
 **Direct Connection:**
 ```bash
-***REMOVED***=<production-url> npm run migrate:up
+DATABASE_URL=<production-url> npm run migrate:up
 ```
 
 ### Emergency Rollback
 ```bash
 # Rollback last migration
-***REMOVED***=<production-url> npm run migrate:down
+DATABASE_URL=<production-url> npm run migrate:down
 
 # Check status
-***REMOVED***=<production-url> npm run migrate:status
+DATABASE_URL=<production-url> npm run migrate:status
 ```
 
 ## Common Scenarios
@@ -245,9 +245,9 @@ bash deploy/scripts/migration-baseline-vps.sh apply
 ```
 
 ### "Database connection failed"
-Check your `***REMOVED***` or connection variables:
+Check your `DATABASE_URL` or connection variables:
 ```bash
-echo $***REMOVED***
+echo $DATABASE_URL
 ```
 
 ### "Migration has already been run"

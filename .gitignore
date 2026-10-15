@@ -15,7 +15,6 @@ dist-ssr
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
-!.vscode/launch.json
 .idea
 .DS_Store
 *.suo
@@ -48,8 +47,11 @@ temp_assets/
 /coverage/
 /output/
 
-# Agent configurations (keep workflows, ignore local)
-.agent/local/
+# Personal AI agent configurations
+.agent/
+.roo/
+.omp/
+.cursorrules
 
 # Deprecated/temporary
 *.sh.log

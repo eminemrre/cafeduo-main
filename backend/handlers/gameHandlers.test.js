@@ -16,7 +16,9 @@ const createMockRes = () => {
 };
 
 const normalizeTableCode = (rawValue) => {
-  const raw = String(rawValue || '').trim().toUpperCase();
+  const raw = String(rawValue || '')
+    .trim()
+    .toUpperCase();
   if (!raw) return null;
   if (raw.startsWith('MASA')) return raw;
   const numeric = Number(raw);
@@ -25,6 +27,67 @@ const normalizeTableCode = (rawValue) => {
   }
   return null;
 };
+
+describe('gameHandlers (database errors)', () => {
+  it('keeps create-game database diagnostics in server logs only', async () => {
+    const databaseError = Object.assign(new Error('sentinel-db-message'), {
+      code: 'XX000',
+      detail: 'sentinel-db-detail',
+      hint: 'sentinel-db-hint',
+      position: 'sentinel-db-position',
+      table: 'sentinel-db-table',
+      column: 'sentinel-db-column',
+      routine: 'sentinel-db-routine',
+      stack: 'sentinel-db-stack',
+    });
+    const client = {
+      query: jest.fn().mockResolvedValue({ rows: [{ daily_game_limit: 0 }] }),
+      release: jest.fn(),
+    };
+    const logger = { error: jest.fn(), warn: jest.fn() };
+    const handlers = createGameHandlers({
+      pool: { connect: jest.fn().mockResolvedValue(client) },
+      isDbConnected: jest.fn().mockResolvedValue(true),
+      logger,
+      normalizeGameType: (value) => value,
+      normalizeTableCode,
+      gameService: {
+        findParticipantPendingOrActiveGameForUpdate: jest.fn().mockResolvedValue(null),
+        insertWaitingGame: jest.fn().mockRejectedValue(databaseError),
+      },
+    });
+    const req = {
+      user: { username: 'u1', role: 'user', table_number: '5', cafe_id: 1, points: 120 },
+      body: { gameType: 'Bilgi Yarışı', points: 50 },
+    };
+    const res = createMockRes();
+
+    await handlers.createGame(req, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.payload).toEqual({
+      code: 'INTERNAL_ERROR',
+      message: 'Oyun kurulamadı.',
+      details: null,
+      requestId: null,
+      error: 'Oyun kurulamadı.',
+      status: 500,
+    });
+    expect(JSON.stringify(res.payload)).not.toMatch(/sentinel/);
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: 'Create game error',
+        errorCode: databaseError.code,
+        errorName: 'Error',
+      })
+    );
+    expect(JSON.stringify(logger.error.mock.calls)).not.toMatch(
+      /sentinel-db-detail|sentinel-db-hint|sentinel-db-stack/
+    );
+    expect(client.query).toHaveBeenCalledWith('ROLLBACK');
+    expect(client.release).toHaveBeenCalledTimes(1);
+  });
+});
 
 describe('gameHandlers (memory mode)', () => {
   let memoryGames;
@@ -43,35 +106,35 @@ describe('gameHandlers (memory mode)', () => {
       pool: { query: jest.fn(), connect: jest.fn() },
       isDbConnected: jest.fn().mockResolvedValue(false),
       logger: { error: jest.fn() },
-      supportedGameTypes: new Set([
-        'Nişancı Düellosu',
-        'Retro Satranç',
-        'Bilgi Yarışı',
-      ]),
+      supportedGameTypes: new Set(['Nişancı Düellosu', 'Retro Satranç', 'Bilgi Yarışı']),
       normalizeGameType: (value) => {
         const raw = String(value || '').trim();
-        return [
-          'Nişancı Düellosu',
-          'Retro Satranç',
-          'Bilgi Yarışı',
-        ].includes(raw)
-          ? raw
-          : null;
+        return ['Nişancı Düellosu', 'Retro Satranç', 'Bilgi Yarışı'].includes(raw) ? raw : null;
       },
       normalizeTableCode,
-      getGameParticipants: (game) => [
-        String(game.host_name || game.hostName || ''),
-        String(game.guest_name || game.guestName || ''),
-      ].filter(Boolean),
+      getGameParticipants: (game) =>
+        [
+          String(game.host_name || game.hostName || ''),
+          String(game.guest_name || game.guestName || ''),
+        ].filter(Boolean),
       normalizeParticipantName: (name, game) => {
-        const normalized = String(name || '').trim().toLowerCase();
-        const host = String(game.host_name || game.hostName || '').trim().toLowerCase();
-        const guest = String(game.guest_name || game.guestName || '').trim().toLowerCase();
+        const normalized = String(name || '')
+          .trim()
+          .toLowerCase();
+        const host = String(game.host_name || game.hostName || '')
+          .trim()
+          .toLowerCase();
+        const guest = String(game.guest_name || game.guestName || '')
+          .trim()
+          .toLowerCase();
         if (normalized && normalized === host) return String(game.host_name || game.hostName);
         if (normalized && normalized === guest) return String(game.guest_name || game.guestName);
         return null;
       },
-      sanitizeScoreSubmission: (payload) => ({ score: Number(payload.score || 0), username: payload.username }),
+      sanitizeScoreSubmission: (payload) => ({
+        score: Number(payload.score || 0),
+        username: payload.username,
+      }),
       pickWinnerFromResults: (results, participants) => {
         const [a, b] = participants;
         const scoreA = Number(results?.[a]?.score || 0);
@@ -99,18 +162,21 @@ describe('gameHandlers (memory mode)', () => {
           return memoryGames.filter((game) => {
             if (String(game.status || '').toLowerCase() !== 'waiting') return false;
             if (
-              ![
-                'Nişancı Düellosu',
-                'Retro Satranç',
-                'Bilgi Yarışı',
-              ].includes(String(game.gameType || '').trim())
+              !['Nişancı Düellosu', 'Retro Satranç', 'Bilgi Yarışı'].includes(
+                String(game.gameType || '').trim()
+              )
             ) {
               return false;
             }
             if (!adminActor && scopeAllRequested) {
-              const hostName = String(game.hostName || '').trim().toLowerCase();
+              const hostName = String(game.hostName || '')
+                .trim()
+                .toLowerCase();
               const hostUser = memoryUsers.find(
-                (user) => String(user?.username || '').trim().toLowerCase() === hostName
+                (user) =>
+                  String(user?.username || '')
+                    .trim()
+                    .toLowerCase() === hostName
               );
               const hostCafeId = Number(hostUser?.cafe_id ?? hostUser?.cafeId ?? 0);
               if (hostCafeId !== actorCafeId) return false;
@@ -179,7 +245,14 @@ describe('gameHandlers (memory mode)', () => {
 
   it('creates game for checked-in user', async () => {
     const req = {
-      user: { username: 'u1', role: 'user', isAdmin: false, table_number: '5', cafe_id: 1, points: 120 },
+      user: {
+        username: 'u1',
+        role: 'user',
+        isAdmin: false,
+        table_number: '5',
+        cafe_id: 1,
+        points: 120,
+      },
       body: { gameType: 'Nişancı Düellosu', points: 50 },
     };
     const res = createMockRes();
@@ -193,7 +266,14 @@ describe('gameHandlers (memory mode)', () => {
 
   it('applies chess tempo config while creating retro chess game', async () => {
     const req = {
-      user: { username: 'u1', role: 'user', isAdmin: false, table_number: '5', cafe_id: 1, points: 500 },
+      user: {
+        username: 'u1',
+        role: 'user',
+        isAdmin: false,
+        table_number: '5',
+        cafe_id: 1,
+        points: 500,
+      },
       body: {
         gameType: 'Retro Satranç',
         points: 90,
@@ -330,7 +410,14 @@ describe('gameHandlers (memory mode)', () => {
 
     const joinReq = {
       params: { id: '75' },
-      user: { username: 'u3', role: 'user', isAdmin: false, table_number: '9', cafe_id: 2, points: 50 },
+      user: {
+        username: 'u3',
+        role: 'user',
+        isAdmin: false,
+        table_number: '9',
+        cafe_id: 2,
+        points: 50,
+      },
     };
     const res = createMockRes();
 
@@ -466,7 +553,13 @@ describe('gameHandlers (memory mode)', () => {
           chess: {
             fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
             moveHistory: [],
-            clock: { baseMs: 180000, incrementMs: 2000, whiteMs: 180000, blackMs: 180000, lastTickAt: null },
+            clock: {
+              baseMs: 180000,
+              incrementMs: 2000,
+              whiteMs: 180000,
+              blackMs: 180000,
+              lastTickAt: null,
+            },
           },
         },
       },
@@ -522,7 +615,13 @@ describe('gameHandlers (memory mode)', () => {
           chess: {
             fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
             moveHistory: [],
-            clock: { baseMs: 180000, incrementMs: 2000, whiteMs: 180000, blackMs: 180000, lastTickAt: null },
+            clock: {
+              baseMs: 180000,
+              incrementMs: 2000,
+              whiteMs: 180000,
+              blackMs: 180000,
+              lastTickAt: null,
+            },
           },
         },
       },

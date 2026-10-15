@@ -15,19 +15,26 @@ const {
   normalizeParticipantKey,
 } = require('./settlementUtils');
 
-const makeDbClient = (userRows) => {
+const makeDbClient = (userRows, tournament = null) => {
   const calls = [];
-  const usersByLowerName = new Map(
-    userRows.map((u) => [String(u.username || '').toLowerCase(), u])
-  );
+  const tournamentPoints = [];
   return {
     calls,
+    tournamentPoints,
     query: jest.fn(async (sql, params = []) => {
       calls.push({ sql, params });
-      // FOR UPDATE select on the users table: return matching rows
+      if (/FROM\s+tournaments/i.test(sql)) {
+        return { rows: tournament && tournament.id === params[0] ? [tournament] : [] };
+      }
+      if (/INSERT INTO\s+tournament_points/i.test(sql)) {
+        const [tournamentId, userId, gameId, points] = params;
+        tournamentPoints.push({ tournamentId, userId, gameId, points });
+        return { rowCount: 1 };
+      }
+      // User lookup order is database-defined, not participant order.
       if (/FROM\s+users/i.test(sql) && /LOWER\(username\)\s*=\s*ANY/i.test(sql)) {
-        const needles = (params[0] || []).map((n) => String(n).toLowerCase());
-        const rows = needles.map((needle) => usersByLowerName.get(needle)).filter(Boolean);
+        const needles = params[0] || [];
+        const rows = userRows.filter((user) => needles.includes(user.username.toLowerCase()));
         return { rows };
       }
       // UPDATE statements: mutate the local row map so subsequent reads see new values
@@ -271,6 +278,66 @@ describe('applyDbSettlement', () => {
     expect(users[1].games_played).toBe(1);
     expect(users[0].wins).toBe(0);
     expect(users[1].wins).toBe(0);
+  });
+
+  it('credits draw participants in game order with one bulk identity lookup', async () => {
+    const users = [
+      { id: 2, username: 'Bob', points: 100, wins: 0, games_played: 0 },
+      { id: 1, username: 'Alice', points: 200, wins: 0, games_played: 0 },
+    ];
+    const client = makeDbClient(users, { id: 7, status: 'active', cafe_id: 3 });
+
+    const result = await applyDbSettlement({
+      client,
+      game: {
+        id: 42,
+        host_name: '  ALICE ',
+        guest_name: ' bob ',
+        points: 50,
+        tournament_id: 7,
+        cafe_id: 3,
+      },
+      winnerName: null,
+      isDraw: true,
+    });
+
+    expect(result.transferredPoints).toBe(0);
+    expect(client.tournamentPoints).toEqual([
+      { tournamentId: 7, userId: 1, gameId: 42, points: 0.5 },
+      { tournamentId: 7, userId: 2, gameId: 42, points: 0.5 },
+    ]);
+    expect(users).toEqual([
+      { id: 2, username: 'Bob', points: 100, wins: 0, games_played: 1 },
+      { id: 1, username: 'Alice', points: 200, wins: 0, games_played: 1 },
+    ]);
+    // One locked balance read plus one tournament identity read, not one per credit.
+    expect(client.calls.filter(({ sql }) => /FROM\s+users/i.test(sql))).toHaveLength(2);
+  });
+
+  it('skips a missing tournament participant without shifting another user credit', async () => {
+    const users = [{ id: 2, username: 'Bob', points: 100, wins: 0, games_played: 0 }];
+    const client = makeDbClient(users, { id: 7, status: 'active', cafe_id: 3 });
+
+    await applyDbSettlement({
+      client,
+      game: {
+        id: 42,
+        host_name: 'BOT',
+        guest_name: ' Bob ',
+        points: 50,
+        tournament_id: 7,
+        cafe_id: 3,
+      },
+      winnerName: null,
+      isDraw: true,
+    });
+
+    expect(client.tournamentPoints).toEqual([
+      { tournamentId: 7, userId: 2, gameId: 42, points: 0.5 },
+    ]);
+    expect(users[0]).toEqual({
+      id: 2, username: 'Bob', points: 100, wins: 0, games_played: 1,
+    });
   });
 
   it('uses FOR UPDATE locking on the users SELECT', async () => {

@@ -12,13 +12,23 @@ const LOCAL_BINARY = path.resolve(
 const command = process.argv[2];
 const extraArgs = process.argv.slice(3);
 
-if (process.env.NODE_ENV === 'production' && ['down', 'redo'].includes(command) && process.env.ALLOW_PRODUCTION_DOWN !== '1') {
-  console.error('Production down/redo requires explicit ALLOW_PRODUCTION_DOWN=1 after reviewing data loss and recovery.');
+if (
+  process.env.NODE_ENV === 'production' &&
+  ['down', 'redo'].includes(command) &&
+  process.env.ALLOW_PRODUCTION_DOWN !== '1'
+) {
+  console.error(
+    'Production down/redo requires explicit ALLOW_PRODUCTION_DOWN=1 after reviewing data loss and recovery.'
+  );
   process.exit(1);
 }
 
 if (command === 'up') {
-  const guard = spawnSync(process.execPath, [path.resolve(__dirname, 'guard-production.js'), ...extraArgs], { stdio: 'inherit' });
+  const guard = spawnSync(
+    process.execPath,
+    [path.resolve(__dirname, 'guard-production.js'), ...extraArgs],
+    { stdio: 'inherit' }
+  );
   if (guard.status !== 0) process.exit(guard.status ?? 1);
 }
 
@@ -29,25 +39,17 @@ if (!command) {
 
 const packageJson = JSON.parse(fs.readFileSync(PACKAGE_JSON_PATH, 'utf8'));
 const configuredVersion =
-  packageJson.devDependencies?.['node-pg-migrate'] ||
-  packageJson.dependencies?.['node-pg-migrate'];
+  packageJson.devDependencies?.['node-pg-migrate'] || packageJson.dependencies?.['node-pg-migrate'];
 
 if (!configuredVersion) {
   console.error('node-pg-migrate version is missing from package.json');
   process.exit(1);
 }
 
-const commonArgs = [
-  command,
-  '--migrations-dir',
-  'migrations/*.js',
-  '--use-glob',
-  ...extraArgs,
-];
+const commonArgs = [command, '--migrations-dir', 'migrations/*.js', '--use-glob', ...extraArgs];
 
 const shouldUseLocalBinary =
-  fs.existsSync(LOCAL_BINARY) &&
-  process.env.NODE_PG_MIGRATE_FORCE_NPX !== '1';
+  fs.existsSync(LOCAL_BINARY) && process.env.NODE_PG_MIGRATE_FORCE_NPX !== '1';
 
 const result = shouldUseLocalBinary
   ? spawnSync(LOCAL_BINARY, commonArgs, { stdio: 'inherit', shell: process.platform === 'win32' })

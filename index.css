@@ -2784,3 +2784,33 @@ main {
     4px 4px 0 var(--riso-pink),
     8px 8px 0 var(--riso-blue);
 }
+
+/* Skip link — keyboard users jump straight to content. Visually hidden
+ * until focused. Pairs with #main-content in App.tsx. */
+.skip-link {
+  position: fixed;
+  left: 1rem;
+  top: -4rem;
+  z-index: 200;
+  border: 2px solid #141413;
+  background: #fbf7ee;
+  color: #141413;
+  padding: 0.6rem 1rem;
+  font-weight: 700;
+  transition: top 0.15s ease-out;
+}
+.skip-link:focus-visible {
+  top: 1rem;
+  outline: none;
+  box-shadow:
+    0 0 0 3px #fbf7ee,
+    0 0 0 5px #141413,
+    4px 4px 0 #ff3e94,
+    8px 8px 0 #1e3fb5;
+}
+
+/* Global focus fallback for elements outside .riso-focus. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid #1e3fb5;
+  outline-offset: 2px;
+}

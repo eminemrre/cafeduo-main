@@ -11,6 +11,8 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        /* Legacy cyber palette — kept for CyberGlitchScreen/Admin accents only.
+         * New code must use paper/carbon/riso tokens. */
         cyber: {
           bg: '#050a19',
           dark: '#020713',
@@ -91,27 +93,11 @@ module.exports = {
       },
       animation: {
         float: 'float 6s ease-in-out infinite',
-        'pulse-soft': 'pulse-soft 4s ease-in-out infinite',
-        'neon-pulse': 'neon-pulse 2s ease-in-out infinite',
       },
       keyframes: {
         float: {
           '0%, 100%': { transform: 'translateY(0px)' },
           '50%': { transform: 'translateY(-8px)' },
-        },
-        'pulse-soft': {
-          '0%, 100%': { opacity: '0.6' },
-          '50%': { opacity: '1' },
-        },
-        'neon-pulse': {
-          '0%, 100%': {
-            textShadow:
-              '0 0 7px #fff, 0 0 10px #fff, 0 0 21px #fff, 0 0 42px #0fa, 0 0 82px #0fa, 0 0 92px #0fa, 0 0 102px #0fa, 0 0 151px #0fa',
-          },
-          '50%': {
-            textShadow:
-              '0 0 4px #fff, 0 0 7px #fff, 0 0 13px #fff, 0 0 25px #0fa, 0 0 54px #0fa, 0 0 62px #0fa, 0 0 71px #0fa, 0 0 100px #0fa',
-          },
         },
       },
     },

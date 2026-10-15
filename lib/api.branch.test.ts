@@ -329,61 +329,62 @@ describe('API branch coverage', () => {
   });
 
   describe('api.achievements.list', () => {
-    it('returns empty array when response is not an array', async () => {
-      (fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ not: 'an array' }),
-      });
+    it('loads the entire catalogue across full pages without duplicates and stops on the empty final page', async () => {
+      const catalogue = Array.from({ length: 200 }, (_, index) => ({
+        id: index + 1,
+        title: `Achievement ${index + 1}`,
+        points_reward: 10,
+        unlocked: index === 100,
+        unlockedAt: index === 100 ? '2026-01-01' : null,
+      }));
+      (fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ items: catalogue.slice(0, 100), nextOffset: 100 }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ items: catalogue.slice(100), nextOffset: 200 }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async (): Promise<{ items: typeof catalogue; nextOffset: number | null }> => ({
+            items: [],
+            nextOffset: null,
+          }),
+        });
 
       const result = await api.achievements.list(1);
-      expect(result).toEqual([]);
+      expect(result.map((item) => item.id)).toEqual(catalogue.map((item) => item.id));
+      expect(result[100]).toMatchObject({ unlocked: true, unlockedAt: '2026-01-01' });
+      expect(
+        (fetch as jest.Mock).mock.calls.map(([url]) => new URL(url, 'http://localhost').search)
+      ).toEqual(['?limit=100&offset=0', '?limit=100&offset=100', '?limit=100&offset=200']);
     });
 
-    it('normalizes achievement fields with defaults', async () => {
+    it('rejects a non-advancing page instead of looping over duplicate achievements', async () => {
       (fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        json: async () => [
-          {
-            id: 1,
-            title: 'First Win',
-            description: 'Win your first game',
-            unlocked: true,
-            unlockedAt: '2026-01-01',
-          },
-          { id: 2 }, // minimal object
-        ],
+        json: async () => ({
+          items: Array.from({ length: 100 }, (_, id) => ({ id })),
+          nextOffset: 0,
+        }),
       });
-
-      const result = await api.achievements.list(1);
-      expect(result).toHaveLength(2);
-      expect(result[0]).toEqual({
-        id: 1,
-        title: 'First Win',
-        description: 'Win your first game',
-        icon: 'star',
-        points_reward: 0,
-        unlocked: true,
-        unlockedAt: '2026-01-01',
-      });
-      expect(result[1]).toEqual({
-        id: 2,
-        title: '',
-        description: '',
-        icon: 'star',
-        points_reward: 0,
-        unlocked: false,
-        unlockedAt: null,
-      });
+      await expect(api.achievements.list(1)).rejects.toThrow();
+      expect(fetch).toHaveBeenCalledTimes(1);
     });
 
-    it('clamps negative points_reward to 0', async () => {
-      (fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => [{ id: 1, points_reward: -50 }],
-      });
-
-      const result = await api.achievements.list(1);
-      expect(result[0].points_reward).toBe(0);
+    it('rejects a malformed later page instead of returning a silently truncated catalogue', async () => {
+      (fetch as jest.Mock)
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            items: Array.from({ length: 100 }, (_, id) => ({ id })),
+            nextOffset: 100,
+          }),
+        })
+        .mockResolvedValueOnce({ ok: true, json: async () => ({ not: 'a page' }) });
+      await expect(api.achievements.list(1)).rejects.toThrow();
     });
   });
 

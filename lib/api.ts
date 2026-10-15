@@ -747,20 +747,40 @@ export const api = {
   // ACHIEVEMENTS
   achievements: {
     list: async (userId: string | number): Promise<Achievement[]> => {
-      const payload = await fetchAPI(`/achievements/${userId}`);
-      if (!Array.isArray(payload)) {
-        return [];
-      }
+      const achievements: Achievement[] = [];
+      const limit = 100;
+      let offset = 0;
+      while (true) {
+        const payload = await fetchAPI<{ items: Achievement[]; nextOffset: number | null }>(
+          `/achievements/${userId}?limit=${limit}&offset=${offset}`
+        );
+        if (
+          !Array.isArray(payload?.items) ||
+          payload.items.length > limit ||
+          (payload.nextOffset !== null &&
+            (!Number.isSafeInteger(payload.nextOffset) ||
+              payload.items.length !== limit ||
+              payload.nextOffset !== offset + payload.items.length))
+        ) {
+          throw new Error('Geçersiz başarım sayfası.');
+        }
 
-      return payload.map((row) => ({
-        id: row?.id,
-        title: String(row?.title || ''),
-        description: String(row?.description || ''),
-        icon: String(row?.icon || 'star'),
-        points_reward: Math.max(0, Number(row?.points_reward || 0)),
-        unlocked: Boolean(row?.unlocked),
-        unlockedAt: row?.unlockedAt ? String(row.unlockedAt) : null,
-      }));
+        for (const row of payload.items) {
+          achievements.push({
+            id: row?.id,
+            title: String(row?.title || ''),
+            description: String(row?.description || ''),
+            icon: String(row?.icon || 'star'),
+            points_reward: Math.max(0, Number(row?.points_reward || 0)),
+            unlocked: Boolean(row?.unlocked),
+            unlockedAt: row?.unlockedAt ? String(row.unlockedAt) : null,
+          });
+        }
+        if (payload.nextOffset === null) {
+          return achievements;
+        }
+        offset = payload.nextOffset;
+      }
     },
   },
 

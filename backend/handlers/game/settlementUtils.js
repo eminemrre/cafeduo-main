@@ -58,17 +58,24 @@ const creditTournamentPoints = async ({ client, game, participants, winnerName, 
     }
     if (credits.length === 0) return;
 
+    const userRes = await client.query(
+      `SELECT DISTINCT ON (LOWER(username)) id, username
+       FROM users
+       WHERE LOWER(username) = ANY($1::text[])`,
+      [credits.map(({ username }) => normalizeParticipantKey(username))]
+    );
+    const userIds = new Map(
+      userRes.rows.map((user) => [normalizeParticipantKey(user.username), user.id])
+    );
+
     for (const { username, points } of credits) {
-      const userRes = await client.query(
-        `SELECT id FROM users WHERE LOWER(username) = $1 LIMIT 1`,
-        [String(username).toLowerCase()]
-      );
-      if (userRes.rows.length === 0) continue;
+      const userId = userIds.get(normalizeParticipantKey(username));
+      if (userId === undefined) continue;
       await client.query(
         `INSERT INTO tournament_points (tournament_id, user_id, game_id, points)
          VALUES ($1, $2, $3, $4)
          ON CONFLICT (tournament_id, game_id, user_id) DO NOTHING`,
-        [tournamentId, userRes.rows[0].id, game.id, points]
+        [tournamentId, userId, game.id, points]
       );
     }
   } catch (err) {

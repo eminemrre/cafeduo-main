@@ -281,50 +281,54 @@ describe('profileHandlers', () => {
   });
 
   describe('getAchievements (DB mode)', () => {
-    it('merges all achievements with user unlocked status', async () => {
-      const allAchievements = [
-        {
-          id: 1,
-          title: 'First Win',
-          description: 'Win one game',
-          condition_type: 'wins',
-          condition_value: 1,
-          points_reward: 10,
-        },
-        {
-          id: 2,
-          title: 'Ten Games',
-          description: 'Play 10 games',
-          condition_type: 'games_played',
-          condition_value: 10,
-          points_reward: 20,
-        },
-      ];
-      const userUnlocked = [{ achievement_id: 1, unlocked_at: '2024-01-01' }];
+    it('advances full pages and terminates after a short page', async () => {
       const pool = {
         query: jest
           .fn()
-          .mockResolvedValueOnce({ rows: allAchievements })
-          .mockResolvedValueOnce({ rows: userUnlocked }),
+          .mockResolvedValueOnce({ rows: [{ id: 1 }, { id: 2 }] })
+          .mockResolvedValueOnce({ rows: [{ id: 3 }] }),
       };
       const dbHandlers = createProfileHandlers({
         pool,
         isDbConnected: jest.fn().mockResolvedValue(true),
         logger: { error: jest.fn(), info: jest.fn() },
-        getMemoryUsers: () => [],
-        setMemoryUsers: () => {},
       });
+      const first = createMockRes();
+      await dbHandlers.getAchievements({ params: { userId: '1' }, query: { limit: '2' } }, first);
+      expect(first.payload.nextOffset).toBe(2);
 
-      const req = { params: { userId: '1' } };
-      const res = createMockRes();
+      const last = createMockRes();
+      await dbHandlers.getAchievements(
+        {
+          params: { userId: '1' },
+          query: { limit: '2', offset: String(first.payload.nextOffset) },
+        },
+        last
+      );
+      expect(last.payload.nextOffset).toBeNull();
+    });
 
-      await dbHandlers.getAchievements(req, res);
-
-      expect(res.statusCode).toBe(200);
-      expect(res.payload[0].unlocked).toBe(true);
-      expect(res.payload[0].unlockedAt).toBe('2024-01-01');
-      expect(res.payload[1].unlocked).toBe(false);
-      expect(res.payload[1].unlockedAt).toBeNull();
+    it('rejects oversized pages and unsafe offsets before accessing the database', async () => {
+      const pool = { query: jest.fn() };
+      const dbHandlers = createProfileHandlers({
+        pool,
+        isDbConnected: jest.fn().mockResolvedValue(true),
+        logger: { error: jest.fn(), info: jest.fn() },
+      });
+      for (const query of [
+        { limit: '101' },
+        { limit: '0' },
+        { limit: '1.5' },
+        { offset: '-1' },
+        { offset: '9007199254740991' },
+        { limit: ['1', '2'] },
+      ]) {
+        const res = createMockRes();
+        await dbHandlers.getAchievements({ params: { userId: '1' }, query }, res);
+        expect(res.statusCode).toBe(400);
+        expect(res.payload.code).toBe('INVALID_PAGINATION');
+      }
+      expect(pool.query).not.toHaveBeenCalled();
     });
 
     it('handles DB error in getAchievements gracefully', async () => {
@@ -345,14 +349,14 @@ describe('profileHandlers', () => {
       expect(res.statusCode).toBe(500);
     });
 
-    it('returns empty array in memory mode', async () => {
+    it('returns a terminal empty page in memory mode', async () => {
       const req = { params: { userId: '1' } };
       const res = createMockRes();
 
       await handlers.getAchievements(req, res);
 
       expect(res.statusCode).toBe(200);
-      expect(res.payload).toEqual([]);
+      expect(res.payload).toEqual({ items: [], nextOffset: null });
     });
   });
 

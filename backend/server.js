@@ -86,7 +86,7 @@ const { Server } = require('socket.io');
 
 // Swagger UI
 const swaggerUi = require('swagger-ui-express');
-const YAML = require('yamljs');
+const yaml = require('js-yaml');
 
 // Local modules
 const { pool, isDbConnected } = require('./db');
@@ -1113,31 +1113,28 @@ const promoteBootstrapAdmins = async () => {
 
   try {
     const passwordHash = await bcrypt.hash(BOOTSTRAP_ADMIN_PASSWORD, 10);
-    let affectedRows = 0;
-
-    for (const email of BOOTSTRAP_ADMIN_EMAILS) {
-      const username =
+    const usernames = BOOTSTRAP_ADMIN_EMAILS.map(
+      (email) =>
         email
           .split('@')[0]
           .replace(/[^a-zA-Z0-9_]/g, '_')
-          .slice(0, 24) || 'admin';
-      const result = await pool.query(
-        `INSERT INTO users (username, email, password_hash, points, department, role, is_admin, cafe_id)
-         VALUES ($1, $2, $3, 100, 'Admin', 'admin', true, NULL)
-         ON CONFLICT (email) DO UPDATE
-         SET password_hash = EXCLUDED.password_hash,
-             role = 'admin',
-             is_admin = true,
-             cafe_id = NULL
-         RETURNING id`,
-        [username, email, passwordHash]
-      );
-      affectedRows += result.rowCount;
-    }
+          .slice(0, 24) || 'admin'
+    );
+    const result = await pool.query(
+      `INSERT INTO users (username, email, password_hash, points, department, role, is_admin, cafe_id)
+       SELECT DISTINCT username, email, $3, 100, 'Admin', 'admin', true, NULL::integer
+       FROM UNNEST($1::text[], $2::text[]) AS admins(username, email)
+       ON CONFLICT (email) DO UPDATE
+       SET password_hash = EXCLUDED.password_hash,
+           role = 'admin',
+           is_admin = true,
+           cafe_id = NULL`,
+      [usernames, BOOTSTRAP_ADMIN_EMAILS, passwordHash]
+    );
 
     logger.info('Bootstrap admin upsert completed.', {
       targetEmails: BOOTSTRAP_ADMIN_EMAILS,
-      affectedRows,
+      affectedRows: result.rowCount,
     });
   } catch (upsertError) {
     logger.warn('Bootstrap admin upsert failed, falling back to promotion-only sync.', upsertError);
@@ -1185,7 +1182,9 @@ registerTournamentJobs({
 
 // --- SWAGGER UI ---
 try {
-  const swaggerDocument = YAML.load(path.resolve(__dirname, '../openapi.yaml'));
+  const swaggerDocument = yaml.load(
+    fs.readFileSync(path.resolve(__dirname, '../openapi.yaml'), 'utf8')
+  );
   app.use(
     '/api-docs',
     swaggerUi.serve,

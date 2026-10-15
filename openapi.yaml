@@ -3,17 +3,17 @@ info:
   title: CafeDuo API
   description: |
     Gamified cafe loyalty platform API
-    
+
     CafeDuo, kafelerde oyun oynayarak puan kazanmayı ve bu puanlarla 
     ödüller satın almayı sağlayan bir platformun backend API'sidir.
-    
+
     ## Özellikler
     - 🎮 Oyun lobisi (Refleks Avı, Ritim Kopyala, Çift Tek Sprint)
     - 🏆 Liderlik tablosu
     - 🎁 Ödül mağazası
     - ☕ Kafe check-in sistemi
     - 📊 Başarım sistemi
-    
+
   version: 1.0.0
   contact:
     name: CafeDuo Support
@@ -77,19 +77,19 @@ paths:
               properties:
                 username:
                   type: string
-                  example: "gamer123"
+                  example: 'gamer123'
                 email:
                   type: string
                   format: email
-                  example: "user@example.com"
+                  example: 'user@example.com'
                 password:
                   type: string
                   format: password
                   minLength: 6
-                  example: "securePass123"
+                  example: 'securePass123'
                 department:
                   type: string
-                  example: "Bilgisayar Mühendisliği"
+                  example: 'Bilgisayar Mühendisliği'
       responses:
         200:
           description: Kayıt başarılı
@@ -128,7 +128,7 @@ paths:
                   format: email
                 code:
                   type: string
-                  example: "123456"
+                  example: '123456'
       responses:
         200:
           description: Doğrulama başarılı
@@ -159,11 +159,11 @@ paths:
                 email:
                   type: string
                   format: email
-                  example: "user@example.com"
+                  example: 'user@example.com'
                 password:
                   type: string
                   format: password
-                  example: "securePass123"
+                  example: 'securePass123'
                 captchaToken:
                   type: string
                   description: Google reCAPTCHA token (opsiyonel)
@@ -179,7 +179,7 @@ paths:
                     $ref: '#/components/schemas/User'
                   token:
                     type: string
-                    example: "eyJhbGciOiJIUzI1NiIs..."
+                    example: 'eyJhbGciOiJIUzI1NiIs...'
                   bonusReceived:
                     type: boolean
                     description: Günlük bonus alındı mı?
@@ -241,7 +241,7 @@ paths:
                   example: 25
                 department:
                   type: string
-                  example: "Endüstri Mühendisliği"
+                  example: 'Endüstri Mühendisliği'
       responses:
         200:
           description: Güncelleme başarılı
@@ -356,7 +356,7 @@ paths:
               schema:
                 oneOf:
                   - $ref: '#/components/schemas/Game'
-                  - type: "null"
+                  - type: 'null'
 
   # ==========================================
   # GAMES
@@ -377,7 +377,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Game'
-    
+
     post:
       tags:
         - Games
@@ -395,8 +395,8 @@ paths:
               properties:
                 gameType:
                   type: string
-                  enum: ["Refleks Avı", "Tank Düellosu", "Retro Satranç", "Bilgi Yarışı"]
-                  example: "Refleks Avı"
+                  enum: ['Refleks Avı', 'Tank Düellosu', 'Retro Satranç', 'Bilgi Yarışı']
+                  example: 'Refleks Avı'
                 points:
                   type: integer
                   minimum: 0
@@ -404,7 +404,7 @@ paths:
                   example: 150
                 table:
                   type: string
-                  example: "MASA04"
+                  example: 'MASA04'
                 chessClock:
                   type: object
                   properties:
@@ -555,7 +555,7 @@ paths:
               properties:
                 player:
                   type: string
-                  enum: ["host", "guest"]
+                  enum: ['host', 'guest']
                   description: Oyuncu rolü
                 move:
                   type: string
@@ -665,7 +665,7 @@ paths:
                 winner:
                   type: string
                   description: Kazananın kullanıcı adı
-                  example: "GamerTr_99"
+                  example: 'GamerTr_99'
       responses:
         200:
           description: Oyun sonlandırıldı
@@ -770,7 +770,7 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Reward'
-    
+
     post:
       tags:
         - Shop
@@ -788,16 +788,16 @@ paths:
               properties:
                 title:
                   type: string
-                  example: "Bedava Filtre Kahve"
+                  example: 'Bedava Filtre Kahve'
                 cost:
                   type: integer
                   example: 500
                 description:
                   type: string
-                  example: "Günün yorgunluğunu at."
+                  example: 'Günün yorgunluğunu at.'
                 icon:
                   type: string
-                  example: "coffee"
+                  example: 'coffee'
                 cafeId:
                   type: integer
       responses:
@@ -896,10 +896,10 @@ paths:
                   type: integer
                 tableNumber:
                   type: string
-                  example: "05"
+                  example: '05'
                 pin:
                   type: string
-                  example: "1234"
+                  example: '1234'
       responses:
         200:
           description: Giriş başarılı
@@ -933,11 +933,11 @@ paths:
                   type: integer
                 tableNumber:
                   type: string
-                  example: "05"
+                  example: '05'
                 pin:
                   type: string
                   minLength: 4
-                  example: "1234"
+                  example: '1234'
       responses:
         200:
           description: Giriş başarılı
@@ -952,7 +952,7 @@ paths:
                     type: string
                   table:
                     type: string
-                    example: "MASA05"
+                    example: 'MASA05'
         400:
           description: Yanlış PIN veya eksik bilgi
         401:
@@ -986,7 +986,7 @@ paths:
                   type: string
                   minLength: 4
                   maxLength: 6
-                  example: "9876"
+                  example: '9876'
                 userId:
                   type: integer
                   description: Kafe admin'in user ID'si
@@ -1013,8 +1013,8 @@ paths:
           in: query
           schema:
             type: string
-            enum: ["general", "department"]
-            default: "general"
+            enum: ['general', 'department']
+            default: 'general'
         - name: department
           in: query
           schema:
@@ -1038,23 +1038,56 @@ paths:
       tags:
         - Achievements
       summary: Kullanıcı başarımlarını getir
-      description: Tüm başarımları ve kullanıcının kazandıklarını listeler
-      security: []
+      description: |
+        Başarımları points_reward ve id artan sırasıyla sayfalar.
+        Kullanıcı yalnızca kendi başarımlarına erişebilir (admin hariç).
+        Tüm kataloğu almak için nextOffset null olana kadar aynı limit ile
+        sonraki offset değerini isteyin. Son sayfa tam doluysa bir sonraki
+        istek boş items ve null nextOffset döndürür.
       parameters:
         - name: userId
           in: path
           required: true
           schema:
             type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Negatif olmayan güvenli tam sayı; offset + limit güvenli tam sayı aralığında olmalıdır.
       responses:
         200:
-          description: Başarım listesi
+          description: Başarım sayfası; bellek modunda items boş ve nextOffset null olur
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Achievement'
+                type: object
+                required: [items, nextOffset]
+                properties:
+                  items:
+                    type: array
+                    maxItems: 100
+                    items:
+                      $ref: '#/components/schemas/Achievement'
+                  nextOffset:
+                    type: integer
+                    minimum: 1
+                    nullable: true
+        400:
+          description: Geçersiz limit veya offset
+        401:
+          description: Kimlik doğrulaması gerekli
+        403:
+          description: Başka bir kullanıcının başarımlarına erişim yasak
 
   # ==========================================
   # COUPONS
@@ -1076,7 +1109,7 @@ paths:
               properties:
                 code:
                   type: string
-                  example: "CD-A1B2-C3D4"
+                  example: 'CD-A1B2-C3D4'
       responses:
         200:
           description: Kupon kullanıldı
@@ -1158,7 +1191,7 @@ paths:
               properties:
                 role:
                   type: string
-                  enum: ["user", "cafe_admin", "admin"]
+                  enum: ['user', 'cafe_admin', 'admin']
                 cafe_id:
                   type: integer
                   description: cafe_admin rolü için zorunlu
@@ -1211,7 +1244,7 @@ paths:
               properties:
                 name:
                   type: string
-                  example: "PAÜ Mühendislik Kafeterya"
+                  example: 'PAÜ Mühendislik Kafeterya'
                 address:
                   type: string
                 total_tables:
@@ -1221,7 +1254,7 @@ paths:
                   type: string
                   minLength: 4
                   maxLength: 4
-                  default: "1234"
+                  default: '1234'
                 latitude:
                   type: number
                 longitude:
@@ -1365,11 +1398,11 @@ components:
           example: 1
         username:
           type: string
-          example: "GamerTr_99"
+          example: 'GamerTr_99'
         email:
           type: string
           format: email
-          example: "user@example.com"
+          example: 'user@example.com'
         points:
           type: integer
           example: 1250
@@ -1381,11 +1414,11 @@ components:
           example: 25
         department:
           type: string
-          example: "Bilgisayar Mühendisliği"
+          example: 'Bilgisayar Mühendisliği'
         role:
           type: string
-          enum: ["user", "cafe_admin", "admin"]
-          example: "user"
+          enum: ['user', 'cafe_admin', 'admin']
+          example: 'user'
         isAdmin:
           type: boolean
           example: false
@@ -1395,7 +1428,7 @@ components:
         table_number:
           type: string
           nullable: true
-          example: "MASA05"
+          example: 'MASA05'
         cafe_name:
           type: string
           nullable: true
@@ -1417,24 +1450,24 @@ components:
           example: 1
         hostName:
           type: string
-          example: "GamerTr_99"
+          example: 'GamerTr_99'
         guestName:
           type: string
           nullable: true
-          example: "Rival_Pro"
+          example: 'Rival_Pro'
         gameType:
           type: string
-          example: "Refleks Avı"
+          example: 'Refleks Avı'
         points:
           type: integer
           example: 150
         table:
           type: string
-          example: "MASA04"
+          example: 'MASA04'
         status:
           type: string
-          enum: ["waiting", "active", "finishing", "finished"]
-          example: "waiting"
+          enum: ['waiting', 'active', 'finishing', 'finished']
+          example: 'waiting'
         player1Move:
           type: string
           nullable: true
@@ -1464,17 +1497,17 @@ components:
           properties:
             code:
               type: string
-              enum: ["invalid_game_status", "invalid_target_status", "invalid_status_transition"]
-              example: "invalid_status_transition"
+              enum: ['invalid_game_status', 'invalid_target_status', 'invalid_status_transition']
+              example: 'invalid_status_transition'
             details:
               type: object
               properties:
                 fromStatus:
                   type: string
-                  example: "finished"
+                  example: 'finished'
                 toStatus:
                   type: string
-                  example: "active"
+                  example: 'active'
 
     Reward:
       type: object
@@ -1484,16 +1517,16 @@ components:
           example: 1
         title:
           type: string
-          example: "Bedava Filtre Kahve"
+          example: 'Bedava Filtre Kahve'
         cost:
           type: integer
           example: 500
         description:
           type: string
-          example: "Günün yorgunluğunu at."
+          example: 'Günün yorgunluğunu at.'
         icon:
           type: string
-          example: "coffee"
+          example: 'coffee'
         cafe_id:
           type: integer
           nullable: true
@@ -1521,7 +1554,7 @@ components:
           type: string
         code:
           type: string
-          example: "CD-A1B2-C3D4"
+          example: 'CD-A1B2-C3D4'
         redeemed_at:
           type: string
           format: date-time
@@ -1533,7 +1566,7 @@ components:
           nullable: true
         status:
           type: string
-          enum: ["active", "used"]
+          enum: ['active', 'used']
 
     InventoryItem:
       type: object
@@ -1546,7 +1579,7 @@ components:
           type: string
         code:
           type: string
-          example: "CD-A1B2-C3D4"
+          example: 'CD-A1B2-C3D4'
         redeemedAt:
           type: string
           format: date-time
@@ -1561,7 +1594,7 @@ components:
           example: 1
         name:
           type: string
-          example: "PAÜ İİBF Kantin"
+          example: 'PAÜ İİBF Kantin'
         address:
           type: string
           nullable: true
@@ -1570,7 +1603,7 @@ components:
           example: 30
         pin:
           type: string
-          example: "1234"
+          example: '1234'
         latitude:
           type: number
           nullable: true
@@ -1584,7 +1617,7 @@ components:
           description: Metre cinsinden
         daily_pin:
           type: string
-          example: "1234"
+          example: '1234'
       required:
         - id
         - name
@@ -1596,7 +1629,7 @@ components:
           type: integer
         username:
           type: string
-          example: "GamerTr_99"
+          example: 'GamerTr_99'
         points:
           type: integer
           example: 2500
@@ -1608,7 +1641,7 @@ components:
           example: 100
         department:
           type: string
-          example: "Bilgisayar Mühendisliği"
+          example: 'Bilgisayar Mühendisliği'
       required:
         - id
         - username
@@ -1621,19 +1654,19 @@ components:
           type: integer
         title:
           type: string
-          example: "İlk Adım"
+          example: 'İlk Adım'
         description:
           type: string
-          example: "İlk oyununu oyna."
+          example: 'İlk oyununu oyna.'
         icon:
           type: string
-          example: "footsteps"
+          example: 'footsteps'
         points_reward:
           type: integer
           example: 50
         condition_type:
           type: string
-          enum: ["wins", "games_played", "points"]
+          enum: ['wins', 'games_played', 'points']
         condition_value:
           type: integer
           example: 1
@@ -1650,20 +1683,20 @@ components:
       properties:
         code:
           type: string
-          example: "TOKEN_MISSING"
+          example: 'TOKEN_MISSING'
         message:
           type: string
-          example: "Access token required"
+          example: 'Access token required'
         details:
           nullable: true
         requestId:
           type: string
           nullable: true
-          example: "1b4f4f2e-3703-47ef-a2f4-8f84efff2f0a"
+          example: '1b4f4f2e-3703-47ef-a2f4-8f84efff2f0a'
         error:
           type: string
           description: message alanı için backward-compatible alias
-          example: "Access token required"
+          example: 'Access token required'
       required:
         - code
         - message
@@ -1675,7 +1708,7 @@ components:
           properties:
             code:
               type: string
-              enum: ["VALIDATION_ERROR"]
+              enum: ['VALIDATION_ERROR']
             details:
               type: array
               items:
@@ -1683,10 +1716,10 @@ components:
                 properties:
                   path:
                     type: string
-                    example: "body.points"
+                    example: 'body.points'
                   message:
                     type: string
-                    example: "points 0 ile 5000 arasında sayı olmalıdır."
+                    example: 'points 0 ile 5000 arasında sayı olmalıdır.'
                   value:
                     nullable: true
 

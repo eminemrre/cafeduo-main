@@ -17,6 +17,7 @@ import { CafeSelection } from './components/CafeSelection';
 import { CookieConsent } from './components/CookieConsent';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { DecodeText } from './components/ui/DecodeText';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
 
@@ -59,6 +60,11 @@ const PageLoader = () => (
       aria-hidden="true"
       className="w-14 h-14 border-4 border-carbon border-t-transparent rounded-full animate-spin"
     ></div>
+    <DecodeText
+      text="YÜKLENİYOR"
+      className="mt-4 font-riso-mono text-[11px] uppercase tracking-[0.3em] text-carbon-muted"
+      data-testid="page-loader-decode"
+    />
   </div>
 );
 

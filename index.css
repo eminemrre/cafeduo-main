@@ -9,6 +9,16 @@
 @source "./lib/**/*.{js,ts,jsx,tsx}";
 
 :root {
+  /* Hareket token'ları — lib/motion.ts ile eşleşir (lib/motion.test.ts denetler).
+     Yeni CSS animasyonu süre/eğri değerlerini buradan alır. */
+  --ease-brand: cubic-bezier(0.35, 0, 0, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-in-out-expo: cubic-bezier(0.87, 0, 0.13, 1);
+  --dur-fast: 150ms;
+  --dur-base: 300ms;
+  --dur-slow: 500ms;
+  --stagger-step: 20ms;
+
   --rf-bg: #070817;
   --rf-bg-soft: rgba(7, 12, 28, 0.9);
   --rf-bg-deep: #02030a;

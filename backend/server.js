@@ -86,7 +86,7 @@ const { Server } = require('socket.io');
 
 // Swagger UI
 const swaggerUi = require('swagger-ui-express');
-const YAML = require('yamljs');
+const yaml = require('js-yaml');
 
 // Local modules
 const { pool, isDbConnected } = require('./db');
@@ -1182,7 +1182,9 @@ registerTournamentJobs({
 
 // --- SWAGGER UI ---
 try {
-  const swaggerDocument = YAML.load(path.resolve(__dirname, '../openapi.yaml'));
+  const swaggerDocument = yaml.load(
+    fs.readFileSync(path.resolve(__dirname, '../openapi.yaml'), 'utf8')
+  );
   app.use(
     '/api-docs',
     swaggerUi.serve,

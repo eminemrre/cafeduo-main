@@ -78,4 +78,48 @@ describe('errorContract middleware', () => {
     expect(res.payload.message).toBe('Origin not allowed');
     expect(res.payload.details).toEqual({ origin: 'http://localhost:3000' });
   });
+
+  describe('production server errors', () => {
+    let originalEnv;
+
+    beforeEach(() => {
+      originalEnv = process.env;
+      process.env = { ...originalEnv, NODE_ENV: 'production', EXPOSE_API_ERRORS: 'true' };
+    });
+
+    afterEach(() => {
+      process.env = originalEnv;
+    });
+
+    it.each([
+      ['unhandled errors', (fields) => Object.assign(new Error(fields.message), fields)],
+      ['explicit API errors', (fields) => new ApiError(fields)],
+    ])('hides %s despite a stale exposure opt-in while retaining server logs', (_name, makeError) => {
+      const err = makeError({
+        status: 503,
+        code: 'sentinel-db-code',
+        message: 'sentinel-db-message',
+        details: { query: 'sentinel-db-query' },
+      });
+      err.stack = 'sentinel-db-stack';
+      const req = { originalUrl: '/api/games', method: 'POST', requestId: 'req-private' };
+      const res = createMockRes();
+      const logger = { error: jest.fn() };
+
+      createErrorHandler({ logger })(err, req, res, () => {});
+
+      expect(res.statusCode).toBe(503);
+      expect(res.payload).toEqual({
+        status: 503,
+        code: 'INTERNAL_ERROR',
+        message: 'Internal server error',
+        error: 'Internal server error',
+        details: null,
+        requestId: 'req-private',
+      });
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.objectContaining({ message: err.message, stack: err.stack })
+      );
+    });
+  });
 });

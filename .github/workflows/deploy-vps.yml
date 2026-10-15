@@ -226,11 +226,6 @@ jobs:
             if [ -n "${RESEND_API_KEY:-}" ]; then
               printf 'RESEND_API_KEY=%s\n' "$RESEND_API_KEY" >> .env.tmp
             fi
-            # Temporary debug switch — exposes pg error messages on 500
-            # responses so production issues can be diagnosed from the
-            # browser DevTools without VPS shell access. Remove once the
-            # wheel 500 is resolved.
-            printf 'EXPOSE_API_ERRORS=true\n' >> .env.tmp
             mv .env.tmp .env
 
             port_in_use() {

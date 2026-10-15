@@ -242,11 +242,6 @@ const createCreateGameHandler = (deps) => {
         return res.status(201).json(createdGame);
       } catch (err) {
         await client.query('ROLLBACK');
-        // TEMPORARY DEBUG (unconditionally exposes pg error details).
-        // The previous EXPOSE_API_ERRORS gate didn't fire in prod —
-        // env var didn't reach the container — so we lost the stack
-        // trace and the user kept seeing a generic 500. This block
-        // MUST be stripped once the bug is identified and fixed.
         logger.error('Create game error', {
           message: err?.message,
           code: err?.code,
@@ -258,19 +253,7 @@ const createCreateGameHandler = (deps) => {
           routine: err?.routine,
           stack: err?.stack,
         });
-        return res.status(500).json({
-          error: 'Oyun kurulamadı.',
-          debug: {
-            message: err?.message || null,
-            code: err?.code || null,
-            detail: err?.detail || null,
-            hint: err?.hint || null,
-            column: err?.column || null,
-            table: err?.table || null,
-            routine: err?.routine || null,
-            position: err?.position || null,
-          },
-        });
+        return res.status(500).json({ error: 'Oyun kurulamadı.' });
       } finally {
         client.release();
       }

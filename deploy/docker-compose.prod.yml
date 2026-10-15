@@ -73,9 +73,6 @@ services:
       # the API key and the email service silently fell back to log-only.
       RESEND_API_KEY: '${RESEND_API_KEY:-}'
       RESEND_FROM: '${RESEND_FROM:-CafeDuo <noreply@cafeduotr.com>}'
-      # Surfaces pg error metadata in 500 responses while we're debugging.
-      # Temporary — remove once the wheel/email issues are confirmed resolved.
-      EXPOSE_API_ERRORS: '${EXPOSE_API_ERRORS:-false}'
     expose:
       - '3001'
 

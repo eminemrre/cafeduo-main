@@ -26,6 +26,58 @@ const normalizeTableCode = (rawValue) => {
   return null;
 };
 
+describe('gameHandlers (database errors)', () => {
+  it('keeps create-game database diagnostics in server logs only', async () => {
+    const databaseError = Object.assign(new Error('sentinel-db-message'), {
+      code: 'XX000',
+      detail: 'sentinel-db-detail',
+      hint: 'sentinel-db-hint',
+      position: 'sentinel-db-position',
+      table: 'sentinel-db-table',
+      column: 'sentinel-db-column',
+      routine: 'sentinel-db-routine',
+      stack: 'sentinel-db-stack',
+    });
+    const client = {
+      query: jest.fn().mockResolvedValue({ rows: [{ daily_game_limit: 0 }] }),
+      release: jest.fn(),
+    };
+    const logger = { error: jest.fn(), warn: jest.fn() };
+    const handlers = createGameHandlers({
+      pool: { connect: jest.fn().mockResolvedValue(client) },
+      isDbConnected: jest.fn().mockResolvedValue(true),
+      logger,
+      normalizeGameType: (value) => value,
+      normalizeTableCode,
+      gameService: {
+        findParticipantPendingOrActiveGameForUpdate: jest.fn().mockResolvedValue(null),
+        insertWaitingGame: jest.fn().mockRejectedValue(databaseError),
+      },
+    });
+    const req = {
+      user: { username: 'u1', role: 'user', table_number: '5', cafe_id: 1, points: 120 },
+      body: { gameType: 'Bilgi Yarışı', points: 50 },
+    };
+    const res = createMockRes();
+
+    await handlers.createGame(req, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.payload).toEqual({ error: 'Oyun kurulamadı.' });
+    expect(logger.error).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        message: databaseError.message,
+        code: databaseError.code,
+        detail: databaseError.detail,
+        stack: databaseError.stack,
+      })
+    );
+    expect(client.query).toHaveBeenCalledWith('ROLLBACK');
+    expect(client.release).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('gameHandlers (memory mode)', () => {
   let memoryGames;
   let memoryUsers;

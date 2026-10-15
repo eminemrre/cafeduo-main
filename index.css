@@ -1,33 +1,11 @@
-@import '@fontsource/teko/400.css';
-@import '@fontsource/teko/500.css';
-@import '@fontsource/teko/600.css';
-@import '@fontsource/teko/700.css';
-@import '@fontsource/oswald/500.css';
-@import '@fontsource/oswald/600.css';
-@import '@fontsource/oswald/700.css';
+/* Premium font set — Riso Kantin dominant + Turkish fallback.
+ * Display: Unbounded Variable · Body: Familjen Grotesk + Noto Sans · Mono: JetBrains Mono Variable.
+ * Legacy families removed (zero component usage): Teko, Oswald, Chakra Petch,
+ * Press Start 2P, Space Grotesk, IBM Plex Mono, Fraunces Variable, DM Sans Variable. */
 @import '@fontsource/noto-sans/400.css';
 @import '@fontsource/noto-sans/500.css';
 @import '@fontsource/noto-sans/600.css';
 @import '@fontsource/noto-sans/700.css';
-@import '@fontsource/chakra-petch/400.css';
-@import '@fontsource/chakra-petch/500.css';
-@import '@fontsource/chakra-petch/600.css';
-@import '@fontsource/chakra-petch/700.css';
-@import '@fontsource/press-start-2p/400.css';
-@import '@fontsource/space-grotesk/400.css';
-@import '@fontsource/space-grotesk/500.css';
-@import '@fontsource/space-grotesk/700.css';
-@import '@fontsource/ibm-plex-mono/400.css';
-@import '@fontsource/ibm-plex-mono/500.css';
-@import '@fontsource/ibm-plex-mono/700.css';
-
-/* Café Concierge — admin-only typography. Scoped via .cafe-concierge class
- * so the rest of the site (Cyber retro theme) is untouched. */
-@import '@fontsource-variable/fraunces';
-@import '@fontsource-variable/dm-sans';
-
-/* Riso Kantin — new app-wide aesthetic (Mayıs 2026 redesign).
- * Self-hosted Google fonts to avoid runtime fetch + CSP friction. */
 @import '@fontsource-variable/unbounded';
 @import '@fontsource/familjen-grotesk/400.css';
 @import '@fontsource/familjen-grotesk/500.css';
@@ -90,9 +68,9 @@ body,
 
 body {
   margin: 0;
-  font-family: 'Chakra Petch', 'Noto Sans', sans-serif;
-  background: #02030a;
-  color: var(--rf-ink);
+  font-family: 'Familjen Grotesk', 'Noto Sans', system-ui, sans-serif;
+  background: #fbf7ee;
+  color: #141413;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   text-rendering: optimizeLegibility;
@@ -3013,4 +2991,34 @@ textarea:focus-visible,
     0 0 0 5px var(--ink),
     4px 4px 0 var(--riso-pink),
     8px 8px 0 var(--riso-blue);
+}
+
+/* Skip link — keyboard users jump straight to content. Visually hidden
+ * until focused. Pairs with #main-content in App.tsx. */
+.skip-link {
+  position: fixed;
+  left: 1rem;
+  top: -4rem;
+  z-index: 200;
+  border: 2px solid #141413;
+  background: #fbf7ee;
+  color: #141413;
+  padding: 0.6rem 1rem;
+  font-weight: 700;
+  transition: top 0.15s ease-out;
+}
+.skip-link:focus-visible {
+  top: 1rem;
+  outline: none;
+  box-shadow:
+    0 0 0 3px #fbf7ee,
+    0 0 0 5px #141413,
+    4px 4px 0 #ff3e94,
+    8px 8px 0 #1e3fb5;
+}
+
+/* Global focus fallback for elements outside .riso-focus. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 3px solid #1e3fb5;
+  outline-offset: 2px;
 }

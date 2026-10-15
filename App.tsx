@@ -247,9 +247,12 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="riso-kantin riso-kantin-app min-h-screen font-riso-body selection:bg-riso-pink selection:text-carbon">
+      <a href="#main-content" className="skip-link">
+        İçeriğe atla
+      </a>
       <Navbar isLoggedIn={!!user} user={user} onLogout={handleLogout} />
 
-      <main>
+      <main id="main-content">
         <Suspense fallback={<PageLoader />}>
           <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>

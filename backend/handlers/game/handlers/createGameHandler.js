@@ -4,6 +4,7 @@
  */
 
 const { isAdminActor } = require('../validation');
+const { sendApiError } = require('../../../utils/routeHelpers');
 const { isChessGameType, createInitialChessState } = require('../chessUtils');
 
 const createCreateGameHandler = (deps) => {
@@ -242,18 +243,7 @@ const createCreateGameHandler = (deps) => {
         return res.status(201).json(createdGame);
       } catch (err) {
         await client.query('ROLLBACK');
-        logger.error('Create game error', {
-          message: err?.message,
-          code: err?.code,
-          detail: err?.detail,
-          hint: err?.hint,
-          position: err?.position,
-          table: err?.table,
-          column: err?.column,
-          routine: err?.routine,
-          stack: err?.stack,
-        });
-        return res.status(500).json({ error: 'Oyun kurulamadı.' });
+        return sendApiError(res, logger, 'Create game error', err, 'Oyun kurulamadı.');
       } finally {
         client.release();
       }

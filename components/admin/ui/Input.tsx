@@ -33,7 +33,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy}
           className={
-            'w-full bg-paper border-2 px-3.5 py-2.5 font-riso-body ' +
+            'duo-input w-full bg-paper border-2 px-3.5 py-2.5 font-riso-body ' +
             'text-base text-carbon placeholder:text-carbon-muted ' +
             'riso-focus ' +
             (error ? 'border-riso-redox ' : 'border-carbon ') +

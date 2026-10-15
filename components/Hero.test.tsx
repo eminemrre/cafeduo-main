@@ -13,19 +13,10 @@ describe('Hero', () => {
     jest.clearAllMocks();
   });
 
-  it('renders the decorative floating square field', () => {
+  it('renders the CafeDuo headline', () => {
     render(<Hero onLogin={jest.fn()} onRegister={jest.fn()} isLoggedIn={false} />);
 
-    const squares = screen.getAllByTestId('hero-floating-square');
-    expect(squares.length).toBeGreaterThanOrEqual(8);
-    expect(squares.every((square) => square.getAttribute('aria-hidden') === 'true')).toBe(true);
-  });
-
-  it('renders the XPatla-inspired slogan', () => {
-    render(<Hero onLogin={jest.fn()} onRegister={jest.fn()} isLoggedIn={false} />);
-
-    expect(screen.getByText(/Kafede oyun oynamak artık/i)).toBeInTheDocument();
-    expect(screen.getByText('kolay.')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Bir el oynayalım mı?');
   });
 
   it('renders logged-out CTAs and triggers register/login callbacks', () => {
@@ -34,11 +25,11 @@ describe('Hero', () => {
 
     render(<Hero onLogin={onLogin} onRegister={onRegister} isLoggedIn={false} />);
 
-    expect(screen.getByText("CafeDuo'ya Başla")).toBeInTheDocument();
-    expect(screen.getByText('Oturum Aç')).toBeInTheDocument();
+    expect(screen.getByText('Masaya katıl')).toBeInTheDocument();
+    expect(screen.getByText('Zaten üyeyim')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText("CafeDuo'ya Başla"));
-    fireEvent.click(screen.getByText('Oturum Aç'));
+    fireEvent.click(screen.getByText('Masaya katıl'));
+    fireEvent.click(screen.getByText('Zaten üyeyim'));
 
     expect(onRegister).toHaveBeenCalledTimes(1);
     expect(onLogin).toHaveBeenCalledTimes(1);

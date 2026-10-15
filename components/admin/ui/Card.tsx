@@ -16,7 +16,7 @@ export const Card: React.FC<CardProps> = ({
   <div
     {...rest}
     className={
-      'relative border-2 border-carbon p-5 ' +
+      'duo-card relative border-2 border-carbon p-5 ' +
       (variant === 'default'
         ? 'bg-paper text-carbon riso-shadow-sm '
         : 'bg-paper-deep text-carbon ') +

@@ -37,6 +37,11 @@ export interface User {
   bonusReceived?: boolean;
 }
 
+export interface UserProfileUpdates {
+  department?: string;
+  avatar_url?: string | null;
+}
+
 export interface GameRequest {
   id: string | number;
   hostName: string;

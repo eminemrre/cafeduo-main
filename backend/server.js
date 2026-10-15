@@ -79,6 +79,7 @@ const cors = require('cors');
 const cookie = require('cookie');
 const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
+const { buildSecurityHeadersOptions } = require('./middleware/securityHeaders');
 const rateLimit = require('express-rate-limit');
 const bcrypt = require('bcrypt');
 const { Server } = require('socket.io');
@@ -95,6 +96,7 @@ const { buildRateLimiterOptions, getPassOnStoreError } = require('./middleware/r
 const { notFoundHandler, createErrorHandler } = require('./middleware/errorContract');
 const { csrfMiddleware } = require('./middleware/csrf');
 const authRoutes = require('./routes/authRoutes');
+const { prepareLogout } = require('./middleware/logoutCleanup');
 const cafeRoutes = require('./routes/cafeRoutes'); // Cafe Routes Import
 const storeRoutes = require('./routes/storeRoutes'); // Store Routes Import
 const { createAdminRoutes } = require('./routes/adminRoutes');
@@ -458,28 +460,14 @@ logger.info('🔐 Security defaults:', {
 // Middleware (Moved to backend/middleware/auth.js)
 
 // Security Middleware
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // aite build için gerekli
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        fontSrc: ["'self'"],
-        imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
-        connectSrc: ["'self'", 'wss:', 'ws:'],
-        frameSrc: ["'none'"],
-        objectSrc: ["'none'"],
-        upgradeInsecureRequests: [],
-      },
-    },
-    crossOriginEmbedderPolicy: false, // Socket.IO uyumluluğu
-  })
-); // Secure HTTP headers with CSP
+app.use(helmet(buildSecurityHeadersOptions({ production: process.env.NODE_ENV === 'production' })));
 
 // Sentry Request and Tracing Handlers (must be before other middleware)
 // In Sentry v10+, request/tracing is automatic via instrumentation
 // No need for explicit requestHandler/tracingHandler
+
+// Device logout cleanup requires a valid CSRF token; API limits still apply afterward.
+app.post('/api/auth/logout', ...prepareLogout);
 
 // Apply a higher baseline limiter only to API routes.
 // Auth brute-force protection is handled separately in authRoutes.
@@ -522,7 +510,7 @@ app.use(
       }
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token'],
   })
 );

@@ -60,8 +60,38 @@ describe('errorContract middleware', () => {
     expect(logger.error).toHaveBeenCalled();
   });
 
+  it.each([
+    new Error('private exception'),
+    new ApiError({
+      status: 503,
+      code: 'DB_INTERNAL',
+      message: 'private exception',
+      details: { query: 'private SQL' },
+    }),
+  ])(
+    'sanitizes unexpected and explicit server errors while preserving request correlation',
+    (err) => {
+      const req = { originalUrl: '/api/test', method: 'GET', requestId: 'req-safe' },
+        res = createMockRes();
+      createErrorHandler({ logger: { error: jest.fn() } })(err, req, res, () => {});
+      expect(res.payload).toMatchObject({
+        code: 'INTERNAL_ERROR',
+        message: 'Internal server error',
+        details: null,
+        requestId: 'req-safe',
+      });
+      expect(JSON.stringify(res.payload)).not.toContain('private');
+      expect(res.statusCode).toBe(err.status || 500);
+    }
+  );
+
   it('preserves custom status/code for non-ApiError inputs', () => {
-    const req = { originalUrl: '/api/shop/buy', method: 'POST', requestId: 'req-3', ip: '127.0.0.1' };
+    const req = {
+      originalUrl: '/api/shop/buy',
+      method: 'POST',
+      requestId: 'req-3',
+      ip: '127.0.0.1',
+    };
     const res = createMockRes();
     const logger = { error: jest.fn() };
     const handler = createErrorHandler({ logger });
@@ -94,32 +124,35 @@ describe('errorContract middleware', () => {
     it.each([
       ['unhandled errors', (fields) => Object.assign(new Error(fields.message), fields)],
       ['explicit API errors', (fields) => new ApiError(fields)],
-    ])('hides %s despite a stale exposure opt-in while retaining server logs', (_name, makeError) => {
-      const err = makeError({
-        status: 503,
-        code: 'sentinel-db-code',
-        message: 'sentinel-db-message',
-        details: { query: 'sentinel-db-query' },
-      });
-      err.stack = 'sentinel-db-stack';
-      const req = { originalUrl: '/api/games', method: 'POST', requestId: 'req-private' };
-      const res = createMockRes();
-      const logger = { error: jest.fn() };
+    ])(
+      'hides %s despite a stale exposure opt-in while retaining server logs',
+      (_name, makeError) => {
+        const err = makeError({
+          status: 503,
+          code: 'sentinel-db-code',
+          message: 'sentinel-db-message',
+          details: { query: 'sentinel-db-query' },
+        });
+        err.stack = 'sentinel-db-stack';
+        const req = { originalUrl: '/api/games', method: 'POST', requestId: 'req-private' };
+        const res = createMockRes();
+        const logger = { error: jest.fn() };
 
-      createErrorHandler({ logger })(err, req, res, () => {});
+        createErrorHandler({ logger })(err, req, res, () => {});
 
-      expect(res.statusCode).toBe(503);
-      expect(res.payload).toEqual({
-        status: 503,
-        code: 'INTERNAL_ERROR',
-        message: 'Internal server error',
-        error: 'Internal server error',
-        details: null,
-        requestId: 'req-private',
-      });
-      expect(logger.error).toHaveBeenCalledWith(
-        expect.objectContaining({ message: err.message, stack: err.stack })
-      );
-    });
+        expect(res.statusCode).toBe(503);
+        expect(res.payload).toEqual({
+          status: 503,
+          code: 'INTERNAL_ERROR',
+          message: 'Internal server error',
+          error: 'Internal server error',
+          details: null,
+          requestId: 'req-private',
+        });
+        expect(logger.error).toHaveBeenCalledWith(
+          expect.objectContaining({ message: err.message, stack: err.stack })
+        );
+      }
+    );
   });
 });

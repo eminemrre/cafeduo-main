@@ -7,6 +7,7 @@ import {
   bootstrapAuthenticatedPage,
   resolveApiBaseUrl,
   waitForApiReady,
+  getLocalAdminHeaders,
 } from './helpers/session';
 
 test.describe('Shop & Inventory Flow', () => {
@@ -25,20 +26,9 @@ test.describe('Shop & Inventory Flow', () => {
 
     // Test için puanı yükseltip satın almayı deterministik hale getiriyoruz.
     const boostedPoints = 1500;
-    const updateRes = await request.put(`${apiRoot}/api/users/${currentUser.id}`, {
-      headers: {
-        Authorization: `Bearer ${session.token}`,
-        'X-CSRF-Token': session.csrfToken || 'test-csrf-token-for-e2e',
-        Cookie: `csrf_token=${session.csrfToken || 'test-csrf-token-for-e2e'}`,
-        'Content-Type': 'application/json',
-      },
-      data: {
-        id: currentUser.id,
-        points: boostedPoints,
-        wins: currentUser.wins || 0,
-        gamesPlayed: currentUser.gamesPlayed || 0,
-        department: currentUser.department || 'E2E',
-      },
+    const updateRes = await request.patch(`${apiRoot}/api/admin/users/${currentUser.id}/points`, {
+      headers: await getLocalAdminHeaders(root),
+      data: { points: boostedPoints },
     });
     expect(updateRes.ok()).toBeTruthy();
     currentUser = await fetchCurrentUser(request, root, session.token);

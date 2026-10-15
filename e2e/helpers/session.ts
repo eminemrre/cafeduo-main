@@ -1,5 +1,5 @@
 import type { APIRequestContext, Page } from '@playwright/test';
-import { expect } from '@playwright/test';
+import { expect, request as playwrightRequest } from '@playwright/test';
 
 export interface E2ECredentials {
   username: string;
@@ -124,6 +124,32 @@ const extractCsrfTokenFromCookies = (setCookieHeader: string | string[] | undefi
   }
 
   return 'test-csrf-token-for-e2e';
+};
+
+// Test data must be seeded by an authorized administrator, never by player stat writes.
+// Use a separate cookie jar so fixture login cannot change the browser/player session.
+export const getLocalAdminHeaders = async (baseURL: string) => {
+  const apiRoot = resolveApiBaseUrl(baseURL);
+  if (!['localhost', '127.0.0.1', '[::1]'].includes(new URL(apiRoot).hostname)) {
+    throw new Error('Admin fixtures are restricted to the local E2E server.');
+  }
+  const context = await playwrightRequest.newContext();
+  try {
+    const response = await context.post(`${apiRoot}/api/auth/login`, {
+      data: { email: 'e2e.admin@example.com', password: 'E2eAdmin!2026' },
+    });
+    expect(response.ok()).toBeTruthy();
+    const body = await response.json();
+    expect(body.user.role === 'admin' || body.user.isAdmin).toBeTruthy();
+    const csrfToken = extractCsrfTokenFromCookies(response.headers()['set-cookie']);
+    return {
+      Authorization: `Bearer ${body.token}`,
+      'X-CSRF-Token': csrfToken,
+      Cookie: `csrf_token=${csrfToken}`,
+    };
+  } finally {
+    await context.dispose();
+  }
 };
 
 export const provisionUser = async (
@@ -286,7 +312,6 @@ export const bootstrapAuthenticatedPage = async (
     : baseUser;
   const root = normalizeBaseUrl(baseURL);
   const rootUrl = new URL(root);
-  await page.goto(root);
 
   await page.context().addCookies([
     {
@@ -309,8 +334,13 @@ export const bootstrapAuthenticatedPage = async (
     },
   ]);
 
-  await page.evaluate(
+  // Seed storage before the first navigation so an anonymous auth/me request
+  // cannot clear the newly installed session while bootstrap reloads.
+  await page.addInitScript(
     ({ userData, checkedIn }) => {
+      const marker = `cafeduo_e2e_bootstrap_${userData.id}_${checkedIn}`;
+      if (sessionStorage.getItem(marker)) return;
+      sessionStorage.setItem(marker, '1');
       localStorage.setItem('cafe_user', JSON.stringify(userData));
       localStorage.setItem('cookie_consent', 'true');
       if (checkedIn) {
@@ -322,8 +352,6 @@ export const bootstrapAuthenticatedPage = async (
       checkedIn: Boolean(options.checkedIn),
     }
   );
-  // Session restore effect'i cookie + local cache ile çalıştığı için reload gerekir.
-  await page.reload();
   await page.goto(`${root}/dashboard`);
 
   // App initially redirects to "/" while async session restore runs.

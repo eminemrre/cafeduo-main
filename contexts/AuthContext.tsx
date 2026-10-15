@@ -151,7 +151,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!user?.id) return;
 
     try {
-      const userData = await api.users.get(user.id.toString());
+      const userData = await api.auth.verifyToken();
       if (userData) {
         setUser(userData);
         localStorage.setItem('cafe_user', JSON.stringify(userData));

@@ -53,6 +53,8 @@ jest.mock('./dashboard/StatusBar', () => ({
   ),
 }));
 
+const mockCreateRejected = jest.fn();
+
 jest.mock('./dashboard/GameSection', () => ({
   GameSection: ({
     currentUser: _currentUser,
@@ -80,7 +82,7 @@ jest.mock('./dashboard/GameSection', () => ({
         <span data-testid="games-loading">{gamesLoading ? 'Loading' : 'Loaded'}</span>
         <button
           data-testid="create-game-btn"
-          onClick={() => onCreateGame('Nişancı Düellosu', 50)}
+          onClick={() => void onCreateGame('Nişancı Düellosu', 50).catch(mockCreateRejected)}
           disabled={!isMatched}
         >
           Oyun Kur
@@ -267,7 +269,12 @@ describe('Dashboard Integration', () => {
     return render(
       <ToastProvider>
         <AuthProvider>
-          <Dashboard currentUser={mockUser} onUpdateUser={mockOnUpdateUser} {...props} />
+          <Dashboard
+            currentUser={mockUser}
+            onUpdateUser={mockOnUpdateUser}
+            onUpdateProfile={jest.fn()}
+            {...props}
+          />
         </AuthProvider>
       </ToastProvider>
     );
@@ -297,7 +304,7 @@ describe('Dashboard Integration', () => {
       renderDashboard();
 
       expect(screen.getByTestId('game-section')).toBeInTheDocument();
-      expect(screen.getAllByText('OYUNLAR')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('Oyunlar')[0]).toBeInTheDocument();
     });
 
     it('renders reward section', () => {
@@ -319,6 +326,7 @@ describe('Dashboard Integration', () => {
             <Dashboard
               currentUser={{ ...mockUser, cafe_id: undefined }}
               onUpdateUser={mockOnUpdateUser}
+              onUpdateProfile={jest.fn()}
             />
           </AuthProvider>
         </ToastProvider>
@@ -331,7 +339,7 @@ describe('Dashboard Integration', () => {
     it('switches to leaderboard tab', () => {
       renderDashboard();
 
-      fireEvent.click(screen.getAllByText('SIRALAMA')[0]);
+      fireEvent.click(screen.getAllByText('Sıralama')[0]);
 
       expect(screen.getByTestId('leaderboard')).toBeInTheDocument();
       expect(screen.queryByTestId('game-section')).not.toBeInTheDocument();
@@ -340,7 +348,7 @@ describe('Dashboard Integration', () => {
     it('switches to achievements tab', () => {
       renderDashboard();
 
-      fireEvent.click(screen.getAllByText('BAŞARI')[0]);
+      fireEvent.click(screen.getAllByText('Başarılar')[0]);
 
       expect(screen.getByTestId('achievements')).toBeInTheDocument();
       expect(screen.getByText('Başarımlar - Kullanıcı #1')).toBeInTheDocument();
@@ -350,11 +358,11 @@ describe('Dashboard Integration', () => {
       renderDashboard();
 
       // First go to leaderboard
-      fireEvent.click(screen.getAllByText('SIRALAMA')[0]);
+      fireEvent.click(screen.getAllByText('Sıralama')[0]);
       expect(screen.getByTestId('leaderboard')).toBeInTheDocument();
 
       // Then go back to games
-      fireEvent.click(screen.getAllByText('OYUNLAR')[0]);
+      fireEvent.click(screen.getAllByText('Oyunlar')[0]);
       expect(screen.getByTestId('game-section')).toBeInTheDocument();
     });
   });
@@ -696,7 +704,11 @@ describe('Dashboard Integration', () => {
     it('shows not connected status', () => {
       render(
         <ToastProvider>
-          <Dashboard currentUser={userWithoutTable} onUpdateUser={mockOnUpdateUser} />
+          <Dashboard
+            currentUser={userWithoutTable}
+            onUpdateUser={mockOnUpdateUser}
+            onUpdateProfile={jest.fn()}
+          />
         </ToastProvider>
       );
 
@@ -706,7 +718,11 @@ describe('Dashboard Integration', () => {
     it('disables game buttons when not connected', () => {
       render(
         <ToastProvider>
-          <Dashboard currentUser={userWithoutTable} onUpdateUser={mockOnUpdateUser} />
+          <Dashboard
+            currentUser={userWithoutTable}
+            onUpdateUser={mockOnUpdateUser}
+            onUpdateProfile={jest.fn()}
+          />
         </ToastProvider>
       );
 
@@ -727,7 +743,9 @@ describe('Dashboard Integration', () => {
       fireEvent.click(screen.getByTestId('create-game-btn'));
 
       await waitFor(() => {
-        expect(screen.getByText('Oyun kurulurken hata oluştu.')).toBeInTheDocument();
+        expect(mockCreateRejected).toHaveBeenCalledWith(
+          expect.objectContaining({ message: 'Failed' })
+        );
       });
     });
 

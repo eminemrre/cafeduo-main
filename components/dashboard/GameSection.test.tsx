@@ -23,7 +23,9 @@ jest.mock('../GameLobby', () => ({
     onViewProfile,
   }: any) => (
     <div data-testid="game-lobby-mock">
-      <button data-testid="create-game-button" onClick={onCreateGameClick}>Oyun Kur</button>
+      <button data-testid="create-game-button" onClick={onCreateGameClick}>
+        Oyun Kur
+      </button>
       <button
         data-testid="quick-join-button"
         disabled={quickJoinDisabled || quickJoinBusy}
@@ -34,8 +36,12 @@ jest.mock('../GameLobby', () => ({
       {requests?.map((game: GameRequest) => (
         <div key={game.id} data-testid={`game-item-${game.id}`}>
           <span>{game.hostName}</span>
-          <button data-testid={`join-${game.id}`} onClick={() => onJoinGame(Number(game.id))}>Katıl</button>
-          <button data-testid={`profile-${game.id}`} onClick={() => onViewProfile(game.hostName)}>Profil</button>
+          <button data-testid={`join-${game.id}`} onClick={() => onJoinGame(Number(game.id))}>
+            Katıl
+          </button>
+          <button data-testid={`profile-${game.id}`} onClick={() => onViewProfile(game.hostName)}>
+            Profil
+          </button>
         </div>
       ))}
     </div>
@@ -47,15 +53,23 @@ jest.mock('../CreateGameModal', () => ({
     isOpen ? (
       <div data-testid="create-game-modal-mock">
         <span data-testid="modal-max-points">{maxPoints}</span>
-        <button data-testid="modal-close" onClick={onClose}>Kapat</button>
-        <button data-testid="modal-submit" onClick={() => onSubmit('Nişancı Düellosu', 100)}>Oluştur</button>
+        <button data-testid="modal-close" onClick={onClose}>
+          Kapat
+        </button>
+        <button data-testid="modal-submit" onClick={() => onSubmit('Nişancı Düellosu', 100)}>
+          Oluştur
+        </button>
       </div>
     ) : null,
 }));
 
 jest.mock('../Skeleton', () => ({
   SkeletonGrid: ({ count }: { count: number }) => (
-    <div data-testid="skeleton-grid">{Array.from({ length: count }).map((_, index) => <div key={index}>Loading</div>)}</div>
+    <div data-testid="skeleton-grid">
+      {Array.from({ length: count }).map((_, index) => (
+        <div key={index}>Loading</div>
+      ))}
+    </div>
   ),
 }));
 
@@ -137,9 +151,7 @@ const renderSection = (overrides: Partial<React.ComponentProps<typeof GameSectio
     ...overrides,
   };
 
-  render(
-    <GameSection {...props} />
-  );
+  render(<GameSection {...props} />);
 
   return props;
 };
@@ -170,10 +182,10 @@ describe('GameSection', () => {
       },
     });
 
-    expect(screen.getByText(/DEVAM EDEN SAVAŞ/i)).toBeInTheDocument();
+    expect(screen.getByText(/Oyunun seni bekliyor/i)).toBeInTheDocument();
     expect(screen.getByText(/guest-player/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /ARENAYA DÖN/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Oyuna dön/i }));
     expect(handlers.onRejoinGame).toHaveBeenCalledTimes(1);
   });
 
@@ -344,7 +356,7 @@ describe('GameSection', () => {
       />
     );
 
-    expect(screen.getByText(/Veri çekiliyor/i)).toBeInTheDocument();
+    expect(screen.getByText(/Oyun geçmişi yükleniyor/i)).toBeInTheDocument();
 
     rerender(
       <GameSection
@@ -367,7 +379,9 @@ describe('GameSection', () => {
       />
     );
 
-    expect(screen.getByText(/SAVAŞ GEÇMİŞİ BULUNAMADI/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/İlk oyunundan sonra sonuçlarını burada görebilirsin/i)
+    ).toBeInTheDocument();
   });
 
   it('renders chess history details with derived tempo and closes modal', async () => {
@@ -388,7 +402,7 @@ describe('GameSection', () => {
 
     renderSection({ gameHistory: [chessHistoryEntry] });
 
-    fireEvent.click(screen.getByRole('button', { name: /LOGLARI GÖSTER/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Hamleleri incele/i }));
 
     await waitFor(() => {
       expect(mockApiGamesGet).toHaveBeenCalledWith(51);
@@ -429,7 +443,7 @@ describe('GameSection', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /LOGLARI GÖSTER/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Hamleleri incele/i }));
     await waitFor(() => {
       expect(screen.getByText(/api failed/i)).toBeInTheDocument();
     });
@@ -465,7 +479,7 @@ describe('GameSection', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /LOGLARI GÖSTER/i }));
+    fireEvent.click(screen.getByRole('button', { name: /Hamleleri incele/i }));
     await waitFor(() => {
       expect(screen.getByText(/ANOMALİ: LOKASYON VERİSİ YOK/i)).toBeInTheDocument();
     });

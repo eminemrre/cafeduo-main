@@ -1,6 +1,6 @@
-﻿/**
+/**
  * GameLobby Component Tests
- * 
+ *
  * @description Game listing and joining functionality tests
  */
 
@@ -13,7 +13,9 @@ import { User, GameRequest } from '../types';
 jest.mock('framer-motion', () => ({
   motion: {
     button: ({ children, onClick, ...props }: any) => (
-      <button onClick={onClick} {...props}>{children}</button>
+      <button onClick={onClick} {...props}>
+        {children}
+      </button>
     ),
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
     span: ({ children, ...props }: any) => <span {...props}>{children}</span>,
@@ -70,7 +72,7 @@ describe('GameLobby', () => {
       render(<GameLobby {...defaultProps} />);
 
       expect(screen.getByText('Oyun Kur')).toBeInTheDocument();
-      expect(screen.getByText('HIZLI EŞLEŞ')).toBeInTheDocument();
+      expect(screen.getByText('Hızlı eşleş')).toBeInTheDocument();
     });
 
     it('renders game list when games exist', () => {
@@ -85,8 +87,8 @@ describe('GameLobby', () => {
     it('renders empty state when no games', () => {
       render(<GameLobby {...defaultProps} requests={[]} />);
 
-      expect(screen.getByText(/RADAR TEMİZ/i)).toBeInTheDocument();
-      expect(screen.getByText(/İLK SİNYALİ GÖNDER!/i)).toBeInTheDocument();
+      expect(screen.getByText(/İlk oyunu sen başlat/i)).toBeInTheDocument();
+      expect(screen.getByText(/Henüz açık bir oyun yok/i)).toBeInTheDocument();
     });
 
     it('shows game types', () => {
@@ -109,7 +111,7 @@ describe('GameLobby', () => {
     it('calls onJoinGame with correct id when joining a game', () => {
       render(<GameLobby {...defaultProps} />);
 
-      const joinButtons = screen.getAllByText('SAVAŞA KATIL');
+      const joinButtons = screen.getAllByText('Oyuna katıl');
       fireEvent.click(joinButtons[0]);
 
       expect(defaultProps.onJoinGame).toHaveBeenCalledWith(1);
@@ -135,7 +137,7 @@ describe('GameLobby', () => {
       render(<GameLobby {...defaultProps} requests={[ownGame]} />);
 
       expect(screen.getByText('SENİN LOBİN')).toBeInTheDocument();
-      expect(screen.queryByText('SAVAŞA KATIL')).not.toBeInTheDocument();
+      expect(screen.queryByText('Oyuna katıl')).not.toBeInTheDocument();
     });
 
     it('matches own lobby case-insensitively and shows cancel action', () => {
@@ -147,7 +149,7 @@ describe('GameLobby', () => {
       render(<GameLobby {...defaultProps} requests={[ownGameDifferentCase]} />);
 
       expect(screen.getByText('SENİN LOBİN')).toBeInTheDocument();
-      expect(screen.queryByText('SAVAŞA KATIL')).not.toBeInTheDocument();
+      expect(screen.queryByText('Oyuna katıl')).not.toBeInTheDocument();
       expect(screen.getByText('İPTAL ET')).toBeInTheDocument();
     });
   });
@@ -156,7 +158,7 @@ describe('GameLobby', () => {
     it('shows lobby header', () => {
       render(<GameLobby {...defaultProps} />);
 
-      expect(screen.getByText('AKTİF LOBİ')).toBeInTheDocument();
+      expect(screen.getByText('Açık oyunlar')).toBeInTheDocument();
     });
 
     it('shows table codes', () => {
@@ -191,7 +193,7 @@ describe('GameLobby', () => {
       render(<GameLobby {...defaultProps} requests={[]} />);
 
       expect(screen.getByText('Oyun Kur')).toBeInTheDocument();
-      expect(screen.getByText('HIZLI EŞLEŞ')).toBeInTheDocument();
+      expect(screen.getByText('Hızlı eşleş')).toBeInTheDocument();
     });
   });
 });

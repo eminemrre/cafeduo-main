@@ -10,10 +10,6 @@ jest.mock('../lib/api', () => ({
   },
 }));
 
-jest.mock('../lib/avatars', () => ({
-  getAvatarUrl: (u: string) => `https://avatar/${u}`,
-}));
-
 import { api } from '../lib/api';
 
 const tournament = {

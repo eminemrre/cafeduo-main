@@ -134,6 +134,8 @@ describe('useCafeSelection', () => {
     onCheckInSuccess.mockReset();
     memoryStorage.clear();
     mockGeoSuccess();
+    mockPermissionState('prompt');
+    (api.cafes.checkIn as jest.Mock).mockReset();
 
     Object.defineProperty(window, 'localStorage', {
       value: {
@@ -350,6 +352,140 @@ describe('useCafeSelection', () => {
     });
     expect(result.current.error).toBeNull();
     expect(result.current.locationStatus).toBe('ready');
+  });
+
+  it.each(['pending', 'denied', 'unsupported'])(
+    'checks in with a trimmed table code without requesting %s geolocation',
+    async (geoState) => {
+      if (geoState === 'unsupported') {
+        Object.defineProperty(window.navigator, 'geolocation', {
+          value: undefined,
+          configurable: true,
+        });
+      } else if (geoState === 'denied') {
+        mockGeoError(1);
+        mockPermissionState('denied');
+      } else {
+        // An unanswered permission prompt never calls either callback.
+        Object.defineProperty(window.navigator, 'geolocation', {
+          value: { getCurrentPosition: jest.fn() },
+          configurable: true,
+        });
+      }
+      (api.cafes.list as jest.Mock).mockResolvedValue([{ id: 1, name: 'Kafe A', table_count: 10 }]);
+      (api.cafes.checkIn as jest.Mock).mockResolvedValueOnce({
+        cafeName: 'Kafe A',
+        table: 'MASA03',
+      });
+      const { result } = renderHook(() =>
+        useCafeSelection({ currentUser: mockUser, onCheckInSuccess })
+      );
+      await waitFor(() => expect(result.current.selectedCafeId).toBe('1'));
+      act(() => {
+        result.current.setTableNumber('3');
+        result.current.setTableVerificationCode('  1234-MASA03  ');
+      });
+      await act(async () => {
+        await result.current.checkIn();
+      });
+
+      expect(api.cafes.checkIn).toHaveBeenCalledWith({
+        cafeId: '1',
+        tableNumber: 3,
+        tableVerificationCode: '1234-MASA03',
+      });
+      expect(navigator.permissions.query).not.toHaveBeenCalled();
+      if (navigator.geolocation) {
+        expect(navigator.geolocation.getCurrentPosition).not.toHaveBeenCalled();
+      }
+      expect(result.current.locationStatus).toBe('idle');
+      expect(onCheckInSuccess).toHaveBeenCalledWith('Kafe A', 'MASA03', '1');
+    }
+  );
+
+  it('omits previously acquired coordinates when the user chooses table code verification', async () => {
+    (api.cafes.list as jest.Mock).mockResolvedValue([{ id: 1, name: 'Kafe A', table_count: 10 }]);
+    (api.cafes.checkIn as jest.Mock).mockResolvedValueOnce({ table: 'MASA03' });
+    const { result } = renderHook(() =>
+      useCafeSelection({ currentUser: mockUser, onCheckInSuccess })
+    );
+    await waitFor(() => expect(result.current.selectedCafeId).toBe('1'));
+    await act(async () => {
+      await result.current.requestLocationAccess();
+    });
+    expect(result.current.locationStatus).toBe('ready');
+    act(() => {
+      result.current.setTableNumber('3');
+      result.current.setTableVerificationCode('1234-MASA03');
+    });
+    await act(async () => {
+      await result.current.checkIn();
+    });
+
+    expect(navigator.geolocation.getCurrentPosition).toHaveBeenCalledTimes(1);
+    expect(api.cafes.checkIn).toHaveBeenCalledWith({
+      cafeId: '1',
+      tableNumber: 3,
+      tableVerificationCode: '1234-MASA03',
+    });
+  });
+
+  it('uses fresh GPS when a code contains only whitespace', async () => {
+    (api.cafes.list as jest.Mock).mockResolvedValue([{ id: 1, name: 'Kafe A', table_count: 10 }]);
+    (api.cafes.checkIn as jest.Mock).mockResolvedValueOnce({ table: 'MASA03' });
+    const { result } = renderHook(() =>
+      useCafeSelection({ currentUser: mockUser, onCheckInSuccess })
+    );
+    await waitFor(() => expect(result.current.selectedCafeId).toBe('1'));
+    act(() => {
+      result.current.setTableNumber('3');
+      result.current.setTableVerificationCode('   ');
+    });
+    await act(async () => {
+      await result.current.checkIn();
+    });
+
+    expect(navigator.geolocation.getCurrentPosition).toHaveBeenCalledTimes(1);
+    expect(api.cafes.checkIn).toHaveBeenCalledWith({
+      cafeId: '1',
+      tableNumber: 3,
+      latitude: 37.741,
+      longitude: 29.101,
+      accuracy: 5,
+    });
+  });
+
+  it('preserves a rejected code and allows retry without persisting a failed check-in', async () => {
+    (api.cafes.list as jest.Mock).mockResolvedValue([{ id: 1, name: 'Kafe A', table_count: 10 }]);
+    (api.cafes.checkIn as jest.Mock)
+      .mockRejectedValueOnce(new Error('Masa doğrulama kodu geçersiz.'))
+      .mockResolvedValueOnce({ table: 'MASA03' });
+    const { result } = renderHook(() =>
+      useCafeSelection({ currentUser: mockUser, onCheckInSuccess })
+    );
+    await waitFor(() => expect(result.current.selectedCafeId).toBe('1'));
+    act(() => {
+      result.current.setTableNumber('3');
+      result.current.setTableVerificationCode('invalid-code');
+    });
+    await act(async () => {
+      await result.current.checkIn();
+    });
+    expect(result.current.error).toBe('Masa doğrulama kodu geçersiz.');
+    expect(result.current.tableVerificationCode).toBe('invalid-code');
+    expect(result.current.loading).toBe(false);
+    expect(onCheckInSuccess).not.toHaveBeenCalled();
+    expect(localStorage.setItem).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.setTableVerificationCode('1234-MASA03');
+    });
+    expect(result.current.error).toBeNull();
+    await act(async () => {
+      await result.current.checkIn();
+    });
+    expect(onCheckInSuccess).toHaveBeenCalledTimes(1);
+    expect(navigator.geolocation.getCurrentPosition).not.toHaveBeenCalled();
   });
 
   it('maps network errors on failed check-in', async () => {

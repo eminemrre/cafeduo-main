@@ -55,7 +55,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
             hasError ? `${fieldId}-err` : helperText ? `${fieldId}-help` : undefined
           }
           className={[
-            'block w-full font-riso-body text-base text-carbon',
+            'duo-input block w-full font-riso-body text-base text-carbon',
             'bg-paper border-2 border-carbon',
             'px-3.5 py-2.5',
             icon ? 'pl-10' : '',

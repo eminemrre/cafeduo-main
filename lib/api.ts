@@ -4,6 +4,7 @@
  */
 import type {
   User,
+  UserProfileUpdates,
   GameRequest,
   Reward,
   Cafe,
@@ -349,6 +350,13 @@ export const api = {
       });
     },
 
+    updateProfile: async (userId: string | number, updates: UserProfileUpdates): Promise<User> => {
+      return await fetchAPI(`/users/${userId}/profile`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates),
+      });
+    },
+
     getActiveGame: async (username: string): Promise<GameRequest | null> => {
       try {
         return await fetchAPI(`/users/${encodeURIComponent(username)}/active-game`);
@@ -357,11 +365,30 @@ export const api = {
       }
     },
 
-    getGameHistory: async (username: string): Promise<GameHistoryEntry[]> => {
+    getGameHistory: async (
+      username: string,
+      options?: { throwOnError?: boolean }
+    ): Promise<GameHistoryEntry[]> => {
       try {
         const payload = await fetchAPI(`/users/${encodeURIComponent(username)}/game-history`);
-        return Array.isArray(payload) ? payload : [];
-      } catch {
+        const valid =
+          Array.isArray(payload) &&
+          (!options?.throwOnError ||
+            payload.every(
+              (row) =>
+                isRecord(row) &&
+                (typeof row.id === 'string' || typeof row.id === 'number') &&
+                typeof row.gameType === 'string' &&
+                typeof row.opponentName === 'string' &&
+                typeof row.createdAt === 'string' &&
+                typeof row.didWin === 'boolean' &&
+                (row.winner === null || typeof row.winner === 'string') &&
+                row.status === 'finished'
+            ));
+        if (!valid) throw new Error('Oyun geçmişi yanıtı geçersiz.');
+        return payload as GameHistoryEntry[];
+      } catch (error) {
+        if (options?.throwOnError) throw error;
         return [];
       }
     },
@@ -728,12 +755,12 @@ export const api = {
           `/achievements/${userId}?limit=${limit}&offset=${offset}`
         );
         if (
-          !Array.isArray(payload?.items) || payload.items.length > limit ||
-          (payload.nextOffset !== null && (
-            !Number.isSafeInteger(payload.nextOffset) ||
-            payload.items.length !== limit ||
-            payload.nextOffset !== offset + payload.items.length
-          ))
+          !Array.isArray(payload?.items) ||
+          payload.items.length > limit ||
+          (payload.nextOffset !== null &&
+            (!Number.isSafeInteger(payload.nextOffset) ||
+              payload.items.length !== limit ||
+              payload.nextOffset !== offset + payload.items.length))
         ) {
           throw new Error('Geçersiz başarım sayfası.');
         }

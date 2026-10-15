@@ -210,7 +210,34 @@ describe('CafeSelection', () => {
     });
   });
 
-  it('allows fallback check-in with table verification code when geolocation times out', async () => {
+  it('announces table code verification and locks controls while the server checks the code', async () => {
+    let resolveCheckIn!: (value: { table: string }) => void;
+    (api.cafes.checkIn as jest.Mock).mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveCheckIn = resolve;
+      })
+    );
+    render(<CafeSelection currentUser={currentUser} onCheckInSuccess={jest.fn()} />);
+    await waitFor(() => expect(screen.getByRole('combobox')).toHaveValue('10'));
+    fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '3' } });
+    fireEvent.click(screen.getByTestId('checkin-show-verification'));
+    fireEvent.change(screen.getByLabelText(/Masa Doğrulama Kodu/i), {
+      target: { value: '1234-MASA03' },
+    });
+    expect(screen.getByRole('status')).toHaveTextContent('Masa koduyla doğrulanacak');
+    fireEvent.click(getSubmitButton());
+    await waitFor(() => expect(api.cafes.checkIn).toHaveBeenCalled());
+    expect(screen.getByRole('spinbutton')).toBeDisabled();
+    expect(screen.getByRole('combobox')).toBeDisabled();
+    expect(screen.getByLabelText(/Masa Doğrulama Kodu/i)).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Konumu Doğrula' })).toBeDisabled();
+    expect(getSubmitButton()).toBeDisabled();
+    resolveCheckIn({ table: 'MASA03' });
+    await waitFor(() => expect(getSubmitButton()).toBeEnabled());
+    expect(navigator.geolocation.getCurrentPosition).not.toHaveBeenCalled();
+  });
+
+  it('allows check-in with table verification code without requesting geolocation', async () => {
     Object.defineProperty(window.navigator, 'geolocation', {
       configurable: true,
       value: {
@@ -250,5 +277,6 @@ describe('CafeSelection', () => {
         tableVerificationCode: '1234-MASA03',
       });
     });
+    expect(navigator.geolocation.getCurrentPosition).not.toHaveBeenCalled();
   });
 });

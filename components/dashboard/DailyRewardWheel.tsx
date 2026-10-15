@@ -250,7 +250,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
 
   return (
     <div
-      className="border-2 border-carbon bg-paper riso-shadow-md p-5 sm:p-6 relative overflow-hidden"
+      className="duo-card border border-carbon/20 bg-paper p-5 sm:p-6 relative overflow-hidden"
       data-testid="daily-reward-wheel"
     >
       {/* Riso confetti accents */}
@@ -418,7 +418,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
             onClick={handleSpin}
             disabled={spinning || status.alreadySpunToday || slices.length === 0}
             data-testid="wheel-spin-button"
-            className="riso-focus riso-press w-full border-2 border-carbon bg-riso-pink text-carbon py-3 px-4 font-riso-display text-sm sm:text-base font-bold uppercase tracking-[0.12em] riso-shadow-sm flex items-center justify-center gap-2 transition-all hover:-translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            className="duo-button riso-focus w-full border-2 border-carbon bg-riso-pink text-carbon py-3 px-4 font-riso-display text-sm sm:text-base font-bold uppercase tracking-[0.12em] riso-shadow-sm flex items-center justify-center gap-2 transition-all hover:-translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             <RotateCw size={18} className={spinning ? 'animate-spin' : ''} />
             {spinning

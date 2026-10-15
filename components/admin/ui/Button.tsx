@@ -48,7 +48,7 @@ export const Button: React.FC<ButtonProps> = ({
   <button
     {...rest}
     className={
-      'inline-flex items-center justify-center font-riso-body font-semibold border-2 ' +
+      'duo-button inline-flex items-center justify-center font-riso-body font-semibold border-2 ' +
       'transition-[box-shadow,transform,background-color] duration-150 ' +
       'riso-focus riso-press disabled:cursor-not-allowed disabled:opacity-50 ' +
       `${variantClass[variant]} ${sizeClass[size]} ${className}`

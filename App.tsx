@@ -2,13 +2,14 @@ import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
+import { LandingExperience } from './components/LandingExperience';
 import { HowItWorks } from './components/HowItWorks';
+import { Games } from './components/Games';
 import { About } from './components/About';
 import { Footer } from './components/Footer';
-import { CursorInk } from './components/ui';
 import { AuthModal } from './components/AuthModal';
 
-import { User } from './types';
+import { User, UserProfileUpdates } from './types';
 import { api } from './lib/api';
 import { socketService } from './lib/socket';
 import { lazyWithRetry } from './lib/lazyWithRetry';
@@ -18,13 +19,8 @@ import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
-import { motion, AnimatePresence } from 'framer-motion';
 
 // Lazy Load Components
-const Games = lazyWithRetry(
-  () => import('./components/Games').then((module) => ({ default: module.Games })),
-  'Games'
-);
 const Dashboard = lazyWithRetry(
   () => import('./components/Dashboard').then((module) => ({ default: module.Dashboard })),
   'Dashboard'
@@ -54,8 +50,15 @@ const BusinessLanding = lazyWithRetry(
 );
 // Loading Component
 const PageLoader = () => (
-  <div className="min-h-[60vh] flex flex-col items-center justify-center text-carbon">
-    <div className="w-14 h-14 border-4 border-carbon border-t-transparent rounded-full animate-spin"></div>
+  <div
+    role="status"
+    aria-label="Sayfa yükleniyor"
+    className="min-h-screen flex flex-col items-center justify-center text-carbon"
+  >
+    <div
+      aria-hidden="true"
+      className="w-14 h-14 border-4 border-carbon border-t-transparent rounded-full animate-spin"
+    ></div>
   </div>
 );
 
@@ -66,17 +69,9 @@ interface ProtectedRouteProps {
   requiredRole?: string;
 }
 
-// Page Transition Wrapper
-const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <motion.div
-    initial={{ opacity: 0, filter: 'blur(8px)', y: 10 }}
-    animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
-    exit={{ opacity: 0, filter: 'blur(8px)', y: -10 }}
-    transition={{ duration: 0.3, ease: 'easeOut' }}
-    className="h-full w-full"
-  >
-    {children}
-  </motion.div>
+// Route content commits immediately; navigation never waits for an exiting animation.
+const PageFrame: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="h-full w-full">{children}</div>
 );
 
 // Protected Route Component
@@ -204,25 +199,24 @@ const AppContent: React.FC = () => {
     }
   };
 
+  const enterClub = () => {
+    if (!user) return openRegister();
+    navigate(user.isAdmin ? '/admin' : user.role === 'cafe_admin' ? '/cafe-admin' : '/dashboard');
+  };
+
   const handleLogout = async () => {
     await logout();
     toast.success('Çıkış yapıldı. Görüşmek üzere!');
     navigate('/');
   };
 
-  const handleUpdateUser = async (updatedUser: User) => {
-    try {
-      // Optimistic update
-      updateUser(updatedUser);
-      // Server update
-      const serverUser = await api.users.update(updatedUser);
-      updateUser(serverUser);
-    } catch (error) {
-      console.error('Failed to update user', error);
-      toast.error('Kullanıcı güncellenirken hata oluştu');
-    }
+  const handleUpdateProfile = async (updates: UserProfileUpdates) => {
+    if (!user) throw new Error('Profil kaydı için oturum gerekli.');
+    const serverUser = await api.users.updateProfile(user.id, updates);
+    updateUser(serverUser);
   };
 
+  // Purchases, spins and settlement write on the server; only read the confirmed balance.
   const handleRefreshUser = async () => {
     try {
       await refreshUser();
@@ -241,12 +235,13 @@ const AppContent: React.FC = () => {
       };
       updateUser(updatedUser);
       setHasSessionCheckIn(true);
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       navigate('/dashboard');
     }
   };
 
   return (
-    <div className="riso-kantin riso-kantin-app min-h-screen font-riso-body selection:bg-riso-pink selection:text-carbon">
+    <div className="duo-app riso-kantin riso-kantin-app min-h-screen font-riso-body selection:bg-riso-pink selection:text-carbon">
       <a href="#main-content" className="skip-link">
         İçeriğe atla
       </a>
@@ -254,12 +249,12 @@ const AppContent: React.FC = () => {
 
       <main id="main-content">
         <Suspense fallback={<PageLoader />}>
-          <AnimatePresence mode="wait">
-            <Routes location={location} key={location.pathname}>
-              <Route
-                path="/"
-                element={
-                  <PageTransition>
+          <Routes location={location} key={location.pathname}>
+            <Route
+              path="/"
+              element={
+                <PageFrame>
+                  <LandingExperience>
                     <Hero
                       onLogin={openLogin}
                       onRegister={openRegister}
@@ -268,98 +263,95 @@ const AppContent: React.FC = () => {
                       isAdmin={user?.isAdmin}
                     />
                     <HowItWorks />
-                    <Games onPlayClick={openRegister} />
-                    <About />
-                  </PageTransition>
-                }
-              />
+                    <Games onPlayClick={enterClub} />
+                    <About onJoin={enterClub} isLoggedIn={!!user} />
+                  </LandingExperience>
+                </PageFrame>
+              }
+            />
 
-              <Route
-                path="/kafeler"
-                element={
-                  <PageTransition>
-                    <BusinessLanding />
-                  </PageTransition>
-                }
-              />
+            <Route
+              path="/kafeler"
+              element={
+                <PageFrame>
+                  <BusinessLanding />
+                </PageFrame>
+              }
+            />
 
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <PageTransition>
-                      <ErrorBoundary>
-                        {requiresCheckIn() ? (
-                          <CafeSelection
-                            currentUser={user!}
-                            onCheckInSuccess={handleCheckInSuccess}
-                          />
-                        ) : (
-                          <Dashboard
-                            currentUser={user!}
-                            onUpdateUser={handleUpdateUser}
-                            onRefreshUser={handleRefreshUser}
-                          />
-                        )}
-                      </ErrorBoundary>
-                    </PageTransition>
-                  </ProtectedRoute>
-                }
-              />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <PageFrame>
+                    <ErrorBoundary>
+                      {requiresCheckIn() ? (
+                        <CafeSelection
+                          currentUser={user!}
+                          onCheckInSuccess={handleCheckInSuccess}
+                        />
+                      ) : (
+                        <Dashboard
+                          currentUser={user!}
+                          onUpdateUser={handleRefreshUser}
+                          onUpdateProfile={handleUpdateProfile}
+                          onRefreshUser={handleRefreshUser}
+                        />
+                      )}
+                    </ErrorBoundary>
+                  </PageFrame>
+                </ProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute isAdminRoute={true}>
-                    <PageTransition>
-                      <ErrorBoundary>
-                        <AdminDashboard currentUser={user!} />
-                      </ErrorBoundary>
-                    </PageTransition>
-                  </ProtectedRoute>
-                }
-              />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute isAdminRoute={true}>
+                  <PageFrame>
+                    <ErrorBoundary>
+                      <AdminDashboard currentUser={user!} />
+                    </ErrorBoundary>
+                  </PageFrame>
+                </ProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/cafe-admin"
-                element={
-                  <ProtectedRoute requiredRole="cafe_admin">
-                    <PageTransition>
-                      <ErrorBoundary>
-                        <CafeDashboard currentUser={user!} />
-                      </ErrorBoundary>
-                    </PageTransition>
-                  </ProtectedRoute>
-                }
-              />
+            <Route
+              path="/cafe-admin"
+              element={
+                <ProtectedRoute requiredRole="cafe_admin">
+                  <PageFrame>
+                    <ErrorBoundary>
+                      <CafeDashboard currentUser={user!} />
+                    </ErrorBoundary>
+                  </PageFrame>
+                </ProtectedRoute>
+              }
+            />
 
-              <Route
-                path="/gizlilik"
-                element={
-                  <PageTransition>
-                    <PrivacyPolicy />
-                  </PageTransition>
-                }
-              />
-              <Route
-                path="/reset-password"
-                element={
-                  <PageTransition>
-                    <ResetPasswordPage />
-                  </PageTransition>
-                }
-              />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </AnimatePresence>
+            <Route
+              path="/gizlilik"
+              element={
+                <PageFrame>
+                  <PrivacyPolicy />
+                </PageFrame>
+              }
+            />
+            <Route
+              path="/reset-password"
+              element={
+                <PageFrame>
+                  <ResetPasswordPage />
+                </PageFrame>
+              }
+            />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
         </Suspense>
       </main>
 
       <Footer />
-
-      {['/', '/kafeler', '/gizlilik', '/reset-password'].includes(location.pathname) && (
-        <CursorInk />
-      )}
 
       <AuthModal
         isOpen={isAuthOpen}

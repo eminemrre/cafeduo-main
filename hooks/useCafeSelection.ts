@@ -303,16 +303,21 @@ export function useCafeSelection({
     setError(null);
 
     try {
-      let coords = locationCoords;
       const normalizedVerificationCode = String(tableVerificationCodeState || '').trim();
-      try {
-        // Always refresh location at check-in time to avoid stale coordinates
-        coords = await requestLocation();
-      } catch (geoErr) {
-        if (!coords && !normalizedVerificationCode) {
-          throw geoErr;
+      let coords: LocationCoords | null = null;
+      if (!normalizedVerificationCode) {
+        coords = locationCoords;
+        try {
+          // Refresh GPS only when it is the chosen verification method.
+          coords = await requestLocation();
+        } catch (geoErr) {
+          if (!coords) {
+            throw geoErr;
+          }
         }
       }
+      // Code verification must omit cached coordinates: the server prioritizes
+      // geofencing whenever coordinates are supplied. It validates the code otherwise.
       if (!coords && !normalizedVerificationCode) {
         throw new Error('Konum alınamadı. Masa doğrulama kodunu girip tekrar deneyin.');
       }

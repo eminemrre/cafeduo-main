@@ -79,13 +79,17 @@ const createErrorHandler = ({ logger } = {}) => {
       const status = Number(err?.status);
       const normalizedStatus =
         Number.isFinite(status) && status >= 400 && status <= 599 ? status : 500;
+      const safeMessage =
+        process.env.NODE_ENV === 'production' && normalizedStatus >= 500
+          ? 'Internal server error'
+          : String(
+              err?.message || (normalizedStatus >= 500 ? 'Internal server error' : 'Request failed')
+            );
 
       return new ApiError({
         status: normalizedStatus,
         code: String(err?.code || 'INTERNAL_ERROR'),
-        message: String(
-          err?.message || (normalizedStatus >= 500 ? 'Internal server error' : 'Request failed')
-        ),
+        message: safeMessage,
         details: err?.details || null,
       });
     })();
@@ -101,8 +105,8 @@ const createErrorHandler = ({ logger } = {}) => {
       timestamp: new Date().toISOString(),
     });
 
-    const responseError =
-      process.env.NODE_ENV === 'production' && normalized.status >= 500
+    const publicError =
+      normalized.status >= 500
         ? {
             status: normalized.status,
             code: 'INTERNAL_ERROR',
@@ -110,7 +114,7 @@ const createErrorHandler = ({ logger } = {}) => {
             details: null,
           }
         : normalized;
-    const payload = formatErrorResponse(req, responseError);
+    const payload = formatErrorResponse(req, publicError);
     return res.status(normalized.status).json(payload);
   };
 };

@@ -6,50 +6,28 @@
  * rounded-full), level progress is a flat ink track with a riso-pink fill
  * (no gradient).
  *
- * Test contract preserved exactly:
- *   - first <button> is the close X (so `getAllByRole('button')[0]` triggers onClose)
- *   - backdrop is `<div class="absolute inset-0">` (matches `.absolute.inset-0` querySelector)
- *   - department empty-state literal: "Bölüm Girilmedi"
- *   - <select> rendered when editing (combobox role)
- *   - save button keeps `text-riso-spring` class (test grep matches it)
- *   - stats render literal numbers: wins, gamesPlayed, ratio %
- *   - level label format: "LEVEL N" / "LEVEL N+1"
  */
-import React, { useEffect, useState } from 'react';
-import {
-  X,
-  Trophy,
-  Gamepad2,
-  Star,
-  Clock,
-  Edit2,
-  Save,
-  Briefcase,
-  Package,
-  ImageIcon,
-} from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { DialogLayer } from './ui/DialogLayer';
+import { X, Trophy, Gamepad2, Star, Edit2, Save, Briefcase, ImageIcon } from 'lucide-react';
 import { User } from '../types';
 import { api } from '../lib/api';
 import { PAU_DEPARTMENTS } from '../constants';
+import { AvatarImage } from './ui/AvatarImage';
 import { getAvatarUrl, seedFromAvatarUrl, type AvatarSeed } from '../lib/avatars';
 import { AvatarPickerModal } from './AvatarPickerModal';
 import { useToast } from '../contexts/ToastContext';
-
-interface UserInventoryItem {
-  id: number;
-  user_id: number;
-  item_id: number;
-  item_title: string;
-  code: string;
-  is_used: boolean;
-}
+import { useProfileData } from '../hooks/useProfileData';
+import { ProfileActivity } from './profile/ProfileActivity';
 
 interface UserProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User | null;
   isEditable?: boolean;
+  isPreview?: boolean;
   onSaveProfile?: (department: string) => Promise<void> | void;
+  onSaveAvatar?: (avatarUrl: string) => Promise<void> | void;
 }
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({
@@ -57,31 +35,45 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onClose,
   user,
   isEditable = false,
+  isPreview = false,
   onSaveProfile,
+  onSaveAvatar,
 }) => {
   const toast = useToast();
+  const departmentTrigger = useRef<HTMLButtonElement>(null);
+  const wasEditing = useRef(false);
   const [isEditing, setIsEditing] = useState(false);
   const [department, setDepartment] = useState(user?.department || '');
   const [loading, setLoading] = useState(false);
-  const [inventory, setInventory] = useState<UserInventoryItem[]>([]);
+  const profileData = useProfileData(
+    user?.id,
+    user?.username || '',
+    isOpen && isEditable && !isPreview
+  );
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
   const [savingAvatar, setSavingAvatar] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatar_url ?? null);
 
   useEffect(() => {
     setDepartment(user?.department || '');
-    setAvatarUrl(user?.avatar_url ?? null);
     setIsEditing(false);
-    if (isOpen && user) {
-      api.store
-        .inventory()
-        .then((res) => {
-          if (res.success) setInventory(res.inventory);
-        })
-        .catch((err) => console.error('Inventory fetch error', err));
+    setProfileError(null);
+    if (!isOpen) {
+      setAvatarPickerOpen(false);
+      setAvatarError(null);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, user?.department, isOpen]);
+
+  useEffect(() => {
+    setAvatarUrl(user?.avatar_url ?? null);
+  }, [user?.id, user?.avatar_url, isOpen]);
+
+  useEffect(() => {
+    if (isOpen && wasEditing.current && !isEditing) departmentTrigger.current?.focus();
+    wasEditing.current = isEditing;
+  }, [isEditing, isOpen]);
 
   if (!isOpen || !user) return null;
 
@@ -89,23 +81,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const level = Math.floor(user.points / 500) + 1;
   const nextLevelProgress = ((user.points % 500) / 500) * 100;
 
-  // Mock activity feed — actual feed will come from useGames in a later pass
-  const recentHistory = [
-    { result: 'WIN' as const, game: 'Nişancı Düellosu', points: '+50', time: '10dk önce' },
-    { result: 'LOSS' as const, game: 'Bilgi Yarışı', points: '-20', time: '25dk önce' },
-    { result: 'WIN' as const, game: 'Retro Satranç', points: '+100', time: '1sa önce' },
-  ];
-
   const handleSave = async () => {
     setLoading(true);
+    setProfileError(null);
     try {
       if (onSaveProfile) {
         await onSaveProfile(department);
       } else {
-        await api.users.update({ ...user, department });
+        await api.users.updateProfile(user.id, { department });
       }
       setIsEditing(false);
     } catch {
+      setProfileError('Bölüm güncellenemedi. Tekrar deneyebilirsin.');
       toast.error('Güncelleme başarısız.');
     } finally {
       setLoading(false);
@@ -113,68 +100,81 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   };
 
   return (
-    <div className="riso-kantin fixed inset-0 z-[115] flex items-center justify-center px-4 py-6">
-      {/* Backdrop — keep as <div> with `.absolute.inset-0` so the existing
-       *  click-outside test (querySelector('.absolute.inset-0')) still matches. */}
-      <div className="absolute inset-0 bg-carbon/80" onClick={onClose} aria-hidden="true" />
+    <DialogLayer open={isOpen} onClose={onClose} label={`${user.username} profili`}>
+      <div className="riso-kantin fixed inset-0 z-[115] flex items-center justify-center px-4 py-6">
+        {/* The visual scrim stays inside the native modal layer. */}
+        <div className="absolute inset-0 bg-carbon/80" onClick={onClose} aria-hidden="true" />
 
-      <div className="relative z-10 w-full max-w-md bg-paper border-2 border-carbon riso-shadow-md overflow-hidden flex flex-col max-h-[calc(100vh-3rem)]">
-        {/* Header — ID card */}
-        <div className="relative bg-paper border-b-2 border-carbon p-5">
-          {/* Halftone overlay */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-multiply"
-            style={{
-              backgroundImage:
-                'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
-              backgroundSize: '5px 5px',
-            }}
-          />
-          <div className="relative flex items-start gap-4">
-            {/* Avatar tile — DiceBear pixel-art if picked, initials fallback otherwise */}
-            <div className="relative shrink-0">
-              <div className="relative h-16 w-16 overflow-hidden border-2 border-carbon bg-riso-blue text-paper">
-                {avatarUrl ? (
-                  <img
+        <div className="relative z-10 w-full max-w-md bg-paper border-2 border-carbon riso-shadow-md overflow-hidden flex flex-col max-h-[calc(100dvh-3rem)]">
+          {/* Header — ID card */}
+          <div className="relative shrink-0 bg-paper border-b-2 border-carbon p-5">
+            {/* Halftone overlay */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-multiply"
+              style={{
+                backgroundImage:
+                  'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
+                backgroundSize: '5px 5px',
+              }}
+            />
+            <div className="relative flex items-start gap-4">
+              {/* Avatar tile — DiceBear pixel-art if picked, initials fallback otherwise */}
+              <div className="relative shrink-0">
+                <div className="relative h-16 w-16 overflow-hidden border-2 border-carbon bg-riso-blue text-paper">
+                  <AvatarImage
                     src={avatarUrl}
-                    alt=""
-                    aria-hidden="true"
-                    className="absolute inset-0 h-full w-full object-contain"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).style.display = 'none';
-                    }}
+                    initials={(user.username || '?').substring(0, 2).toUpperCase()}
+                    initialsClassName="font-riso-display text-2xl font-bold tracking-tight"
+                    loading="eager"
                   />
-                ) : null}
-                <span className="absolute inset-0 flex items-center justify-center font-riso-display text-2xl font-bold tracking-tight">
-                  {(user.username || '?').substring(0, 2).toUpperCase()}
+                </div>
+                {isEditable && !isPreview && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setAvatarError(null);
+                      setAvatarPickerOpen(true);
+                    }}
+                    aria-label="Avatar seç"
+                    data-testid="open-avatar-picker"
+                    className="riso-focus absolute -bottom-3.5 -right-3.5 inline-flex h-11 w-11 items-center justify-center text-carbon group"
+                  >
+                    <span className="inline-flex h-6 w-6 items-center justify-center border-2 border-carbon bg-paper group-hover:bg-riso-pink group-hover:text-paper transition-colors">
+                      <ImageIcon size={12} strokeWidth={2.5} />
+                    </span>
+                  </button>
+                )}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <h2 className="font-riso-display text-2xl text-carbon truncate">{user.username}</h2>
+                <span className="block mt-0.5 font-riso-mono text-[0.7rem] uppercase tracking-[0.16em] text-carbon-muted">
+                  {isPreview ? 'CafeDuo oyuncusu' : `ID: #${user.id.toString().padStart(6, '0')}`}
                 </span>
               </div>
+
               <button
                 type="button"
-                onClick={() => setAvatarPickerOpen(true)}
-                aria-label="Avatar seç"
-                data-testid="open-avatar-picker"
-                className="riso-focus absolute -bottom-1 -right-1 inline-flex h-6 w-6 items-center justify-center border-2 border-carbon bg-paper text-carbon hover:bg-riso-pink hover:text-paper transition-colors"
+                onClick={onClose}
+                aria-label="Profili kapat"
+                className="riso-focus inline-flex h-11 w-11 items-center justify-center shrink-0 border-2 border-carbon bg-paper text-carbon hover:bg-riso-redox hover:text-paper transition-colors"
               >
-                <ImageIcon size={12} strokeWidth={2.5} />
+                <X size={16} strokeWidth={2.5} />
               </button>
             </div>
-
-            <div className="min-w-0 flex-1">
-              <h2 className="font-riso-display text-2xl text-carbon truncate">{user.username}</h2>
-              <span className="block mt-0.5 font-riso-mono text-[0.7rem] uppercase tracking-[0.16em] text-carbon-muted">
-                ID: #{user.id.toString().padStart(6, '0')}
-              </span>
-
-              {/* Department row */}
-              <div className="mt-2">
+            {/* Department row */}
+            {!isPreview && (
+              <div className="relative mt-3">
                 {isEditable && isEditing ? (
                   <div className="flex items-center gap-2">
                     <select
+                      aria-label="Bölüm"
+                      autoFocus
+                      disabled={loading}
                       value={department}
                       onChange={(e) => setDepartment(e.target.value)}
-                      className="riso-focus bg-paper border-2 border-carbon px-2 py-1 font-riso-body text-xs text-carbon w-48"
+                      className="riso-focus min-h-11 min-w-0 flex-1 bg-paper border-2 border-carbon px-2 py-1 font-riso-body text-base text-carbon"
                     >
                       <option value="">Bölüm Seçiniz</option>
                       {PAU_DEPARTMENTS.map((dept) => (
@@ -188,14 +188,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       onClick={handleSave}
                       disabled={loading}
                       aria-label="Bölümü kaydet"
-                      className="riso-focus inline-flex h-7 w-7 items-center justify-center border-2 border-carbon bg-paper text-riso-spring hover:bg-riso-spring hover:text-carbon transition-colors"
+                      className="riso-focus shrink-0 inline-flex h-11 w-11 items-center justify-center border-2 border-carbon bg-paper text-riso-spring hover:bg-riso-spring hover:text-carbon transition-colors"
                     >
                       <Save size={14} strokeWidth={2.5} />
                     </button>
                   </div>
                 ) : (
-                  <div
-                    className={`inline-flex items-center gap-1.5 border-2 border-carbon bg-paper-deep px-2 py-0.5 ${
+                  <button
+                    type="button"
+                    ref={departmentTrigger}
+                    disabled={!isEditable}
+                    aria-label={isEditable ? 'Bölümü düzenle' : undefined}
+                    className={`inline-flex max-w-full min-w-0 items-center gap-1.5 border-2 border-carbon bg-paper-deep px-2 py-0.5 text-left ${
                       isEditable ? 'group cursor-pointer hover:bg-riso-mustard/40' : ''
                     }`}
                     onClick={() => {
@@ -205,175 +209,126 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     }}
                   >
                     <Briefcase size={11} strokeWidth={2.4} className="text-carbon-muted" />
-                    <span className="font-riso-mono text-[0.7rem] uppercase tracking-wider text-carbon">
+                    <span className="min-w-0 truncate font-riso-mono text-[0.7rem] uppercase tracking-wider text-carbon">
                       {user.department || 'Bölüm Girilmedi'}
                     </span>
-                    {isEditable && (
+                    {isEditable && !isPreview && (
                       <Edit2
                         size={10}
                         strokeWidth={2.5}
                         className="text-riso-pink-deep opacity-0 group-hover:opacity-100 transition-opacity"
                       />
                     )}
-                  </div>
+                  </button>
                 )}
               </div>
-            </div>
+            )}
+          </div>
 
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Profili kapat"
-              className="riso-focus shrink-0 border-2 border-carbon bg-paper p-1.5 text-carbon hover:bg-riso-redox hover:text-paper transition-colors"
+          {profileError && (
+            <p
+              role="alert"
+              className="shrink-0 border-l-4 border-riso-redox bg-paper-deep px-5 py-3 text-sm text-carbon"
             >
-              <X size={16} strokeWidth={2.5} />
-            </button>
-          </div>
-        </div>
-
-        {/* Stats grid */}
-        <div className="grid grid-cols-3 border-b-2 border-carbon">
-          <StatCell
-            icon={<Trophy size={18} strokeWidth={2.5} />}
-            label="Galibiyet"
-            value={String(user.wins)}
-            tone="mustard"
-          />
-          <StatCell
-            icon={<Gamepad2 size={18} strokeWidth={2.5} />}
-            label="Oyun"
-            value={String(user.gamesPlayed)}
-            tone="blue"
-            borderLeft
-          />
-          <StatCell
-            icon={<Star size={18} strokeWidth={2.5} />}
-            label="Oran"
-            value={`${user.gamesPlayed > 0 ? Math.floor((user.wins / user.gamesPlayed) * 100) : 0}%`}
-            tone="pink"
-            borderLeft
-          />
-        </div>
-
-        {/* Level progress */}
-        <div className="p-5 border-b-2 border-carbon bg-paper">
-          <div className="flex items-baseline justify-between font-riso-mono text-xs font-bold uppercase tracking-[0.16em] mb-2">
-            <span className="text-carbon">LEVEL {level}</span>
-            <span className="text-carbon-muted">LEVEL {level + 1}</span>
-          </div>
-          <div className="relative h-4 border-2 border-carbon bg-paper-deep overflow-hidden">
-            <div
-              className="h-full bg-riso-pink transition-[width] duration-500"
-              style={{ width: `${nextLevelProgress}%` }}
-            />
-            {/* Diagonal stripe sticker pattern over the fill */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 opacity-25"
-              style={{
-                backgroundImage:
-                  'repeating-linear-gradient(135deg, transparent 0 4px, var(--ink) 4px 5px)',
-                width: `${nextLevelProgress}%`,
-              }}
-            />
-          </div>
-          <p className="mt-1.5 text-right font-riso-mono text-[0.65rem] uppercase tracking-wider text-carbon-muted">
-            {user.points} CP
-          </p>
-        </div>
-
-        {/* Inventory */}
-        {inventory.length > 0 && (
-          <div className="p-5 border-b-2 border-carbon bg-paper-deep">
-            <h3 className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.16em] mb-3 flex items-center gap-1.5 text-carbon-soft">
-              <Package size={11} strokeWidth={2.5} />
-              Envanter
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {inventory.map((item) => (
-                <span
-                  key={item.id}
-                  className="inline-flex items-center gap-1.5 border-2 border-carbon bg-paper px-2 py-0.5 font-riso-mono text-[0.65rem] font-bold uppercase tracking-wider text-carbon"
-                >
-                  <span className="h-1.5 w-1.5 bg-riso-spring" />
-                  {item.item_title}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Recent activity */}
-        <div className="p-5 bg-paper overflow-y-auto">
-          <h3 className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.16em] mb-3 flex items-center gap-1.5 text-carbon-soft">
-            <Clock size={11} strokeWidth={2.5} />
-            Son Aktivite
-          </h3>
-          <div className="space-y-2">
-            {recentHistory.map((item, idx) => {
-              const win = item.result === 'WIN';
-              return (
-                <div
-                  key={idx}
-                  className={`flex items-center justify-between border-2 border-carbon p-2.5 ${
-                    win ? 'bg-riso-spring/15' : 'bg-riso-pink/10'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span
-                      className={`h-2 w-2 shrink-0 ${win ? 'bg-riso-spring' : 'bg-riso-pink'}`}
-                    />
-                    <span className="font-riso-body text-sm text-carbon truncate">{item.game}</span>
-                  </div>
-                  <div className="text-right shrink-0 ml-3">
-                    <span
-                      className={`block font-riso-mono text-sm font-bold ${
-                        win ? 'text-riso-spring' : 'text-riso-redox'
-                      }`}
-                    >
-                      {item.points}
-                    </span>
-                    <span className="block font-riso-mono text-[0.6rem] uppercase tracking-wider text-carbon-muted">
-                      {item.time}
-                    </span>
-                  </div>
+              {profileError}
+            </p>
+          )}
+          <div className="min-h-0 overflow-y-auto overscroll-contain">
+            {isPreview ? (
+              <p className="p-5 font-riso-body text-sm leading-6 text-carbon-soft">
+                Bu oyuncunun ayrıntılı profili paylaşılmıyor.
+              </p>
+            ) : (
+              <>
+                {/* Stats grid */}
+                <div className="grid grid-cols-3 border-b-2 border-carbon">
+                  <StatCell
+                    icon={<Trophy size={18} strokeWidth={2.5} />}
+                    label="Galibiyet"
+                    value={String(user.wins)}
+                    tone="mustard"
+                  />
+                  <StatCell
+                    icon={<Gamepad2 size={18} strokeWidth={2.5} />}
+                    label="Oyun"
+                    value={String(user.gamesPlayed)}
+                    tone="blue"
+                    borderLeft
+                  />
+                  <StatCell
+                    icon={<Star size={18} strokeWidth={2.5} />}
+                    label="Oran"
+                    value={`${user.gamesPlayed > 0 ? Math.floor((user.wins / user.gamesPlayed) * 100) : 0}%`}
+                    tone="pink"
+                    borderLeft
+                  />
                 </div>
-              );
-            })}
+
+                {/* Level progress */}
+                <div className="p-5 border-b-2 border-carbon bg-paper">
+                  <div className="flex items-baseline justify-between font-riso-mono text-xs font-bold uppercase tracking-[0.16em] mb-2">
+                    <span className="text-carbon">LEVEL {level}</span>
+                    <span className="text-carbon-muted">LEVEL {level + 1}</span>
+                  </div>
+                  <div className="relative h-4 border-2 border-carbon bg-paper-deep overflow-hidden">
+                    <div
+                      className="h-full bg-riso-pink transition-[width] duration-500"
+                      style={{ width: `${nextLevelProgress}%` }}
+                    />
+                    {/* Diagonal stripe sticker pattern over the fill */}
+                    <div
+                      aria-hidden="true"
+                      className="pointer-events-none absolute inset-0 opacity-25"
+                      style={{
+                        backgroundImage:
+                          'repeating-linear-gradient(135deg, transparent 0 4px, var(--ink) 4px 5px)',
+                        width: `${nextLevelProgress}%`,
+                      }}
+                    />
+                  </div>
+                  <p className="mt-1.5 text-right font-riso-mono text-[0.65rem] uppercase tracking-wider text-carbon-muted">
+                    {user.points} CP
+                  </p>
+                </div>
+              </>
+            )}
+            {isEditable && !isPreview && <ProfileActivity {...profileData} />}
+          </div>
+          {/* Footer strip */}
+          <div className="shrink-0 border-t-2 border-carbon bg-riso-mustard px-4 py-2 text-center">
+            <span className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.2em] text-carbon">
+              {isPreview ? 'CafeDuo · Oyuncu' : 'CafeDuo Üye Kartı · Güncel'}
+            </span>
           </div>
         </div>
-
-        {/* Footer strip */}
-        <div className="border-t-2 border-carbon bg-riso-mustard px-4 py-2 text-center">
-          <span className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.2em] text-carbon">
-            CafeDuo Üye Kartı · Güncel
-          </span>
-        </div>
+        <AvatarPickerModal
+          isOpen={avatarPickerOpen && isEditable && !isPreview}
+          onClose={() => setAvatarPickerOpen(false)}
+          currentSeed={seedFromAvatarUrl(avatarUrl)}
+          saving={savingAvatar}
+          error={avatarError}
+          onPick={async (seed: AvatarSeed) => {
+            const nextUrl = getAvatarUrl(seed);
+            setSavingAvatar(true);
+            setAvatarError(null);
+            try {
+              if (onSaveAvatar) {
+                await onSaveAvatar(nextUrl);
+              } else {
+                await api.users.updateProfile(user.id, { avatar_url: nextUrl });
+              }
+              setAvatarUrl(nextUrl);
+              setAvatarPickerOpen(false);
+            } catch {
+              setAvatarError('Avatar kaydedilemedi. Tekrar deneyebilirsin.');
+              toast.error('Avatar kaydedilemedi.');
+            } finally {
+              setSavingAvatar(false);
+            }
+          }}
+        />
       </div>
-      <AvatarPickerModal
-        isOpen={avatarPickerOpen}
-        onClose={() => setAvatarPickerOpen(false)}
-        currentSeed={seedFromAvatarUrl(avatarUrl)}
-        saving={savingAvatar}
-        onPick={async (seed: AvatarSeed) => {
-          const nextUrl = getAvatarUrl(seed);
-          setSavingAvatar(true);
-          try {
-            // Optimistic update so the picker closes feeling instant.
-            setAvatarUrl(nextUrl);
-            await api.users.update({ ...user, avatar_url: nextUrl });
-            setAvatarPickerOpen(false);
-          } catch {
-            // Roll back on failure and surface a generic warning — the
-            // backend rejects malformed URLs, so this is rare in normal flow.
-            setAvatarUrl(user.avatar_url ?? null);
-            toast.error('Avatar kaydedilemedi.');
-          } finally {
-            setSavingAvatar(false);
-          }
-        }}
-      />
-    </div>
+    </DialogLayer>
   );
 };
 

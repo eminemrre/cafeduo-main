@@ -1,156 +1,197 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { AlertTriangle, ArrowRight, CheckCircle2, Lock } from 'lucide-react';
-import { RetroButton } from './RetroButton';
+import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, LockKeyhole } from 'lucide-react';
 import { api } from '../lib/api';
-import { Reveal } from './ui';
+import { Button } from './ui/Button';
+import { Input } from './ui/Input';
+import './ResetPasswordPage.css';
 
 const MIN_PASSWORD_LENGTH = 6;
+const MAX_PASSWORD_LENGTH = 72;
 
+/** A different recovery link starts a fresh form, including any pending request. */
 export const ResetPasswordPage: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const token = useMemo(() => String(searchParams.get('token') || '').trim(), [searchParams]);
+  const token = (searchParams.get('token') || '').trim();
+  return <PasswordResetForm key={token} token={token} />;
+};
+
+const PasswordResetForm: React.FC<{ token: string }> = ({ token }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPasswords, setShowPasswords] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ password?: string; confirmation?: string }>({});
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const submittingRef = useRef(false);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const confirmationRef = useRef<HTMLInputElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const invalidLink = token.length < 32;
 
-  const validate = () => {
-    if (!token) {
-      return 'Sıfırlama bağlantısı geçersiz veya eksik.';
-    }
-    if (password.length < MIN_PASSWORD_LENGTH) {
-      return `Şifre en az ${MIN_PASSWORD_LENGTH} karakter olmalıdır.`;
-    }
-    if (password !== confirmPassword) {
-      return 'Şifreler eşleşmiyor.';
-    }
-    return '';
-  };
+  useEffect(() => {
+    if (successMessage) headingRef.current?.focus({ preventScroll: true });
+  }, [successMessage]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (submittingRef.current || invalidLink || successMessage) return;
     setError('');
-    setSuccessMessage('');
 
-    const validationError = validate();
-    if (validationError) {
-      setError(validationError);
+    const errors: typeof fieldErrors = {};
+    if (password.length < MIN_PASSWORD_LENGTH || password.length > MAX_PASSWORD_LENGTH) {
+      errors.password = `Şifre ${MIN_PASSWORD_LENGTH}–${MAX_PASSWORD_LENGTH} karakter arasında olmalı.`;
+    }
+    if (!confirmPassword) errors.confirmation = 'Yeni şifreni tekrar yaz.';
+    else if (password !== confirmPassword) errors.confirmation = 'Şifreler eşleşmiyor.';
+    setFieldErrors(errors);
+    if (errors.password || errors.confirmation) {
+      (errors.password ? passwordRef : confirmationRef).current?.focus();
       return;
     }
 
+    // Guard synchronously as well as disabling controls during the request.
+    submittingRef.current = true;
     setLoading(true);
     try {
       const response = await api.auth.resetPassword(token, password);
-      setSuccessMessage(response.message || 'Şifre başarıyla güncellendi.');
+      if (!response.success)
+        throw new Error(response.message || 'Şifre güncellenemedi. Tekrar dene.');
+      setSuccessMessage(
+        response.message || 'Şifren güncellendi. Yeni şifrenle giriş yapabilirsin.'
+      );
       setPassword('');
       setConfirmPassword('');
+      setShowPasswords(false);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Şifre güncellenemedi.';
-      setError(message);
+      setError(err instanceof Error ? err.message : 'Şifre güncellenemedi. Tekrar dene.');
     } finally {
+      submittingRef.current = false;
       setLoading(false);
     }
   };
 
   return (
-    <section className="rf-section bg-paper  min-h-[70vh] flex items-center justify-center px-4 py-16">
-      <Reveal
-        as="div"
-        className="w-full max-w-md border-2 border-carbon bg-paper riso-shadow-sm p-6 md:p-8 riso-shadow-md"
-      >
-        <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
-          CafeDuo Güvenlik
-        </p>
-        <h1 className="font-riso-display text-4xl leading-[1.05] text-white mt-3 mb-3 tracking-[0.08em]">
-          Şifreyi Yenile
+    <section className="duo-recovery" aria-labelledby="recovery-title">
+      <div className="duo-recovery-card">
+        <div className="duo-recovery-icon" aria-hidden="true">
+          {successMessage ? <CheckCircle2 size={28} /> : <LockKeyhole size={28} />}
+        </div>
+        <p className="duo-recovery-eyebrow">Hesabına yeniden bağlan</p>
+        <h1 id="recovery-title" ref={headingRef} tabIndex={-1}>
+          {successMessage
+            ? 'Şifren hazır.'
+            : invalidLink
+              ? 'Bağlantıyı kontrol edelim.'
+              : 'Yeni şifreni belirle.'}
         </h1>
-        <p className="text-carbon-muted text-sm mb-5">
-          Yeni bir şifre belirleyerek hesabınıza güvenli şekilde tekrar giriş yapabilirsiniz.
-        </p>
 
-        {error && (
-          <div className="mb-4 border border-riso-redox/45 bg-riso-redox/12 text-red-100 px-3 py-2.5 text-sm flex items-center gap-2">
-            <AlertTriangle size={16} className="shrink-0" />
-            {error}
-          </div>
-        )}
-
-        {successMessage && (
-          <div className="mb-4 border border-riso-spring/45 bg-emerald-500/12 text-emerald-100 px-3 py-2.5 text-sm flex items-center gap-2">
-            <CheckCircle2 size={16} className="shrink-0" />
-            {successMessage}
-          </div>
-        )}
-
-        <form className="space-y-3.5" onSubmit={handleSubmit}>
-          <label className="block">
-            <span className="text-xs uppercase tracking-[0.16em] text-carbon-muted mb-2 block">
-              Yeni Şifre
-            </span>
-            <div className="relative">
-              <Lock
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-carbon-muted"
-                size={17}
-              />
-              <input
-                type="password"
+        {successMessage ? (
+          <>
+            <p className="duo-recovery-description" role="status">
+              {successMessage}
+            </p>
+            <Link to="/?auth=login" className="duo-recovery-cta riso-focus">
+              Giriş yap <ArrowRight size={18} aria-hidden="true" />
+            </Link>
+          </>
+        ) : invalidLink ? (
+          <>
+            <p className="duo-recovery-description">Sıfırlama bağlantısı geçersiz veya eksik.</p>
+            <p className="duo-recovery-description">
+              E-postandaki bağlantının tamamını aç. Yeni bir bağlantı almak için giriş ekranındaki
+              “Şifremi unuttum” seçeneğini kullanabilirsin.
+            </p>
+            <Link to="/?auth=login" className="duo-recovery-cta riso-focus">
+              Giriş ekranına git <ArrowRight size={18} aria-hidden="true" />
+            </Link>
+          </>
+        ) : (
+          <>
+            <p className="duo-recovery-description">
+              Yeni şifreni kaydet, kahve molana kaldığın yerden devam et.
+            </p>
+            {error && (
+              <div className="duo-recovery-error" role="alert">
+                <AlertTriangle size={18} aria-hidden="true" />
+                <p>{error}</p>
+              </div>
+            )}
+            <form noValidate onSubmit={handleSubmit} aria-busy={loading}>
+              <Input
+                ref={passwordRef}
+                id="recovery-password"
+                label="Yeni şifre"
+                name="password"
+                type={showPasswords ? 'text' : 'password'}
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="border-2 border-carbon bg-paper pl-10 pr-3"
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  setFieldErrors({});
+                  setError('');
+                }}
                 placeholder="Yeni şifre"
                 autoComplete="new-password"
+                spellCheck={false}
+                autoCapitalize="none"
+                required
+                disabled={loading}
+                minLength={MIN_PASSWORD_LENGTH}
+                helperText={`En az ${MIN_PASSWORD_LENGTH}, en fazla ${MAX_PASSWORD_LENGTH} karakter.`}
+                errorText={fieldErrors.password}
               />
-            </div>
-          </label>
-
-          <label className="block">
-            <span className="text-xs uppercase tracking-[0.16em] text-carbon-muted mb-2 block">
-              Şifre Tekrar
-            </span>
-            <div className="relative">
-              <Lock
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-carbon-muted"
-                size={17}
-              />
-              <input
-                type="password"
+              <Input
+                ref={confirmationRef}
+                id="recovery-confirmation"
+                label="Şifre tekrar"
+                name="confirmPassword"
+                type={showPasswords ? 'text' : 'password'}
                 value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                className="border-2 border-carbon bg-paper pl-10 pr-3"
+                onChange={(event) => {
+                  setConfirmPassword(event.target.value);
+                  setFieldErrors((previous) => ({ password: previous.password }));
+                  setError('');
+                }}
                 placeholder="Yeni şifre tekrar"
                 autoComplete="new-password"
+                spellCheck={false}
+                autoCapitalize="none"
+                required
+                disabled={loading}
+                errorText={fieldErrors.confirmation}
               />
-            </div>
-          </label>
-
-          <RetroButton
-            type="submit"
-            disabled={loading}
-            className="w-full normal-case tracking-[0.08em] disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {loading ? (
-              <span className="inline-flex items-center gap-2">
-                <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                Güncelleniyor...
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-2">
-                Şifreyi Güncelle
-                <ArrowRight size={16} />
-              </span>
+              <button
+                type="button"
+                className="duo-recovery-visibility riso-focus"
+                aria-pressed={showPasswords}
+                disabled={loading}
+                onClick={() => setShowPasswords((shown) => !shown)}
+              >
+                {showPasswords ? 'Şifreleri gizle' : 'Şifreleri göster'}
+              </button>
+              <Button type="submit" tone="blue" block disabled={loading}>
+                {loading ? 'Şifre kaydediliyor…' : 'Şifreyi güncelle'}
+              </Button>
+              <p className="duo-recovery-progress" role="status">
+                {loading ? 'Şifren güvenle kaydediliyor. Lütfen bekle.' : ''}
+              </p>
+            </form>
+            {error && (
+              <p className="duo-recovery-help">
+                Bağlantının süresi dolduysa{' '}
+                <Link to="/?auth=login" className="riso-focus">
+                  giriş ekranındaki “Şifremi unuttum” seçeneğinden
+                </Link>{' '}
+                yeni bir bağlantı isteyebilirsin.
+              </p>
             )}
-          </RetroButton>
-        </form>
-
-        <Link
-          to="/"
-          className="mt-4 inline-flex items-center text-sm text-riso-blue hover:text-carbon-soft transition-colors"
-        >
-          Ana sayfaya dön ve giriş yap
+          </>
+        )}
+        <Link to="/" className="duo-recovery-back riso-focus">
+          <ArrowLeft size={16} aria-hidden="true" /> Ana sayfaya dön
         </Link>
-      </Reveal>
+      </div>
     </section>
   );
 };

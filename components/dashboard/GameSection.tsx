@@ -194,23 +194,21 @@ export const GameSection: React.FC<GameSectionProps> = ({
         : serverActiveGame.hostName;
 
     return (
-      <div className="bg-riso-pink text-carbon p-5 sm:p-6 mb-8 border-2 border-carbon riso-shadow-md">
+      <div className="duo-card bg-riso-pink text-carbon p-5 sm:p-6 mb-8 border border-carbon/20">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="min-w-0">
-            <h3 className="font-riso-display text-2xl sm:text-3xl uppercase tracking-wider mb-2">
-              DEVAM EDEN SAVAŞ!
-            </h3>
+            <h3 className="duo-lobby-heading mb-2">Oyunun seni bekliyor.</h3>
             <p className="font-riso-body text-base text-carbon">
-              Sistem uyarısı: <span className="font-bold underline">{opponentLabel}</span> ile olan
+              <span className="font-bold underline">{opponentLabel}</span> ile olan
               <span className="font-bold"> {serverActiveGame.gameType}</span> karşılaşması
               beklemede.
             </p>
           </div>
           <button
             onClick={onRejoinGame}
-            className="riso-focus riso-press shrink-0 px-5 py-3 bg-paper text-carbon font-riso-display text-lg sm:text-xl uppercase border-2 border-carbon riso-shadow-sm transition-all"
+            className="duo-button riso-focus shrink-0 px-5 py-3 bg-paper text-carbon font-riso-display text-lg sm:text-xl uppercase border-2 border-carbon riso-shadow-sm transition-all"
           >
-            ARENAYA DÖN
+            Oyuna dön
           </button>
         </div>
       </div>
@@ -243,23 +241,20 @@ export const GameSection: React.FC<GameSectionProps> = ({
       </div>
 
       {/* Oyun Geçmişi */}
-      <div className="bg-paper border-2 border-carbon p-5 sm:p-6 riso-shadow-md">
-        <div className="border-b-2 border-carbon pb-4 mb-6 flex justify-between items-end">
-          <h3 className="font-riso-display text-3xl sm:text-4xl text-riso-blue uppercase tracking-wider">
-            SAVAŞ ARŞİVİ
-          </h3>
-          <span className="font-riso-mono text-xs font-bold text-riso-pink-deep">// KAYITLAR</span>
+      <div className="duo-card bg-paper border border-carbon/20 p-5 sm:p-6">
+        <div className="border-b border-carbon/20 pb-4 mb-5 flex justify-between items-end">
+          <h3 className="duo-lobby-heading text-carbon">Son oyunların</h3>
+          <span className="font-riso-mono text-xs font-bold text-riso-pink-deep">Geçmiş</span>
         </div>
 
         <div>
           {historyLoading ? (
             <p className="text-base font-riso-body text-carbon-muted animate-pulse">
-              Veri çekiliyor...
+              Oyun geçmişi yükleniyor...
             </p>
           ) : (gameHistory?.length ?? 0) === 0 ? (
-            <div className="border-2 border-dashed border-carbon-muted bg-paper-deep p-8 text-center font-riso-body text-carbon-muted tracking-wider uppercase">
-              SAVAŞ GEÇMİŞİ BULUNAMADI. <br />
-              KANITLAR OLUŞTURULMALI.
+            <div className="rounded-xl border border-dashed border-carbon/20 bg-paper-deep p-6 text-center text-sm leading-6 text-carbon-muted">
+              İlk oyunundan sonra sonuçlarını burada görebilirsin.
             </div>
           ) : (
             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
@@ -306,7 +301,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
                         onClick={() => void openHistoryDetail(item)}
                         className="text-xs font-riso-body font-bold text-riso-blue hover:text-riso-pink-deep transition-colors uppercase tracking-widest underline decoration-riso-blue decoration-2 underline-offset-4"
                       >
-                        LOGLARI GÖSTER &rarr;
+                        Hamleleri incele &rarr;
                       </button>
                     )}
                   </div>

@@ -296,6 +296,38 @@ describe('API branch coverage', () => {
     });
   });
 
+  describe('strict profile history reads', () => {
+    it('propagates server errors rather than turning them into empty history', async () => {
+      (fetch as jest.Mock).mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        json: async () => ({ error: 'History unavailable' }),
+      });
+      await expect(api.users.getGameHistory('testuser', { throwOnError: true })).rejects.toThrow(
+        'History unavailable'
+      );
+    });
+    it('rejects malformed successful responses', async () => {
+      (fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: async () => [{}] });
+      await expect(api.users.getGameHistory('testuser', { throwOnError: true })).rejects.toThrow(
+        'Oyun geçmişi yanıtı geçersiz'
+      );
+    });
+    it('accepts genuine empty history and safely encodes the username', async () => {
+      (fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        json: async (): Promise<unknown> => [],
+      });
+      await expect(api.users.getGameHistory('user/name', { throwOnError: true })).resolves.toEqual(
+        []
+      );
+      expect(fetch).toHaveBeenCalledWith(
+        expect.stringContaining('user%2Fname/game-history'),
+        expect.any(Object)
+      );
+    });
+  });
+
   describe('api.achievements.list', () => {
     it('loads the entire catalogue across full pages without duplicates and stops on the empty final page', async () => {
       const catalogue = Array.from({ length: 200 }, (_, index) => ({
@@ -316,15 +348,18 @@ describe('API branch coverage', () => {
         })
         .mockResolvedValueOnce({
           ok: true,
-          json: async (): Promise<{ items: typeof catalogue; nextOffset: number | null }> =>
-            ({ items: [], nextOffset: null }),
+          json: async (): Promise<{ items: typeof catalogue; nextOffset: number | null }> => ({
+            items: [],
+            nextOffset: null,
+          }),
         });
 
       const result = await api.achievements.list(1);
       expect(result.map((item) => item.id)).toEqual(catalogue.map((item) => item.id));
       expect(result[100]).toMatchObject({ unlocked: true, unlockedAt: '2026-01-01' });
-      expect((fetch as jest.Mock).mock.calls.map(([url]) => new URL(url, 'http://localhost').search))
-        .toEqual(['?limit=100&offset=0', '?limit=100&offset=100', '?limit=100&offset=200']);
+      expect(
+        (fetch as jest.Mock).mock.calls.map(([url]) => new URL(url, 'http://localhost').search)
+      ).toEqual(['?limit=100&offset=0', '?limit=100&offset=100', '?limit=100&offset=200']);
     });
 
     it('rejects a non-advancing page instead of looping over duplicate achievements', async () => {

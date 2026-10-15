@@ -10,23 +10,26 @@ Object.defineProperty(global, 'TextDecoder', {
 });
 
 if (typeof global.setImmediate === 'undefined') {
-  (global as typeof globalThis & { setImmediate: (fn: (...args: any[]) => void, ...args: any[]) => any }).setImmediate =
-    ((fn: (...args: any[]) => void, ...args: any[]) => {
-      const invoke = () => fn(...args);
-      if (typeof queueMicrotask === 'function') {
-        queueMicrotask(invoke);
-      } else {
-        Promise.resolve().then(invoke);
-      }
-      return 0;
-    }) as any;
+  (
+    global as typeof globalThis & {
+      setImmediate: (fn: (...args: any[]) => void, ...args: any[]) => any;
+    }
+  ).setImmediate = ((fn: (...args: any[]) => void, ...args: any[]) => {
+    const invoke = () => fn(...args);
+    if (typeof queueMicrotask === 'function') {
+      queueMicrotask(invoke);
+    } else {
+      Promise.resolve().then(invoke);
+    }
+    return 0;
+  }) as any;
 }
 
 // Mock matchMedia
 if (typeof window !== 'undefined') {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation(query => ({
+    value: jest.fn().mockImplementation((query) => ({
       matches: false,
       media: query,
       onchange: null,
@@ -37,6 +40,21 @@ if (typeof window !== 'undefined') {
       dispatchEvent: jest.fn(),
     })),
   });
+}
+
+// jsdom has no native dialog lifecycle. Real focus/inert/Escape behavior is
+// verified in Playwright; these shims only expose open state to component tests.
+if (typeof HTMLDialogElement !== 'undefined') {
+  if (typeof HTMLDialogElement.prototype.showModal !== 'function') {
+    HTMLDialogElement.prototype.showModal = function () {
+      this.open = true;
+    };
+  }
+  if (typeof HTMLDialogElement.prototype.close !== 'function') {
+    HTMLDialogElement.prototype.close = function () {
+      this.open = false;
+    };
+  }
 }
 
 // Mock IntersectionObserver
@@ -102,10 +120,10 @@ Object.defineProperty(global, 'import', {
         VITE_API_URL: 'http://localhost:3001',
         DEV: true,
         PROD: false,
-      }
-    }
+      },
+    },
   },
-  writable: true
+  writable: true,
 });
 
 // Suppress console errors during tests

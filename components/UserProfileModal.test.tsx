@@ -2,11 +2,13 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { UserProfileModal } from './UserProfileModal';
 import { User } from '../types';
+import { api } from '../lib/api';
 
 jest.mock('../lib/api', () => ({
   api: {
     users: {
-      update: jest.fn(),
+      updateProfile: jest.fn(),
+      getGameHistory: jest.fn().mockResolvedValue([]),
     },
     store: {
       inventory: jest.fn().mockResolvedValue({ success: true, inventory: [] }),
@@ -69,7 +71,7 @@ describe('UserProfileModal', () => {
     const user = createUser();
     const onSaveProfile = jest.fn().mockResolvedValueOnce(undefined);
 
-    const { container } = render(
+    render(
       <UserProfileModal
         isOpen={true}
         onClose={jest.fn()}
@@ -83,11 +85,7 @@ describe('UserProfileModal', () => {
     const select = screen.getByRole('combobox');
     fireEvent.change(select, { target: { value: 'Bilgisayar Mühendisliği' } });
 
-    const saveButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.className.includes('text-riso-spring')
-    );
-    expect(saveButton).toBeTruthy();
-    fireEvent.click(saveButton as HTMLButtonElement);
+    fireEvent.click(screen.getByRole('button', { name: 'Bölümü kaydet' }));
 
     await waitFor(() => {
       expect(onSaveProfile).toHaveBeenCalledWith('Bilgisayar Mühendisliği');
@@ -99,7 +97,7 @@ describe('UserProfileModal', () => {
     const user = createUser();
     const onSaveProfile = jest.fn().mockRejectedValueOnce(new Error('db down'));
 
-    const { container } = render(
+    render(
       <UserProfileModal
         isOpen={true}
         onClose={jest.fn()}
@@ -112,26 +110,140 @@ describe('UserProfileModal', () => {
     fireEvent.change(screen.getByRole('combobox'), {
       target: { value: 'İşletme' },
     });
-    const saveButton = Array.from(container.querySelectorAll('button')).find((btn) =>
-      btn.className.includes('text-riso-spring')
-    );
-    expect(saveButton).toBeTruthy();
-    fireEvent.click(saveButton as HTMLButtonElement);
+    fireEvent.click(screen.getByRole('button', { name: 'Bölümü kaydet' }));
 
     await waitFor(() => {
       expect(mockToast.error).toHaveBeenCalledWith('Güncelleme başarısız.');
+      expect(screen.getByRole('alert')).toHaveTextContent('Bölüm güncellenemedi');
     });
+  });
+
+  it('does not invent stats or fetch private data for an opponent preview', () => {
+    const user = { ...createUser(), id: 0, username: 'other', points: 0, wins: 0, gamesPlayed: 0 };
+    render(<UserProfileModal isOpen onClose={jest.fn()} user={user} isPreview />);
+    expect(screen.getByText('Bu oyuncunun ayrıntılı profili paylaşılmıyor.')).toBeInTheDocument();
+    expect(screen.queryByText('ID: #000000')).not.toBeInTheDocument();
+    expect(screen.queryByText('LEVEL 1')).not.toBeInTheDocument();
+    expect(screen.queryByText('Galibiyet')).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Envanterin' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Son oyunların' })).not.toBeInTheDocument();
+    expect(api.store.inventory).not.toHaveBeenCalled();
+    expect(api.users.getGameHistory).not.toHaveBeenCalled();
+  });
+
+  it('keeps supplied read-only stats while withholding private history and inventory', () => {
+    render(<UserProfileModal isOpen onClose={jest.fn()} user={createUser()} />);
+    expect(screen.getByText('75%')).toBeInTheDocument();
+    expect(api.store.inventory).not.toHaveBeenCalled();
+    expect(api.users.getGameHistory).not.toHaveBeenCalled();
+  });
+
+  it('waits for the shared avatar save and keeps the confirmed choice on failure', async () => {
+    const user = {
+      ...createUser(),
+      avatar_url: 'https://api.dicebear.com/9.x/pixel-art/svg?seed=kahve',
+    };
+    let reject!: (reason: Error) => void;
+    const pending = new Promise<void>((_, fail) => {
+      reject = fail;
+    });
+    const onSaveAvatar = jest.fn().mockReturnValueOnce(pending).mockResolvedValueOnce(undefined);
+    render(
+      <UserProfileModal
+        isOpen
+        onClose={jest.fn()}
+        user={user}
+        isEditable
+        onSaveAvatar={onSaveAvatar}
+      />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Avatar seç' }));
+    fireEvent.click(screen.getByTestId('avatar-option-duo'));
+    expect(screen.getByText('Avatar kaydediliyor…')).toHaveAttribute('role', 'status');
+    expect(screen.getByTestId('avatar-option-duo')).toBeDisabled();
+    const profile = screen.getByRole('dialog', { name: 'emin profili' });
+    expect(profile.querySelector('img')).toHaveAttribute('src', '/avatars/pixel-art-v9/kahve.svg');
+    reject(new Error('save failed'));
+    await waitFor(() =>
+      expect(screen.getByRole('alert')).toHaveTextContent('Avatar kaydedilemedi')
+    );
+    expect(screen.getByTestId('avatar-option-kahve')).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByTestId('avatar-option-duo'));
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Avatar seçimi' })).not.toBeInTheDocument()
+    );
+    expect(profile.querySelector('img')).toHaveAttribute('src', '/avatars/pixel-art-v9/duo.svg');
+    expect(onSaveAvatar).toHaveBeenCalledTimes(2);
+    expect(onSaveAvatar).toHaveBeenLastCalledWith(
+      'https://api.dicebear.com/9.x/pixel-art/svg?seed=duo'
+    );
+    expect(api.users.updateProfile).not.toHaveBeenCalled();
+  });
+
+  it('syncs external avatar changes without clearing an in-progress department edit', () => {
+    const user = createUser();
+    const { rerender } = render(
+      <UserProfileModal isOpen onClose={jest.fn()} user={user} isEditable />
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Bölümü düzenle' }));
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'İşletme' } });
+    rerender(
+      <UserProfileModal
+        isOpen
+        onClose={jest.fn()}
+        user={{ ...user, avatar_url: 'https://api.dicebear.com/9.x/pixel-art/svg?seed=masa' }}
+        isEditable
+      />
+    );
+    expect(screen.getByRole('combobox')).toHaveValue('İşletme');
+    expect(screen.getByRole('dialog').querySelector('img')).toHaveAttribute(
+      'src',
+      '/avatars/pixel-art-v9/masa.svg'
+    );
+  });
+
+  it('keeps the standalone API fallback when no shared avatar callback is supplied', async () => {
+    const user = createUser();
+    (api.users.updateProfile as jest.Mock).mockResolvedValueOnce({
+      ...user,
+      avatar_url: 'https://api.dicebear.com/9.x/pixel-art/svg?seed=duo',
+    });
+    render(<UserProfileModal isOpen onClose={jest.fn()} user={user} isEditable />);
+    fireEvent.click(screen.getByRole('button', { name: 'Avatar seç' }));
+    fireEvent.click(screen.getByTestId('avatar-option-duo'));
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: 'Avatar seçimi' })).not.toBeInTheDocument()
+    );
+    expect(api.users.updateProfile).toHaveBeenCalledWith(user.id, {
+      avatar_url: 'https://api.dicebear.com/9.x/pixel-art/svg?seed=duo',
+    });
+  });
+
+  it('sends only the department in the standalone fallback', async () => {
+    const user = createUser();
+    (api.users.updateProfile as jest.Mock).mockResolvedValueOnce({
+      ...user,
+      department: 'İşletme',
+    });
+    render(<UserProfileModal isOpen onClose={jest.fn()} user={user} isEditable />);
+    fireEvent.click(screen.getByRole('button', { name: 'Bölümü düzenle' }));
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'İşletme' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Bölümü kaydet' }));
+    await waitFor(() => expect(screen.queryByRole('combobox')).not.toBeInTheDocument());
+    expect(api.users.updateProfile).toHaveBeenCalledWith(user.id, { department: 'İşletme' });
   });
 
   it('calls onClose from close button and backdrop', () => {
     const user = createUser();
     const onClose = jest.fn();
-    const { container } = render(<UserProfileModal isOpen={true} onClose={onClose} user={user} />);
+    render(<UserProfileModal isOpen={true} onClose={onClose} user={user} />);
 
     fireEvent.click(screen.getByRole('button', { name: 'Profili kapat' }));
     expect(onClose).toHaveBeenCalledTimes(1);
 
-    const backdrop = container.querySelector('.absolute.inset-0');
+    const backdrop = screen
+      .getByRole('dialog', { name: 'emin profili' })
+      .querySelector('.absolute.inset-0');
     expect(backdrop).toBeTruthy();
     fireEvent.click(backdrop as HTMLDivElement);
     expect(onClose).toHaveBeenCalledTimes(2);

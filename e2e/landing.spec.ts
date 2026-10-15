@@ -2,6 +2,43 @@ import { test, expect } from '@playwright/test';
 import { DEFAULT_E2E_APP_BASE_URL } from './helpers/session';
 
 test.describe('Public Landing Pages', () => {
+  test('@smoke loads the self-hosted brand fonts with Turkish characters', async ({ page, baseURL }) => {
+    await page.goto(baseURL || DEFAULT_E2E_APP_BASE_URL);
+    const fonts = await page.evaluate(async () => {
+      const fonts = [
+        { family: 'Familjen Grotesk', style: 'normal' },
+        { family: 'Unbounded Variable', style: 'normal' },
+        { family: 'JetBrains Mono Variable', style: 'normal' },
+        { family: 'Fraunces Variable', style: 'normal' },
+        { family: 'Fraunces Variable', style: 'italic' },
+      ];
+      return Promise.all(fonts.map(async ({ family, style }) => {
+        const faces = await document.fonts.load(`${style} 400 16px "${family}"`, 'CafeDuo ıİşŞğĞçÇöÖüÜ');
+        return { family, style, loaded: faces.length > 0 && faces.every((face) => face.status === 'loaded' && face.style === style) };
+      }));
+    });
+    expect(fonts).toEqual([
+      { family: 'Familjen Grotesk', style: 'normal', loaded: true },
+      { family: 'Unbounded Variable', style: 'normal', loaded: true },
+      { family: 'JetBrains Mono Variable', style: 'normal', loaded: true },
+      { family: 'Fraunces Variable', style: 'normal', loaded: true },
+      { family: 'Fraunces Variable', style: 'italic', loaded: true },
+    ]);
+  });
+
+  test('@smoke plays a legal move on the public demo board without logging in', async ({ page, baseURL }) => {
+    await page.goto(baseURL || DEFAULT_E2E_APP_BASE_URL);
+    await page.getByTestId('preview-square-g1').click();
+    await expect(page.getByTestId('preview-square-g1')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('preview-square-g1')).toBeFocused();
+    await page.getByTestId('preview-square-f3').click();
+    await expect(page.getByTestId('preview-square-f3')).toHaveAttribute('aria-label', 'f3, beyaz at');
+    await expect(page.getByLabel('Oynanan hamleler')).toContainText('2. Nf3 d6');
+    await page.getByRole('button', { name: 'Baştan', exact: true }).click();
+    await expect(page.getByTestId('preview-square-g1')).toHaveAttribute('aria-label', 'g1, beyaz at');
+    await expect(page.getByRole('button', { name: 'Kayıt ol ve oyuna başla' })).toBeVisible();
+  });
+
   test('@smoke renders the home hero with CTA actions', async ({ page, baseURL }) => {
     const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     await page.goto(root);
@@ -25,12 +62,32 @@ test.describe('Public Landing Pages', () => {
     await expect(whatsapp).toBeVisible();
   });
 
-  test('@smoke shows footer social links and version pill', async ({ page, baseURL }) => {
+  test('@smoke opens the privacy policy from the cafe FAQ using the keyboard on mobile', async ({ page, baseURL }) => {
+    await page.setViewportSize({ width: 320, height: 568 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto(`${baseURL || DEFAULT_E2E_APP_BASE_URL}/kafeler`);
+    const question = page.locator('summary').filter({ hasText: 'Müşteri verileri nasıl korunur?' });
+    await question.scrollIntoViewIfNeeded();
+    await question.focus();
+    await page.keyboard.press('Enter');
+    await expect(question.locator('..')).toHaveAttribute('open', '');
+    const privacy = question.locator('..').getByRole('link', { name: 'Gizlilik Politikası' });
+    await expect(privacy).toHaveAttribute('href', '/gizlilik');
+    await privacy.focus();
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/gizlilik$/);
+    await expect(page.getByRole('heading', { level: 1, name: /Gizlilik Politikası ve KVKK Aydınlatma Metni/i })).toBeVisible();
+  });
+
+  test('@smoke shows footer social links and keeps build diagnostics in metadata', async ({ page, baseURL }) => {
     const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     await page.goto(root);
 
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-    await expect(page.locator('[data-testid="footer-version-pill"]').first()).toBeVisible();
+    await expect(page.getByTestId('footer-version-pill')).toHaveCount(0);
+    const version = await page.locator('meta[name="cafeduo:app-version"]').getAttribute('content');
+    expect(version).toBeTruthy();
+
     await expect(page.getByRole('link', { name: 'Instagram' }).first()).toHaveAttribute(
       'href',
       /instagram\.com/

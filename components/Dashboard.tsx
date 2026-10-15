@@ -6,7 +6,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { User, Reward } from '../types';
+import { User, Reward, UserProfileUpdates } from '../types';
 import { UserProfileModal } from './UserProfileModal';
 import { ArenaBattle } from './ArenaBattle';
 import { KnowledgeQuiz } from './KnowledgeQuiz';
@@ -38,13 +38,15 @@ import { api } from '../lib/api';
 
 interface DashboardProps {
   currentUser: User;
-  onUpdateUser: (user: User) => void;
+  onUpdateUser: (user: User, options?: { throwOnError?: boolean }) => Promise<void> | void;
+  onUpdateProfile: (updates: UserProfileUpdates) => Promise<void> | void;
   onRefreshUser?: () => Promise<void> | void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
   currentUser,
   onUpdateUser,
+  onUpdateProfile,
   onRefreshUser,
 }) => {
   const toast = useToast();
@@ -177,17 +179,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
     options?: { chessClock?: { baseSeconds: number; incrementSeconds: number; label: string } }
   ) => {
     if (!isMatched) {
-      toast.warning('Oyun kurmak için önce bir masaya bağlanmalısın!');
-      setIsCreateModalOpen(false);
-      return;
+      throw new Error('Oyun kurmak için önce bir masaya bağlanmalısın!');
     }
-
-    try {
-      await createGame(gameType, points, options);
-      setIsCreateModalOpen(false);
-    } catch {
-      toast.error('Oyun kurulurken hata oluştu.');
-    }
+    // The dialog owns pending/error feedback. Propagate rejection so it does
+    // not interpret a failed request as a successful game creation.
+    await createGame(gameType, points, options);
+    setIsCreateModalOpen(false);
   };
 
   // Oyuna katılma
@@ -256,12 +253,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const handleSaveProfile = async (department: string) => {
     if (!isOwnProfile) return;
-    const updatedUser = {
-      ...currentUser,
-      department,
-    };
-    await onUpdateUser(updatedUser);
-    setProfileUser(updatedUser);
+    await onUpdateProfile({ department });
+  };
+
+  const handleSaveAvatar = async (avatarUrl: string) => {
+    if (!isOwnProfile) return;
+    await onUpdateProfile({ avatar_url: avatarUrl });
   };
 
   const handleCancelGame = async (gameId: number | string) => {
@@ -433,7 +430,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="min-h-screen bg-paper text-carbon pt-[calc(6rem+env(safe-area-inset-top))] md:pt-24 pb-[calc(3rem+env(safe-area-inset-bottom))] px-4 relative overflow-hidden">
       <div className="absolute inset-0 opacity-0 opacity-[0.06] pointer-events-none" />
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="duo-dashboard space-y-7">
         {/* Status Bar */}
         <StatusBar
           user={currentUser}
@@ -449,62 +446,27 @@ export const Dashboard: React.FC<DashboardProps> = ({
           />
         )}
 
-        {/* Main Navigation Tabs */}
-        <div className="relative bg-paper border-4 border-carbon p-2 md:p-3 riso-shadow-sm flex flex-col">
-          <div className="flex items-center gap-2 md:gap-4">
-            {[
-              {
-                id: 'games',
-                label: 'OYUNLAR',
-                mobileLabel: 'OYUN',
-                icon: Gamepad2,
-                hoverColor: 'hover:border-riso-blue hover:text-riso-blue',
-                activeColor: 'border-riso-blue text-cyber-dark bg-riso-blue',
-              },
-              {
-                id: 'leaderboard',
-                label: 'SIRALAMA',
-                mobileLabel: 'SIRA',
-                icon: Trophy,
-                hoverColor: 'hover:border-riso-pink hover:text-riso-pink-deep',
-                activeColor: 'border-riso-pink text-cyber-dark bg-riso-pink',
-              },
-              {
-                id: 'achievements',
-                label: 'BAŞARI',
-                mobileLabel: 'BAŞARI',
-                icon: Gift,
-                hoverColor: 'hover:border-riso-spring hover:text-riso-spring',
-                activeColor: 'border-riso-spring text-cyber-dark bg-riso-spring',
-              },
-            ].map((tab) => {
-              const Icon = tab.icon;
-              const isActive = mainTab === tab.id;
-
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setMainTab(tab.id as typeof mainTab)}
-                  data-testid={`dashboard-tab-${tab.id}`}
-                  aria-label={tab.label}
-                  className={`relative flex-1 flex items-center justify-center gap-2 md:gap-3 px-2 py-3 md:py-4 transition-all border-2 font-riso-display uppercase tracking-widest text-lg md:text-xl
-                    ${isActive ? tab.activeColor : `border-transparent text-ink-300 ${tab.hoverColor} bg-paper-deep/50`}`}
-                >
-                  <span className="relative z-10 flex items-center justify-center gap-2 min-w-0">
-                    <Icon size={24} className={isActive ? '' : 'opacity-70'} />
-                    <span className="hidden sm:inline truncate">{tab.label}</span>
-                    <span className="sm:hidden max-[380px]:hidden truncate whitespace-nowrap">
-                      {tab.mobileLabel}
-                    </span>
-                  </span>
-
-                  {isActive && (
-                    <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white border border-carbon" />
-                  )}
-                </button>
-              );
-            })}
-          </div>
+        <div className="duo-dashboard-tabs" aria-label="Oyuncu paneli bölümleri">
+          {[
+            { id: 'games', label: 'Oyunlar', icon: Gamepad2 },
+            { id: 'leaderboard', label: 'Sıralama', icon: Trophy },
+            { id: 'achievements', label: 'Başarılar', icon: Gift },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setMainTab(tab.id as typeof mainTab)}
+                data-testid={`dashboard-tab-${tab.id}`}
+                aria-pressed={mainTab === tab.id}
+                className="duo-dashboard-tab riso-focus"
+              >
+                <Icon size={20} aria-hidden="true" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Tab Content */}
@@ -580,7 +542,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
           onClose={() => setIsProfileOpen(false)}
           user={profileUser}
           isEditable={isOwnProfile}
+          isPreview={!isOwnProfile}
           onSaveProfile={handleSaveProfile}
+          onSaveAvatar={handleSaveAvatar}
         />
       </div>
       {activeTournament && (

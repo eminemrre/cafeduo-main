@@ -1,9 +1,8 @@
 /**
  * Card — Riso Kantin primitive.
  *
- * The Risograph misregistration shadow (offset blue + pink behind a hard
- * ink border) is the signature character. Use sparingly for hero/grouping
- * elements; nested cards should drop `shadow` to "sm" or "none".
+ * Rounded paper surfaces and subtle shadows group content without competing
+ * with game actions. Nested cards should use `shadow="none"`.
  *
  * Surface tones map to CSS vars defined under `.riso-kantin` in index.css;
  * the wrapping body class must be present for tones to resolve.
@@ -61,7 +60,7 @@ export const Card: React.FC<CardProps> = ({
       data-testid={testId}
       style={rotation ? { transform: `rotate(${rotation}deg)` } : undefined}
       className={[
-        'relative isolate border-2 border-carbon p-5 sm:p-6',
+        'duo-card relative isolate border-2 border-carbon p-5 sm:p-6',
         'transition-[box-shadow,transform] duration-150 ease-out',
         TONE_CLASS[tone],
         SHADOW_CLASS[shadow],

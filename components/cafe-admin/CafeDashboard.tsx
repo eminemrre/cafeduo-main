@@ -3,6 +3,7 @@ import { Trophy, Coffee, Gift, MapPin, QrCode } from 'lucide-react';
 import type { User } from '../../types';
 import { useCafeAdmin } from '../../hooks/useCafeAdmin';
 import { useToast } from '../../contexts/ToastContext';
+import { toErrorMessage } from '../../lib/errorMessage';
 import { CafeStats } from './CafeStats';
 import { CouponScanner } from './CouponScanner';
 import { RewardManager } from './RewardManager';
@@ -13,9 +14,6 @@ import type { CafeAdminTab } from './types';
 interface CafeDashboardProps {
   currentUser: User;
 }
-
-const toErrorMessage = (error: unknown, fallback: string): string =>
-  error instanceof Error && error.message ? error.message : fallback;
 
 export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => {
   const toast = useToast();

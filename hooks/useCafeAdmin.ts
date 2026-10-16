@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
+import { toErrorMessage } from '../lib/errorMessage';
 import type { Reward, Tournament, User } from '../types';
 import type {
   CafeAdminTab,
@@ -86,21 +87,6 @@ const buildDefaultTournamentForm = (): TournamentFormData => {
   };
 };
 
-const toErrorMessage = (err: unknown, fallback: string): string => {
-  if (err instanceof Error && err.message) {
-    return err.message;
-  }
-
-  if (typeof err === 'object' && err !== null) {
-    const responseError = (err as { response?: { data?: { error?: unknown } } }).response?.data?.error;
-    if (typeof responseError === 'string' && responseError.trim()) {
-      return responseError;
-    }
-  }
-
-  return fallback;
-};
-
 const normalizeCouponItem = (item: unknown): CouponItem | null => {
   if (!item || typeof item !== 'object') {
     return null;
@@ -177,7 +163,9 @@ export function useCafeAdmin({ currentUser }: UseCafeAdminProps): UseCafeAdminRe
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [tournamentsLoading, setTournamentsLoading] = useState(false);
   const [tournamentsError, setTournamentsError] = useState<string | null>(null);
-  const [tournamentForm, setTournamentForm] = useState<TournamentFormData>(buildDefaultTournamentForm);
+  const [tournamentForm, setTournamentForm] = useState<TournamentFormData>(
+    buildDefaultTournamentForm
+  );
 
   const [locationLatitude, setLocationLatitude] = useState('');
   const [locationLongitude, setLocationLongitude] = useState('');
@@ -208,8 +196,12 @@ export function useCafeAdmin({ currentUser }: UseCafeAdminProps): UseCafeAdminRe
       setLocationLatitude(cafe?.latitude != null ? String(cafe.latitude) : '');
       setLocationLongitude(cafe?.longitude != null ? String(cafe.longitude) : '');
       setLocationRadius(String(Number(cafe?.radius || 150)));
-      setLocationSecondaryLatitude(cafe?.secondary_latitude != null ? String(cafe.secondary_latitude) : '');
-      setLocationSecondaryLongitude(cafe?.secondary_longitude != null ? String(cafe.secondary_longitude) : '');
+      setLocationSecondaryLatitude(
+        cafe?.secondary_latitude != null ? String(cafe.secondary_latitude) : ''
+      );
+      setLocationSecondaryLongitude(
+        cafe?.secondary_longitude != null ? String(cafe.secondary_longitude) : ''
+      );
       setLocationSecondaryRadius(String(Number(cafe?.secondary_radius || cafe?.radius || 150)));
     } catch (err) {
       console.error('Failed to fetch cafe info', err);
@@ -260,7 +252,9 @@ export function useCafeAdmin({ currentUser }: UseCafeAdminProps): UseCafeAdminRe
   const createTournament = useCallback(async () => {
     if (!cafeId) throw new Error('Turnuva için bir kafeye atanmalısın.');
     const cleanedTiers = tournamentForm.tiers
-      .filter((t) => t.rewardId !== null && Number.isFinite(t.rewardId) && (t.rewardId as number) > 0)
+      .filter(
+        (t) => t.rewardId !== null && Number.isFinite(t.rewardId) && (t.rewardId as number) > 0
+      )
       .map((t, idx) => ({ rank: idx + 1, reward_id: Number(t.rewardId) }));
     if (cleanedTiers.length === 0) {
       throw new Error('En az bir ödül kademesi seçmelisin.');
@@ -346,10 +340,13 @@ export function useCafeAdmin({ currentUser }: UseCafeAdminProps): UseCafeAdminRe
     await fetchRewards();
   }, [cafeId, fetchRewards, rewardForm]);
 
-  const deleteReward = useCallback(async (id: number | string) => {
-    await api.rewards.delete(id);
-    await fetchRewards();
-  }, [fetchRewards]);
+  const deleteReward = useCallback(
+    async (id: number | string) => {
+      await api.rewards.delete(id);
+      await fetchRewards();
+    },
+    [fetchRewards]
+  );
 
   const updateLocation = useCallback(async () => {
     if (!cafeId) {
@@ -383,12 +380,20 @@ export function useCafeAdmin({ currentUser }: UseCafeAdminProps): UseCafeAdminRe
       return;
     }
     if (hasSecondaryInput) {
-      if (!Number.isFinite(secondaryLatitude) || secondaryLatitude < -90 || secondaryLatitude > 90) {
+      if (
+        !Number.isFinite(secondaryLatitude) ||
+        secondaryLatitude < -90 ||
+        secondaryLatitude > 90
+      ) {
         setLocationStatus('error');
         setLocationMessage('İkinci konum enlem değeri -90 ile 90 arasında olmalıdır.');
         return;
       }
-      if (!Number.isFinite(secondaryLongitude) || secondaryLongitude < -180 || secondaryLongitude > 180) {
+      if (
+        !Number.isFinite(secondaryLongitude) ||
+        secondaryLongitude < -180 ||
+        secondaryLongitude > 180
+      ) {
         setLocationStatus('error');
         setLocationMessage('İkinci konum boylam değeri -180 ile 180 arasında olmalıdır.');
         return;

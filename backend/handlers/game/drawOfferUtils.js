@@ -3,18 +3,17 @@
  * Handles draw offer normalization and opponent finding
  */
 
-const DRAW_OFFER_ACTIONS = new Set(['offer', 'accept', 'reject', 'cancel']);
+const { normalizeParticipantKey } = require('./validation/playerValidation');
 
-/**
- * Normalize participant name to lowercase key
- */
-const normalizeParticipantKey = (value) => String(value || '').trim().toLowerCase();
+const DRAW_OFFER_ACTIONS = new Set(['offer', 'accept', 'reject', 'cancel']);
 
 /**
  * Normalize draw offer action (offer, accept, reject, cancel)
  */
 const normalizeDrawOfferAction = (value) => {
-  const action = String(value || 'offer').trim().toLowerCase();
+  const action = String(value || 'offer')
+    .trim()
+    .toLowerCase();
   return DRAW_OFFER_ACTIONS.has(action) ? action : null;
 };
 
@@ -23,7 +22,9 @@ const normalizeDrawOfferAction = (value) => {
  */
 const normalizeDrawOffer = (rawOffer) => {
   if (!rawOffer || typeof rawOffer !== 'object') return null;
-  const statusRaw = String(rawOffer.status || '').trim().toLowerCase();
+  const statusRaw = String(rawOffer.status || '')
+    .trim()
+    .toLowerCase();
   const offeredBy = String(rawOffer.offeredBy || '').trim();
   if (!offeredBy) return null;
   const status = ['pending', 'accepted', 'rejected', 'cancelled'].includes(statusRaw)

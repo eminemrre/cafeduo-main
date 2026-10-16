@@ -1,4 +1,5 @@
 import React from 'react';
+import { SplitWords } from './ui/SplitWords';
 
 const steps = [
   {
@@ -19,20 +20,24 @@ const steps = [
 ];
 
 export const HowItWorks: React.FC = () => (
-  <section id="features" className="club-flow" aria-label="Nasıl çalışır">
+  <section id="features" className="club-flow" aria-label="Nasıl çalışır" data-landing-track>
     <div className="club-container club-flow-layout" data-landing-reveal>
       <div>
         <span className="club-kicker">Kulübe giriş</span>
         <h2 data-testid="flow-main-heading">
-          Masaya nasıl <br />
-          <em>oturulur?</em>
+          <SplitWords text="Masaya nasıl" /> <br />
+          <em>
+            <SplitWords text="oturulur?" start={2} />
+          </em>
         </h2>
         <div className="club-journey-art" aria-hidden="true">
-          <span className="club-journey-table">
+          <span className="club-journey-table" data-depth="8" data-scroll-depth="50">
             Masa 07 <i>↗</i>
           </span>
-          <span className="club-journey-token">♞</span>
-          <span className="club-journey-reward">
+          <span className="club-journey-token" data-depth="-14" data-scroll-depth="-40">
+            ♞
+          </span>
+          <span className="club-journey-reward" data-depth="10" data-scroll-depth="30">
             Oyna.
             <br />
             <em>Puan biriktir.</em>
@@ -41,9 +46,9 @@ export const HowItWorks: React.FC = () => (
           </span>
         </div>
       </div>
-      <ol className="club-steps">
+      <ol className="club-steps" data-landing-track>
         {steps.map(({ id, title, description }) => (
-          <li key={id} data-testid={`how-step-${id}`}>
+          <li key={id} data-testid={`how-step-${id}`} data-landing-track>
             <span className="club-step-number" aria-hidden="true">
               {id}
             </span>

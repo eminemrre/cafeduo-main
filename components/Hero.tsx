@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router';
 import { LandingMotionControl } from './LandingExperience';
 import { ClubBoardPreview } from './ClubBoardPreview';
 import { CafeScene3D } from './CafeScene3D';
+import { ScrollMarquee } from './ScrollMarquee';
+import { SplitWords } from './ui/SplitWords';
 
 interface HeroProps {
   onLogin: () => void;
@@ -25,17 +27,20 @@ export const Hero: React.FC<HeroProps> = ({
     navigate(isAdmin ? '/admin' : userRole === 'cafe_admin' ? '/cafe-admin' : '/dashboard');
   };
   return (
-    <section id="home" aria-label="Ana bölüm" className="club-home">
-      <div className="club-spread club-spread-3d">
+    <section id="home" aria-label="Ana bölüm" className="club-home" data-landing-track>
+      <div className="club-spread club-spread-3d" data-landing-track>
         <div className="club-intro">
           <div className="club-hero-meta">
             <p className="club-kicker">CafeDuo · Kafenin oyun kulübü</p>
             <LandingMotionControl />
           </div>
           <h1>
-            Bir el <br />
-            <em>
-              oynayalım mı?
+            <span className="club-h1-line" data-depth="5">
+              <SplitWords text="Bir el" />
+            </span>{' '}
+            <br />
+            <em data-depth="12">
+              <SplitWords text="oynayalım mı?" start={2} />
               <svg className="club-headline-underline" viewBox="0 0 500 25" aria-hidden="true">
                 <path d="M4 14C117 0 289 1 491 10M81 22C192 10 331 8 438 15" />
               </svg>
@@ -49,6 +54,7 @@ export const Hero: React.FC<HeroProps> = ({
             <button
               type="button"
               className="club-join-button riso-focus"
+              data-magnetic
               onClick={enter}
               aria-label={isLoggedIn ? 'Kontrol paneline git' : 'Kayıt ol ve oyuna başla'}
             >
@@ -68,16 +74,21 @@ export const Hero: React.FC<HeroProps> = ({
             )}
           </div>
         </div>
-        <CafeScene3D />
+        <div className="club-scene-slot" data-depth="-10" data-scroll-depth="-60">
+          <CafeScene3D />
+        </div>
       </div>
       <div className="club-index">
         <span>Bu masada</span>
-        <span>Satranç / Bilgi Yarışı / Nişancı Düellosu</span>
+        <ScrollMarquee
+          label="Satranç / Bilgi Yarışı / Nişancı Düellosu"
+          items={['Satranç', 'Bilgi Yarışı', 'Nişancı Düellosu', 'Kahve molası', 'Puan', 'Ödül']}
+        />
         <a href="#games" className="riso-focus">
           Oyunlara bak ↓
         </a>
       </div>
-      <div className="club-demo-section">
+      <div className="club-demo-section" data-landing-track>
         <div className="club-demo-copy">
           <h2>
             Tahta açık.

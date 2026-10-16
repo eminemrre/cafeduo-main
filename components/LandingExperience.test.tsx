@@ -93,3 +93,22 @@ test('hidden tabs suspend motion without losing the user preference', () => {
   act(() => document.dispatchEvent(new Event('visibilitychange')));
   expect(container.querySelector('.club-landing')).toHaveAttribute('data-motion', 'on');
 });
+
+test('the cursor follower exists only for a fine pointer while motion is enabled', () => {
+  const fine = { ...media, matches: true } as MediaQueryList;
+  jest
+    .spyOn(window, 'matchMedia')
+    .mockImplementation((query) => (query.includes('pointer: fine') ? fine : media));
+  const { container } = render(content);
+  const cursor = container.querySelector('.club-cursor');
+  expect(cursor).toHaveAttribute('aria-hidden', 'true');
+  expect(container.querySelector('.club-ink-layer')).toHaveAttribute('aria-hidden', 'true');
+  fireEvent.click(screen.getByRole('button', { name: 'Hareketi durdur' }));
+  expect(container.querySelector('.club-cursor')).toBeNull();
+});
+
+test('touch devices get no cursor follower', () => {
+  const { container } = render(content);
+  expect(container.querySelector('.club-landing')).toHaveAttribute('data-motion', 'on');
+  expect(container.querySelector('.club-cursor')).toBeNull();
+});

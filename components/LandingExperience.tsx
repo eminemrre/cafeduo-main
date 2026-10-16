@@ -1,14 +1,17 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { Pause, Play } from 'lucide-react';
+import { createLandingMotion } from '../lib/landingMotion';
 
 interface LandingMotionState {
   enabled: boolean;
   running: boolean;
   reduced: boolean;
+  finePointer: boolean;
   toggle: () => void;
 }
 const LandingMotionContext = createContext<LandingMotionState | null>(null);
 const MOTION_PREFERENCE = 'cafeduo_landing_motion';
+const FINE_POINTER = '(hover: hover) and (pointer: fine)';
 
 export const useLandingMotion = () => useContext(LandingMotionContext);
 
@@ -37,7 +40,10 @@ export const LandingMotionControl: React.FC = () => {
 
 export const LandingExperience: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const root = useRef<HTMLDivElement>(null);
+  const cursor = useRef<HTMLDivElement>(null);
+  const inkLayer = useRef<HTMLDivElement>(null);
   const [reduced, setReduced] = useState(true);
+  const [finePointer, setFinePointer] = useState(false);
   const [preferred, setPreferred] = useState(true);
   const [visible, setVisible] = useState(true);
   const enabled = preferred && !reduced;
@@ -45,7 +51,11 @@ export const LandingExperience: React.FC<{ children: React.ReactNode }> = ({ chi
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const syncMedia = () => setReduced(media.matches);
+    const pointerMedia = window.matchMedia(FINE_POINTER);
+    const syncMedia = () => {
+      setReduced(media.matches);
+      setFinePointer(pointerMedia.matches);
+    };
     const syncVisibility = () => setVisible(!document.hidden);
     syncMedia();
     syncVisibility();
@@ -55,9 +65,11 @@ export const LandingExperience: React.FC<{ children: React.ReactNode }> = ({ chi
       /* Storage is optional. */
     }
     media.addEventListener('change', syncMedia);
+    pointerMedia.addEventListener('change', syncMedia);
     document.addEventListener('visibilitychange', syncVisibility);
     return () => {
       media.removeEventListener('change', syncMedia);
+      pointerMedia.removeEventListener('change', syncMedia);
       document.removeEventListener('visibilitychange', syncVisibility);
     };
   }, []);
@@ -89,29 +101,16 @@ export const LandingExperience: React.FC<{ children: React.ReactNode }> = ({ chi
             { threshold: 0.12 }
           );
     targets.forEach((target) => observer?.observe(target));
-    let frame = 0;
-    const updateProgress = () => {
-      frame = 0;
-      const rect = element.getBoundingClientRect();
-      const distance = Math.max(1, element.offsetHeight - window.innerHeight);
-      element.style.setProperty(
-        '--club-progress',
-        String(Math.min(1, Math.max(0, -rect.top / distance)))
-      );
-    };
-    const schedule = () => {
-      if (!frame) frame = requestAnimationFrame(updateProgress);
-    };
-    schedule();
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule);
+    const stopEngine = createLandingMotion(element, {
+      finePointer,
+      cursor: cursor.current,
+      inkLayer: inkLayer.current,
+    });
     return () => {
       observer?.disconnect();
-      cancelAnimationFrame(frame);
-      window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
+      stopEngine();
     };
-  }, [running]);
+  }, [running, finePointer]);
 
   const toggle = () => {
     const next = !preferred;
@@ -124,10 +123,22 @@ export const LandingExperience: React.FC<{ children: React.ReactNode }> = ({ chi
   };
 
   return (
-    <LandingMotionContext.Provider value={{ enabled, running, reduced, toggle }}>
+    <LandingMotionContext.Provider value={{ enabled, running, reduced, finePointer, toggle }}>
       <div ref={root} className="club-landing" data-motion={running ? 'on' : 'off'}>
         <div className="club-reading-progress" aria-hidden="true" />
         {children}
+        <div ref={inkLayer} className="club-ink-layer" aria-hidden="true" />
+        {finePointer && enabled && (
+          <div
+            ref={cursor}
+            className="club-cursor"
+            data-state="idle"
+            data-visible="false"
+            aria-hidden="true"
+          >
+            <span />
+          </div>
+        )}
       </div>
     </LandingMotionContext.Provider>
   );

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Coffee, Gift } from 'lucide-react';
 import type { CafeScene } from '../lib/createCafeScene';
 import { useLandingMotion } from './LandingExperience';
+import { clamp } from '../lib/landingMotion';
 
 export const CafeScene3D: React.FC = () => {
   const host = useRef<HTMLDivElement>(null);
@@ -12,7 +13,9 @@ export const CafeScene3D: React.FC = () => {
   const [inView, setInView] = useState(false);
   const [ready, setReady] = useState(false);
   const [chapter, setChapter] = useState(0);
+  const drag = useRef<{ id: number; startX: number } | null>(null);
   const running = !!motion?.running && inView;
+  const touchFirst = !motion?.finePointer;
 
   useEffect(() => {
     const element = host.current;
@@ -76,6 +79,39 @@ export const CafeScene3D: React.FC = () => {
     if (ready) controller.current?.setChapter(chapter);
   }, [chapter, ready]);
 
+  // Without a hover pointer the scene turns with the scroll instead, so phones still see depth.
+  useEffect(() => {
+    const element = host.current;
+    if (!element || !running || !ready || !touchFirst) return;
+    let frame = 0;
+    const sway = () => {
+      frame = 0;
+      if (drag.current) return;
+      const rect = element.getBoundingClientRect();
+      const offset = clamp(
+        (window.innerHeight / 2 - (rect.top + rect.height / 2)) / window.innerHeight,
+        -0.6,
+        0.6
+      );
+      controller.current?.setPointer(offset * 1.6, offset * 0.8);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(sway);
+    };
+    schedule();
+    window.addEventListener('scroll', schedule, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', schedule);
+    };
+  }, [running, ready, touchFirst]);
+
+  const endDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (drag.current?.id !== event.pointerId) return;
+    drag.current = null;
+    controller.current?.setPointer(0, 0);
+  };
+
   return (
     <div className="cafe-scene-wrap">
       <div
@@ -83,15 +119,30 @@ export const CafeScene3D: React.FC = () => {
         className="cafe-scene"
         data-renderer={ready ? 'webgl' : 'illustration'}
         data-running={running && ready ? 'true' : 'false'}
+        onPointerDown={(event) => {
+          if (!running || event.pointerType === 'mouse') return;
+          drag.current = { id: event.pointerId, startX: event.clientX };
+        }}
         onPointerMove={(event) => {
-          if (!running || event.pointerType === 'touch') return;
+          if (!running) return;
           const rect = event.currentTarget.getBoundingClientRect();
+          if (event.pointerType !== 'mouse') {
+            // touch-action: pan-y leaves horizontal drags to us, so a sideways swipe spins the scene.
+            if (drag.current?.id !== event.pointerId) return;
+            const spin = clamp(((event.clientX - drag.current.startX) / rect.width) * 5, -3, 3);
+            controller.current?.setPointer(spin, 0);
+            return;
+          }
           controller.current?.setPointer(
             (event.clientX - rect.left) / rect.width - 0.5,
             (event.clientY - rect.top) / rect.height - 0.5
           );
         }}
-        onPointerLeave={() => controller.current?.setPointer(0, 0)}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onPointerLeave={(event) => {
+          if (event.pointerType === 'mouse') controller.current?.setPointer(0, 0);
+        }}
       >
         <div className="cafe-scene-backdrop" aria-hidden="true" />
         <div className="cafe-scene-fallback" aria-hidden="true">

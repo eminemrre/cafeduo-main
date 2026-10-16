@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { pool, isDbConnected } = require('../db');
+const logger = require('../utils/logger');
 const memoryState = require('../store/memoryState');
 const { buildApiErrorPayload } = require('../utils/routeHelpers');
 const { isTokenRevoked, TokenRevocationUnavailableError } = require('../utils/tokenRevocation');
@@ -125,7 +126,7 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    console.error('Auth middleware error:', err);
+    logger.error('Auth middleware error:', err);
     return sendAuthError(res, {
       status: 500,
       code: 'AUTH_ERROR',

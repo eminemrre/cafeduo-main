@@ -7,7 +7,10 @@ jest.mock('../db', () => ({
   },
 }));
 
+jest.mock('../utils/logger', () => ({ error: jest.fn(), warn: jest.fn(), info: jest.fn() }));
+
 const db = require('../db');
+const logger = require('../utils/logger');
 const storeController = require('./storeController');
 
 const createRes = () => {
@@ -75,6 +78,7 @@ describe('storeController', () => {
       success: false,
       message: 'Envanter alınırken hata oluştu',
     });
+    expect(logger.error).toHaveBeenCalledWith('getInventory error:', expect.any(Error));
   });
 
   it('buyItem validates missing itemId', async () => {
@@ -235,5 +239,6 @@ describe('storeController', () => {
       message: 'Satın alma işlemi sırasında hata oluştu',
     });
     expect(client.release).toHaveBeenCalledTimes(1);
+    expect(logger.error).toHaveBeenCalledWith('buyItem error:', expect.any(Error));
   });
 });

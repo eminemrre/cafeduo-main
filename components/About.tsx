@@ -1,16 +1,19 @@
 import React from 'react';
+import { SplitWords } from './ui/SplitWords';
 
 export const About: React.FC<{ onJoin?: () => void; isLoggedIn?: boolean }> = ({
   onJoin,
   isLoggedIn,
 }) => (
-  <section id="about" className="club-about" aria-label="Hakkımızda">
+  <section id="about" className="club-about" aria-label="Hakkımızda" data-landing-track>
     <div className="club-container club-about-layout" data-landing-reveal>
       <span className="club-kicker">Küçük bir kulüp notu</span>
       <div>
         <h2 data-testid="about-main-heading">
-          Bir sonraki masada <br />
-          <em>kim var?</em>
+          <SplitWords text="Bir sonraki masada" /> <br />
+          <em>
+            <SplitWords text="kim var?" start={3} />
+          </em>
         </h2>
         <p>
           CafeDuo’yu açınca aynı kafedeki açık oyunları görürsün. Tanıdığın biriyle de
@@ -24,7 +27,7 @@ export const About: React.FC<{ onJoin?: () => void; isLoggedIn?: boolean }> = ({
           Hesaptan ilk oyuna nasıl geçerim? ↗
         </a>
       </div>
-      <aside className="club-members-note">
+      <aside className="club-members-note" data-depth="-12" data-scroll-depth="-80">
         <span aria-hidden="true">CD</span>
         <p>
           Kahve masada. <br />
@@ -41,7 +44,12 @@ export const About: React.FC<{ onJoin?: () => void; isLoggedIn?: boolean }> = ({
           <em>Bir sonraki karşılaşma.</em>
         </p>
         <div>
-          <button type="button" className="club-join-button riso-focus" onClick={onJoin}>
+          <button
+            type="button"
+            className="club-join-button riso-focus"
+            data-magnetic
+            onClick={onJoin}
+          >
             {isLoggedIn ? 'Paneline geç' : 'Masaya katıl'}
             <span aria-hidden="true">↗</span>
           </button>

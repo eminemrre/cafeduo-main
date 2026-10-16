@@ -12,7 +12,7 @@ import {
   Users,
 } from 'lucide-react';
 import { CafeScene3D } from './CafeScene3D';
-import { LandingExperience, LandingMotionControl, useLandingMotion } from './LandingExperience';
+import { LandingExperience, useLandingMotion } from './LandingExperience';
 
 const WHATSAPP_NUMBER = '905538542535';
 const WHATSAPP_PREFILL = encodeURIComponent(
@@ -45,7 +45,6 @@ const HeroSection: React.FC = () => {
         <div className="owner-intro">
           <div className="club-hero-meta">
             <p className="club-kicker">Kafeniz için CafeDuo</p>
-            <LandingMotionControl />
           </div>
           <h1>
             Kahve sizden.

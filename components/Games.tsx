@@ -1,4 +1,5 @@
 import React from 'react';
+import { SplitWords } from './ui/SplitWords';
 
 const games = [
   {
@@ -31,14 +32,16 @@ const games = [
 ];
 
 export const Games: React.FC<{ onPlayClick?: () => void }> = ({ onPlayClick }) => (
-  <section id="games" className="club-games" aria-label="Oyunlar">
+  <section id="games" className="club-games" aria-label="Oyunlar" data-landing-track>
     <div className="club-container">
       <div className="club-games-heading" data-landing-reveal>
         <div>
           <span className="club-kicker">Oyun listesi</span>
           <h2 data-testid="games-main-heading">
-            Hangisini <br />
-            <em>oynuyoruz?</em>
+            <SplitWords text="Hangisini" /> <br />
+            <em>
+              <SplitWords text="oynuyoruz?" start={1} />
+            </em>
           </h2>
         </div>
         <p>
@@ -51,6 +54,8 @@ export const Games: React.FC<{ onPlayClick?: () => void }> = ({ onPlayClick }) =
           <button
             key={title}
             data-landing-reveal
+            data-landing-track
+            data-cursor-label={mark}
             type="button"
             className="club-game-row riso-focus"
             onClick={onPlayClick}

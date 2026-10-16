@@ -1,0 +1,446 @@
+/*
+ * Landing interaction layer. lib/landingMotion.ts writes --p, --exit, --mag-x/--mag-y and
+ * `translate`; everything here only reads them. Every effect is scoped to
+ * data-motion='on', so the pause button and prefers-reduced-motion return the static page
+ * that club.css describes. `translate`, `scale` and `rotate` are used instead of
+ * `transform` so they compose with the existing transform-based animations.
+ */
+
+.club-landing {
+  overflow-x: clip;
+}
+.club-scene-slot {
+  min-width: 0;
+}
+.club-h1-line,
+.club-intro h1 em {
+  display: inline-block;
+}
+
+/* Scroll story: the scene stays pinned while the three chapters scroll past it. */
+.club-story {
+  grid-template-areas:
+    'intro stage'
+    'steps stage';
+  align-items: start;
+  min-height: 0;
+  padding-bottom: 0;
+}
+.club-intro-wrap {
+  grid-area: intro;
+  min-width: 0;
+  min-height: calc(100svh - 170px);
+  display: flex;
+  align-items: center;
+}
+.club-story-stage {
+  grid-area: stage;
+  position: sticky;
+  top: 96px;
+  height: calc(100svh - 120px);
+  min-height: 460px;
+  min-width: 0;
+}
+.club-story-stage .club-scene-slot,
+.club-story-stage .cafe-scene-wrap {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.club-story-stage .cafe-scene {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+/* Close-ups run past the canvas; a soft edge keeps them from ending in a hard cut. */
+.club-story-stage .cafe-scene-canvas {
+  mask-image:
+    linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent),
+    linear-gradient(180deg, transparent, #000 6%, #000 88%, transparent);
+  mask-composite: intersect;
+}
+.club-story-stage .cafe-scene-chapters {
+  padding: 10px 0 4px;
+}
+.club-story-steps {
+  grid-area: steps;
+  list-style: none;
+  margin: 0;
+  padding: 0 0 14svh;
+}
+.club-story-step {
+  min-height: 74svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.club-story-card {
+  max-width: 440px;
+}
+.club-story-index {
+  display: block;
+  font-family: 'Fraunces Variable', Georgia, serif;
+  font-style: italic;
+  font-size: 22px;
+  color: #315bd5;
+}
+.club-story-step h2 {
+  margin: 10px 0 18px;
+  font-family: 'DM Sans Variable', sans-serif;
+  font-size: clamp(42px, 4.6vw, 68px);
+  font-weight: 650;
+  line-height: 1.02;
+  letter-spacing: -0.06em;
+}
+.club-story-step p {
+  max-width: 380px;
+  font-size: 17px;
+  line-height: 1.7;
+  color: #62645d;
+}
+
+/* Words rise out of their own line box; the padding keeps descenders and italic overhang. */
+.club-split-word {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding: 0 0.08em 0.16em;
+  margin: 0 -0.08em -0.16em;
+}
+.club-split-word > span {
+  display: inline-block;
+}
+
+/* Ticker band under the hero. */
+.club-marquee {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  margin-inline: 24px;
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+}
+.club-marquee-track {
+  display: flex;
+  width: max-content;
+  will-change: transform;
+}
+.club-marquee-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 22px;
+  padding-right: 22px;
+  font-family: 'Fraunces Variable', Georgia, serif;
+  font-style: italic;
+  font-size: 21px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.club-marquee-item i {
+  font-style: normal;
+  font-size: 11px;
+  color: #f2c4d6;
+}
+
+/* Magnetic calls to action: the label follows the pointer further than the pill does. */
+.club-landing [data-magnetic] {
+  translate: var(--mag-x, 0px) var(--mag-y, 0px);
+  transition:
+    translate 0.6s var(--ease-out-quart),
+    scale var(--dur-fast) var(--ease-out-quart),
+    background 0.2s,
+    box-shadow 0.2s;
+}
+.club-landing [data-magnetic] > span {
+  translate: calc(var(--mag-x, 0px) * 0.6) calc(var(--mag-y, 0px) * 0.6);
+  transition:
+    translate 0.6s var(--ease-out-quart),
+    transform 0.2s;
+}
+.club-landing [data-magnetic][data-magnet-active] {
+  transition-duration: 0.2s, var(--dur-fast), 0.2s, 0.2s;
+}
+.club-landing[data-motion='on'] .club-join-button:active,
+.club-landing[data-motion='on'] .club-game-row:active {
+  scale: 0.97;
+}
+
+/* Cursor follower: a trailing ink dot that opens into a ring on links and a label on games. */
+.club-cursor {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 130;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-brand);
+}
+.club-cursor[data-visible='true'] {
+  opacity: 1;
+}
+.club-cursor > span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 12px;
+  height: 12px;
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  background: #315bd5;
+  box-shadow: 0 0 0 2px #fff9efcc;
+  color: #fff9ef;
+  font-family: 'Fraunces Variable', Georgia, serif;
+  font-size: 0;
+  line-height: 1;
+  transition:
+    width 0.45s var(--ease-brand),
+    height 0.45s var(--ease-brand),
+    background var(--dur-base),
+    border-color var(--dur-base),
+    box-shadow var(--dur-base),
+    font-size var(--dur-base) var(--ease-brand);
+}
+.club-cursor[data-state='link'] > span {
+  width: 52px;
+  height: 52px;
+  background: #315bd514;
+  border-color: #315bd5;
+  box-shadow: none;
+}
+.club-cursor[data-state='label'] > span {
+  width: 104px;
+  height: 104px;
+  box-shadow: 0 14px 34px #315bd540;
+  font-size: 46px;
+}
+
+/* Touch ink: every tap leaves a short-lived riso ring where the finger landed. */
+.club-ink-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  overflow: hidden;
+  pointer-events: none;
+}
+.club-touch-ink {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border: 2px solid #315bd5;
+  border-radius: 50%;
+  background: radial-gradient(circle, #e480aa 0 28%, transparent 31%);
+  animation: club-touch-ink 0.75s var(--ease-out-quart) forwards;
+}
+
+@keyframes club-touch-ink {
+  from {
+    scale: 0.3;
+    opacity: 0.9;
+  }
+  to {
+    scale: 3.4;
+    opacity: 0;
+  }
+}
+@keyframes club-word-rise {
+  from {
+    transform: translateY(110%) rotate(6deg);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes club-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes club-scene-in {
+  from {
+    opacity: 0;
+    transform: scale(0.88) rotate(-4deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Load choreography: headline words, then copy and actions, while the scene settles in. */
+  .club-landing[data-motion='on'] .club-intro h1 .club-split-word > span {
+    animation: club-word-rise 1s var(--ease-brand) both;
+    animation-delay: calc(120ms + var(--word-index) * 75ms);
+  }
+  .club-landing[data-motion='on'] .club-hero-meta,
+  .club-landing[data-motion='on'] .club-intro-copy,
+  .club-landing[data-motion='on'] .club-join {
+    animation: club-rise-in 0.9s var(--ease-brand) both;
+  }
+  .club-landing[data-motion='on'] .club-intro-copy {
+    animation-delay: 450ms;
+  }
+  .club-landing[data-motion='on'] .club-join {
+    animation-delay: 560ms;
+  }
+  .club-landing[data-motion='on'] .club-scene-slot > * {
+    animation: club-scene-in 1.3s var(--ease-brand) 180ms both;
+  }
+  .club-landing[data-motion='on'] [data-landing-revealed='true'] .club-split-word > span {
+    animation: club-word-rise 0.9s var(--ease-brand) both;
+    animation-delay: calc(80ms + var(--word-index) * 70ms);
+  }
+
+  /* The hero copy lifts away as the first fold scrolls off. */
+  .club-landing[data-motion='on'] .club-intro {
+    translate: 0 calc(var(--exit, 0) * -90px);
+    opacity: calc(1 - var(--exit, 0) * 0.75);
+  }
+
+  /* Story chapters come into focus at the middle of the screen and fade as they leave. */
+  .club-landing[data-motion='on'] .club-story-step {
+    --focus: min(
+      clamp(0, calc((var(--p, 0.5) - 0.18) * 4), 1),
+      clamp(0, calc((0.82 - var(--p, 0.5)) * 4), 1)
+    );
+  }
+  .club-landing[data-motion='on'] .club-story-step > .club-story-card {
+    opacity: calc(0.18 + var(--focus) * 0.82);
+    translate: 0 calc((1 - var(--focus)) * 26px);
+  }
+
+  /* Steps: a cobalt rule draws down the list and each step slides in as it is reached. */
+  .club-landing[data-motion='on'] .club-steps {
+    position: relative;
+  }
+  .club-landing[data-motion='on'] .club-steps::before {
+    content: '';
+    position: absolute;
+    left: -22px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    border-radius: 2px;
+    background: #315bd5;
+    transform-origin: top;
+    scale: 1 clamp(0, calc((var(--p, 1) - 0.15) * 2.2), 1);
+  }
+  .club-landing[data-motion='on'] .club-steps li {
+    --enter: clamp(0, calc(var(--p, 1) * 5), 1);
+    opacity: calc(0.15 + var(--enter) * 0.85);
+    translate: calc((1 - var(--enter)) * 56px) 0;
+  }
+  .club-landing[data-motion='on'] .club-steps .club-step-number {
+    display: inline-block;
+    transform-origin: left center;
+    scale: calc(0.6 + var(--enter) * 0.4);
+  }
+
+  /* Game rows assemble from alternating sides, column by column, as they scroll in. */
+  .club-landing[data-motion='on'] .club-game-row > * {
+    --enter: clamp(0, calc((var(--p, 1) - var(--lag, 0)) * 5), 1);
+    translate: calc((1 - var(--enter)) * var(--from, 64px)) 0;
+    opacity: calc(0.1 + var(--enter) * 0.9);
+  }
+  .club-landing[data-motion='on'] .club-game-row:nth-child(even) > * {
+    --from: -64px;
+  }
+  .club-landing[data-motion='on'] .club-game-row > :nth-child(2) {
+    --lag: 0.02;
+  }
+  .club-landing[data-motion='on'] .club-game-row > :nth-child(3) {
+    --lag: 0.04;
+  }
+  .club-landing[data-motion='on'] .club-game-row > :nth-child(4) {
+    --lag: 0.06;
+  }
+  .club-landing[data-motion='on'] .club-game-row > :nth-child(5) {
+    --lag: 0.08;
+  }
+}
+
+@media (max-width: 700px) {
+  .club-story {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'intro'
+      'stage'
+      'steps';
+  }
+  .club-intro-wrap {
+    min-height: 0;
+  }
+  .club-story-stage {
+    top: 70px;
+    height: 48svh;
+    min-height: 320px;
+    z-index: 0;
+  }
+  .club-story-steps {
+    position: relative;
+    z-index: 1;
+    padding-bottom: 8svh;
+  }
+  .club-story-step {
+    min-height: 66svh;
+    justify-content: flex-end;
+    padding-bottom: 4svh;
+  }
+  /* The cards slide over the pinned stage, so they carry their own paper. */
+  .club-story-card {
+    padding: 22px 22px 24px;
+    border-radius: 22px;
+    background: #fff9efeb;
+    box-shadow: 0 18px 44px #2b487522;
+    backdrop-filter: blur(8px);
+  }
+  .club-story-step h2 {
+    font-size: clamp(36px, 10vw, 46px);
+    margin: 6px 0 12px;
+  }
+  .club-story-step p {
+    font-size: 15px;
+  }
+  /* A card is readable only below the pinned stage; it fades before sliding over it. */
+  .club-landing[data-motion='on'] .club-story-step {
+    --focus: min(
+      clamp(0, calc((var(--p, 0.4) - 0.22) * 7), 1),
+      clamp(0, calc((0.54 - var(--p, 0.4)) * 9), 1)
+    );
+  }
+  .club-landing[data-motion='on'] .club-story-step > .club-story-card {
+    opacity: var(--focus);
+  }
+}
+
+@media (max-width: 767px) {
+  .club-marquee {
+    margin-inline: 4px 0;
+  }
+  .club-marquee-item {
+    font-size: 17px;
+    gap: 16px;
+    padding-right: 16px;
+  }
+  .club-landing[data-motion='on'] .club-steps::before {
+    left: -12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .club-landing [data-magnetic],
+  .club-landing [data-magnetic] > span {
+    translate: none;
+  }
+}

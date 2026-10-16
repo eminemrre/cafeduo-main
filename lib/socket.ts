@@ -102,12 +102,12 @@ class SocketService {
     });
 
     this.socket.on('connect', () => {
-      console.warn('✅ Socket connected:', this.socket?.id);
+      console.warn('Socket connected:', this.socket?.id);
       this.notifyListeners();
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('❌ Socket connection error:', error.message);
+      console.error('Socket connection error:', error.message);
       this.notifyListeners();
       // If authentication failed, token might be invalid or expired
       if (
@@ -115,12 +115,12 @@ class SocketService {
         error.message === 'Invalid token' ||
         error.message === 'Token expired'
       ) {
-        console.warn('⚠️ Socket authentication failed - user may need to re-login');
+        console.warn('Socket authentication failed - user may need to re-login');
       }
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.warn('❌ Socket disconnected:', reason);
+      console.warn('Socket disconnected:', reason);
       this.notifyListeners();
       // If server disconnected, try to reconnect with fresh token
       if (reason === 'io server disconnect') {
@@ -129,7 +129,7 @@ class SocketService {
     });
 
     this.socket.io?.on?.('reconnect_failed', () => {
-      console.warn('⚠️ Socket reconnect attempts are still pending');
+      console.warn('Socket reconnect attempts are still pending');
       this.notifyListeners();
     });
   }

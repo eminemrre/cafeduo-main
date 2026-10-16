@@ -3,7 +3,8 @@ name: Perf Baseline
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */6 * * *'
+    # Daily is enough to spot regressions; 03:00 is taken by the Playwright run.
+    - cron: '0 4 * * *'
 
 jobs:
   api-p95:

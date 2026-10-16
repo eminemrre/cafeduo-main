@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api } from '../lib/api';
+import { toErrorMessage } from '../lib/errorMessage';
 import type { Cafe, User } from '../types';
 
 interface UseCafeSelectionProps {
@@ -24,9 +25,6 @@ interface UseCafeSelectionReturn {
   requestLocationAccess: () => Promise<void>;
   checkIn: () => Promise<void>;
 }
-
-const toErrorMessage = (err: unknown, fallback: string): string =>
-  err instanceof Error && err.message ? err.message : fallback;
 
 interface LocationCoords {
   latitude: number;

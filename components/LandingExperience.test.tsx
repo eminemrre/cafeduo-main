@@ -1,27 +1,16 @@
 import React from 'react';
-import { render, screen, fireEvent, act } from '@testing-library/react';
-import { LandingExperience, LandingMotionControl } from './LandingExperience';
+import { render, screen, act } from '@testing-library/react';
+import { LandingExperience } from './LandingExperience';
 
 const content = (
   <LandingExperience>
-    <LandingMotionControl />
     <h1>Visible landing</h1>
     <button>Join</button>
   </LandingExperience>
 );
-const originalStorage = Object.getOwnPropertyDescriptor(window, 'sessionStorage');
 let media: MediaQueryList;
 let mediaChanged: () => void;
 beforeEach(() => {
-  const values = new Map<string, string>();
-  Object.defineProperty(window, 'sessionStorage', {
-    configurable: true,
-    value: {
-      getItem: jest.fn((key: string) => values.get(key) ?? null),
-      setItem: jest.fn((key: string, value: string) => values.set(key, value)),
-      clear: jest.fn(() => values.clear()),
-    },
-  });
   media = {
     matches: false,
     addEventListener: jest.fn((_event, callback) => {
@@ -33,82 +22,54 @@ beforeEach(() => {
 });
 afterEach(() => {
   jest.restoreAllMocks();
-  if (originalStorage) Object.defineProperty(window, 'sessionStorage', originalStorage);
 });
 
-test('motion can be paused, persists across remount, and resumes without hiding the content', () => {
+test('motion is always on and offers no pause control', () => {
   const view = render(content);
-  const pause = screen.getByRole('button', { name: 'Hareketi durdur' });
-  expect(pause.textContent).toBe('');
-  expect(pause).not.toHaveAttribute('title');
-  pause.focus();
-  fireEvent.click(pause);
-  expect(screen.getByRole('button', { name: 'Hareketi aç' })).toHaveFocus();
-  expect(screen.getByRole('button', { name: 'Hareketi aç' }).textContent).toBe('');
-  expect(document.documentElement.dataset.landingMotion).toBe('off');
-  expect(sessionStorage.getItem('cafeduo_landing_motion')).toBe('off');
-  expect(screen.getByRole('heading')).toBeVisible();
+  expect(view.container.querySelector('.club-landing')).toHaveAttribute('data-motion', 'on');
+  expect(document.documentElement.dataset.landingMotion).toBe('on');
+  expect(screen.getAllByRole('button')).toHaveLength(1);
   view.unmount();
   expect(document.documentElement.dataset.landingMotion).toBeUndefined();
-  render(content);
-  fireEvent.click(screen.getByRole('button', { name: 'Hareketi aç' }));
-  expect(document.documentElement.dataset.landingMotion).toBe('on');
-});
-test('system reduced motion takes priority and reacts to preference changes', () => {
-  Object.defineProperty(media, 'matches', { value: true, configurable: true });
-  render(content);
-  expect(screen.getByRole('button', { name: 'Hareket azaltıldı' })).toBeDisabled();
-  expect(document.documentElement.dataset.landingMotion).toBe('off');
-  Object.defineProperty(media, 'matches', { value: false, configurable: true });
-  act(() => mediaChanged());
-  expect(screen.getByRole('button', { name: 'Hareketi durdur' })).toBeEnabled();
-});
-test('motion controls still work when browser storage is unavailable', () => {
-  jest.spyOn(window.sessionStorage, 'getItem').mockImplementation(() => {
-    throw new Error('Storage unavailable');
-  });
-  jest.spyOn(window.sessionStorage, 'setItem').mockImplementation(() => {
-    throw new Error('Storage unavailable');
-  });
-  render(content);
-  fireEvent.click(screen.getByRole('button', { name: 'Hareketi durdur' }));
-  expect(screen.getByRole('button', { name: 'Hareketi aç' })).toHaveAttribute(
-    'aria-pressed',
-    'false'
-  );
-  expect(screen.getByRole('button', { name: 'Join' })).toBeVisible();
 });
 
-test('hidden tabs suspend motion without losing the user preference', () => {
+test('system reduced motion turns motion off and reacts to preference changes', () => {
+  Object.defineProperty(media, 'matches', { value: true, configurable: true });
+  const { container } = render(content);
+  expect(container.querySelector('.club-landing')).toHaveAttribute('data-motion', 'off');
+  expect(document.documentElement.dataset.landingMotion).toBe('off');
+  expect(screen.getByRole('heading')).toBeVisible();
+  Object.defineProperty(media, 'matches', { value: false, configurable: true });
+  act(() => mediaChanged());
+  expect(container.querySelector('.club-landing')).toHaveAttribute('data-motion', 'on');
+});
+
+test('hidden tabs suspend motion and resume when visible again', () => {
   const hidden = jest.spyOn(document, 'hidden', 'get').mockReturnValue(false);
   const { container } = render(content);
   hidden.mockReturnValue(true);
   act(() => document.dispatchEvent(new Event('visibilitychange')));
   expect(container.querySelector('.club-landing')).toHaveAttribute('data-motion', 'off');
-  expect(screen.getByRole('button', { name: 'Hareketi durdur' })).toHaveAttribute(
-    'aria-pressed',
-    'true'
-  );
   hidden.mockReturnValue(false);
   act(() => document.dispatchEvent(new Event('visibilitychange')));
   expect(container.querySelector('.club-landing')).toHaveAttribute('data-motion', 'on');
 });
 
-test('the cursor follower exists only for a fine pointer while motion is enabled', () => {
+test('the cursor follower exists only for a fine pointer without reduced motion', () => {
+  const reduced = { ...media, matches: false } as MediaQueryList;
   const fine = { ...media, matches: true } as MediaQueryList;
   jest
     .spyOn(window, 'matchMedia')
-    .mockImplementation((query) => (query.includes('pointer: fine') ? fine : media));
+    .mockImplementation((query) => (query.includes('pointer: fine') ? fine : reduced));
   const { container } = render(content);
-  const cursor = container.querySelector('.club-cursor');
-  expect(cursor).toHaveAttribute('aria-hidden', 'true');
+  expect(container.querySelector('.club-cursor')).toHaveAttribute('aria-hidden', 'true');
   expect(container.querySelector('.club-ink-layer')).toHaveAttribute('aria-hidden', 'true');
-  fireEvent.click(screen.getByRole('button', { name: 'Hareketi durdur' }));
+  Object.defineProperty(reduced, 'matches', { value: true, configurable: true });
+  act(() => mediaChanged());
   expect(container.querySelector('.club-cursor')).toBeNull();
 });
 
 test('touch devices get no cursor follower', () => {
   const { container } = render(content);
-  expect(container.querySelector('.club-landing')).toHaveAttribute('data-motion', 'on');
   expect(container.querySelector('.club-cursor')).toBeNull();
 });

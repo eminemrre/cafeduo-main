@@ -14,6 +14,7 @@ const scene = {
   setRunning: jest.fn(),
   setPointer: jest.fn(),
   setChapter: jest.fn(),
+  setProgress: jest.fn(),
   resize: jest.fn(),
   dispose: jest.fn(),
 };
@@ -32,7 +33,6 @@ beforeEach(() => {
     enabled: true,
     reduced: false,
     finePointer: true,
-    toggle: jest.fn(),
   });
   window.IntersectionObserver = jest.fn((callback) => {
     intersect = callback;
@@ -75,7 +75,6 @@ test('honors the landing pause and reduced-motion state', async () => {
     enabled: false,
     reduced: true,
     finePointer: true,
-    toggle: jest.fn(),
   });
   view.rerender(<CafeScene3D />);
   expect(scene.setRunning).toHaveBeenLastCalledWith(false);
@@ -145,7 +144,6 @@ test('a sideways touch drag spins the scene and releasing hands it back to the s
     enabled: true,
     reduced: false,
     finePointer: false,
-    toggle: jest.fn(),
   });
   const view = render(<CafeScene3D />);
   await visible(true);
@@ -190,4 +188,52 @@ test('mouse hover still tilts the scene and leaving recenters it', async () => {
   // React derives onPointerLeave from pointerout towards an element outside the host.
   mouse('pointerout', 300, 25, document.body);
   expect(scene.setPointer).toHaveBeenLastCalledWith(0, 0);
+});
+
+test('the chapter list drives the story and the chapter buttons scroll to their chapter', async () => {
+  const frames: FrameRequestCallback[] = [];
+  jest.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+    frames.push(callback);
+    return frames.length;
+  });
+  Object.defineProperty(window, 'innerHeight', { configurable: true, value: 1000 });
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1400 });
+  const list = document.createElement('ol');
+  const steps = [0, 1, 2].map(() => {
+    const step = document.createElement('li');
+    step.setAttribute('data-story-step', '');
+    step.scrollIntoView = jest.fn();
+    list.appendChild(step);
+    return step;
+  });
+  document.body.appendChild(list);
+  const position = jest.spyOn(list, 'getBoundingClientRect');
+  position.mockReturnValue({ top: 1200, height: 600 } as DOMRect);
+  const story = { current: list };
+
+  render(<CafeScene3D story={story} />);
+  await visible(true);
+  expect(scene.setProgress).toHaveBeenLastCalledWith(-1);
+  expect(screen.getByRole('button', { name: 'Kahveni al' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  );
+
+  // Anchor at 55% of 1000 px sits on the middle of the second 200 px block.
+  position.mockReturnValue({ top: 250, height: 600 } as DOMRect);
+  act(() => {
+    window.dispatchEvent(new Event('scroll'));
+    frames.splice(0).forEach((callback) => callback(0));
+  });
+  expect(scene.setProgress).toHaveBeenLastCalledWith(1);
+  expect(screen.getByRole('button', { name: 'Oyuna katıl' })).toHaveAttribute(
+    'aria-pressed',
+    'true'
+  );
+  expect(scene.setChapter).not.toHaveBeenCalled();
+
+  fireEvent.click(screen.getByRole('button', { name: 'Ödülünü seç' }));
+  expect(steps[2].scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
+  list.remove();
+  jest.restoreAllMocks();
 });

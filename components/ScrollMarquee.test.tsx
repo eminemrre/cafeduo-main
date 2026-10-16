@@ -10,7 +10,6 @@ const motionState = (running: boolean) => ({
   enabled: running,
   reduced: false,
   finePointer: false,
-  toggle: jest.fn(),
 });
 
 let frames: FrameRequestCallback[];

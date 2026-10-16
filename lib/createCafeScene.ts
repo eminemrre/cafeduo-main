@@ -1,35 +1,58 @@
 import {
   AmbientLight,
   ACESFilmicToneMapping,
+  BoxGeometry,
+  CanvasTexture,
   CircleGeometry,
+  Color,
   CylinderGeometry,
   DataTexture,
   DirectionalLight,
   ExtrudeGeometry,
   Group,
+  InstancedMesh,
   LatheGeometry,
   Mesh,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
+  NearestFilter,
+  Object3D,
   PerspectiveCamera,
   PlaneGeometry,
   PMREMGenerator,
   RGBAFormat,
   Scene,
+  SRGBColorSpace,
   Shape,
   SphereGeometry,
+  Sprite,
+  SpriteMaterial,
   TorusGeometry,
   Vector2,
   WebGLRenderer,
   type BufferGeometry,
   type Material,
+  type Texture,
 } from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import {
+  STORY_START,
+  confettiProgress,
+  easeOutBack,
+  easeOutExpo,
+  knightHop,
+  seeded,
+  smoothstep,
+  storyPose,
+  tokenSpin,
+} from './cafeStory';
 
 export interface CafeScene {
   setRunning: (running: boolean) => void;
   setPointer: (x: number, y: number) => void;
   setChapter: (chapter: number) => void;
+  /** Story position from -1 (opening shot) to 2 (reward); see lib/cafeStory.ts. */
+  setProgress: (story: number) => void;
   resize: () => void;
   dispose: () => void;
 }
@@ -58,6 +81,7 @@ export function createCafeScene(canvas: HTMLCanvasElement): CafeScene {
   pmrem.dispose();
   const geometries = new Set<BufferGeometry>();
   const materials = new Set<Material>();
+  const textures = new Set<Texture>();
   const material = (color: string, roughness = 0.25) => {
     const value = new MeshPhysicalMaterial({
       color,
@@ -165,14 +189,46 @@ export function createCafeScene(canvas: HTMLCanvasElement): CafeScene {
   const eye = mesh(new SphereGeometry(0.038, 12, 12), dark, knight);
   eye.position.set(0.32, 1.61, 0.28);
 
+  // The pivot carries position and the scroll spin; the token inside keeps its tilt.
+  const tokenPivot = new Group();
+  composition.add(tokenPivot);
   const token = new Group();
-  token.position.set(1.2, 1.75, -0.42);
   token.rotation.set(1.1, 0.35, -0.35);
-  composition.add(token);
+  tokenPivot.add(token);
   mesh(new CylinderGeometry(0.54, 0.54, 0.16, 48), blue, token);
   const tokenRim = mesh(new TorusGeometry(0.46, 0.025, 8, 48), cream, token);
   tokenRim.rotation.x = -Math.PI / 2;
   tokenRim.position.y = 0.085;
+  const tokenBack = mesh(new TorusGeometry(0.46, 0.025, 8, 48), cream, token);
+  tokenBack.rotation.x = Math.PI / 2;
+  tokenBack.position.y = -0.085;
+  // Both faces carry the CafeDuo mark, drawn locally so no image asset is fetched.
+  const markCanvas = document.createElement('canvas');
+  markCanvas.width = markCanvas.height = 256;
+  const markContext = markCanvas.getContext('2d');
+  if (markContext) {
+    markContext.fillStyle = '#3966dd';
+    markContext.fillRect(0, 0, 256, 256);
+    markContext.fillStyle = '#fff3df';
+    markContext.font = '800 112px "DM Sans Variable", "DM Sans", system-ui, sans-serif';
+    markContext.textAlign = 'center';
+    markContext.textBaseline = 'middle';
+    markContext.fillText('CD', 128, 136);
+  }
+  const markTexture = new CanvasTexture(markCanvas);
+  markTexture.colorSpace = SRGBColorSpace;
+  textures.add(markTexture);
+  const markMaterial = new MeshStandardMaterial({ map: markTexture, roughness: 0.3 });
+  materials.add(markMaterial);
+  const markGeometry = new CircleGeometry(0.43, 48);
+  geometries.add(markGeometry);
+  const front = new Mesh(markGeometry, markMaterial);
+  front.rotation.x = -Math.PI / 2;
+  front.position.y = 0.082;
+  const back = new Mesh(markGeometry, markMaterial);
+  back.rotation.set(Math.PI / 2, 0, Math.PI);
+  back.position.y = -0.082;
+  token.add(front, back);
   const orbit = mesh(new TorusGeometry(2.25, 0.015, 6, 96), blue, composition);
   orbit.rotation.set(1.12, 0.25, -0.34);
   orbit.position.y = 0.45;
@@ -191,6 +247,7 @@ export function createCafeScene(canvas: HTMLCanvasElement): CafeScene {
     }
   const shadowTexture = new DataTexture(pixels, 64, 64, RGBAFormat);
   shadowTexture.needsUpdate = true;
+  textures.add(shadowTexture);
   const shadowMaterial = new MeshStandardMaterial({
     color: '#1e2960',
     map: shadowTexture,
@@ -203,33 +260,258 @@ export function createCafeScene(canvas: HTMLCanvasElement): CafeScene {
   shadow.rotation.x = -Math.PI / 2;
   shadow.position.set(0, -0.468, 0.03);
 
+  // Chapter 2 turns the platform into a board: an 8x8 checker texture that fades in.
+  const checker = new Uint8Array(8 * 8 * 4);
+  for (let y = 0; y < 8; y++)
+    for (let x = 0; x < 8; x++) {
+      const light = (x + y) % 2 === 0;
+      checker.set(light ? [255, 243, 223, 255] : [154, 175, 217, 255], (y * 8 + x) * 4);
+    }
+  const boardTexture = new DataTexture(checker, 8, 8, RGBAFormat);
+  boardTexture.magFilter = NearestFilter;
+  boardTexture.colorSpace = SRGBColorSpace;
+  boardTexture.needsUpdate = true;
+  textures.add(boardTexture);
+  const boardMaterial = new MeshStandardMaterial({
+    map: boardTexture,
+    roughness: 0.45,
+    transparent: true,
+    opacity: 0,
+  });
+  materials.add(boardMaterial);
+  const board = mesh(new CircleGeometry(1.98, 64), boardMaterial, scene);
+  board.rotation.x = -Math.PI / 2;
+  board.position.set(0, -0.476, 0);
+
+  // The opponent: a blue pawn that rises out of the board.
+  const rival = new Group();
+  composition.add(rival);
+  const pawnProfile = [
+    [0.5, 0],
+    [0.52, 0.1],
+    [0.4, 0.2],
+    [0.24, 0.32],
+    [0.17, 0.75],
+    [0.3, 0.82],
+    [0.3, 0.88],
+    [0.12, 0.92],
+  ].map(([x, y]) => new Vector2(x, y));
+  mesh(new LatheGeometry(pawnProfile, 40), blue, rival);
+  const pawnHead = mesh(new SphereGeometry(0.27, 28, 20), blue, rival);
+  pawnHead.position.y = 1.12;
+
+  // Soft steam: sprites with a local radial texture rising and curling out of the cup.
+  const puffPixels = new Uint8Array(32 * 32 * 4);
+  for (let y = 0; y < 32; y++)
+    for (let x = 0; x < 32; x++) {
+      const distance = Math.min(1, Math.hypot(x - 15.5, y - 15.5) / 16);
+      puffPixels.set([255, 255, 255, Math.round((1 - distance) ** 2 * 255)], (y * 32 + x) * 4);
+    }
+  const puffTexture = new DataTexture(puffPixels, 32, 32, RGBAFormat);
+  puffTexture.needsUpdate = true;
+  textures.add(puffTexture);
+  const steam = Array.from({ length: 12 }, (_, index) => {
+    const spriteMaterial = new SpriteMaterial({
+      map: puffTexture,
+      color: '#d8c8b4',
+      transparent: true,
+      depthWrite: false,
+      opacity: 0,
+    });
+    materials.add(spriteMaterial);
+    const sprite = new Sprite(spriteMaterial);
+    cup.add(sprite);
+    return { sprite, material: spriteMaterial, phase: index / 12 };
+  });
+
+  // Reward confetti and ambient particles are instanced, one draw call each.
+  const dummy = new Object3D();
+  const palette = ['#ed82b4', '#3966dd', '#e9ba70', '#fff3df'].map((value) => new Color(value));
+  const confettiMaterial = new MeshStandardMaterial({ roughness: 0.4, metalness: 0.1 });
+  materials.add(confettiMaterial);
+  const confettiGeometry = new BoxGeometry(0.09, 0.09, 0.02);
+  geometries.add(confettiGeometry);
+  const confetti = new InstancedMesh(confettiGeometry, confettiMaterial, 56);
+  composition.add(confetti);
+  const random = seeded(7);
+  const pieces = Array.from({ length: confetti.count }, (_, index) => {
+    const angle = random() * Math.PI * 2;
+    const lift = 0.35 + random() * 0.9;
+    const speed = 0.9 + random() * 1.2;
+    confetti.setColorAt(index, palette[index % palette.length]);
+    return {
+      direction: [Math.cos(angle) * speed, lift * speed, Math.sin(angle) * speed * 0.6],
+      spin: [random() * 14 - 7, random() * 14 - 7],
+    };
+  });
+  const particleGeometry = new SphereGeometry(1, 12, 10);
+  geometries.add(particleGeometry);
+  const particleMaterial = new MeshStandardMaterial({ roughness: 0.3 });
+  materials.add(particleMaterial);
+  const particles = new InstancedMesh(particleGeometry, particleMaterial, 26);
+  scene.add(particles);
+  const motes = Array.from({ length: particles.count }, (_, index) => {
+    particles.setColorAt(index, palette[(index + 1) % palette.length]);
+    return {
+      angle: random() * Math.PI * 2,
+      radius: 2.5 + random() * 1.1,
+      height: -0.2 + random() * 2.7,
+      size: 0.03 + random() * 0.06,
+      depth: 0.4 + random() * 1.2,
+      drift: (random() > 0.5 ? 1 : -1) * (0.04 + random() * 0.05),
+    };
+  });
+
   let frame = 0,
     disposed = false,
     running = false,
     last = 0,
-    elapsed = 0;
+    elapsed = 0,
+    // The opening assembly plays once, the first time the scene runs.
+    intro = 0,
+    moving = true;
   let targetX = 0,
     targetY = 0,
-    chapter = 0,
-    currentChapter = 0;
+    pointerX = 0,
+    pointerY = 0,
+    storyTarget: number = STORY_START,
+    story: number = STORY_START;
+
+  const apply = (delta: number) => {
+    const ease = 1 - Math.exp(-delta * 6);
+    if (running) {
+      intro = Math.min(1, intro + delta / 1.8);
+      story += (storyTarget - story) * (1 - Math.exp(-delta * 7));
+      pointerX += (targetX - pointerX) * ease;
+      pointerY += (targetY - pointerY) * ease;
+    } else {
+      story = storyTarget;
+      pointerX = targetX;
+      pointerY = targetY;
+    }
+    const pose = storyPose(story);
+    const settle = easeOutExpo(intro);
+    const pop = (start: number) => easeOutBack(Math.min(1, Math.max(0, (intro - start) / 0.55)));
+
+    const framing = Math.min(1, camera.aspect);
+    const [lx, ly, lz] = pose.look;
+    camera.position.set(
+      lx + (pose.camera[0] - lx + pointerX * 0.45) / framing,
+      ly + (pose.camera[1] - ly + pointerY * 0.3) / framing,
+      lz + (pose.camera[2] - lz) / framing
+    );
+    camera.lookAt(lx, ly, lz);
+
+    composition.scale.setScalar(0.72 + 0.28 * pop(0));
+    composition.position.y = (1 - settle) * -0.9;
+    composition.rotation.y = pointerX * 0.35 - (1 - settle) * 0.9;
+    composition.rotation.x = pointerY * 0.12;
+
+    cup.position.set(...pose.cup.position);
+    cup.position.y += running ? Math.sin(elapsed * 0.8) * 0.035 : 0;
+    cup.scale.setScalar(pose.cup.scale);
+    cup.rotation.y = -0.3 + pose.cup.turn;
+
+    const hop = knightHop(story);
+    knight.position.set(...pose.knight.position);
+    knight.position.y += hop;
+    knight.rotation.set(0.02, -0.5 + pose.knight.turn, 0.12 + hop * 0.25);
+    knight.scale.setScalar(pose.knight.scale * pop(0.12));
+
+    rival.position.set(...pose.rival.position);
+    rival.scale.setScalar(Math.max(0.0001, pose.rival.scale));
+
+    tokenPivot.position.set(...pose.token.position);
+    tokenPivot.position.y += running
+      ? Math.sin(elapsed * 0.9 + 1) * 0.1 * (1 - pose.token.face)
+      : 0;
+    tokenPivot.rotation.y = tokenSpin(story);
+    tokenPivot.scale.setScalar(pose.token.scale * pop(0.25));
+    token.rotation.set(
+      1.1 + (Math.PI / 2 - 1.1) * pose.token.face,
+      0.35 * (1 - pose.token.face),
+      -0.35 * (1 - pose.token.face) + (running ? Math.sin(elapsed * 0.55) * 0.13 : 0)
+    );
+
+    // The orbit ring closes in behind the token and becomes its halo.
+    const ring = Math.min(1, Math.max(0, (intro - 0.35) / 0.65));
+    orbit.scale.setScalar(easeOutExpo(ring) * (1 - pose.halo * 0.42));
+    orbit.position.set(0, 0.45 + pose.halo * 0.7, pose.halo * 0.35);
+    orbit.rotation.set(
+      1.12 * (1 - pose.halo),
+      0.25 * (1 - pose.halo),
+      -0.34 * (1 - pose.halo) + elapsed * 0.2 * pose.halo
+    );
+    mini.position.set(-1.7, 1.85 + (running ? Math.sin(elapsed * 1.1) * 0.08 : 0), -0.25);
+    drop.position.set(1.75, 0.32 + (running ? Math.sin(elapsed * 1.4 + 2) * 0.06 : 0), 0.2);
+
+    boardMaterial.opacity = pose.board;
+    board.visible = pose.board > 0.01;
+
+    for (const { sprite, material: puff, phase } of steam) {
+      const rise = (elapsed * 0.28 + phase) % 1;
+      sprite.position.set(
+        Math.sin(elapsed * 1.3 + phase * 9) * 0.12 * rise,
+        1.2 + rise * 1.5,
+        Math.cos(elapsed + phase * 7) * 0.08
+      );
+      sprite.scale.setScalar(0.22 + rise * 0.55);
+      puff.opacity = pose.steam * Math.sin(Math.PI * rise) * 0.5;
+    }
+
+    const burst = confettiProgress(story);
+    confetti.visible = burst > 0;
+    if (confetti.visible) {
+      const fade = (1 - smoothstep(0.72, 1, burst)) * Math.min(1, burst * 8);
+      pieces.forEach(({ direction, spin }, index) => {
+        dummy.position.set(
+          pose.token.position[0] + direction[0] * burst * 1.6,
+          pose.token.position[1] + direction[1] * burst * 1.6 - 2.1 * burst * burst,
+          pose.token.position[2] + direction[2] * burst * 1.6
+        );
+        dummy.rotation.set(spin[0] * burst, spin[1] * burst, 0);
+        dummy.scale.setScalar(fade);
+        dummy.updateMatrix();
+        confetti.setMatrixAt(index, dummy.matrix);
+      });
+      confetti.instanceMatrix.needsUpdate = true;
+    }
+
+    const glow = Math.min(1, Math.max(0, (intro - 0.4) / 0.6));
+    motes.forEach((mote, index) => {
+      const angle = mote.angle + elapsed * mote.drift;
+      dummy.position.set(
+        Math.cos(angle) * mote.radius - pointerX * mote.depth,
+        mote.height + Math.sin(elapsed * 0.8 + index) * 0.12 + pointerY * mote.depth * 0.5,
+        Math.sin(angle) * mote.radius * 0.6
+      );
+      dummy.rotation.set(0, 0, 0);
+      dummy.scale.setScalar(mote.size * glow);
+      dummy.updateMatrix();
+      particles.setMatrixAt(index, dummy.matrix);
+    });
+    particles.instanceMatrix.needsUpdate = true;
+
+    return (
+      intro < 1 ||
+      Math.abs(storyTarget - story) > 0.001 ||
+      Math.abs(targetX - pointerX) > 0.001 ||
+      Math.abs(targetY - pointerY) > 0.001
+    );
+  };
+
   const render = (time = 0) => {
     if (disposed) return;
     frame = 0;
-    if (running && last && time - last < 1000 / 30) {
+    const delta = last ? Math.min((time - last) / 1000, 0.06) : 0;
+    // Full frame rate while the story or pointer is moving; idle floating drops to 30 fps.
+    if (running && last && !moving && time - last < 1000 / 30) {
       frame = requestAnimationFrame(render);
       return;
     }
-    const delta = last ? Math.min((time - last) / 1000, 0.06) : 0;
     last = time;
     if (running) elapsed += delta;
-    composition.rotation.y +=
-      (targetX * 0.16 - currentChapter * 0.16 - composition.rotation.y) * 0.07;
-    composition.rotation.x += (targetY * 0.08 - composition.rotation.x) * 0.07;
-    currentChapter += (chapter - currentChapter) * 0.06;
-    cup.position.y = 0.12 + (running ? Math.sin(elapsed * 0.8) * 0.035 : 0);
-    token.position.y = 1.75 + (running ? Math.sin(elapsed * 0.9 + 1) * 0.1 : 0);
-    token.rotation.z = -0.35 + (running ? Math.sin(elapsed * 0.55) * 0.13 : 0);
-    knight.position.x = 0.78 + currentChapter * 0.09;
+    moving = apply(delta);
     renderer.render(scene, camera);
     if (running) frame = requestAnimationFrame(render);
   };
@@ -239,9 +521,6 @@ export function createCafeScene(canvas: HTMLCanvasElement): CafeScene {
     if (!width || !height) return;
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
-    const framing = Math.min(1, camera.aspect);
-    camera.position.set(0, 3.1 / framing, 8.3 / framing);
-    camera.lookAt(0, 0.05, 0);
     camera.updateProjectionMatrix();
     if (!running) render();
   };
@@ -256,7 +535,13 @@ export function createCafeScene(canvas: HTMLCanvasElement): CafeScene {
   return {
     resize,
     setRunning(value) {
-      if (disposed || running === value) return;
+      if (disposed) return;
+      if (!value) {
+        // Without motion the assembly is skipped and every pose is shown at rest.
+        intro = 1;
+        if (!running) return render();
+      }
+      if (running === value) return;
       running = value;
       cancelAnimationFrame(frame);
       last = 0;
@@ -267,13 +552,15 @@ export function createCafeScene(canvas: HTMLCanvasElement): CafeScene {
     setPointer(x, y) {
       targetX = x;
       targetY = y;
+      if (!running) render();
     },
     setChapter(value) {
-      chapter = value;
-      if (!running) {
-        currentChapter = value;
-        render();
-      }
+      storyTarget = value;
+      if (!running) render();
+    },
+    setProgress(value) {
+      storyTarget = value;
+      if (!running) render();
     },
     dispose() {
       if (disposed) return;
@@ -283,8 +570,10 @@ export function createCafeScene(canvas: HTMLCanvasElement): CafeScene {
       canvas.removeEventListener('webglcontextlost', lost);
       geometries.forEach((g) => g.dispose());
       materials.forEach((m) => m.dispose());
+      textures.forEach((t) => t.dispose());
+      confetti.dispose();
+      particles.dispose();
       environment.dispose();
-      shadowTexture.dispose();
       renderer.dispose();
       renderer.forceContextLoss();
       scene.clear();

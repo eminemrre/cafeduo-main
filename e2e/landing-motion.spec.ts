@@ -2,22 +2,24 @@ import { test, expect } from '@playwright/test';
 import { provisionUser, checkInUser, fetchCurrentUser, bootstrapAuthenticatedPage, DEFAULT_E2E_APP_BASE_URL } from './helpers/session';
 
 for (const viewport of [{ width: 320, height: 568 }, { width: 568, height: 320 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }]) {
-  test(`@smoke landing motion stays controllable, readable and playable at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+  test(`@smoke landing motion runs by default and stays readable and playable at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.addInitScript(() => localStorage.setItem('cookie_consent', 'true'));
     await page.goto('/');
     const root = page.locator('.club-landing');
     await expect(root).toHaveAttribute('data-motion', 'on');
-    const pause = page.getByRole('button', { name: 'Hareketi durdur' });
-    await pause.focus(); await page.keyboard.press('Enter');
-    await expect(page.getByRole('button', { name: 'Hareketi aç' })).toBeFocused();
-    await expect(root).toHaveAttribute('data-motion', 'off');
-    expect(await root.evaluate(el => el.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length)).toBe(0);
-    // The illustration never covers instructions or board hit targets.
-    await page.locator('.club-board-note').scrollIntoViewIfNeeded();
-    const note = await page.locator('.club-board-note').boundingBox(), ticket = await page.locator('.club-scene-ticket').boundingBox();
-    expect(ticket!.y).toBeGreaterThan(note!.y + note!.height + 8);
+    // Motion is part of the design: there is no pause control, only the system setting.
+    await expect(page.getByRole('button', { name: /Hareket/ })).toHaveCount(0);
+    for (const chapter of ['Kahveni al', 'Oyuna katıl', 'Ödülünü seç']) {
+      await expect(page.locator('.club-story-steps').getByRole('heading', { level: 2, name: chapter })).toBeAttached();
+    }
+    await page.getByTestId('preview-square-g1').click();
+    await expect(page.getByTestId('preview-square-g1')).toHaveAttribute('aria-pressed', 'true');
+    await page.getByTestId('preview-square-f3').click();
+    await expect(page.locator('.club-piece-arriving')).toHaveCount(2);
+    await page.locator('.club-piece-arriving').evaluateAll(nodes => Promise.all(nodes.flatMap(node => node.getAnimations().map(animation => animation.finished.catch(() => {})))));
+    await page.getByRole('button', { name: 'Baştan' }).click();
     await page.getByTestId('preview-square-g1').focus(); await page.keyboard.press('Enter');
     await expect(page.getByTestId('preview-square-g1')).toHaveAttribute('aria-pressed', 'true');
     await page.keyboard.press('ArrowUp'); await page.keyboard.press('ArrowUp'); await page.keyboard.press('ArrowLeft'); await page.keyboard.press('Enter');
@@ -25,17 +27,15 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 568, height: 320 }
     await expect(page.getByTestId('preview-square-f3')).toBeFocused();
     await expect(page.getByLabel('Oynanan hamleler')).toContainText('2. Nf3 d6');
     await page.getByRole('button', { name: 'Baştan' }).click();
-    await page.getByRole('button', { name: 'Hareketi aç' }).click();
-    await expect(root).toHaveAttribute('data-motion', 'on');
-    await page.getByTestId('preview-square-g1').click();
-    await expect(page.getByTestId('preview-square-g1')).toHaveAttribute('aria-pressed', 'true');
-    await page.getByTestId('preview-square-f3').click();
-    await expect(page.locator('.club-piece-arriving')).toHaveCount(2);
-    await page.locator('.club-piece-arriving').evaluateAll(nodes => Promise.all(nodes.flatMap(node => node.getAnimations().map(animation => animation.finished.catch(() => {})))));
-    await page.getByRole('button', { name: 'Baştan' }).click();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);
+
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await expect(page.getByRole('button', { name: 'Hareket azaltıldı' })).toBeDisabled();
     await expect(root).toHaveAttribute('data-motion', 'off');
+    expect(await root.evaluate(el => el.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length)).toBe(0);
+    // The illustration never covers instructions or board hit targets.
+    await page.locator('.club-board-note').scrollIntoViewIfNeeded();
+    const note = await page.locator('.club-board-note').boundingBox(), ticket = await page.locator('.club-scene-ticket').boundingBox();
+    expect(ticket!.y).toBeGreaterThan(note!.y + note!.height + 8);
     for (const section of ['#features', '#games', '#about']) {
       await page.locator(section).scrollIntoViewIfNeeded();
       await expect(page.locator(section).getByRole('heading', { level: 2 })).toBeVisible();
@@ -46,17 +46,15 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 568, height: 320 }
   });
 }
 
-test('@smoke manual motion choice persists across reload and system preference takes priority', async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: 'no-preference' });
+test('@smoke the system reduced-motion setting switches the landing off and on live', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.addInitScript(() => localStorage.setItem('cookie_consent', 'true'));
   await page.goto('/');
-  await page.getByRole('button', { name: 'Hareketi durdur' }).click();
-  await page.reload();
-  await expect(page.getByRole('button', { name: 'Hareketi aç' })).toHaveAttribute('aria-pressed', 'false');
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await expect(page.getByRole('button', { name: 'Hareket azaltıldı' })).toBeDisabled();
+  const root = page.locator('.club-landing');
+  await expect(root).toHaveAttribute('data-motion', 'off');
+  expect(await root.evaluate(el => el.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length)).toBe(0);
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await expect(page.getByRole('button', { name: 'Hareketi aç' })).toBeEnabled();
+  await expect(root).toHaveAttribute('data-motion', 'on');
 });
 
 test('@smoke landing content and join action work without scroll enhancement or storage access', async ({ page }) => {

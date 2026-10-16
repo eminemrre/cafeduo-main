@@ -17,6 +17,88 @@
   display: inline-block;
 }
 
+/* Scroll story: the scene stays pinned while the three chapters scroll past it. */
+.club-story {
+  grid-template-areas:
+    'intro stage'
+    'steps stage';
+  align-items: start;
+  min-height: 0;
+  padding-bottom: 0;
+}
+.club-intro-wrap {
+  grid-area: intro;
+  min-width: 0;
+  min-height: calc(100svh - 170px);
+  display: flex;
+  align-items: center;
+}
+.club-story-stage {
+  grid-area: stage;
+  position: sticky;
+  top: 96px;
+  height: calc(100svh - 120px);
+  min-height: 460px;
+  min-width: 0;
+}
+.club-story-stage .club-scene-slot,
+.club-story-stage .cafe-scene-wrap {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.club-story-stage .cafe-scene {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+/* Close-ups run past the canvas; a soft edge keeps them from ending in a hard cut. */
+.club-story-stage .cafe-scene-canvas {
+  mask-image:
+    linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent),
+    linear-gradient(180deg, transparent, #000 6%, #000 88%, transparent);
+  mask-composite: intersect;
+}
+.club-story-stage .cafe-scene-chapters {
+  padding: 10px 0 4px;
+}
+.club-story-steps {
+  grid-area: steps;
+  list-style: none;
+  margin: 0;
+  padding: 0 0 14svh;
+}
+.club-story-step {
+  min-height: 74svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.club-story-card {
+  max-width: 440px;
+}
+.club-story-index {
+  display: block;
+  font-family: 'Fraunces Variable', Georgia, serif;
+  font-style: italic;
+  font-size: 22px;
+  color: #315bd5;
+}
+.club-story-step h2 {
+  margin: 10px 0 18px;
+  font-family: 'DM Sans Variable', sans-serif;
+  font-size: clamp(42px, 4.6vw, 68px);
+  font-weight: 650;
+  line-height: 1.02;
+  letter-spacing: -0.06em;
+}
+.club-story-step p {
+  max-width: 380px;
+  font-size: 17px;
+  line-height: 1.7;
+  color: #62645d;
+}
+
 /* Words rise out of their own line box; the padding keeps descenders and italic overhang. */
 .club-split-word {
   display: inline-block;
@@ -226,6 +308,18 @@
     opacity: calc(1 - var(--exit, 0) * 0.75);
   }
 
+  /* Story chapters come into focus at the middle of the screen and fade as they leave. */
+  .club-landing[data-motion='on'] .club-story-step {
+    --focus: min(
+      clamp(0, calc((var(--p, 0.5) - 0.18) * 4), 1),
+      clamp(0, calc((0.82 - var(--p, 0.5)) * 4), 1)
+    );
+  }
+  .club-landing[data-motion='on'] .club-story-step > .club-story-card {
+    opacity: calc(0.18 + var(--focus) * 0.82);
+    translate: 0 calc((1 - var(--focus)) * 26px);
+  }
+
   /* Steps: a cobalt rule draws down the list and each step slides in as it is reached. */
   .club-landing[data-motion='on'] .club-steps {
     position: relative;
@@ -273,6 +367,60 @@
   }
   .club-landing[data-motion='on'] .club-game-row > :nth-child(5) {
     --lag: 0.08;
+  }
+}
+
+@media (max-width: 700px) {
+  .club-story {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      'intro'
+      'stage'
+      'steps';
+  }
+  .club-intro-wrap {
+    min-height: 0;
+  }
+  .club-story-stage {
+    top: 70px;
+    height: 48svh;
+    min-height: 320px;
+    z-index: 0;
+  }
+  .club-story-steps {
+    position: relative;
+    z-index: 1;
+    padding-bottom: 8svh;
+  }
+  .club-story-step {
+    min-height: 66svh;
+    justify-content: flex-end;
+    padding-bottom: 4svh;
+  }
+  /* The cards slide over the pinned stage, so they carry their own paper. */
+  .club-story-card {
+    padding: 22px 22px 24px;
+    border-radius: 22px;
+    background: #fff9efeb;
+    box-shadow: 0 18px 44px #2b487522;
+    backdrop-filter: blur(8px);
+  }
+  .club-story-step h2 {
+    font-size: clamp(36px, 10vw, 46px);
+    margin: 6px 0 12px;
+  }
+  .club-story-step p {
+    font-size: 15px;
+  }
+  /* A card is readable only below the pinned stage; it fades before sliding over it. */
+  .club-landing[data-motion='on'] .club-story-step {
+    --focus: min(
+      clamp(0, calc((var(--p, 0.4) - 0.22) * 7), 1),
+      clamp(0, calc((0.54 - var(--p, 0.4)) * 9), 1)
+    );
+  }
+  .club-landing[data-motion='on'] .club-story-step > .club-story-card {
+    opacity: var(--focus);
   }
 }
 

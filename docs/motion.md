@@ -61,8 +61,20 @@ Bileşenler motora data öznitelikleriyle bağlanır:
   ekrandan çıkarken metin yukarı süzülüp söner; mavi bant (`ScrollMarquee`) boşta
   yavaş akar, kaydırma hızıyla hızlanır, yönünü ve eğimini kaydırmadan alır.
 
-Duraklat düğmesi, gizli sekme ve `prefers-reduced-motion` motoru tamamen durdurur;
-yazılan tüm değerler silinir ve sayfa `club.css`'teki durağan haline döner. Yeni bir
+- **Hero hikâyesi:** 3D sahne (`lib/createCafeScene.ts`) yapışkan bir sahnede durur,
+  yanından üç bölüm kayar (`Hero.tsx`, `data-story-step`). Kaydırma konumu hikâyenin
+  oynatma kafasıdır (`lib/cafeStory.ts`): açılış çekimi → _Kahveni al_ (kamera fincana
+  yaklaşır, buhar yükselir) → _Oyuna katıl_ (platform satranç tahtasına döner, at
+  sıçrar, rakip piyon yükselir) → _Ödülünü seç_ (jeton dönerek öne gelir, yörünge
+  halkası haleye dönüşür, konfeti patlar). Geri kaydırınca hikâye tersine oynar.
+  Sahne ilk açılışta parçalarını yerine oturtarak kurulur; çevresindeki parçacıklar
+  imleçle derinlik kazanır.
+
+Hareket tasarımın parçasıdır ve her zaman açıktır; sayfada durdurma düğmesi yoktur.
+Yalnızca işletim sisteminin `prefers-reduced-motion` ayarı (erişilebilirlik ihtiyacı)
+ve gizli sekme motoru durdurur; yazılan tüm değerler silinir ve sayfa `club.css`'teki
+durağan haline döner. Hareket azaltıldığında hikâye bölümleri yine kaydırmayla değişir,
+yalnızca aradaki geçişler oynamaz. Yeni bir
 etki eklerken kuralı `.club-landing[data-motion='on']` altına yazın ve `transform`
 yerine `translate` / `scale` kullanın; mevcut keyframe animasyonları `transform`
 kullandığı için ikisi birlikte çalışır.

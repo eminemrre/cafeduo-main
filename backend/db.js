@@ -80,17 +80,17 @@ const dbStatusCache = {
 const connectWithRetry = (attempts = 5) => {
   pool.connect((err, client, release) => {
     if (err) {
-      logger.error(`❌ DB Connection Attempt Failed: ${err.message}`);
+      logger.error(`DB connection attempt failed: ${err.message}`);
       if (attempts > 1) {
-        logger.info(`🔄 Retrying in 3 seconds... (${attempts - 1} attempts left)`);
+        logger.info(`Retrying in 3 seconds (${attempts - 1} attempts left)`);
         setTimeout(() => connectWithRetry(attempts - 1), 3000);
       } else {
-        logger.error('❌ All connection attempts failed.');
-        logger.warn('⚠️  UYARI: PostgreSQL bağlantısı kurulamadı.');
+        logger.error('All connection attempts failed.');
+        logger.warn('PostgreSQL bağlantısı kurulamadı.');
         logger.warn('   Sunucu "In-Memory" (Geçici Bellek) modunda çalışacak.');
       }
     } else {
-      logger.info('✅ Veritabanı bağlantısı başarılı.');
+      logger.info('Veritabanı bağlantısı başarılı.');
       release();
     }
   });

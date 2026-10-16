@@ -10,7 +10,7 @@ const createSystemRoutes = ({
   const router = express.Router();
 
   router.get('/', (req, res) => {
-    res.send('✅ CafeDuo API Sunucusu Aktif!');
+    res.send('CafeDuo API Sunucusu Aktif!');
   });
 
   router.get('/api/meta/version', (req, res) => {

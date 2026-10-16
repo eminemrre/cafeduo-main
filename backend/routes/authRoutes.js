@@ -3,10 +3,9 @@ const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const authController = require('../controllers/authController');
 const { buildRateLimiterOptions } = require('../middleware/rateLimit');
-const { authenticateToken } = require('../middleware/auth'); // Will create this later or move from server.js
+const { authenticateToken } = require('../middleware/auth');
 
-// 🔒 SECURITY: Rate limiting tuned for better UX while maintaining protection
-// Window reduced from 15min to 5min to prevent excessive lockout times
+// A 5-minute window keeps brute-force protection without locking users out for 15 minutes.
 const AUTH_WINDOW_MS = Number(process.env.AUTH_RATE_LIMIT_WINDOW_MS || 5 * 60 * 1000); // 5 minutes
 const AUTH_LOGIN_MAX_ATTEMPTS = Number(process.env.AUTH_LOGIN_RATE_LIMIT_MAX_REQUESTS || 8);
 const AUTH_REGISTER_MAX_ATTEMPTS = Number(process.env.AUTH_REGISTER_RATE_LIMIT_MAX_REQUESTS || 5);

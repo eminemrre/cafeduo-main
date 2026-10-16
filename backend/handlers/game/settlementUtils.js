@@ -3,12 +3,9 @@
  * Handles point transfers and statistics updates for finished games
  */
 
-const NON_COMPETITIVE_GAME_TYPES = new Set([]);
+const { normalizeParticipantKey } = require('./validation/playerValidation');
 
-/**
- * Normalize participant name to lowercase key
- */
-const normalizeParticipantKey = (value) => String(value || '').trim().toLowerCase();
+const NON_COMPETITIVE_GAME_TYPES = new Set([]);
 
 /**
  * Check if a game type is non-competitive (no point transfers)
@@ -29,7 +26,14 @@ const isNonCompetitiveGameType = (gameType) =>
  * NOTHING). Failure is logged but never thrown — a tournament-credit hiccup
  * must not roll back the parent game-finish.
  */
-const creditTournamentPoints = async ({ client, game, participants, winnerName, isDraw, logger }) => {
+const creditTournamentPoints = async ({
+  client,
+  game,
+  participants,
+  winnerName,
+  isDraw,
+  logger,
+}) => {
   try {
     const tournamentId = Number(game?.tournament_id || game?.tournamentId || 0);
     if (!Number.isInteger(tournamentId) || tournamentId <= 0) return;
@@ -92,14 +96,7 @@ const creditTournamentPoints = async ({ client, game, participants, winnerName, 
  * Apply database settlement for a finished game
  * Updates user points, wins, and games_played in the database
  */
-const applyDbSettlement = async ({
-  client,
-  game,
-  winnerName,
-  isDraw,
-  gameType,
-  logger,
-}) => {
+const applyDbSettlement = async ({ client, game, winnerName, isDraw, gameType, logger }) => {
   const hostName = String(game.host_name || '').trim();
   const guestName = String(game.guest_name || '').trim();
   const participants = [hostName, guestName].filter(Boolean);
@@ -147,9 +144,7 @@ const applyDbSettlement = async ({
   }
 
   if (!isDraw && canonicalWinner && participants.length === 2) {
-    const loserName = participants.find(
-      (name) => normalizeParticipantKey(name) !== winnerKey
-    );
+    const loserName = participants.find((name) => normalizeParticipantKey(name) !== winnerKey);
     const winnerUser = byUsername.get(winnerKey);
     const loserUser = loserName ? byUsername.get(normalizeParticipantKey(loserName)) : null;
 
@@ -211,9 +206,7 @@ const applyDbSettlement = async ({
     const user = byUsername.get(normalizeParticipantKey(participantName));
     if (!user) continue;
     const isWinner =
-      !isDraw &&
-      canonicalWinner &&
-      normalizeParticipantKey(participantName) === winnerKey;
+      !isDraw && canonicalWinner && normalizeParticipantKey(participantName) === winnerKey;
     await client.query(
       `
         UPDATE users
@@ -232,13 +225,7 @@ const applyDbSettlement = async ({
  * Apply in-memory settlement for a finished game
  * Updates user points, wins, and games_played in memory
  */
-const applyMemorySettlement = ({
-  game,
-  winnerName,
-  isDraw,
-  gameType,
-  getMemoryUsers,
-}) => {
+const applyMemorySettlement = ({ game, winnerName, isDraw, gameType, getMemoryUsers }) => {
   const users = Array.isArray(getMemoryUsers?.()) ? getMemoryUsers() : [];
   const hostName = String(game.hostName || '').trim();
   const guestName = String(game.guestName || '').trim();
@@ -248,7 +235,9 @@ const applyMemorySettlement = ({
   }
 
   const findUser = (username) =>
-    users.find((user) => normalizeParticipantKey(user?.username) === normalizeParticipantKey(username));
+    users.find(
+      (user) => normalizeParticipantKey(user?.username) === normalizeParticipantKey(username)
+    );
 
   const canonicalWinner = String(winnerName || '').trim();
   const winnerKey = normalizeParticipantKey(canonicalWinner);
@@ -288,11 +277,7 @@ const applyMemorySettlement = ({
     const user = findUser(participantName);
     if (!user) continue;
     user.gamesPlayed = Math.max(0, Math.floor(Number(user.gamesPlayed || 0))) + 1;
-    if (
-      !isDraw &&
-      canonicalWinner &&
-      normalizeParticipantKey(participantName) === winnerKey
-    ) {
+    if (!isDraw && canonicalWinner && normalizeParticipantKey(participantName) === winnerKey) {
       user.wins = Math.max(0, Math.floor(Number(user.wins || 0))) + 1;
     }
   }

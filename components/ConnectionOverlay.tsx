@@ -66,12 +66,3 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = () => {
     </div>
   );
 };
-
-// Add loading-bar keyframes to index.css if not present
-export const connectionStyles = `
-@keyframes loading-bar {
-  0% { transform: translateX(-100%); }
-  50% { transform: translateX(50%); }
-  100% { transform: translateX(200%); }
-}
-`;

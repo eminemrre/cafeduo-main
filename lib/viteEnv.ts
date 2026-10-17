@@ -4,7 +4,7 @@ declare const __CAFE_VITE_ENV__: ViteEnv;
 
 let cached: ViteEnv | null = null;
 
-export const getViteEnv = (): ViteEnv => {
+const getViteEnv = (): ViteEnv => {
   if (cached === null) {
     cached = typeof __CAFE_VITE_ENV__ === 'undefined' ? {} : __CAFE_VITE_ENV__;
   }

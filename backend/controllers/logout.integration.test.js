@@ -194,7 +194,11 @@ describe('confirmed session logout', () => {
     const modules = load({ redis });
     const result = await request(await start(modules));
     expect(result.status).toBe(503);
-    expect(result.body).toMatchObject({ success: false, code: 'LOGOUT_REVOCATION_FAILED' });
+    expect(result.body).toMatchObject({
+      code: 'LOGOUT_REVOCATION_FAILED',
+      error: expect.any(String),
+    });
+    expect(result.body.success).not.toBe(true);
     expectCookieCleared(result);
     expect(global.tokenBlacklist?.has(token)).not.toBe(true);
     const observations = JSON.stringify({ result, logs: modules.logger.error.mock.calls });
@@ -207,7 +211,8 @@ describe('confirmed session logout', () => {
     redis.setex.mockResolvedValue(null);
     const result = await request(await start(load({ redis })));
     expect(result.status).toBe(503);
-    expect(result.body.success).toBe(false);
+    expect(result.body.code).toBe('LOGOUT_REVOCATION_FAILED');
+    expect(result.body.success).not.toBe(true);
     expectCookieCleared(result);
   });
 
@@ -299,7 +304,10 @@ describe('confirmed session logout', () => {
       };
       await modules.controller.logout({ headers: {}, cookies: { auth_token: token } }, res);
       expect(res.status).toHaveBeenCalledWith(503);
-      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: false }));
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ code: 'LOGOUT_REVOCATION_FAILED' })
+      );
+      expect(res.json).not.toHaveBeenCalledWith(expect.objectContaining({ success: true }));
       expect(res.clearCookie).toHaveBeenCalled();
       expect(global.tokenBlacklist?.has(token)).not.toBe(true);
     }

@@ -136,9 +136,13 @@ describe('authController security-critical auth flows', () => {
     await authController.register(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({
-      error: 'Bu kullanıcı adı kullanımda. Farklı bir kullanıcı adı seç.',
-    });
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'USERNAME_IN_USE',
+        message: 'Bu kullanıcı adı kullanımda. Farklı bir kullanıcı adı seç.',
+        error: 'Bu kullanıcı adı kullanımda. Farklı bir kullanıcı adı seç.',
+      })
+    );
     // INSERT must NOT be reached when username is taken
     const insertCalls = pool.query.mock.calls.filter((call) =>
       String(call[0]).includes('INSERT INTO users')
@@ -159,9 +163,12 @@ describe('authController security-critical auth flows', () => {
     await authController.register(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({
-      error: 'Kullanıcı adı 3-20 karakter ve sadece harf/rakam/_ içermelidir.',
-    });
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'VALIDATION_ERROR',
+        error: 'Kullanıcı adı 3-20 karakter ve sadece harf/rakam/_ içermelidir.',
+      })
+    );
     expect(pool.query).not.toHaveBeenCalled();
   });
 
@@ -275,8 +282,31 @@ describe('authController security-critical auth flows', () => {
     await authController.login(req, res);
 
     expect(res.status).toHaveBeenCalledWith(401);
-    expect(res.json).toHaveBeenCalledWith({ error: 'Geçersiz e-posta veya şifre.' });
+    expect(res.json).toHaveBeenCalledWith({
+      code: 'INVALID_CREDENTIALS',
+      message: 'Geçersiz e-posta veya şifre.',
+      details: null,
+      requestId: null,
+      error: 'Geçersiz e-posta veya şifre.',
+      status: 401,
+    });
     expect(jwt.sign).not.toHaveBeenCalled();
+  });
+
+  it('answers a login database failure with the generic error contract', async () => {
+    isDbConnected.mockResolvedValue(true);
+    pool.query.mockRejectedValueOnce(new Error('relation "users" does not exist'));
+
+    const req = { body: { email: 'player@example.com', password: 'StrongPass123' } };
+    const res = buildRes();
+
+    await authController.login(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'INTERNAL_ERROR', error: 'Sunucu hatası.', status: 500 })
+    );
+    expect(JSON.stringify(res.json.mock.calls)).not.toContain('relation');
   });
 
   it('sends generic forgot-password response for unknown email without revealing existence', async () => {

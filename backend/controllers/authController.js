@@ -9,6 +9,7 @@ const { sendPasswordResetEmail } = require('../services/emailService');
 const { revokeToken } = require('../utils/tokenRevocation');
 const { getRequiredJwtSecret } = require('../utils/securityConfig');
 const { setCsrfCookie, clearCsrfCookie } = require('../middleware/csrf');
+const { sendApiProblem } = require('../utils/routeHelpers');
 
 const JWT_SECRET = getRequiredJwtSecret();
 const PASSWORD_RESET_TOKEN_TTL_MINUTES = Number(process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES || 30);
@@ -218,7 +219,11 @@ const authController = {
     const { username, email, password, department } = req.body;
 
     if (!username || !email || !password) {
-      return res.status(400).json({ error: 'Tüm alanlar zorunludur.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'Tüm alanlar zorunludur.',
+      });
     }
 
     const normalizedUsername = String(username).trim();
@@ -228,15 +233,25 @@ const authController = {
       .slice(0, 120);
 
     if (!USERNAME_PATTERN.test(normalizedUsername)) {
-      return res
-        .status(400)
-        .json({ error: 'Kullanıcı adı 3-20 karakter ve sadece harf/rakam/_ içermelidir.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'Kullanıcı adı 3-20 karakter ve sadece harf/rakam/_ içermelidir.',
+      });
     }
     if (!EMAIL_PATTERN.test(normalizedEmail)) {
-      return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'Geçerli bir e-posta adresi girin.',
+      });
     }
     if (String(password).length < 6 || String(password).length > 72) {
-      return res.status(400).json({ error: 'Şifre 6-72 karakter aralığında olmalıdır.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'Şifre 6-72 karakter aralığında olmalıdır.',
+      });
     }
 
     try {
@@ -247,7 +262,12 @@ const authController = {
         const check = await pool.query('SELECT id FROM users WHERE LOWER(email) = $1', [
           normalizedEmail,
         ]);
-        if (check.rows.length > 0) return res.status(400).json({ error: 'E-posta kullanımda.' });
+        if (check.rows.length > 0)
+          return sendApiProblem(res, {
+            status: 400,
+            code: 'EMAIL_IN_USE',
+            message: 'E-posta kullanımda.',
+          });
 
         // Username uniqueness (case-insensitive) — DB has a UNIQUE INDEX on
         // LOWER(username) since migration 20260513000002, but we check here
@@ -257,8 +277,10 @@ const authController = {
           [normalizedUsername]
         );
         if (usernameCheck.rows.length > 0) {
-          return res.status(400).json({
-            error: 'Bu kullanıcı adı kullanımda. Farklı bir kullanıcı adı seç.',
+          return sendApiProblem(res, {
+            status: 400,
+            code: 'USERNAME_IN_USE',
+            message: 'Bu kullanıcı adı kullanımda. Farklı bir kullanıcı adı seç.',
           });
         }
 
@@ -285,7 +307,11 @@ const authController = {
             .toLowerCase() === normalizedEmail
       );
       if (existing) {
-        return res.status(400).json({ error: 'E-posta kullanımda.' });
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'EMAIL_IN_USE',
+          message: 'E-posta kullanımda.',
+        });
       }
 
       // Same username uniqueness check for the memory-mode fallback so
@@ -297,8 +323,10 @@ const authController = {
             .toLowerCase() === normalizedUsername.toLowerCase()
       );
       if (usernameTaken) {
-        return res.status(400).json({
-          error: 'Bu kullanıcı adı kullanımda. Farklı bir kullanıcı adı seç.',
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'USERNAME_IN_USE',
+          message: 'Bu kullanıcı adı kullanımda. Farklı bir kullanıcı adı seç.',
         });
       }
 
@@ -323,9 +351,17 @@ const authController = {
     } catch (err) {
       logger.error('Register error:', err);
       if (err?.code === '23505') {
-        return res.status(400).json({ error: 'E-posta kullanımda.' });
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'EMAIL_IN_USE',
+          message: 'E-posta kullanımda.',
+        });
       }
-      return res.status(400).json({ error: 'Kullanıcı oluşturulamadı.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'REGISTRATION_FAILED',
+        message: 'Kullanıcı oluşturulamadı.',
+      });
     }
   },
 
@@ -336,10 +372,18 @@ const authController = {
     const normalizedPassword = String(password || '');
 
     if (!normalizedEmail || !normalizedPassword) {
-      return res.status(400).json({ error: 'E-posta ve şifre zorunludur.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'E-posta ve şifre zorunludur.',
+      });
     }
     if (normalizedPassword.length < 6 || normalizedPassword.length > 128) {
-      return res.status(400).json({ error: 'Geçersiz şifre formatı.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'Geçersiz şifre formatı.',
+      });
     }
 
     try {
@@ -376,10 +420,18 @@ const authController = {
             setAuthCookie(res, token);
             return res.json({ user: toPublicUser(user), token });
           }
-          return res.status(401).json({ error: 'Geçersiz e-posta veya şifre.' });
+          return sendApiProblem(res, {
+            status: 401,
+            code: 'INVALID_CREDENTIALS',
+            message: 'Geçersiz e-posta veya şifre.',
+          });
         }
 
-        return res.status(401).json({ error: 'Geçersiz e-posta veya şifre.' });
+        return sendApiProblem(res, {
+          status: 401,
+          code: 'INVALID_CREDENTIALS',
+          message: 'Geçersiz e-posta veya şifre.',
+        });
       }
 
       const memoryUser = memoryState.users.find(
@@ -389,7 +441,11 @@ const authController = {
             .toLowerCase() === normalizedEmail
       );
       if (!memoryUser) {
-        return res.status(401).json({ error: 'Geçersiz e-posta veya şifre.' });
+        return sendApiProblem(res, {
+          status: 401,
+          code: 'INVALID_CREDENTIALS',
+          message: 'Geçersiz e-posta veya şifre.',
+        });
       }
 
       // SECURITY: Never use plain-text password comparison
@@ -397,7 +453,11 @@ const authController = {
         ? await bcrypt.compare(normalizedPassword, memoryUser.password_hash)
         : false;
       if (!match) {
-        return res.status(401).json({ error: 'Geçersiz e-posta veya şifre.' });
+        return sendApiProblem(res, {
+          status: 401,
+          code: 'INVALID_CREDENTIALS',
+          message: 'Geçersiz e-posta veya şifre.',
+        });
       }
 
       const shouldBootstrapAdmin = BOOTSTRAP_ADMIN_EMAILS.includes(normalizedEmail);
@@ -412,7 +472,11 @@ const authController = {
       return res.json({ user: toPublicUser(memoryUser), token });
     } catch (err) {
       logger.error('Login error:', err);
-      res.status(500).json({ error: 'Sunucu hatası.' });
+      return sendApiProblem(res, {
+        status: 500,
+        code: 'INTERNAL_ERROR',
+        message: 'Sunucu hatası.',
+      });
     }
   },
 
@@ -420,7 +484,11 @@ const authController = {
   async forgotPassword(req, res) {
     const normalizedEmail = normalizeEmail(req.body?.email);
     if (!EMAIL_PATTERN.test(normalizedEmail)) {
-      return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'Geçerli bir e-posta adresi girin.',
+      });
     }
 
     try {
@@ -505,10 +573,18 @@ const authController = {
     const nextPassword = String(req.body?.password || '');
 
     if (!token || token.length < 32) {
-      return res.status(400).json({ error: 'Geçersiz veya eksik sıfırlama bağlantısı.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'RESET_TOKEN_INVALID',
+        message: 'Geçersiz veya eksik sıfırlama bağlantısı.',
+      });
     }
     if (nextPassword.length < 6 || nextPassword.length > 72) {
-      return res.status(400).json({ error: 'Şifre 6-72 karakter aralığında olmalıdır.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'Şifre 6-72 karakter aralığında olmalıdır.',
+      });
     }
 
     const tokenHash = hashResetToken(token);
@@ -527,9 +603,11 @@ const authController = {
         );
 
         if (lookup.rows.length === 0) {
-          return res
-            .status(400)
-            .json({ error: 'Sıfırlama bağlantısı geçersiz veya süresi dolmuş.' });
+          return sendApiProblem(res, {
+            status: 400,
+            code: 'RESET_TOKEN_INVALID',
+            message: 'Sıfırlama bağlantısı geçersiz veya süresi dolmuş.',
+          });
         }
 
         const resetRow = lookup.rows[0];
@@ -568,14 +646,22 @@ const authController = {
         );
 
       if (!memoryToken) {
-        return res.status(400).json({ error: 'Sıfırlama bağlantısı geçersiz veya süresi dolmuş.' });
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'RESET_TOKEN_INVALID',
+          message: 'Sıfırlama bağlantısı geçersiz veya süresi dolmuş.',
+        });
       }
 
       const userIndex = memoryState.users.findIndex(
         (item) => Number(item.id) === Number(memoryToken.userId)
       );
       if (userIndex < 0) {
-        return res.status(400).json({ error: 'Sıfırlama bağlantısı geçersiz veya süresi dolmuş.' });
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'RESET_TOKEN_INVALID',
+          message: 'Sıfırlama bağlantısı geçersiz veya süresi dolmuş.',
+        });
       }
 
       memoryState.users[userIndex].password_hash = await bcrypt.hash(nextPassword, 10);
@@ -592,7 +678,11 @@ const authController = {
       });
     } catch (error) {
       logger.error('resetPassword flow failed', error);
-      return res.status(500).json({ error: 'Şifre sıfırlama işlemi tamamlanamadı.' });
+      return sendApiProblem(res, {
+        status: 500,
+        code: 'INTERNAL_ERROR',
+        message: 'Şifre sıfırlama işlemi tamamlanamadı.',
+      });
     }
   },
 
@@ -615,7 +705,11 @@ const authController = {
     const token = cookieToken || (isBearer ? authHeader.slice(7).trim() : null);
 
     if (!token) {
-      return res.status(400).json({ error: 'Token required for logout.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'TOKEN_REQUIRED',
+        message: 'Token required for logout.',
+      });
     }
 
     try {
@@ -628,16 +722,18 @@ const authController = {
         return res.json({ success: true, message: 'Logged out successfully.' });
       }
       if (error.name === 'JsonWebTokenError' || error.name === 'NotBeforeError') {
-        return res
-          .status(401)
-          .json({ success: false, code: 'TOKEN_INVALID', error: 'Invalid token.' });
+        return sendApiProblem(res, {
+          status: 401,
+          code: 'TOKEN_INVALID',
+          message: 'Invalid token.',
+        });
       }
       // Never include Redis commands/keys, JWTs or connection errors in logs or responses.
       logger.error('Logout revocation unavailable', { code: 'LOGOUT_REVOCATION_FAILED' });
-      return res.status(503).json({
-        success: false,
+      return sendApiProblem(res, {
+        status: 503,
         code: 'LOGOUT_REVOCATION_FAILED',
-        error: 'Sunucu oturumu kapatılamadı. Oturum hizmeti geçici olarak kullanılamıyor.',
+        message: 'Sunucu oturumu kapatılamadı. Oturum hizmeti geçici olarak kullanılamıyor.',
       });
     }
   },

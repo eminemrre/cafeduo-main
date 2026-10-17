@@ -71,8 +71,8 @@ export function useRewards({ currentUser }: UseRewardsProps): UseRewardsReturn {
     }
     try {
       setRewardsLoading(true);
-      const data = await api.rewards.list(currentUser.cafe_id);
-      setRewards(Array.isArray(data) ? data : []);
+      const fetched = await api.rewards.list(currentUser.cafe_id);
+      setRewards(Array.isArray(fetched) ? fetched : []);
       setRewardsError(null);
     } catch (err: unknown) {
       console.error('Failed to load rewards:', err);
@@ -89,10 +89,10 @@ export function useRewards({ currentUser }: UseRewardsProps): UseRewardsReturn {
   const fetchInventory = useCallback(async () => {
     try {
       setInventoryLoading(true);
-      const data = await api.shop.inventory(currentUser.id);
+      const fetched = await api.shop.inventory(currentUser.id);
 
       // Tarih dönüşümü
-      const rows = (Array.isArray(data) ? data : []) as InventoryApiItem[];
+      const rows = (Array.isArray(fetched) ? fetched : []) as InventoryApiItem[];
       const formattedData = rows.map((item) => ({
         ...item,
         redeemedAt: new Date(item.redeemedAt)

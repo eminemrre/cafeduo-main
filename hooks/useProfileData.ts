@@ -26,8 +26,8 @@ export function useProfileData(
     let active = true;
     setHistory(pending(owner));
     void api.users.getGameHistory(username, { throwOnError: true }).then(
-      (data) => {
-        if (active) setHistory({ owner, status: 'success', data: data.slice(0, 3) });
+      (games) => {
+        if (active) setHistory({ owner, status: 'success', data: games.slice(0, 3) });
       },
       () => {
         if (active) setHistory({ owner, status: 'error', data: [] });

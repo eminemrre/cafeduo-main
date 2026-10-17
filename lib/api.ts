@@ -257,18 +257,18 @@ async function fetchAPI<TResponse = unknown>(
 export const api = {
   meta: {
     getVersion: async (): Promise<BuildMeta & { nodeEnv?: string }> => {
-      const data = await fetchAPI<{ commit?: string; buildTime?: string | null; nodeEnv?: string }>(
+      const meta = await fetchAPI<{ commit?: string; buildTime?: string | null; nodeEnv?: string }>(
         '/meta/version'
       );
-      const rawVersion = String(data.commit || 'local').trim();
+      const rawVersion = String(meta.commit || 'local').trim();
       const shortVersion = /^[a-f0-9]{8,}$/i.test(rawVersion)
         ? rawVersion.slice(0, 7)
         : rawVersion.slice(0, 12);
       return {
         version: rawVersion || 'local',
         shortVersion: shortVersion || 'local',
-        buildTime: String(data.buildTime || 'unknown'),
-        nodeEnv: data.nodeEnv,
+        buildTime: String(meta.buildTime || 'unknown'),
+        nodeEnv: meta.nodeEnv,
       };
     },
   },
@@ -276,24 +276,23 @@ export const api = {
   // AUTH
   auth: {
     login: async (email: string, password: string): Promise<User> => {
-      const data = await fetchAPI<AuthLoginResponse>('/auth/login', {
+      const loginResponse = await fetchAPI<AuthLoginResponse>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
-      return (data.user || data) as User;
+      return (loginResponse.user || loginResponse) as User;
     },
 
     register: async (username: string, email: string, password: string): Promise<User> => {
-      const data = await fetchAPI<AuthRegisterResponse>('/auth/register', {
+      const registered = await fetchAPI<AuthRegisterResponse>('/auth/register', {
         method: 'POST',
         body: JSON.stringify({ username, email, password }),
       });
       // Auto-login after registration
-      if (data.id) {
-        const loginData = await api.auth.login(email, password);
-        return loginData;
+      if (registered.id) {
+        return await api.auth.login(email, password);
       }
-      return data as User;
+      return registered as User;
     },
 
     forgotPassword: async (email: string): Promise<{ success: boolean; message: string }> => {
@@ -499,10 +498,10 @@ export const api = {
       return await fetchAPI(`/games/${gameId}`);
     },
 
-    create: async (data: Partial<GameRequest>): Promise<GameRequest> => {
+    create: async (game: Partial<GameRequest>): Promise<GameRequest> => {
       return await fetchAPI('/games', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify(game),
       });
     },
 
@@ -515,7 +514,7 @@ export const api = {
 
     move: async (
       gameId: number | string,
-      data: {
+      move: {
         gameState?: unknown;
         player?: 'host' | 'guest';
         move?: string;
@@ -539,7 +538,7 @@ export const api = {
     ) => {
       return await fetchAPI(`/games/${gameId}/move`, {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify(move),
       });
     },
 
@@ -639,10 +638,10 @@ export const api = {
       return await fetchAPI(url);
     },
 
-    create: async (data: Partial<Reward> & { cafeId?: string | number }): Promise<Reward> => {
+    create: async (reward: Partial<Reward> & { cafeId?: string | number }): Promise<Reward> => {
       return await fetchAPI('/rewards', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify(reward),
       });
     },
 
@@ -790,7 +789,7 @@ export const api = {
       return await fetchAPI('/admin/users');
     },
 
-    createUser: async (data: {
+    createUser: async (newUser: {
       username: string;
       email: string;
       password: string;
@@ -801,7 +800,7 @@ export const api = {
     }): Promise<User> => {
       return await fetchAPI('/admin/users', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify(newUser),
       });
     },
 
@@ -833,17 +832,17 @@ export const api = {
       });
     },
 
-    updateCafe: async (cafeId: string | number, data: Partial<Cafe>): Promise<void> => {
+    updateCafe: async (cafeId: string | number, changes: Partial<Cafe>): Promise<void> => {
       await fetchAPI(`/admin/cafes/${cafeId}`, {
         method: 'PUT',
-        body: JSON.stringify(data),
+        body: JSON.stringify(changes),
       });
     },
 
-    createCafe: async (data: Partial<Cafe>): Promise<Cafe> => {
+    createCafe: async (cafe: Partial<Cafe>): Promise<Cafe> => {
       return await fetchAPI('/admin/cafes', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify(cafe),
       });
     },
 

@@ -126,8 +126,8 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
     setError(null);
     void (async () => {
       try {
-        const data = await api.wheel.get(cafeId);
-        if (!cancelled) setStatus(data);
+        const wheelStatus = await api.wheel.get(cafeId);
+        if (!cancelled) setStatus(wheelStatus);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Çark bilgisi alınamadı.');

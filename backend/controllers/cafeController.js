@@ -284,14 +284,21 @@ const cafeController = {
       Object.prototype.hasOwnProperty.call(body, 'secondary_radius');
     const hasSecondaryUpdate = hasSecondaryLatitude || hasSecondaryLongitude || hasSecondaryRadius;
 
+    // Pick by key presence, not `??`: an explicit null means "clear this
+    // field" (what the location editor sends), and `??` would treat that null
+    // as absent, fall through to the snake_case key and return undefined —
+    // which the empty checks below do not recognize, breaking the clear path.
+    const pickSecondaryField = (camelKey, snakeKey) =>
+      Object.prototype.hasOwnProperty.call(body, camelKey) ? body[camelKey] : body[snakeKey];
+
     const secondaryLatitudeRaw = hasSecondaryLatitude
-      ? (body.secondaryLatitude ?? body.secondary_latitude)
+      ? pickSecondaryField('secondaryLatitude', 'secondary_latitude')
       : undefined;
     const secondaryLongitudeRaw = hasSecondaryLongitude
-      ? (body.secondaryLongitude ?? body.secondary_longitude)
+      ? pickSecondaryField('secondaryLongitude', 'secondary_longitude')
       : undefined;
     const secondaryRadiusRaw = hasSecondaryRadius
-      ? (body.secondaryRadius ?? body.secondary_radius)
+      ? pickSecondaryField('secondaryRadius', 'secondary_radius')
       : undefined;
 
     const secondaryLatitudeEmpty = secondaryLatitudeRaw === null || secondaryLatitudeRaw === '';

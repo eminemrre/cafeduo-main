@@ -33,7 +33,17 @@ describe('cafeController.checkIn', () => {
 
   it('returns 400 when location is missing and verification code is absent', async () => {
     pool.query.mockResolvedValueOnce({
-      rows: [{ id: 1, name: 'Merkez', table_count: 5, latitude: 37.741, longitude: 29.101, radius: 150, daily_pin: '1234' }],
+      rows: [
+        {
+          id: 1,
+          name: 'Merkez',
+          table_count: 5,
+          latitude: 37.741,
+          longitude: 29.101,
+          radius: 150,
+          daily_pin: '1234',
+        },
+      ],
     });
     const req = {
       params: { id: '1' },
@@ -53,7 +63,18 @@ describe('cafeController.checkIn', () => {
   it('accepts check-in with valid table verification code when location is missing', async () => {
     pool.query
       .mockResolvedValueOnce({
-        rows: [{ id: 1, name: 'Merkez', table_count: 20, latitude: null, longitude: null, radius: 120, daily_pin: '1234', pin: '5555' }],
+        rows: [
+          {
+            id: 1,
+            name: 'Merkez',
+            table_count: 20,
+            latitude: null,
+            longitude: null,
+            radius: 120,
+            daily_pin: '1234',
+            pin: '5555',
+          },
+        ],
       })
       .mockResolvedValueOnce({ rowCount: 1 });
 
@@ -78,7 +99,9 @@ describe('cafeController.checkIn', () => {
 
   it('returns 400 for out-of-range table number', async () => {
     pool.query.mockResolvedValueOnce({
-      rows: [{ id: 1, name: 'Merkez', table_count: 5, latitude: 37.741, longitude: 29.101, radius: 150 }],
+      rows: [
+        { id: 1, name: 'Merkez', table_count: 5, latitude: 37.741, longitude: 29.101, radius: 150 },
+      ],
     });
 
     const req = {
@@ -96,7 +119,16 @@ describe('cafeController.checkIn', () => {
 
   it('returns 400 when user is outside allowed radius', async () => {
     pool.query.mockResolvedValueOnce({
-      rows: [{ id: 1, name: 'Merkez', table_count: 20, latitude: 37.741, longitude: 29.101, radius: 120 }],
+      rows: [
+        {
+          id: 1,
+          name: 'Merkez',
+          table_count: 20,
+          latitude: 37.741,
+          longitude: 29.101,
+          radius: 120,
+        },
+      ],
     });
     getDistanceFromLatLonInMeters.mockReturnValueOnce(280);
 
@@ -119,7 +151,9 @@ describe('cafeController.checkIn', () => {
 
   it('returns 400 when cafe location is not configured', async () => {
     pool.query.mockResolvedValueOnce({
-      rows: [{ id: 1, name: 'Merkez', table_count: 20, latitude: null, longitude: null, radius: 120 }],
+      rows: [
+        { id: 1, name: 'Merkez', table_count: 20, latitude: null, longitude: null, radius: 120 },
+      ],
     });
 
     const req = {
@@ -140,7 +174,16 @@ describe('cafeController.checkIn', () => {
   it('returns normalized success payload', async () => {
     pool.query
       .mockResolvedValueOnce({
-        rows: [{ id: 1, name: 'Merkez', table_count: 20, latitude: 37.741, longitude: 29.101, radius: 150 }],
+        rows: [
+          {
+            id: 1,
+            name: 'Merkez',
+            table_count: 20,
+            latitude: 37.741,
+            longitude: 29.101,
+            radius: 150,
+          },
+        ],
       })
       .mockResolvedValueOnce({ rowCount: 1 });
 
@@ -170,7 +213,16 @@ describe('cafeController.checkIn', () => {
   it('accepts nearby check-in when gps accuracy is low but still plausible', async () => {
     pool.query
       .mockResolvedValueOnce({
-        rows: [{ id: 1, name: 'Merkez', table_count: 20, latitude: 37.741, longitude: 29.101, radius: 120 }],
+        rows: [
+          {
+            id: 1,
+            name: 'Merkez',
+            table_count: 20,
+            latitude: 37.741,
+            longitude: 29.101,
+            radius: 120,
+          },
+        ],
       })
       .mockResolvedValueOnce({ rowCount: 1 });
     getDistanceFromLatLonInMeters.mockReturnValueOnce(170);
@@ -197,17 +249,19 @@ describe('cafeController.checkIn', () => {
   it('accepts check-in when user is inside secondary location radius', async () => {
     pool.query
       .mockResolvedValueOnce({
-        rows: [{
-          id: 1,
-          name: 'Merkez',
-          table_count: 20,
-          latitude: 37.741,
-          longitude: 29.101,
-          radius: 120,
-          secondary_latitude: 37.743,
-          secondary_longitude: 29.105,
-          secondary_radius: 180,
-        }],
+        rows: [
+          {
+            id: 1,
+            name: 'Merkez',
+            table_count: 20,
+            latitude: 37.741,
+            longitude: 29.101,
+            radius: 120,
+            secondary_latitude: 37.743,
+            secondary_longitude: 29.105,
+            secondary_radius: 180,
+          },
+        ],
       })
       .mockResolvedValueOnce({ rowCount: 1 });
 
@@ -268,10 +322,12 @@ describe('cafeController.updateLocation', () => {
 
     await cafeController.updateLocation(req, res);
 
-    expect(pool.query).toHaveBeenCalledWith(
-      expect.stringContaining('UPDATE cafes'),
-      [37.75, 29.11, 160, '3']
-    );
+    expect(pool.query).toHaveBeenCalledWith(expect.stringContaining('UPDATE cafes'), [
+      37.75,
+      29.11,
+      160,
+      '3',
+    ]);
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
         success: true,
@@ -282,16 +338,18 @@ describe('cafeController.updateLocation', () => {
 
   it('updates optional secondary location when provided', async () => {
     pool.query.mockResolvedValueOnce({
-      rows: [{
-        id: 3,
-        name: 'Kafe 3',
-        latitude: 37.75,
-        longitude: 29.11,
-        radius: 160,
-        secondary_latitude: 37.751,
-        secondary_longitude: 29.112,
-        secondary_radius: 240,
-      }],
+      rows: [
+        {
+          id: 3,
+          name: 'Kafe 3',
+          latitude: 37.75,
+          longitude: 29.11,
+          radius: 160,
+          secondary_latitude: 37.751,
+          secondary_longitude: 29.112,
+          secondary_radius: 240,
+        },
+      ],
     });
 
     const req = {
@@ -310,10 +368,56 @@ describe('cafeController.updateLocation', () => {
 
     await cafeController.updateLocation(req, res);
 
-    expect(pool.query).toHaveBeenCalledWith(
-      expect.stringContaining('secondary_latitude'),
-      [37.75, 29.11, 160, 37.751, 29.112, 240, '3']
-    );
+    expect(pool.query).toHaveBeenCalledWith(expect.stringContaining('secondary_latitude'), [
+      37.75,
+      29.11,
+      160,
+      37.751,
+      29.112,
+      240,
+      '3',
+    ]);
     expect(res.status).not.toHaveBeenCalledWith(400);
+  });
+
+  it('clears secondary location when the client sends explicit nulls', async () => {
+    pool.query.mockResolvedValueOnce({
+      rows: [{ id: 3, name: 'Kafe 3', latitude: 37.75, longitude: 29.11, radius: 160 }],
+    });
+
+    const req = {
+      params: { id: '3' },
+      body: {
+        latitude: 37.75,
+        longitude: 29.11,
+        radius: 160,
+        secondaryLatitude: null,
+        secondaryLongitude: null,
+        secondaryRadius: null,
+      },
+      user: { id: 11, role: 'cafe_admin', cafe_id: 3 },
+    };
+    const res = buildRes();
+
+    await cafeController.updateLocation(req, res);
+
+    // Regression: `??` used to coerce the explicit nulls to undefined, so the
+    // empty checks saw "not empty" and answered 400 instead of clearing.
+    expect(pool.query).toHaveBeenCalledWith(expect.stringContaining('secondary_latitude'), [
+      37.75,
+      29.11,
+      160,
+      null,
+      null,
+      null,
+      '3',
+    ]);
+    expect(res.status).not.toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        message: 'Kafe konumu güncellendi.',
+      })
+    );
   });
 });

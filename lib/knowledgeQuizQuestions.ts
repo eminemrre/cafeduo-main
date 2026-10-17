@@ -848,7 +848,7 @@ const RAW_QUIZ_QUESTIONS: QuizQuestion[] = [
   },
 ];
 
-export const KNOWLEDGE_QUIZ_QUESTION_BANK: QuizQuestion[] = RAW_QUIZ_QUESTIONS.slice(0, 150);
+const KNOWLEDGE_QUIZ_QUESTION_BANK: QuizQuestion[] = RAW_QUIZ_QUESTIONS.slice(0, 150);
 
 const hashSeed = (input: string): number => {
   let hash = 2166136261;

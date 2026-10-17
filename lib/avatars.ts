@@ -9,7 +9,7 @@
  * regex-validates the stored URL, locking us to the `pixel-art` style — that
  * matches the riso/print aesthetic of the rest of the app.
  */
-export const AVATAR_STYLE = 'pixel-art' as const;
+const AVATAR_STYLE = 'pixel-art' as const;
 
 /**
  * 16 curated seeds. Names are intentionally a mix of CafeDuo vocabulary

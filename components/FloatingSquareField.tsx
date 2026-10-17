@@ -21,7 +21,7 @@ interface SquareDescriptor {
   opacity: number;
 }
 
-export const FLOATING_SQUARES: readonly SquareDescriptor[] = [
+const FLOATING_SQUARES: readonly SquareDescriptor[] = [
   {
     tone: 'pink',
     size: 52,

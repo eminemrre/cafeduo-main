@@ -14,6 +14,9 @@ colors:
   limon: "#FFD23F"
   gok: "#1FB3FF"
   fistik: "#B6D31B"
+  gok-deep: "#1597D9"
+  fistik-face: "#C8E23A"
+  coffee: "#5A3424"
   board-light: "#F2F9FB"
   board-dark: "#7FC9EE"
   success: "#177A41"
@@ -21,9 +24,15 @@ colors:
 typography:
   display-xl:
     fontFamily: Bagel Fat One
-    fontSize: 7.5rem
+    fontSize: 6rem
     fontWeight: 400
-    lineHeight: 0.92
+    lineHeight: 0.95
+    letterSpacing: -0.01em
+  display-xl-mobile:
+    fontFamily: Bagel Fat One
+    fontSize: 2.625rem
+    fontWeight: 400
+    lineHeight: 0.95
     letterSpacing: -0.01em
   display-lg:
     fontFamily: Bagel Fat One
@@ -31,6 +40,18 @@ typography:
     fontWeight: 400
     lineHeight: 0.95
     letterSpacing: -0.01em
+  display-lg-mobile:
+    fontFamily: Bagel Fat One
+    fontSize: 2.5rem
+    fontWeight: 400
+    lineHeight: 0.98
+    letterSpacing: -0.01em
+  wordmark:
+    fontFamily: Bagel Fat One
+    fontSize: 1.75rem
+    fontWeight: 400
+    lineHeight: 1
+    letterSpacing: 0em
   heading:
     fontFamily: Bagel Fat One
     fontSize: 2.25rem
@@ -154,6 +175,13 @@ components:
   board-square-dark:
     backgroundColor: "{colors.board-dark}"
     textColor: "{colors.ink}"
+  toy-knight-base:
+    backgroundColor: "{colors.gok-deep}"
+  toy-coin-face:
+    backgroundColor: "{colors.fistik-face}"
+    textColor: "{colors.ink}"
+  toy-cup-coffee:
+    backgroundColor: "{colors.coffee}"
   status-success:
     backgroundColor: "{colors.success}"
     textColor: "{colors.paper}"
@@ -179,7 +207,7 @@ Butter (the product as collectable objects). Analysis: `docs/design/references/R
 The world has two registers, chosen by the surface's mode:
 
 - **Vitrin (Persuade):** the landing and `/kafeler`. Whole sections are drenched in one candy
-  colour, toys are huge and cropped by the screen edge, display type runs up to 120 px. Loud.
+  colour, toys are huge and cropped by the screen edge, display type runs up to 96 px. Loud.
 - **Masa (Operate):** auth, check-in, the player panel, the games, the café panel and admin. Ice
   ground, white surfaces, candy colours only as the identity of a game or the one primary action,
   display type only for screen titles and scores. Calm, dense enough for a phone held in one hand.
@@ -209,13 +237,13 @@ section on the landing. No other colour is introduced for a game.
 
 - **Bagel Fat One** (OFL, latin-ext) is the display face: fat, rounded, toy-like. Headlines, the
   wordmark, screen titles and big numerals on Vitrin. Never below 28 px, never for running text,
-  never italic.
+  never italic. The wordmark is the one exception to the 28 px floor.
 - **Golos Text** (OFL, latin-ext, 400–900) is everything else: body, labels, buttons, inputs,
   tables, and scores (`score`, weight 800, tabular figures).
 - Both are self-hosted through `@fontsource`; every face must render `ı İ ş Ş ğ Ğ ç Ç ö Ö ü Ü`.
 - Sentence case everywhere. No letter-spaced uppercase labels. Nothing readable below 12 px;
   12–13 px only for secondary metadata.
-- Mobile sizes: `display-xl` 3.5 rem, `display-lg` 2.75 rem, `heading` 1.75 rem.
+- Mobile sizes: `display-xl-mobile` 2.625 rem and `display-lg-mobile` 2.5 rem, growing fluidly to `display-xl` and `display-lg`. The wordmark is set at `wordmark` (1.75 rem), the one display use below 28 px.
 
 ## Layout
 
@@ -271,6 +299,9 @@ rest. Only things that float above the page (dialogs, menus, the toast) get one 
 - Transform and opacity only. `prefers-reduced-motion`: toys stand still, states change instantly.
 
 ## 3D Toys
+
+Toy materials add three tones that never appear in the UI: `gok-deep` (the knight's base),
+`fistik-face` (the coin's face) and `coffee` (the cup's contents).
 
 The toy set is rendered with Three.js (already a dependency): matte vinyl material, rounded bevels,
 candy colours from this file, one key light and one fill. Cap 30 fps and 1.5 DPR, load only when

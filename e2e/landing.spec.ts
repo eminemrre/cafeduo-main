@@ -11,6 +11,8 @@ test.describe('Public Landing Pages', () => {
         { family: 'JetBrains Mono Variable', style: 'normal' },
         { family: 'Fraunces Variable', style: 'normal' },
         { family: 'Fraunces Variable', style: 'italic' },
+        { family: 'Bagel Fat One', style: 'normal' },
+        { family: 'Golos Text', style: 'normal' },
       ];
       return Promise.all(fonts.map(async ({ family, style }) => {
         const faces = await document.fonts.load(`${style} 400 16px "${family}"`, 'CafeDuo ıİşŞğĞçÇöÖüÜ');
@@ -23,20 +25,21 @@ test.describe('Public Landing Pages', () => {
       { family: 'JetBrains Mono Variable', style: 'normal', loaded: true },
       { family: 'Fraunces Variable', style: 'normal', loaded: true },
       { family: 'Fraunces Variable', style: 'italic', loaded: true },
+      { family: 'Bagel Fat One', style: 'normal', loaded: true },
+      { family: 'Golos Text', style: 'normal', loaded: true },
     ]);
   });
 
-  test('@smoke plays a legal move on the public demo board without logging in', async ({ page, baseURL }) => {
+  test('@smoke plays the knight move on the toy table without logging in', async ({ page, baseURL }) => {
+    await page.addInitScript(() => localStorage.setItem('cookie_consent', 'accepted'));
     await page.goto(baseURL || DEFAULT_E2E_APP_BASE_URL);
-    await page.getByTestId('preview-square-g1').click();
-    await expect(page.getByTestId('preview-square-g1')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.getByTestId('preview-square-g1')).toBeFocused();
-    await page.getByTestId('preview-square-f3').click();
-    await expect(page.getByTestId('preview-square-f3')).toHaveAttribute('aria-label', 'f3, beyaz at');
-    await expect(page.getByLabel('Oynanan hamleler')).toContainText('2. Nf3 d6');
-    await page.getByRole('button', { name: 'Baştan', exact: true }).click();
-    await expect(page.getByTestId('preview-square-g1')).toHaveAttribute('aria-label', 'g1, beyaz at');
-    await expect(page.getByRole('button', { name: 'Kayıt ol ve oyuna başla' })).toBeVisible();
+    const play = page.getByRole('button', { name: 'Ata dokun, ilk hamleni yap' });
+    await play.click();
+    await expect(page.getByRole('button', { name: 'Atı geri çek' })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByText('Güzel açılış. Gerçek maçta kazandığın puan o kafenin ödüllerine gider.')).toBeVisible();
+    await page.getByRole('button', { name: 'Atı geri çek' }).click();
+    await expect(page.getByRole('button', { name: 'Ata dokun, ilk hamleni yap' })).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.getByRole('banner').getByRole('button', { name: 'Masaya katıl' })).toBeVisible();
   });
 
   test('@smoke renders the home hero with CTA actions', async ({ page, baseURL }) => {
@@ -44,8 +47,10 @@ test.describe('Public Landing Pages', () => {
     await page.goto(root);
 
     await expect(page.locator('[aria-label="Ana bölüm"]').first()).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Kayıt ol ve oyuna başla' }).first()).toBeVisible();
+    await expect(page.getByRole('banner').getByRole('button', { name: 'Masaya katıl' })).toBeVisible();
     await expect(page.locator('[data-testid="hero-login-button"]').first()).toBeVisible();
+    await page.locator('[data-testid="hero-login-button"]').first().click();
+    await expect(page.getByRole('dialog')).toBeVisible();
   });
 
   test('@smoke renders the cafe-owner landing at /kafeler', async ({ page, baseURL }) => {

@@ -71,6 +71,7 @@ content = """export default {
     '!lib/pixi/**',
     '!components/games/*StageCanvas*',
     '!components/games/ChessBoardOverlay.tsx',
+    '!lib/createToyScene.ts',
     // Sadece re-export yapan barrel dosyasi
     '!backend/handlers/game/index.js',
   ],

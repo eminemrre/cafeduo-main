@@ -1,0 +1,790 @@
+/*
+ * Public landing (/): DESIGN.md "Masa Oyuncakları", Vitrin register. Scoped to .cdl.
+ * Tokens mirror DESIGN.md; motion runs only while LandingExperience has motion on.
+ */
+html:has(.cdl),
+html:has(.cdl) body,
+.duo-app:has(.cdl) {
+  background: #ffffff;
+  scrollbar-color: #17140f #eef6f8;
+}
+.club-landing:has(.cdl) .club-reading-progress {
+  display: none;
+}
+.duo-app:has(.cdl) .skip-link {
+  border: 0;
+  border-radius: 999px;
+  background: #17140f;
+  color: #ffffff;
+  font-family: 'Golos Text', system-ui, sans-serif;
+  box-shadow: none; /* taste-skill-ignore: removes the global skip-link shadow */
+}
+
+.cdl {
+  --ink: #17140f;
+  --ink-soft: #4a4540;
+  --paper: #ffffff;
+  --ice: #eef6f8;
+  --ice-deep: #d9eaef;
+  --lokum: #ff5c8a;
+  --limon: #ffd23f;
+  --gok: #1fb3ff;
+  --fistik: #b6d31b;
+  --display: 'Bagel Fat One', 'Golos Text', system-ui, sans-serif;
+  --text: 'Golos Text', system-ui, sans-serif;
+  --margin: 20px;
+  --radius-md: 20px;
+  --radius-lg: 32px;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-toy: cubic-bezier(0.22, 1, 0.36, 1);
+  --shadow-float: 0 16px 40px rgba(23, 20, 15, 0.18);
+  position: relative;
+  color: var(--ink);
+  font-family: var(--text);
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  caret-color: var(--lokum);
+  -webkit-font-smoothing: antialiased;
+}
+@media (min-width: 900px) {
+  .cdl {
+    --margin: 40px;
+  }
+}
+.cdl *,
+.cdl *::before,
+.cdl *::after {
+  box-sizing: border-box;
+}
+.cdl ::selection {
+  background: var(--lokum);
+  color: var(--ink);
+}
+.cdl :where(h1, h2, h3, p, ul, ol, li, figure) {
+  margin: 0;
+  padding: 0;
+}
+.cdl :where(ul, ol) {
+  list-style: none;
+}
+.cdl :where(h1, h2, h3, p, a, button, span, strong, li, figcaption) {
+  font-family: var(--text);
+}
+.cdl :where(a) {
+  color: inherit;
+}
+.cdl :where(button) {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.cdl :where(a, button):focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+.cdl img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Controls: every button and chip is a pill. */
+.cdl-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 700;
+  font-size: 1.0625rem;
+  white-space: nowrap;
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 160ms var(--ease-out);
+}
+.cdl-pill:hover {
+  transform: translateY(-2px);
+}
+.cdl-pill:active {
+  transform: scale(0.97);
+}
+.cdl-pill-lg {
+  min-height: 56px;
+  padding: 0 30px;
+}
+.cdl-text-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 6px;
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+  text-decoration-color: transparent;
+  white-space: nowrap;
+  transition: text-decoration-color 160ms var(--ease-out);
+}
+.cdl-text-button:hover {
+  text-decoration-color: currentColor;
+}
+.cdl-quiet-button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0;
+  color: var(--ink-soft);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.cdl-quiet-button:disabled {
+  cursor: default;
+  text-decoration: none;
+}
+
+/* Header: wordmark, four links, both actions; sticky on every width. */
+.cdl-header {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 64px;
+  padding: 0 var(--margin);
+  background: var(--paper);
+}
+.cdl-wordmark {
+  margin-right: auto;
+  font-family: var(--display);
+  font-size: 1.75rem;
+  line-height: 1;
+  text-decoration: none;
+}
+.cdl-header .cdl-wordmark {
+  font-family: var(--display);
+}
+.cdl-header-links {
+  display: none;
+}
+.cdl-header-links a {
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-decoration: none;
+  transition: color 160ms var(--ease-out);
+}
+.cdl-header-links a:hover {
+  color: var(--ink-soft);
+}
+.cdl-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+@media (min-width: 900px) {
+  .cdl-header {
+    height: 72px;
+  }
+  .cdl-header-links {
+    display: flex;
+    gap: 28px;
+    margin-right: 24px;
+  }
+  .cdl-header-actions {
+    gap: 16px;
+  }
+}
+@media (max-width: 379px) {
+  .cdl-header {
+    gap: 4px;
+    padding: 0 12px;
+  }
+  .cdl-wordmark {
+    font-size: 1.375rem;
+  }
+  .cdl-header .cdl-text-button {
+    padding: 0 4px;
+    font-size: 0.875rem;
+  }
+  .cdl-header .cdl-pill {
+    padding: 0 14px;
+    font-size: 0.875rem;
+  }
+}
+
+/* Fields: a section is its colour. */
+.cdl-field {
+  position: relative;
+  padding: 72px var(--margin);
+  overflow: hidden;
+}
+.cdl :where(h2) {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(2.5rem, 1.6rem + 3.6vw, 4.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.cdl .cdl-field h2 {
+  font-family: var(--display);
+}
+.cdl-lede {
+  max-width: 40ch;
+  margin-top: 16px;
+  font-size: 1.375rem;
+  line-height: 1.4;
+}
+@media (min-width: 900px) {
+  .cdl-field {
+    padding: 112px var(--margin);
+  }
+}
+
+/* Hero: limon field, copy and the toy set. */
+.cdl-hero {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 0;
+  background: var(--limon);
+}
+.cdl-hero h1 {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: clamp(2.625rem, 0.5rem + 10.5vw, 6rem);
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+}
+.cdl-hero h1 span {
+  display: inline-block;
+  font-family: inherit;
+}
+.cdl-hero-copy > p {
+  max-width: 32ch;
+  margin-top: 28px;
+  font-size: 1.375rem;
+  line-height: 1.4;
+}
+.cdl-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 18px;
+  margin-top: 28px;
+}
+.cdl-hero-copy .cdl-quiet-button {
+  margin-top: 8px;
+}
+.cdl-stage {
+  position: relative;
+  margin: 0 calc(var(--margin) * -1);
+  aspect-ratio: 780 / 660;
+}
+.cdl-stage-still,
+.cdl-stage-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.cdl-stage-still img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.cdl-stage-canvas {
+  opacity: 0;
+  transition: opacity 400ms var(--ease-out);
+}
+.cdl-stage[data-live='true'] .cdl-stage-canvas {
+  opacity: 1;
+}
+.cdl-stage[data-live='true'] .cdl-stage-still {
+  opacity: 0;
+  transition: opacity 400ms var(--ease-out);
+}
+.cdl-stage-play {
+  position: absolute;
+  left: var(--margin);
+  bottom: 20px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-weight: 700;
+  transition: transform 160ms var(--ease-out);
+}
+.cdl-stage-play:hover {
+  transform: translateY(-2px);
+}
+.cdl-stage-play:active {
+  transform: scale(0.97);
+}
+.cdl-stage-play[aria-disabled='true'] {
+  cursor: progress;
+}
+.cdl-stage-caption {
+  position: absolute;
+  left: var(--margin);
+  bottom: 80px;
+  z-index: 2;
+  max-width: min(34ch, calc(100% - 2 * var(--margin)));
+  padding: 10px 16px;
+  border-radius: 20px;
+  background: var(--paper);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.cdl-stage-caption:empty {
+  display: none;
+}
+@media (min-width: 900px) {
+  .cdl-hero {
+    grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
+    align-items: center;
+    min-height: calc(100svh - 72px);
+    padding-top: 48px;
+    padding-bottom: 48px;
+  }
+  .cdl-stage {
+    margin: 0 calc(var(--margin) * -1) 0 0;
+    aspect-ratio: 1440 / 1520;
+    max-height: calc(100svh - 120px);
+    justify-self: stretch;
+  }
+  .cdl-stage-caption {
+    bottom: 84px;
+  }
+}
+
+/* Games: ice field, three stickers dropped on the table. */
+.cdl-games {
+  background: var(--ice);
+}
+.cdl-stickers {
+  display: grid;
+  gap: 100px;
+  margin-top: 96px;
+}
+.cdl-sticker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 92px 24px 26px;
+  border-radius: var(--radius-lg);
+  transform: rotate(var(--tilt));
+  transition: transform 260ms var(--ease-toy);
+}
+.cdl-sticker:hover {
+  transform: rotate(0deg) translateY(-6px);
+}
+.cdl-sticker-satranc {
+  background: var(--gok);
+}
+.cdl-sticker-bilgi {
+  background: var(--limon);
+}
+.cdl-sticker-nisanci {
+  background: var(--lokum);
+}
+.cdl-sticker-toy {
+  position: absolute;
+  top: -78px;
+  right: 8px;
+  width: 168px;
+  pointer-events: none;
+  transition: transform 300ms var(--ease-toy);
+}
+.cdl-sticker:hover .cdl-sticker-toy {
+  transform: translateY(-10px) rotate(-6deg);
+}
+.cdl .cdl-sticker h3 {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 2.25rem;
+  line-height: 1.02;
+}
+.cdl-sticker-meta {
+  font-weight: 700;
+}
+@media (min-width: 900px) {
+  .cdl-stickers {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 28px;
+    margin-top: 120px;
+  }
+  .cdl-sticker {
+    min-height: 380px;
+    padding-top: 120px;
+  }
+  .cdl-sticker-toy {
+    top: -96px;
+    width: 210px;
+  }
+}
+
+/* Rewards: lokum field, the coin, the catalogue and a coupon. */
+.cdl-rewards {
+  display: grid;
+  gap: 24px;
+  background: var(--lokum);
+}
+.cdl-rewards-coin img {
+  width: min(280px, 70vw);
+  margin: 0 auto;
+}
+.cdl-reward-list {
+  display: grid;
+  gap: 8px;
+  max-width: 520px;
+  margin-top: 28px;
+}
+.cdl-reward-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 60px;
+  padding: 10px 12px 10px 20px;
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  font-weight: 600;
+}
+.cdl-points {
+  flex: none;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--fistik);
+  font-size: 0.875rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.cdl-note {
+  max-width: 52ch;
+  margin-top: 12px;
+  font-size: 0.875rem;
+}
+.cdl-coupon {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  align-self: start;
+  max-width: 420px;
+  padding: 16px;
+  border-radius: var(--radius-md);
+  background: var(--paper);
+  border-left: 0;
+  outline: 6px solid var(--fistik);
+  outline-offset: -6px;
+}
+.cdl-coupon svg {
+  flex: none;
+}
+.cdl-coupon figcaption {
+  display: grid;
+  gap: 4px;
+}
+.cdl-coupon strong {
+  font-size: 1.0625rem;
+}
+.cdl-coupon span {
+  font-size: 0.875rem;
+  color: var(--ink-soft);
+}
+@media (min-width: 900px) {
+  .cdl-rewards {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+    align-items: center;
+    column-gap: 48px;
+  }
+  .cdl-rewards-coin {
+    grid-row: 1 / 3;
+  }
+  .cdl-rewards-coin img {
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto;
+  }
+}
+
+/* Steps: gök field, three toys in order. */
+.cdl-steps {
+  background: var(--gok);
+}
+.cdl-steps ol {
+  display: grid;
+  gap: 32px;
+  margin-top: 40px;
+}
+.cdl-steps li {
+  display: grid;
+  gap: 8px;
+  max-width: 34ch;
+}
+.cdl-steps li img {
+  width: 132px;
+  margin: 0 0 4px -12px;
+}
+.cdl .cdl-steps h3 {
+  font-size: 1.375rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+@media (min-width: 900px) {
+  .cdl-steps ol {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 40px;
+    margin-top: 56px;
+  }
+  .cdl-steps li img {
+    width: 168px;
+  }
+}
+
+/* Close: fıstık field, the cup and the action. */
+.cdl-close {
+  display: grid;
+  justify-items: start;
+  background: var(--fistik);
+}
+.cdl-close-toy {
+  width: 180px;
+  margin: -24px 0 4px -16px;
+}
+@media (min-width: 900px) {
+  .cdl-close {
+    justify-items: center;
+    text-align: center;
+  }
+  .cdl-close .cdl-lede {
+    margin-inline: auto;
+  }
+  .cdl-close-toy {
+    width: 240px;
+    margin: -40px auto 8px;
+  }
+}
+
+/* Footer: one line on white. */
+.cdl-footer {
+  display: grid;
+  gap: 8px;
+  padding: 28px var(--margin) 32px;
+  background: var(--paper);
+  font-size: 0.875rem;
+}
+.cdl-footer-brand {
+  font-family: var(--display);
+  font-size: 1.75rem;
+  line-height: 1;
+}
+.cdl .cdl-footer-brand {
+  font-family: var(--display);
+}
+.cdl-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+}
+.cdl-footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.cdl-footer a:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.cdl-footer-year {
+  color: var(--ink-soft);
+}
+@media (min-width: 900px) {
+  .cdl-footer {
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 32px;
+  }
+  .cdl-footer-links {
+    justify-content: center;
+  }
+}
+
+/* Motion: the toys land; stickers drop onto the table; the coin flips in. */
+@keyframes cdl-rise {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cdl-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-90px) rotate(calc(var(--tilt) * 4));
+  }
+  to {
+    opacity: 1;
+    transform: rotate(var(--tilt));
+  }
+}
+@keyframes cdl-flip {
+  from {
+    opacity: 0;
+    transform: translateY(40px) rotateY(180deg) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes cdl-bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(-3deg);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .club-landing[data-motion='on'] .cdl-hero h1 span {
+    animation: cdl-rise 760ms var(--ease-out) both;
+  }
+  .club-landing[data-motion='on'] .cdl-hero h1 span + span {
+    animation-delay: 90ms;
+  }
+  .club-landing[data-motion='on'] .cdl-hero-copy > p {
+    animation: cdl-rise 760ms var(--ease-out) 180ms both;
+  }
+  .club-landing[data-motion='on'] .cdl-hero-copy > .cdl-actions {
+    animation: cdl-rise 760ms var(--ease-out) 260ms both;
+  }
+  .club-landing[data-motion='on'] .cdl [data-landing-revealed='true'] {
+    animation: cdl-rise 700ms var(--ease-out) both;
+  }
+  .club-landing[data-motion='on'] .cdl .cdl-sticker[data-landing-revealed='true'] {
+    animation: cdl-drop 820ms var(--ease-toy) calc(var(--order) * 110ms) both;
+  }
+  .club-landing[data-motion='on'] .cdl .cdl-rewards-coin[data-landing-revealed='true'] {
+    animation: cdl-flip 900ms var(--ease-out) both;
+  }
+  .club-landing[data-motion='on'] .cdl-close-toy {
+    animation: cdl-bob 4s ease-in-out infinite;
+  }
+  .club-landing[data-motion='on'] .cdl-stage[data-live='false'][data-moved='true'] img {
+    animation: cdl-rise 500ms var(--ease-toy) both;
+  }
+}
+.club-landing[data-motion='on'] .cdl [data-landing-revealed='true']:focus-within {
+  animation: none;
+}
+
+/* Cookie notice on the landing: it floats above the page, so it may carry a shadow. */
+.cdl-cookie {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  z-index: 130;
+  display: grid;
+  gap: 8px;
+  max-width: 380px;
+  margin-left: auto;
+  padding: 18px;
+  border-radius: 20px;
+  background: #ffffff;
+  color: #17140f;
+  font-family: 'Golos Text', system-ui, sans-serif;
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  box-shadow: 0 16px 40px rgba(23, 20, 15, 0.18); /* taste-skill-ignore: floating notice */
+}
+.cdl-cookie h3 {
+  margin: 0;
+  font-family: 'Bagel Fat One', 'Golos Text', sans-serif;
+  font-weight: 400;
+  font-size: 1.375rem;
+}
+.cdl-cookie p {
+  margin: 0;
+}
+.cdl-cookie-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+.cdl-cookie button {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.cdl-cookie-reject {
+  background: #eef6f8;
+  color: #17140f;
+}
+.cdl-cookie-accept {
+  background: #ff5c8a;
+  color: #17140f;
+}
+.cdl-cookie button:focus-visible {
+  outline: 3px solid #17140f;
+  outline-offset: 2px;
+}
+@media (max-width: 899px) {
+  .cdl-cookie {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    top: 64px;
+    right: 0;
+    bottom: auto;
+    left: 0;
+    max-width: none;
+    padding: 8px 12px;
+    border-radius: 0 0 20px 20px;
+    font-size: 0.875rem;
+    line-height: 1.35;
+  }
+  .cdl-cookie h3,
+  .cdl-cookie-more {
+    display: none;
+  }
+  .cdl-cookie-actions {
+    margin-top: 0;
+    gap: 6px;
+  }
+  .cdl-cookie button {
+    padding: 0 14px;
+  }
+}
+@media (min-width: 900px) {
+  .cdl-cookie {
+    right: 40px;
+    bottom: 32px;
+    left: auto;
+    width: 380px;
+  }
+}

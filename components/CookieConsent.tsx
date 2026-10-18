@@ -33,7 +33,12 @@ export const readCookieConsent = (): CookieConsentValue => {
   return 'pending';
 };
 
-export const CookieConsent: React.FC = () => {
+interface CookieConsentProps {
+  /** The public landing sets the banner in its own type and colours. */
+  variant?: 'default' | 'landing';
+}
+
+export const CookieConsent: React.FC<CookieConsentProps> = ({ variant = 'default' }) => {
   const [hydrated, setHydrated] = useState(false);
   const [state, setState] = useState<CookieConsentValue>('pending');
   const portalRoot = useMemo(() => (typeof document !== 'undefined' ? document.body : null), []);
@@ -70,6 +75,26 @@ export const CookieConsent: React.FC = () => {
   // also hides it so the user can browse — auth flows will re-open the banner
   // when they actually try to sign in.
   if (state !== 'pending') return null;
+
+  if (variant === 'landing')
+    return createPortal(
+      <div role="region" aria-label="Çerez bildirimi" className="cdl-cookie">
+        <h3>Çerezler</h3>
+        <p>
+          Giriş için çerez onayı gerekir.{' '}
+          <span className="cdl-cookie-more">Yalnızca gezeceksen reddedebilirsin.</span>
+        </p>
+        <div className="cdl-cookie-actions">
+          <button type="button" className="cdl-cookie-reject" onClick={handleReject}>
+            Reddet
+          </button>
+          <button type="button" className="cdl-cookie-accept" onClick={handleAccept}>
+            Kabul et
+          </button>
+        </div>
+      </div>,
+      portalRoot
+    );
 
   return createPortal(
     <div

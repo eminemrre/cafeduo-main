@@ -36,6 +36,49 @@ kısmı budur. Bir bileşene özel süre uydurmak yerine bu ölçekten seçin.
   çıkış animasyonu bilinçli olarak yok (yukarı akışın kararı), bu yüzden gezinme
   gecikme hissi vermez. Rota perdesi fikri planın kalan yüzeyleri arasında durur.
 
+## Landing etkileşim katmanı
+
+Ana sayfa ve `/kafeler`, `LandingExperience` içinde çalışan küçük bir motor kullanır
+(`lib/landingMotion.ts`). Motor React'i her karede yeniden çizdirmez; yalnızca CSS
+değişkenleri ve `translate` yazar, stiller `styles/landing-motion.css` içindedir.
+Bileşenler motora data öznitelikleriyle bağlanır:
+
+| Öznitelik                          | Etkisi                                                     |
+| ---------------------------------- | ---------------------------------------------------------- |
+| `data-landing-track`               | `--p` (görünüm içindeki ilerleme, 0→1) ve `--exit` yazılır |
+| `data-depth` / `data-scroll-depth` | İmleçle n px, kaydırmayla n px kayar (parallax)            |
+| `data-magnetic`                    | Buton imlece doğru çekilir (`--mag-x` / `--mag-y`)         |
+| `data-cursor-label`                | İmleç takipçisi bu etiketi gösteren bir baloncuğa dönüşür  |
+
+- **Fare (hover destekleyen ince işaretçi):** imleci gecikmeli izleyen mürekkep
+  noktası; linklerde halkaya, oyun satırlarında oyunun işaretine dönüşür. Başlık
+  satırları ve süs öğeleri farklı derinliklerde imlece göre kayar, CTA'lar mıknatıs
+  gibi çekilir. Gerçek imleç gizlenmez.
+- **Telefon:** her dokunuş kısa ömürlü bir mürekkep halkası bırakır; 3D sahne yana
+  sürüklenince döner, sürüklenmediğinde kaydırmayla salınır. Adımlar, oyun satırları
+  ve süsler kaydırmaya bağlı (scroll-scrubbed) girer.
+- **Ortak:** başlık kelimeleri maskeden sırayla yükselir (`SplitWords`); hero ilk
+  ekrandan çıkarken metin yukarı süzülüp söner; mavi bant (`ScrollMarquee`) boşta
+  yavaş akar, kaydırma hızıyla hızlanır, yönünü ve eğimini kaydırmadan alır.
+
+- **Hero hikâyesi:** 3D sahne (`lib/createCafeScene.ts`) yapışkan bir sahnede durur,
+  yanından üç bölüm kayar (`Hero.tsx`, `data-story-step`). Kaydırma konumu hikâyenin
+  oynatma kafasıdır (`lib/cafeStory.ts`): açılış çekimi → _Kahveni al_ (kamera fincana
+  yaklaşır, buhar yükselir) → _Oyuna katıl_ (platform satranç tahtasına döner, at
+  sıçrar, rakip piyon yükselir) → _Ödülünü seç_ (jeton dönerek öne gelir, yörünge
+  halkası haleye dönüşür, konfeti patlar). Geri kaydırınca hikâye tersine oynar.
+  Sahne ilk açılışta parçalarını yerine oturtarak kurulur; çevresindeki parçacıklar
+  imleçle derinlik kazanır.
+
+Hareket tasarımın parçasıdır ve her zaman açıktır; sayfada durdurma düğmesi yoktur.
+Yalnızca işletim sisteminin `prefers-reduced-motion` ayarı (erişilebilirlik ihtiyacı)
+ve gizli sekme motoru durdurur; yazılan tüm değerler silinir ve sayfa `club.css`'teki
+durağan haline döner. Hareket azaltıldığında hikâye bölümleri yine kaydırmayla değişir,
+yalnızca aradaki geçişler oynamaz. Yeni bir
+etki eklerken kuralı `.club-landing[data-motion='on']` altına yazın ve `transform`
+yerine `translate` / `scale` kullanın; mevcut keyframe animasyonları `transform`
+kullandığı için ikisi birlikte çalışır.
+
 ## Değerlerin kaynağı
 
 Süre/eğri ve kademe değerleri, ödül alan sitelerin tarayıcıya giden kodunun pasif

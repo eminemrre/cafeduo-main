@@ -2,8 +2,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Coffee, Gift } from 'lucide-react';
 import type { CafeScene } from '../lib/createCafeScene';
 import { useLandingMotion } from './LandingExperience';
+import { clamp } from '../lib/landingMotion';
+import { chapterFromStory, storyFromScroll } from '../lib/cafeStory';
 
-export const CafeScene3D: React.FC = () => {
+interface CafeScene3DProps {
+  /** Chapter list whose `[data-story-step]` blocks drive the scene as they scroll past. */
+  story?: React.RefObject<HTMLElement | null>;
+}
+
+export const CafeScene3D: React.FC<CafeScene3DProps> = ({ story }) => {
   const host = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const controller = useRef<CafeScene | null>(null);
@@ -12,6 +19,7 @@ export const CafeScene3D: React.FC = () => {
   const [inView, setInView] = useState(false);
   const [ready, setReady] = useState(false);
   const [chapter, setChapter] = useState(0);
+  const drag = useRef<{ id: number; startX: number } | null>(null);
   const running = !!motion?.running && inView;
 
   useEffect(() => {
@@ -73,8 +81,49 @@ export const CafeScene3D: React.FC = () => {
     controller.current?.setRunning(running && ready);
   }, [running, ready]);
   useEffect(() => {
-    if (ready) controller.current?.setChapter(chapter);
-  }, [chapter, ready]);
+    if (ready && !story) controller.current?.setChapter(chapter);
+  }, [chapter, ready, story]);
+
+  // The scroll position is the story's playhead. This also runs with reduced motion:
+  // the chapters are content, only the transitions between them are motion.
+  useEffect(() => {
+    const list = story?.current;
+    if (!list) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const rect = list.getBoundingClientRect();
+      // On phones the stage fills the top of the screen and a chapter card is read
+      // below it, so the anchor sits lower than the middle used side by side.
+      const anchor = window.innerHeight * (window.innerWidth > 700 ? 0.55 : 0.62);
+      const value = storyFromScroll(rect.top, rect.height, anchor);
+      controller.current?.setProgress(value);
+      setChapter(chapterFromStory(value));
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+    };
+  }, [story, ready]);
+
+  const selectChapter = (index: number) => {
+    const step = story?.current?.querySelectorAll<HTMLElement>('[data-story-step]')[index];
+    if (!step) return setChapter(index);
+    step.scrollIntoView({ behavior: motion?.running ? 'smooth' : 'auto', block: 'center' });
+  };
+
+  const endDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (drag.current?.id !== event.pointerId) return;
+    drag.current = null;
+    controller.current?.setPointer(0, 0);
+  };
 
   return (
     <div className="cafe-scene-wrap">
@@ -83,15 +132,30 @@ export const CafeScene3D: React.FC = () => {
         className="cafe-scene"
         data-renderer={ready ? 'webgl' : 'illustration'}
         data-running={running && ready ? 'true' : 'false'}
+        onPointerDown={(event) => {
+          if (!running || event.pointerType === 'mouse') return;
+          drag.current = { id: event.pointerId, startX: event.clientX };
+        }}
         onPointerMove={(event) => {
-          if (!running || event.pointerType === 'touch') return;
+          if (!running) return;
           const rect = event.currentTarget.getBoundingClientRect();
+          if (event.pointerType !== 'mouse') {
+            // touch-action: pan-y leaves horizontal drags to us, so a sideways swipe spins the scene.
+            if (drag.current?.id !== event.pointerId) return;
+            const spin = clamp(((event.clientX - drag.current.startX) / rect.width) * 5, -3, 3);
+            controller.current?.setPointer(spin, 0);
+            return;
+          }
           controller.current?.setPointer(
             (event.clientX - rect.left) / rect.width - 0.5,
             (event.clientY - rect.top) / rect.height - 0.5
           );
         }}
-        onPointerLeave={() => controller.current?.setPointer(0, 0)}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+        onPointerLeave={(event) => {
+          if (event.pointerType === 'mouse') controller.current?.setPointer(0, 0);
+        }}
       >
         <div className="cafe-scene-backdrop" aria-hidden="true" />
         <div className="cafe-scene-fallback" aria-hidden="true">
@@ -110,7 +174,7 @@ export const CafeScene3D: React.FC = () => {
             type="button"
             aria-pressed={chapter === index}
             aria-label={label}
-            onClick={() => setChapter(index)}
+            onClick={() => selectChapter(index)}
             className="riso-focus"
           >
             {index === 0 ? (

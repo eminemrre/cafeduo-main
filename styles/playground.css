@@ -84,17 +84,6 @@
   box-shadow: none;
   border-radius: 24px;
 }
-.club-motion-control {
-  width: 44px;
-  padding: 0;
-  flex: 0 0 44px;
-  justify-content: center;
-  border-radius: 50%;
-  min-height: 44px;
-  background: transparent;
-  border-color: #315bd52e;
-  color: #315bd5;
-}
 .cafe-scene-wrap {
   min-width: 0;
   position: relative;

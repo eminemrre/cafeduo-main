@@ -1,63 +1,45 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
-import { Pause, Play } from 'lucide-react';
+import { createLandingMotion } from '../lib/landingMotion';
 
 interface LandingMotionState {
   enabled: boolean;
   running: boolean;
   reduced: boolean;
-  toggle: () => void;
+  finePointer: boolean;
 }
 const LandingMotionContext = createContext<LandingMotionState | null>(null);
-const MOTION_PREFERENCE = 'cafeduo_landing_motion';
+const FINE_POINTER = '(hover: hover) and (pointer: fine)';
 
 export const useLandingMotion = () => useContext(LandingMotionContext);
 
-export const LandingMotionControl: React.FC = () => {
-  const motion = useContext(LandingMotionContext);
-  if (!motion) return null;
-  return (
-    <button
-      type="button"
-      className="club-motion-control riso-focus"
-      onClick={motion.toggle}
-      aria-pressed={motion.enabled}
-      aria-label={
-        motion.reduced ? 'Hareket azaltıldı' : motion.enabled ? 'Hareketi durdur' : 'Hareketi aç'
-      }
-      disabled={motion.reduced}
-    >
-      {motion.enabled ? (
-        <Pause size={16} aria-hidden="true" />
-      ) : (
-        <Play size={16} aria-hidden="true" />
-      )}
-    </button>
-  );
-};
-
 export const LandingExperience: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const root = useRef<HTMLDivElement>(null);
+  const cursor = useRef<HTMLDivElement>(null);
+  const inkLayer = useRef<HTMLDivElement>(null);
   const [reduced, setReduced] = useState(true);
-  const [preferred, setPreferred] = useState(true);
+  const [finePointer, setFinePointer] = useState(false);
   const [visible, setVisible] = useState(true);
-  const enabled = preferred && !reduced;
+  // Motion is part of the landing design and always on; only the system-wide
+  // reduced-motion setting turns it off, because that is an accessibility need.
+  const enabled = !reduced;
   const running = enabled && visible;
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const syncMedia = () => setReduced(media.matches);
+    const pointerMedia = window.matchMedia(FINE_POINTER);
+    const syncMedia = () => {
+      setReduced(media.matches);
+      setFinePointer(pointerMedia.matches);
+    };
     const syncVisibility = () => setVisible(!document.hidden);
     syncMedia();
     syncVisibility();
-    try {
-      setPreferred(sessionStorage.getItem(MOTION_PREFERENCE) !== 'off');
-    } catch {
-      /* Storage is optional. */
-    }
     media.addEventListener('change', syncMedia);
+    pointerMedia.addEventListener('change', syncMedia);
     document.addEventListener('visibilitychange', syncVisibility);
     return () => {
       media.removeEventListener('change', syncMedia);
+      pointerMedia.removeEventListener('change', syncMedia);
       document.removeEventListener('visibilitychange', syncVisibility);
     };
   }, []);
@@ -89,45 +71,34 @@ export const LandingExperience: React.FC<{ children: React.ReactNode }> = ({ chi
             { threshold: 0.12 }
           );
     targets.forEach((target) => observer?.observe(target));
-    let frame = 0;
-    const updateProgress = () => {
-      frame = 0;
-      const rect = element.getBoundingClientRect();
-      const distance = Math.max(1, element.offsetHeight - window.innerHeight);
-      element.style.setProperty(
-        '--club-progress',
-        String(Math.min(1, Math.max(0, -rect.top / distance)))
-      );
-    };
-    const schedule = () => {
-      if (!frame) frame = requestAnimationFrame(updateProgress);
-    };
-    schedule();
-    window.addEventListener('scroll', schedule, { passive: true });
-    window.addEventListener('resize', schedule);
+    const stopEngine = createLandingMotion(element, {
+      finePointer,
+      cursor: cursor.current,
+      inkLayer: inkLayer.current,
+    });
     return () => {
       observer?.disconnect();
-      cancelAnimationFrame(frame);
-      window.removeEventListener('scroll', schedule);
-      window.removeEventListener('resize', schedule);
+      stopEngine();
     };
-  }, [running]);
-
-  const toggle = () => {
-    const next = !preferred;
-    setPreferred(next);
-    try {
-      sessionStorage.setItem(MOTION_PREFERENCE, next ? 'on' : 'off');
-    } catch {
-      /* Storage is optional. */
-    }
-  };
+  }, [running, finePointer]);
 
   return (
-    <LandingMotionContext.Provider value={{ enabled, running, reduced, toggle }}>
+    <LandingMotionContext.Provider value={{ enabled, running, reduced, finePointer }}>
       <div ref={root} className="club-landing" data-motion={running ? 'on' : 'off'}>
         <div className="club-reading-progress" aria-hidden="true" />
         {children}
+        <div ref={inkLayer} className="club-ink-layer" aria-hidden="true" />
+        {finePointer && enabled && (
+          <div
+            ref={cursor}
+            className="club-cursor"
+            data-state="idle"
+            data-visible="false"
+            aria-hidden="true"
+          >
+            <span />
+          </div>
+        )}
       </div>
     </LandingMotionContext.Provider>
   );

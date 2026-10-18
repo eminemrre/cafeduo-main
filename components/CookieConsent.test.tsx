@@ -76,18 +76,4 @@ describe('CookieConsent', () => {
 
     expect(screen.queryByText('Çerez Kullanımı')).not.toBeInTheDocument();
   });
-
-  it('sets the landing variant in the landing style with the same choices', async () => {
-    (window.localStorage.getItem as jest.Mock).mockReturnValue(null);
-
-    render(<CookieConsent variant="landing" />);
-
-    const region = await screen.findByRole('region', { name: 'Çerez bildirimi' });
-    expect(region).toHaveClass('cdl-cookie');
-    fireEvent.click(screen.getByRole('button', { name: 'Reddet' }));
-    expect(window.localStorage.setItem).toHaveBeenCalledWith('cookie_consent', 'rejected');
-    await waitFor(() =>
-      expect(screen.queryByRole('region', { name: 'Çerez bildirimi' })).not.toBeInTheDocument()
-    );
-  });
 });

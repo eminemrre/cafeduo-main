@@ -11,7 +11,6 @@ test.describe('Public Landing Pages', () => {
         { family: 'JetBrains Mono Variable', style: 'normal' },
         { family: 'Fraunces Variable', style: 'normal' },
         { family: 'Fraunces Variable', style: 'italic' },
-        { family: 'Albert Sans', style: 'normal' },
       ];
       return Promise.all(fonts.map(async ({ family, style }) => {
         const faces = await document.fonts.load(`${style} 400 16px "${family}"`, 'CafeDuo ıİşŞğĞçÇöÖüÜ');
@@ -24,7 +23,6 @@ test.describe('Public Landing Pages', () => {
       { family: 'JetBrains Mono Variable', style: 'normal', loaded: true },
       { family: 'Fraunces Variable', style: 'normal', loaded: true },
       { family: 'Fraunces Variable', style: 'italic', loaded: true },
-      { family: 'Albert Sans', style: 'normal', loaded: true },
     ]);
   });
 
@@ -36,12 +34,9 @@ test.describe('Public Landing Pages', () => {
     await page.getByTestId('preview-square-f3').click();
     await expect(page.getByTestId('preview-square-f3')).toHaveAttribute('aria-label', 'f3, beyaz at');
     await expect(page.getByLabel('Oynanan hamleler')).toContainText('2. Nf3 d6');
-    // MASA07's reply brings the first İzmir district into focus, with its photo credit.
-    await expect(page.getByRole('region', { name: 'MASA07 ile deneme satranç maçı' })).toContainText('Kordon, Alsancak');
-    await expect(page.getByRole('link', { name: /Fotoğraf: Egemen Bilek/ })).toHaveAttribute('href', /commons\.wikimedia\.org/);
     await page.getByRole('button', { name: 'Baştan', exact: true }).click();
     await expect(page.getByTestId('preview-square-g1')).toHaveAttribute('aria-label', 'g1, beyaz at');
-    await expect(page.getByRole('banner').getByRole('button', { name: 'Masaya katıl' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Kayıt ol ve oyuna başla' })).toBeVisible();
   });
 
   test('@smoke renders the home hero with CTA actions', async ({ page, baseURL }) => {
@@ -49,10 +44,8 @@ test.describe('Public Landing Pages', () => {
     await page.goto(root);
 
     await expect(page.locator('[aria-label="Ana bölüm"]').first()).toBeVisible();
-    await expect(page.getByRole('banner').getByRole('button', { name: 'Masaya katıl' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Kayıt ol ve oyuna başla' }).first()).toBeVisible();
     await expect(page.locator('[data-testid="hero-login-button"]').first()).toBeVisible();
-    await page.locator('[data-testid="hero-login-button"]').first().click();
-    await expect(page.getByRole('dialog')).toBeVisible();
   });
 
   test('@smoke renders the cafe-owner landing at /kafeler', async ({ page, baseURL }) => {

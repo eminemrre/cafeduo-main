@@ -31,6 +31,3 @@ import '@fontsource/familjen-grotesk/500.css';
 import '@fontsource/familjen-grotesk/600.css';
 import '@fontsource/familjen-grotesk/700.css';
 import '@fontsource-variable/jetbrains-mono';
-import '@fontsource/albert-sans/400.css';
-import '@fontsource/albert-sans/500.css';
-import '@fontsource/albert-sans/600.css';

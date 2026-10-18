@@ -64,8 +64,6 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
-          // Landing photographs load on demand; only their small renditions are precached.
-          globIgnores: ['**/landing/*-1600.webp'],
           runtimeCaching: [
             {
               urlPattern: /\/api\/health$/i,

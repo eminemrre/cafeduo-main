@@ -1,8 +1,11 @@
 import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router';
 import { Navbar } from './components/Navbar';
+import { Hero } from './components/Hero';
 import { LandingExperience } from './components/LandingExperience';
-import { ClubLanding, LandingFooter, LandingHeader } from './components/landing/ClubLanding';
+import { HowItWorks } from './components/HowItWorks';
+import { Games } from './components/Games';
+import { About } from './components/About';
 import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
 
@@ -119,7 +122,6 @@ const AppContent: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const previousPathRef = useRef(location.pathname);
-  const isLanding = location.pathname === '/';
 
   // Socket IO Connection
   useEffect(() => {
@@ -249,17 +251,7 @@ const AppContent: React.FC = () => {
       <a href="#main-content" className="skip-link">
         İçeriğe atla
       </a>
-      {/* The landing has its own header and footer line; other routes keep the shared ones. */}
-      {isLanding ? (
-        <LandingHeader
-          isLoggedIn={!!user}
-          onJoin={enterClub}
-          onLogin={openLogin}
-          onLogout={handleLogout}
-        />
-      ) : (
-        <Navbar isLoggedIn={!!user} user={user} onLogout={handleLogout} />
-      )}
+      <Navbar isLoggedIn={!!user} user={user} onLogout={handleLogout} />
 
       <main id="main-content">
         <Suspense fallback={<PageLoader />}>
@@ -269,12 +261,16 @@ const AppContent: React.FC = () => {
               element={
                 <PageFrame>
                   <LandingExperience>
-                    <ClubLanding
-                      isLoggedIn={!!user}
-                      onJoin={enterClub}
+                    <Hero
                       onLogin={openLogin}
-                      onLogout={handleLogout}
+                      onRegister={openRegister}
+                      isLoggedIn={!!user}
+                      userRole={user?.role}
+                      isAdmin={user?.isAdmin}
                     />
+                    <HowItWorks />
+                    <Games onPlayClick={enterClub} />
+                    <About onJoin={enterClub} isLoggedIn={!!user} />
                   </LandingExperience>
                 </PageFrame>
               }
@@ -361,7 +357,7 @@ const AppContent: React.FC = () => {
         </Suspense>
       </main>
 
-      {isLanding ? <LandingFooter /> : <Footer />}
+      <Footer />
 
       <AuthModal
         isOpen={isAuthOpen}
@@ -369,7 +365,7 @@ const AppContent: React.FC = () => {
         initialMode={authMode}
         onLoginSuccess={handleLoginSuccess}
       />
-      <CookieConsent variant={isLanding ? 'landing' : 'default'} />
+      <CookieConsent />
     </div>
   );
 };

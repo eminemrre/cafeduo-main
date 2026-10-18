@@ -53,18 +53,25 @@ const buildSubmissionKey = (params: {
   return `${base}|${entropy}`.slice(0, 96);
 };
 
+interface ResolvedWinnerState {
+  resolvedWinner?: string | null;
+  live?: { resolvedWinner?: string | null };
+}
+
 interface GameResultLike {
   winner?: string | null;
   status?: string | null;
-  gameState?: {
-    resolvedWinner?: string | null;
-    live?: { resolvedWinner?: string | null };
-  };
+  // The API types game state as unknown; only the resolved-winner fields are read here.
+  gameState?: unknown;
 }
 
 const extractAuthoritativeWinner = (game: GameResultLike | null | undefined): string | null => {
+  const state =
+    game?.gameState && typeof game.gameState === 'object'
+      ? (game.gameState as ResolvedWinnerState)
+      : undefined;
   const winner = normalizeName(
-    game?.winner ?? game?.gameState?.resolvedWinner ?? game?.gameState?.live?.resolvedWinner
+    game?.winner ?? state?.resolvedWinner ?? state?.live?.resolvedWinner
   );
   return winner || null;
 };

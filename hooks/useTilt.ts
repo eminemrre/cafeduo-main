@@ -18,7 +18,7 @@ interface UseTiltOptions {
 }
 
 interface UseTiltResult {
-  ref: RefObject<HTMLDivElement>;
+  ref: RefObject<HTMLDivElement | null>;
   rotateX: MotionValue<number>;
   rotateY: MotionValue<number>;
   enabled: boolean;

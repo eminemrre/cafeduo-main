@@ -317,4 +317,21 @@ describe('App critical session and routing integration', () => {
 
     expect(await screen.findByTestId('cafe-admin-view')).toHaveTextContent('emin');
   });
+
+  it('keeps guests and regular users out of the admin panels', async () => {
+    renderAt('/admin');
+    expect(await screen.findByTestId('hero-view')).toBeInTheDocument();
+    expect(screen.queryByTestId('admin-view')).not.toBeInTheDocument();
+
+    cleanup();
+    (window.localStorage.getItem as jest.Mock).mockImplementation((key: string) => {
+      if (key === 'token') return 'valid-token';
+      return null;
+    });
+    mockVerifyToken.mockResolvedValue({ ...baseUser });
+
+    renderAt('/cafe-admin');
+    expect(await screen.findByTestId('cafe-selection-view')).toBeInTheDocument();
+    expect(screen.queryByTestId('cafe-admin-view')).not.toBeInTheDocument();
+  });
 });

@@ -5,6 +5,7 @@ const {
   validateJoinGamePayload,
   validateMovePayload,
 } = require('../validators/gameValidators');
+const { sendApiProblem } = require('../utils/routeHelpers');
 
 const createGameRoutes = ({ authenticateToken, gameHandlers, gameService }) => {
   const router = express.Router();
@@ -36,14 +37,22 @@ const createGameRoutes = ({ authenticateToken, gameHandlers, gameService }) => {
     const isAdminActor = req.user?.role === 'admin' || req.user?.isAdmin === true;
 
     if (!isAdminActor && actor !== target) {
-      return res.status(403).json({ error: 'Sadece kendi aktif oyununuzu görüntüleyebilirsiniz.' });
+      return sendApiProblem(res, {
+        status: 403,
+        code: 'FORBIDDEN',
+        message: 'Sadece kendi aktif oyununuzu görüntüleyebilirsiniz.',
+      });
     }
 
     try {
       const activeGame = await gameService.getActiveGameForUser(username);
       return res.json(activeGame);
     } catch {
-      return res.status(500).json({ error: 'Aktif oyun sorgulanamadı.' });
+      return sendApiProblem(res, {
+        status: 500,
+        code: 'INTERNAL_ERROR',
+        message: 'Aktif oyun sorgulanamadı.',
+      });
     }
   });
 

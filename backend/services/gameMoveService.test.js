@@ -62,6 +62,7 @@
  */
 
 const { createGameMoveService } = require('./gameMoveService');
+const { sendTransitionError } = require('../handlers/game/utils/errorHelpers');
 
 // ---------------------------------------------------------------------------
 // Yardımcılar
@@ -181,7 +182,7 @@ const baseDepsDerived_raw = () => ({
     from: currentStatus,
     to: requiredStatus,
   })),
-  mapTransitionError: (e) => ({ error: 'transition', ...e }),
+  sendTransitionError,
   sanitizeLiveSubmission: (p) => p,
   getGameParticipants,
   pickWinnerFromResults: jest.fn(() => null),
@@ -261,6 +262,11 @@ describe('gameMoveService – DB yolu', () => {
     const res = createMockRes();
     await service.makeMove(chessReq({ chessMove: { from: 'e2', to: 'e4' } }), res);
     expect(res.statusCode).toBe(409);
+    expect(res.payload).toMatchObject({
+      code: 'invalid_status_transition',
+      error: 'invalid',
+      details: { fromStatus: 'finished', toStatus: 'active' },
+    });
   });
 
   it('chess: resolvedColor geçersizse 403 döner', async () => {
@@ -338,6 +344,7 @@ describe('gameMoveService – DB yolu', () => {
     );
     expect(res.statusCode).toBe(409);
     expect(res.payload?.error).toMatch(/Sıra sende değil/);
+    expect(res.payload?.code).toBe('NOT_YOUR_TURN');
   });
 
   // -------------------------------------------------------------------------
@@ -351,6 +358,7 @@ describe('gameMoveService – DB yolu', () => {
     await service.makeMove(chessReq({ chessMove: { from: 'h1', to: 'h8' } }), res);
     expect(res.statusCode).toBe(400);
     expect(res.payload?.error).toMatch(/Yasadışı hamle/);
+    expect(res.payload?.code).toBe('ILLEGAL_MOVE');
   });
 
   // -------------------------------------------------------------------------
@@ -742,6 +750,7 @@ describe('gameMoveService – memory yolu', () => {
     await service.makeMove(memReq('10', 'u2', { chessMove: { from: 'e7', to: 'e5' } }), res);
     expect(res.statusCode).toBe(409);
     expect(res.payload?.error).toMatch(/Sıra sende değil/);
+    expect(res.payload?.code).toBe('NOT_YOUR_TURN');
   });
 
   it('chess: yasadışı hamle → 400', async () => {

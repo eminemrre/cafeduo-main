@@ -199,7 +199,8 @@ describe('createGameHandler (DB path)', () => {
 
     expect(res.statusCode).toBe(409);
     expect(res.payload.error).toMatch(/mevcut oyun/i);
-    expect(res.payload.game).toEqual({ id: 50, status: 'waiting' });
+    expect(res.payload.code).toBe('ACTIVE_GAME_EXISTS');
+    expect(res.payload.details.game).toEqual({ id: 50, status: 'waiting' });
     expect(gameService.insertWaitingGame).not.toHaveBeenCalled();
     // ROLLBACK must be issued
     expect(client.calls.some((c) => /ROLLBACK/.test(c.sql))).toBe(true);
@@ -410,7 +411,8 @@ describe('createGameHandler (memory path)', () => {
     await handler(req, res);
 
     expect(res.statusCode).toBe(409);
-    expect(res.payload.game).toMatchObject({ id: 1, hostName: 'u1' });
+    expect(res.payload.code).toBe('ACTIVE_GAME_EXISTS');
+    expect(res.payload.details.game).toMatchObject({ id: 1, hostName: 'u1' });
   });
 
   it('prepends a new memory game and emits lobby update on success', async () => {

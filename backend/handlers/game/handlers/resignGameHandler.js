@@ -8,8 +8,9 @@ const {
   assertGameStatusTransition,
   assertRequiredGameStatus,
 } = require('../../../utils/gameStateMachine');
-const { mapTransitionError } = require('../utils/errorHelpers');
+const { sendTransitionError } = require('../utils/errorHelpers');
 const { applyDbSettlement, applyMemorySettlement } = require('../settlementUtils');
+const { sendApiProblem } = require('../../../utils/routeHelpers');
 
 const createResignGameHandler = (deps) => {
   const {
@@ -46,14 +47,22 @@ const createResignGameHandler = (deps) => {
 
         if (result.rows.length === 0) {
           await client.query('ROLLBACK');
-          return res.status(404).json({ error: 'Oyun bulunamadı.' });
+          return sendApiProblem(res, {
+            status: 404,
+            code: 'GAME_NOT_FOUND',
+            message: 'Oyun bulunamadı.',
+          });
         }
 
         const game = result.rows[0];
         const actorParticipant = normalizeParticipantName(actorName, game);
         if (!actorParticipant) {
           await client.query('ROLLBACK');
-          return res.status(403).json({ error: 'Bu oyunda teslim olma yetkin yok.' });
+          return sendApiProblem(res, {
+            status: 403,
+            code: 'FORBIDDEN',
+            message: 'Bu oyunda teslim olma yetkin yok.',
+          });
         }
         const resignStatus = assertRequiredGameStatus({
           currentStatus: game.status,
@@ -62,15 +71,17 @@ const createResignGameHandler = (deps) => {
         });
         if (!resignStatus.ok) {
           await client.query('ROLLBACK');
-          return res.status(409).json(mapTransitionError(resignStatus));
+          return sendTransitionError(res, resignStatus, 409);
         }
 
         const winnerByResign = findOpponentName(actorParticipant, game, getGameParticipants);
         if (!winnerByResign) {
           await client.query('ROLLBACK');
-          return res
-            .status(409)
-            .json({ error: 'Rakip bulunamadığı için teslim işlemi yapılamadı.' });
+          return sendApiProblem(res, {
+            status: 409,
+            code: 'OPPONENT_NOT_FOUND',
+            message: 'Rakip bulunamadığı için teslim işlemi yapılamadı.',
+          });
         }
 
         const resignTransition = assertGameStatusTransition({
@@ -80,7 +91,7 @@ const createResignGameHandler = (deps) => {
         });
         if (!resignTransition.ok) {
           await client.query('ROLLBACK');
-          return res.status(409).json(mapTransitionError(resignTransition));
+          return sendTransitionError(res, resignTransition, 409);
         }
 
         const nowIso = new Date().toISOString();
@@ -149,7 +160,11 @@ const createResignGameHandler = (deps) => {
       } catch (err) {
         await client.query('ROLLBACK');
         logger.error('Resign game error', err);
-        return res.status(500).json({ error: 'Teslim olma işlemi başarısız.' });
+        return sendApiProblem(res, {
+          status: 500,
+          code: 'INTERNAL_ERROR',
+          message: 'Teslim olma işlemi başarısız.',
+        });
       } finally {
         client.release();
       }
@@ -157,7 +172,11 @@ const createResignGameHandler = (deps) => {
 
     const game = getMemoryGames().find((item) => String(item.id) === String(id));
     if (!game) {
-      return res.status(404).json({ error: 'Oyun bulunamadı.' });
+      return sendApiProblem(res, {
+        status: 404,
+        code: 'GAME_NOT_FOUND',
+        message: 'Oyun bulunamadı.',
+      });
     }
 
     const actorParticipant = normalizeParticipantName(actorName, {
@@ -165,7 +184,11 @@ const createResignGameHandler = (deps) => {
       guest_name: game.guestName,
     });
     if (!actorParticipant) {
-      return res.status(403).json({ error: 'Bu oyunda teslim olma yetkin yok.' });
+      return sendApiProblem(res, {
+        status: 403,
+        code: 'FORBIDDEN',
+        message: 'Bu oyunda teslim olma yetkin yok.',
+      });
     }
     const resignStatus = assertRequiredGameStatus({
       currentStatus: game.status,
@@ -173,7 +196,7 @@ const createResignGameHandler = (deps) => {
       context: 'resign_game_memory',
     });
     if (!resignStatus.ok) {
-      return res.status(409).json(mapTransitionError(resignStatus));
+      return sendTransitionError(res, resignStatus, 409);
     }
 
     const winnerByResign = findOpponentName(
@@ -185,7 +208,11 @@ const createResignGameHandler = (deps) => {
       getGameParticipants
     );
     if (!winnerByResign) {
-      return res.status(409).json({ error: 'Rakip bulunamadığı için teslim işlemi yapılamadı.' });
+      return sendApiProblem(res, {
+        status: 409,
+        code: 'OPPONENT_NOT_FOUND',
+        message: 'Rakip bulunamadığı için teslim işlemi yapılamadı.',
+      });
     }
 
     const resignTransition = assertGameStatusTransition({
@@ -194,7 +221,7 @@ const createResignGameHandler = (deps) => {
       context: 'resign_game_memory',
     });
     if (!resignTransition.ok) {
-      return res.status(409).json(mapTransitionError(resignTransition));
+      return sendTransitionError(res, resignTransition, 409);
     }
 
     const nowIso = new Date().toISOString();

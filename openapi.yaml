@@ -466,6 +466,16 @@ paths:
                 $ref: '#/components/schemas/Game'
         404:
           description: Oyun bulunamadı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        403:
+          description: Bu oyunun detaylarını görme yetkisi yok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
     delete:
       tags:
@@ -489,6 +499,12 @@ paths:
                 properties:
                   success:
                     type: boolean
+        404:
+          description: Oyun bulunamadı veya silme yetkisi yok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/games/{id}/join:
     post:

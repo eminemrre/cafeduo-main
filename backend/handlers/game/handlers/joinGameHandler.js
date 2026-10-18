@@ -6,7 +6,8 @@
 const { isAdminActor } = require('../validation');
 const { isChessGameType, activateChessClockState } = require('../chessUtils');
 const { assertGameStatusTransition } = require('../../../utils/gameStateMachine');
-const { mapTransitionError } = require('../utils/errorHelpers');
+const { sendTransitionError } = require('../utils/errorHelpers');
+const { sendApiProblem } = require('../../../utils/routeHelpers');
 
 const createJoinGameHandler = (deps) => {
   const {
@@ -31,12 +32,18 @@ const createJoinGameHandler = (deps) => {
     const hasCheckIn = Boolean(req.user?.cafe_id) && Boolean(actorTableCode);
 
     if (!guestName) {
-      return res.status(400).json({ error: 'guestName zorunludur.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'guestName zorunludur.',
+      });
     }
     if (!adminActor && !hasCheckIn) {
-      return res
-        .status(403)
-        .json({ error: 'Oyuna katılmak için önce kafe check-in işlemi yapmalısın.' });
+      return sendApiProblem(res, {
+        status: 403,
+        code: 'CHECKIN_REQUIRED',
+        message: 'Oyuna katılmak için önce kafe check-in işlemi yapmalısın.',
+      });
     }
 
     if (await isDbConnected()) {
@@ -50,11 +57,19 @@ const createJoinGameHandler = (deps) => {
 
         if (!game) {
           await client.query('ROLLBACK');
-          return res.status(404).json({ error: 'Oyun bulunamadı.' });
+          return sendApiProblem(res, {
+            status: 404,
+            code: 'GAME_NOT_FOUND',
+            message: 'Oyun bulunamadı.',
+          });
         }
         if (String(game.host_name || '').toLowerCase() === guestName.toLowerCase()) {
           await client.query('ROLLBACK');
-          return res.status(400).json({ error: 'Kendi oyununa katılamazsın.' });
+          return sendApiProblem(res, {
+            status: 400,
+            code: 'CANNOT_JOIN_OWN_GAME',
+            message: 'Kendi oyununa katılamazsın.',
+          });
         }
 
         if (game.status === 'finished') {
@@ -64,15 +79,17 @@ const createJoinGameHandler = (deps) => {
             context: 'join_game',
           });
           await client.query('ROLLBACK');
-          return res.status(409).json(mapTransitionError(finishedJoinTransition));
+          return sendTransitionError(res, finishedJoinTransition, 409);
         }
 
         const requiredStake = Math.max(0, Math.floor(Number(game.points || 0)));
         const actorPoints = Number(req.user?.points);
         if (!adminActor && Number.isFinite(actorPoints) && actorPoints < requiredStake) {
           await client.query('ROLLBACK');
-          return res.status(400).json({
-            error: `Bu oyuna katılmak için en az ${requiredStake} puan gerekli.`,
+          return sendApiProblem(res, {
+            status: 400,
+            code: 'INSUFFICIENT_POINTS',
+            message: `Bu oyuna katılmak için en az ${requiredStake} puan gerekli.`,
           });
         }
 
@@ -101,7 +118,7 @@ const createJoinGameHandler = (deps) => {
           }
 
           await client.query('ROLLBACK');
-          return res.status(409).json({ error: 'Oyun dolu.' });
+          return sendApiProblem(res, { status: 409, code: 'GAME_FULL', message: 'Oyun dolu.' });
         }
 
         const joinTransition = assertGameStatusTransition({
@@ -111,7 +128,7 @@ const createJoinGameHandler = (deps) => {
         });
         if (!joinTransition.ok) {
           await client.query('ROLLBACK');
-          return res.status(409).json(mapTransitionError(joinTransition));
+          return sendTransitionError(res, joinTransition, 409);
         }
 
         const playerBusy = gameService?.findActivePlayerConflict
@@ -120,7 +137,11 @@ const createJoinGameHandler = (deps) => {
 
         if (playerBusy) {
           await client.query('ROLLBACK');
-          return res.status(409).json({ error: 'Bu kullanıcı zaten aktif bir oyunda.' });
+          return sendApiProblem(res, {
+            status: 409,
+            code: 'ACTIVE_GAME_EXISTS',
+            message: 'Bu kullanıcı zaten aktif bir oyunda.',
+          });
         }
 
         const nextGameState = (() => {
@@ -143,7 +164,11 @@ const createJoinGameHandler = (deps) => {
 
         if (!joinedGame) {
           await client.query('ROLLBACK');
-          return res.status(409).json({ error: 'Bu oyun artık katılıma uygun değil.' });
+          return sendApiProblem(res, {
+            status: 409,
+            code: 'GAME_NOT_JOINABLE',
+            message: 'Bu oyun artık katılıma uygun değil.',
+          });
         }
 
         await client.query('COMMIT');
@@ -174,7 +199,11 @@ const createJoinGameHandler = (deps) => {
       } catch (err) {
         await client.query('ROLLBACK');
         logger.error('Join game error', err);
-        return res.status(500).json({ error: 'Oyuna katılım sırasında hata oluştu.' });
+        return sendApiProblem(res, {
+          status: 500,
+          code: 'INTERNAL_ERROR',
+          message: 'Oyuna katılım sırasında hata oluştu.',
+        });
       } finally {
         client.release();
       }
@@ -183,10 +212,18 @@ const createJoinGameHandler = (deps) => {
     const memoryGames = getMemoryGames();
     const game = memoryGames.find((item) => String(item.id) === String(id));
     if (!game) {
-      return res.status(404).json({ error: 'Oyun bulunamadı.' });
+      return sendApiProblem(res, {
+        status: 404,
+        code: 'GAME_NOT_FOUND',
+        message: 'Oyun bulunamadı.',
+      });
     }
     if (String(game.hostName || '').toLowerCase() === guestName.toLowerCase()) {
-      return res.status(400).json({ error: 'Kendi oyununa katılamazsın.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'CANNOT_JOIN_OWN_GAME',
+        message: 'Kendi oyununa katılamazsın.',
+      });
     }
     if (game.status === 'finished') {
       const finishedJoinTransition = assertGameStatusTransition({
@@ -194,14 +231,16 @@ const createJoinGameHandler = (deps) => {
         toStatus: GAME_STATUS.ACTIVE,
         context: 'join_game_memory',
       });
-      return res.status(409).json(mapTransitionError(finishedJoinTransition));
+      return sendTransitionError(res, finishedJoinTransition, 409);
     }
     {
       const requiredStake = Math.max(0, Math.floor(Number(game.points || 0)));
       const actorPoints = Number(req.user?.points);
       if (!adminActor && Number.isFinite(actorPoints) && actorPoints < requiredStake) {
-        return res.status(400).json({
-          error: `Bu oyuna katılmak için en az ${requiredStake} puan gerekli.`,
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'INSUFFICIENT_POINTS',
+          message: `Bu oyuna katılmak için en az ${requiredStake} puan gerekli.`,
         });
       }
     }
@@ -209,7 +248,7 @@ const createJoinGameHandler = (deps) => {
       if (String(game.guestName || '').toLowerCase() === guestName.toLowerCase()) {
         return res.json({ success: true, game });
       }
-      return res.status(409).json({ error: 'Oyun dolu.' });
+      return sendApiProblem(res, { status: 409, code: 'GAME_FULL', message: 'Oyun dolu.' });
     }
 
     const memoryJoinTransition = assertGameStatusTransition({
@@ -218,7 +257,7 @@ const createJoinGameHandler = (deps) => {
       context: 'join_game_memory',
     });
     if (!memoryJoinTransition.ok) {
-      return res.status(409).json(mapTransitionError(memoryJoinTransition));
+      return sendTransitionError(res, memoryJoinTransition, 409);
     }
 
     game.status = 'active';

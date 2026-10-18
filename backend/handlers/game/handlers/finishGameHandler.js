@@ -10,8 +10,9 @@ const {
   normalizeGameStatus,
   GAME_STATUS,
 } = require('../../../utils/gameStateMachine');
-const { mapTransitionError } = require('../utils/errorHelpers');
+const { sendTransitionError } = require('../utils/errorHelpers');
 const { applyDbSettlement, applyMemorySettlement } = require('../settlementUtils');
+const { sendApiProblem } = require('../../../utils/routeHelpers');
 
 const createFinishGameHandler = (deps) => {
   const {
@@ -44,13 +45,21 @@ const createFinishGameHandler = (deps) => {
 
         if (!game) {
           await client.query('ROLLBACK');
-          return res.status(404).json({ error: 'Oyun bulunamadı.' });
+          return sendApiProblem(res, {
+            status: 404,
+            code: 'GAME_NOT_FOUND',
+            message: 'Oyun bulunamadı.',
+          });
         }
         const actorParticipant = depsNormalizeParticipantName(actorName, game);
         const adminActor = isAdminActor(req.user);
         if (!actorParticipant && !adminActor) {
           await client.query('ROLLBACK');
-          return res.status(403).json({ error: 'Bu oyunu kapatma yetkin yok.' });
+          return sendApiProblem(res, {
+            status: 403,
+            code: 'FORBIDDEN',
+            message: 'Bu oyunu kapatma yetkin yok.',
+          });
         }
 
         const participants = getGameParticipants(game);
@@ -77,22 +86,29 @@ const createFinishGameHandler = (deps) => {
 
         if (requestedWinnerRaw && !winnerFromRequest && adminActor && !derivedWinner) {
           await client.query('ROLLBACK');
-          return res.status(400).json({ error: 'Geçersiz kazanan bilgisi.' });
+          return sendApiProblem(res, {
+            status: 400,
+            code: 'VALIDATION_ERROR',
+            message: 'Geçersiz kazanan bilgisi.',
+          });
         }
 
         if (!adminActor && requestedWinnerRaw && !derivedWinner) {
           await client.query('ROLLBACK');
-          return res.status(409).json({
-            error: 'Sonuç henüz sunucu tarafından belirlenmedi. Önce tüm skorlar tamamlanmalı.',
+          return sendApiProblem(res, {
+            status: 409,
             code: 'server_result_pending',
+            message: 'Sonuç henüz sunucu tarafından belirlenmedi. Önce tüm skorlar tamamlanmalı.',
           });
         }
 
         if (!finalWinner && !isChessDraw && !manualWinnerAllowed) {
           await client.query('ROLLBACK');
-          return res.status(409).json({
-            error: 'Sonuç henüz sunucu tarafından belirlenmedi. Her iki oyuncu skoru tamamlamalı.',
+          return sendApiProblem(res, {
+            status: 409,
             code: 'server_result_pending',
+            message:
+              'Sonuç henüz sunucu tarafından belirlenmedi. Her iki oyuncu skoru tamamlamalı.',
           });
         }
 
@@ -186,7 +202,11 @@ const createFinishGameHandler = (deps) => {
             return res.json({ success: true, winner: game.winner || null, alreadyFinished: true });
           }
           await client.query('ROLLBACK');
-          return res.status(409).json({ error: 'Oyun zaten farklı bir sonuçla tamamlandı.' });
+          return sendApiProblem(res, {
+            status: 409,
+            code: 'RESULT_CONFLICT',
+            message: 'Oyun zaten farklı bir sonuçla tamamlandı.',
+          });
         }
 
         const finishTransition = assertGameStatusTransition({
@@ -196,7 +216,7 @@ const createFinishGameHandler = (deps) => {
         });
         if (!finishTransition.ok) {
           await client.query('ROLLBACK');
-          return res.status(409).json(mapTransitionError(finishTransition));
+          return sendTransitionError(res, finishTransition, 409);
         }
 
         const nextGameState = { ...currentGameState };
@@ -238,7 +258,11 @@ const createFinishGameHandler = (deps) => {
       } catch (err) {
         await client.query('ROLLBACK');
         logger.error('Finish game error', err);
-        return res.status(500).json({ error: 'Oyun tamamlanamadı.' });
+        return sendApiProblem(res, {
+          status: 500,
+          code: 'INTERNAL_ERROR',
+          message: 'Oyun tamamlanamadı.',
+        });
       } finally {
         client.release();
       }
@@ -246,7 +270,11 @@ const createFinishGameHandler = (deps) => {
 
     const game = getMemoryGames().find((item) => String(item.id) === String(id));
     if (!game) {
-      return res.status(404).json({ error: 'Oyun bulunamadı.' });
+      return sendApiProblem(res, {
+        status: 404,
+        code: 'GAME_NOT_FOUND',
+        message: 'Oyun bulunamadı.',
+      });
     }
 
     const actorParticipant = depsNormalizeParticipantName(actorName, {
@@ -255,7 +283,11 @@ const createFinishGameHandler = (deps) => {
     });
     const adminActor = isAdminActor(req.user);
     if (!actorParticipant && !adminActor) {
-      return res.status(403).json({ error: 'Bu oyunu kapatma yetkin yok.' });
+      return sendApiProblem(res, {
+        status: 403,
+        code: 'FORBIDDEN',
+        message: 'Bu oyunu kapatma yetkin yok.',
+      });
     }
 
     const participants = getGameParticipants({
@@ -279,20 +311,26 @@ const createFinishGameHandler = (deps) => {
       isChessGameType(game.gameType) && Boolean(game.gameState?.chess?.isGameOver) && !finalWinner;
 
     if (requestedWinnerRaw && !winnerFromRequest && adminActor && !derivedWinner) {
-      return res.status(400).json({ error: 'Geçersiz kazanan bilgisi.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'Geçersiz kazanan bilgisi.',
+      });
     }
 
     if (!adminActor && requestedWinnerRaw && !derivedWinner) {
-      return res.status(409).json({
-        error: 'Sonuç henüz sunucu tarafından belirlenmedi. Önce tüm skorlar tamamlanmalı.',
+      return sendApiProblem(res, {
+        status: 409,
         code: 'server_result_pending',
+        message: 'Sonuç henüz sunucu tarafından belirlenmedi. Önce tüm skorlar tamamlanmalı.',
       });
     }
 
     if (!finalWinner && !isChessDraw && !manualWinnerAllowed) {
-      return res.status(409).json({
-        error: 'Sonuç henüz sunucu tarafından belirlenmedi. Her iki oyuncu skoru tamamlamalı.',
+      return sendApiProblem(res, {
+        status: 409,
         code: 'server_result_pending',
+        message: 'Sonuç henüz sunucu tarafından belirlenmedi. Her iki oyuncu skoru tamamlamalı.',
       });
     }
 
@@ -304,7 +342,11 @@ const createFinishGameHandler = (deps) => {
         storedWinner.toLowerCase() !== targetWinner.toLowerCase() &&
         !(isChessDraw && !storedWinner && !targetWinner)
       ) {
-        return res.status(409).json({ error: 'Oyun zaten farklı bir sonuçla tamamlandı.' });
+        return sendApiProblem(res, {
+          status: 409,
+          code: 'RESULT_CONFLICT',
+          message: 'Oyun zaten farklı bir sonuçla tamamlandı.',
+        });
       }
       if (!settlementAlreadyApplied) {
         const settlement = applyMemorySettlement({
@@ -347,7 +389,7 @@ const createFinishGameHandler = (deps) => {
       context: 'finish_game_memory',
     });
     if (!memoryFinishTransition.ok) {
-      return res.status(409).json(mapTransitionError(memoryFinishTransition));
+      return sendTransitionError(res, memoryFinishTransition, 409);
     }
 
     game.status = 'finished';

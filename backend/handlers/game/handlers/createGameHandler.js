@@ -4,7 +4,7 @@
  */
 
 const { isAdminActor } = require('../validation');
-const { sendApiError } = require('../../../utils/routeHelpers');
+const { sendApiError, sendApiProblem } = require('../../../utils/routeHelpers');
 const { isChessGameType, createInitialChessState } = require('../chessUtils');
 
 const createCreateGameHandler = (deps) => {
@@ -32,21 +32,35 @@ const createCreateGameHandler = (deps) => {
     const actorPoints = Math.max(0, Math.floor(Number(req.user?.points || 0)));
 
     if (!hostName || !gameType) {
-      return res.status(400).json({ error: 'hostName ve gameType zorunludur.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'hostName ve gameType zorunludur.',
+      });
     }
     if (!adminActor && !hasCheckIn) {
-      return res
-        .status(403)
-        .json({ error: 'Oyun kurmak için önce kafe check-in işlemi yapmalısın.' });
+      return sendApiProblem(res, {
+        status: 403,
+        code: 'CHECKIN_REQUIRED',
+        message: 'Oyun kurmak için önce kafe check-in işlemi yapmalısın.',
+      });
     }
     if (points > actorPoints && !adminActor) {
-      return res.status(400).json({ error: 'Katılım puanı mevcut bakiyenden yüksek olamaz.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'STAKE_EXCEEDS_BALANCE',
+        message: 'Katılım puanı mevcut bakiyenden yüksek olamaz.',
+      });
     }
     // Stake cap tightened to 150 in PR #36 (was 5000). Same value is mirrored
     // in backend/validators/gameValidators.js and CreateGameModal.tsx so the
     // form, validator, and handler all agree.
     if (points > 150) {
-      return res.status(400).json({ error: 'Katılım puanı en fazla 150 olabilir.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'STAKE_TOO_HIGH',
+        message: 'Katılım puanı en fazla 150 olabilir.',
+      });
     }
 
     const actorCafeId = req.user?.cafe_id ?? null;
@@ -62,9 +76,11 @@ const createCreateGameHandler = (deps) => {
 
         if (existingGame) {
           await client.query('ROLLBACK');
-          return res.status(409).json({
-            error: 'Önce mevcut oyunu tamamla veya lobiye dön.',
-            game: existingGame,
+          return sendApiProblem(res, {
+            status: 409,
+            code: 'ACTIVE_GAME_EXISTS',
+            message: 'Önce mevcut oyunu tamamla veya lobiye dön.',
+            details: { game: existingGame },
           });
         }
 
@@ -124,11 +140,11 @@ const createCreateGameHandler = (deps) => {
               const todaysGames = Number(countRes.rows[0]?.count ?? 0);
               if (todaysGames >= limit) {
                 await client.query('ROLLBACK');
-                return res.status(429).json({
-                  error: `Bu kafede günlük oyun sınırına (${limit}) ulaştın. Yarın tekrar dene.`,
+                return sendApiProblem(res, {
+                  status: 429,
                   code: 'DAILY_GAME_LIMIT_REACHED',
-                  limit,
-                  played: todaysGames,
+                  message: `Bu kafede günlük oyun sınırına (${limit}) ulaştın. Yarın tekrar dene.`,
+                  details: { limit, played: todaysGames },
                 });
               }
             } catch (countErr) {
@@ -155,9 +171,10 @@ const createCreateGameHandler = (deps) => {
         if (Number.isInteger(rawTournamentId) && rawTournamentId > 0) {
           if (!actorCafeId) {
             await client.query('ROLLBACK');
-            return res.status(400).json({
-              error: 'Turnuvaya katılmak için bir kafede check-in olman gerekiyor.',
+            return sendApiProblem(res, {
+              status: 400,
               code: 'TOURNAMENT_REQUIRES_CHECKIN',
+              message: 'Turnuvaya katılmak için bir kafede check-in olman gerekiyor.',
             });
           }
           try {
@@ -171,17 +188,19 @@ const createCreateGameHandler = (deps) => {
             await client.query('RELEASE SAVEPOINT tournament_lookup');
             if (tournRes.rows.length === 0) {
               await client.query('ROLLBACK');
-              return res.status(400).json({
-                error: 'Bu turnuva şu an aktif değil veya kafenle eşleşmiyor.',
+              return sendApiProblem(res, {
+                status: 400,
                 code: 'TOURNAMENT_NOT_ACCEPTING_GAMES',
+                message: 'Bu turnuva şu an aktif değil veya kafenle eşleşmiyor.',
               });
             }
             const tourn = tournRes.rows[0];
             if (tourn.game_type && tourn.game_type !== gameType) {
               await client.query('ROLLBACK');
-              return res.status(400).json({
-                error: `Bu turnuva sadece ${tourn.game_type} oyunlarını kabul ediyor.`,
+              return sendApiProblem(res, {
+                status: 400,
                 code: 'TOURNAMENT_GAME_TYPE_MISMATCH',
+                message: `Bu turnuva sadece ${tourn.game_type} oyunlarını kabul ediyor.`,
               });
             }
             tournamentId = tourn.id;
@@ -256,9 +275,11 @@ const createCreateGameHandler = (deps) => {
         (game.status === 'waiting' || game.status === 'active')
     );
     if (existingMemoryGame) {
-      return res.status(409).json({
-        error: 'Önce mevcut oyunu tamamla veya lobiye dön.',
-        game: existingMemoryGame,
+      return sendApiProblem(res, {
+        status: 409,
+        code: 'ACTIVE_GAME_EXISTS',
+        message: 'Önce mevcut oyunu tamamla veya lobiye dön.',
+        details: { game: existingMemoryGame },
       });
     }
 

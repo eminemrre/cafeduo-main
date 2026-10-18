@@ -392,8 +392,8 @@ describe('gameHandlers (memory mode)', () => {
 
     expect(res.statusCode).toBe(409);
     expect(res.payload?.code).toBe('invalid_status_transition');
-    expect(res.payload?.fromStatus).toBe('finished');
-    expect(res.payload?.toStatus).toBe('active');
+    expect(res.payload?.details).toEqual({ fromStatus: 'finished', toStatus: 'active' });
+    expect(res.payload?.error).toEqual(expect.any(String));
   });
 
   it('rejects join when player has insufficient points for stake', async () => {

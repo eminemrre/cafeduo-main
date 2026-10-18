@@ -44,26 +44,24 @@ jest.mock('./components/Navbar', () => ({
   ),
 }));
 
-jest.mock('./components/Hero', () => ({
-  Hero: ({ onLogin }: { onLogin: () => void }) => (
+// The landing has its own header on '/', so it reports the session like the navbar does.
+jest.mock('./components/landing/ClubLanding', () => ({
+  LandingHeader: ({ isLoggedIn, onLogout }: { isLoggedIn?: boolean; onLogout?: () => void }) => (
+    <div data-testid="landing-header">
+      <span data-testid="session-state">{isLoggedIn ? 'AUTH' : 'GUEST'}</span>
+      <button data-testid="logout-action" onClick={onLogout}>
+        logout
+      </button>
+    </div>
+  ),
+  LandingFooter: () => <div data-testid="footer-view">footer</div>,
+  ClubLanding: ({ onLogin }: { onLogin: () => void }) => (
     <div data-testid="hero-view">
       <button data-testid="hero-open-login" onClick={onLogin}>
         open-login
       </button>
     </div>
   ),
-}));
-
-jest.mock('./components/Games', () => ({
-  Games: () => <div data-testid="games-view">games</div>,
-}));
-
-jest.mock('./components/HowItWorks', () => ({
-  HowItWorks: () => <div data-testid="how-view">how</div>,
-}));
-
-jest.mock('./components/About', () => ({
-  About: () => <div data-testid="about-view">about</div>,
 }));
 
 jest.mock('./components/Footer', () => ({

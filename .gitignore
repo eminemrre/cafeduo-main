@@ -61,3 +61,4 @@ antigravity/
 # pgmigrations table is created in database, not in filesystem
 # Migration files (*.js) should be tracked in git
 cafeduo-project/
+.taste-skill/

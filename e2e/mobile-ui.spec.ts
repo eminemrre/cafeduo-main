@@ -35,13 +35,15 @@ test.describe('Mobile UI Stability', () => {
 
     await page.getByRole('button', { name: 'Kapat', exact: true }).click();
 
-    // Akış kartları mobilde kaybolmamalı: 3 adım da görünür olmalı.
-    const flowHeading = page.locator('[data-testid="flow-main-heading"]');
+    // The three statements of the pinned flow stay readable on a phone.
+    const flowHeading = page.getByRole('heading', { level: 2, name: 'Masadan ödüle' });
     await flowHeading.scrollIntoViewIfNeeded();
     await expect(flowHeading).toBeVisible();
-    await expect(page.getByText('Hesabını aç').first()).toBeVisible();
-    await expect(page.getByText('Kafeye bağlan').first()).toBeVisible();
-    await expect(page.getByText('Eşleş ve kazan').first()).toBeVisible();
+    for (const statement of ['Önce kafede check-in yap.', 'Sonra açık bir masayla eşleş.', 'Kazandığını kafede harca.']) {
+      const heading = page.getByRole('heading', { level: 3, name: statement });
+      await heading.scrollIntoViewIfNeeded();
+      await expect(heading).toBeVisible();
+    }
 
     const hasHorizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth > window.innerWidth + 1

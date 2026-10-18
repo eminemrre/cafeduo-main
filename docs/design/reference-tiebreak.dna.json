@@ -1,0 +1,248 @@
+{
+  "meta": {
+    "name": "The Tie-break (reference)",
+    "description": "Brand launch for the New Balance x Miu Miu collection with Coco Gauff, told as a playable tennis tie-break. Analysed as the reference for the CafeDuo landing redesign; the goal is to understand why it works, not to copy it.",
+    "source_references": [
+      "https://thetiebreak.merci-michel.com/ (Merci Michel, Awwwards Site of the Day 2026-09-25)",
+      "Viewport captures at 1440x900 of intro, rules, countdown, rally, point won and photo reveal (not committed: third-party campaign photography)"
+    ],
+    "created_at": "2026-10-17"
+  },
+  "design_system": {
+    "color": {
+      "palette_type": "analogous (cool navy and slate taken from the photograph) with one blue accent",
+      "primary": { "hex": "#283E6C", "role": "dominant field: the blurred campaign photo's navy, covers about a quarter of the frame" },
+      "secondary": { "hex": "#0E0C13", "role": "ink-black shadows of the photo; ground of the intro screens" },
+      "accent": { "hex": "#4A79D8", "role": "court lines and score on the player's side; under 1% coverage" },
+      "neutral": {
+        "scale": ["#F4F5F8", "#A7A7A8", "#939497", "#72798D", "#515978", "#211C26"],
+        "usage": "#F4F5F8 is the only text colour, always on top of the photo; the greys are photo tones, never UI fills"
+      },
+      "semantic": {
+        "success": "not observed (a won point is shown by the photo coming into focus, not by colour)",
+        "warning": "not observed",
+        "error": "not observed",
+        "info": "not observed"
+      },
+      "surface": {
+        "background": "#283E6C (full-bleed photograph, never a flat UI colour)",
+        "card": "none: the site has no cards",
+        "elevated": "none"
+      },
+      "contrast_strategy": "white type and lines over a darkened, blurred photograph; the blur is the scrim",
+      "measurement": { "tool": "design-dna scripts/measure-colors.mjs", "frames": ["intro", "rally", "point won"] },
+      "measured_palette": [
+        { "hex": "#0E0C13", "coverage": 0.2814, "role": "background (intro)" },
+        { "hex": "#283E6C", "coverage": 0.2501, "role": "background (rally)" },
+        { "hex": "#939497", "coverage": 0.1962, "role": "photo mid-tone" },
+        { "hex": "#211C26", "coverage": 0.1499, "role": "photo shadow" },
+        { "hex": "#72798D", "coverage": 0.1482, "role": "photo mid-tone" },
+        { "hex": "#623337", "coverage": 0.114, "role": "warm photo tone (skin, red court line)" },
+        { "hex": "#F4F5F8", "coverage": 0.0085, "role": "text" },
+        { "hex": "#4A79D8", "coverage": 0.007, "role": "accent" }
+      ]
+    },
+    "typography": {
+      "type_scale": {
+        "display": { "size": "149px (about 10vw)", "weight": "400", "line_height": "0.9", "tracking": "-0.02em" },
+        "heading_1": { "size": "about 40px", "weight": "400", "line_height": "1.05", "tracking": "-0.01em" },
+        "heading_2": { "size": "not used", "weight": "-", "line_height": "-", "tracking": "-" },
+        "heading_3": { "size": "not used", "weight": "-", "line_height": "-", "tracking": "-" },
+        "body": { "size": "15.9px", "weight": "400", "line_height": "1.4", "tracking": "0" },
+        "body_small": { "size": "not used", "weight": "-", "line_height": "-", "tracking": "-" },
+        "caption": { "size": "9.9px", "weight": "400", "line_height": "1.2", "tracking": "0.04em" },
+        "overline": { "size": "about 8px (OPPONENT / YOU court labels)", "weight": "500", "line_height": "1", "tracking": "0.08em" }
+      },
+      "font_families": {
+        "heading": "Instrument Serif 400 (headline, score numerals)",
+        "body": "Work Sans 300/500",
+        "mono": "none"
+      },
+      "font_style_notes": "A narrow, high-contrast serif carries every sentence the visitor reads, including the score; the sans appears only on tiny controls. Two families, three sizes in practice: huge, medium and tiny."
+    },
+    "spacing": {
+      "base_unit": "court geometry, not a pixel scale: elements sit on the service lines and centre line",
+      "scale": ["the court's own proportions"],
+      "content_density": "spacious",
+      "section_rhythm": "no sections: one full-screen stage whose state changes (intro, rules, countdown, rally, reveal)"
+    },
+    "layout": {
+      "grid_system": "a tennis court drawn in perspective is the grid; text centres in the service box",
+      "max_content_width": "full viewport",
+      "columns": "1",
+      "gutter": "none",
+      "breakpoints": "stage scales with the viewport; controls switch from arrow keys to touch",
+      "alignment_tendency": "centered"
+    },
+    "shape": {
+      "border_radius": { "small": "0", "medium": "0", "large": "0", "pill": "only the small round paddles and ball" },
+      "border_usage": "none on UI; the only lines are the court lines, which are the content",
+      "divider_style": "court lines in white, blue (player) and red (opponent) with a soft glow"
+    },
+    "elevation": {
+      "shadow_style": "none",
+      "levels": { "low": "none", "medium": "none", "high": "none" },
+      "depth_cues": "focus: blurred photo behind sharp lines; depth of field is the only depth"
+    },
+    "iconography": {
+      "style": "almost none: keyboard key glyphs in the rules screen, pause and mute",
+      "stroke_weight": "1px",
+      "size_scale": "10-12px",
+      "preferred_set": "custom"
+    },
+    "motion": {
+      "easing": "slow ease-in-out on focus pulls, linear ball physics",
+      "duration_scale": { "micro": "150ms", "normal": "600ms", "macro": "about 1.5s focus pull and text cross-fade" },
+      "entrance_pattern": "copy cross-fades in place inside the service box; one sentence at a time",
+      "exit_pattern": "the previous sentence fades out before the next appears",
+      "philosophy": "cinematic: the camera (focus) moves, the layout never does"
+    },
+    "components": {
+      "button_style": "a single small outlined Start, later plain text buttons with an arrow (Next, Click to continue)",
+      "input_style": "the game controls are the input: arrow keys or pointer",
+      "card_style": "none",
+      "navigation_pattern": "none: the experience is linear, pause and mute are the only chrome",
+      "modal_style": "none: state changes happen on the same stage",
+      "list_style": "none",
+      "component_notes": "The site has about five DOM elements on top of one WebGL canvas. Everything else is the scene."
+    }
+  },
+  "design_style": {
+    "aesthetic": {
+      "mood": ["cinematic", "quiet", "competitive", "intimate"],
+      "visual_metaphor": "a tie-break: the decisive moment of a match, played by the visitor",
+      "era_influence": "1970s tennis broadcast and film grain, mixed with a modern fashion editorial",
+      "genre": "luxury editorial game",
+      "personality_traits": ["confident", "restrained", "playful underneath"],
+      "adjectives": ["grainy", "soft-focus", "sparse", "kinetic"]
+    },
+    "visual_language": {
+      "complexity": "minimal",
+      "ornamentation": "none: the court lines are function, not decoration",
+      "whitespace_usage": "the photograph fills the space; there is no empty ground",
+      "visual_weight_distribution": "centre-weighted on the service box",
+      "focal_strategy": "progressive reveal: blurred to sharp",
+      "contrast_level": "medium (soft photo) with high-contrast white text",
+      "texture_usage": "heavy film grain over everything"
+    },
+    "composition": {
+      "hierarchy_method": "scale contrast between the serif sentence and tiny labels",
+      "balance_type": "symmetric",
+      "flow_direction": "time, not space: one screen that changes state",
+      "grouping_strategy": "the court boxes group information (score in a corner of each half)",
+      "negative_space_role": "the blur acts as negative space while still being a picture"
+    },
+    "imagery": {
+      "photo_treatment": "full-bleed campaign photography, heavily blurred and grained during play, revealed sharp as a reward",
+      "illustration_style": "none",
+      "graphic_elements": "court lines with chromatic tint and slight glow",
+      "pattern_usage": "film grain",
+      "image_shape": "full-bleed, no frame"
+    },
+    "interaction_feel": {
+      "feedback_style": "the scene answers: ball physics, score change, focus pull on a point",
+      "hover_behavior": "minimal",
+      "transition_personality": "smooth glide",
+      "loading_style": "the intro screen is the loader",
+      "microinteraction_density": "low in the UI, high in the game"
+    },
+    "brand_voice_in_ui": {
+      "tone": "friendly challenge",
+      "formality": "casual but elegant",
+      "cta_style": "friendly invitation (Start, Next, Click to continue)",
+      "empty_state_approach": "not applicable",
+      "error_tone": "not observed"
+    }
+  },
+  "visual_effects": {
+    "overview": {
+      "effect_intensity": "heavy-immersive",
+      "performance_tier": "heavy",
+      "fallback_strategy": "not observed; the experience depends on WebGL2",
+      "primary_technology": "WebGL2 with a custom bundle (no global three.js, GSAP or Pixi detected)"
+    },
+    "background_effects": {
+      "type": "photo with blur and grain",
+      "description": "Campaign photograph rendered as a full-screen texture, blurred during play and pulled into focus after a point",
+      "technology": "WebGL2 fragment shader",
+      "params": {
+        "color_palette": ["#283E6C", "#0E0C13", "#939497", "#623337"],
+        "speed": "focus pull about 1.5s",
+        "density": "full frame",
+        "opacity": "1",
+        "blend_mode": "normal, grain overlaid"
+      }
+    },
+    "particle_systems": {
+      "enabled": false,
+      "type": "none",
+      "description": "not observed",
+      "technology": "-",
+      "params": { "count": "-", "shape": "-", "size_range": "-", "movement_pattern": "-", "color_behavior": "-", "interaction": "none", "spawn_area": "-" }
+    },
+    "3d_elements": {
+      "enabled": true,
+      "type": "scene-bg",
+      "description": "A court drawn in perspective over the photo, with a ball and two paddles; the camera stays fixed",
+      "technology": "WebGL2",
+      "params": {
+        "renderer": "WebGL2",
+        "lighting": "none (lines are emissive)",
+        "camera": "fixed, slightly elevated perspective",
+        "materials": "emissive lines, flat ball",
+        "geometry": "lines and spheres",
+        "post_processing": ["gaussian blur", "film grain", "slight chromatic tint on lines"],
+        "interaction_model": "arrow keys or pointer move the player's paddle"
+      }
+    },
+    "shader_effects": {
+      "enabled": true,
+      "type": "custom-GLSL",
+      "description": "Blur and grain on the photo; the blur radius is the game's reward signal",
+      "technology": "GLSL",
+      "params": { "uniforms": "blur radius, time, grain", "vertex_manipulation": "none", "fragment_output": "blurred photo plus noise", "noise_type": "white noise grain", "distortion": "none" }
+    },
+    "scroll_effects": {
+      "parallax": { "enabled": false, "layers": "0", "depth_range": "-", "speed_curve": "-" },
+      "scroll_triggered_animations": { "enabled": false, "trigger_points": "-", "animation_type": "-", "scrub_behavior": "-" },
+      "scroll_morphing": { "enabled": false, "description": "the page does not scroll; progress is driven by play" }
+    },
+    "text_effects": {
+      "type": "none",
+      "description": "sentences cross-fade in place",
+      "technology": "CSS",
+      "params": { "split_strategy": "none", "animation_per_unit": "-", "stagger": "-", "effect_style": "fade" }
+    },
+    "cursor_effects": {
+      "enabled": false,
+      "type": "none",
+      "description": "the pointer steers the paddle instead",
+      "params": { "shape": "-", "size": "-", "blend_mode": "-", "trail": "-", "interaction_zone": "-" }
+    },
+    "image_effects": {
+      "type": "reveal-clip",
+      "description": "Blur-to-focus reveal of a sharp product photograph after each point",
+      "technology": "WebGL2",
+      "params": { "filter_pipeline": "blur, grain", "hover_transform": "none", "reveal_animation": "focus pull", "distortion_type": "none" }
+    },
+    "glassmorphism_neumorphism": {
+      "enabled": false,
+      "style": "none",
+      "params": { "blur_radius": "-", "transparency": "-", "border_treatment": "-", "shadow_type": "-", "light_source_angle": "-" }
+    },
+    "canvas_drawings": {
+      "enabled": true,
+      "type": "custom",
+      "description": "court lines and score drawn into the same canvas as the photo",
+      "technology": "WebGL2",
+      "params": { "draw_method": "line geometry", "animation_loop": "requestAnimationFrame", "color_scheme": "white, #4A79D8 player side, red opponent side", "responsiveness": "scales with the viewport", "interaction": "game input" }
+    },
+    "svg_animations": {
+      "enabled": false,
+      "type": "none",
+      "description": "not observed",
+      "params": { "animation_method": "-", "path_morphing": "-", "stroke_animation": "-", "filter_effects": "-" }
+    },
+    "composite_notes": "Three layers: a grained, blurred photo; an emissive court whose lines double as the layout grid; a few DOM sentences in Instrument Serif. Winning a point pulls the photo into focus and pauses on the sharp campaign image with Click to continue. The game is the navigation: the visitor never scrolls. Type sizes were measured from computed styles; the court and focus behaviour were observed from captures and are approximate."
+  }
+}

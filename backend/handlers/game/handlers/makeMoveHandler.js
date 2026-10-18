@@ -42,7 +42,7 @@ const createMakeMoveHandler = (deps) => {
     }
   };
 
-  const { mapTransitionError } = require('../utils/errorHelpers');
+  const { sendTransitionError } = require('../utils/errorHelpers');
 
   const { makeMove } = createGameMoveService({
     pool,
@@ -57,7 +57,7 @@ const createMakeMoveHandler = (deps) => {
     buildChessStateFromEngine,
     assertGameStatusTransition,
     assertRequiredGameStatus,
-    mapTransitionError,
+    sendTransitionError,
     sanitizeLiveSubmission: (payload) => sanitizeLiveSubmission(payload, normalizeGameType),
     getGameParticipants,
     pickWinnerFromResults,

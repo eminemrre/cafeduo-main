@@ -705,8 +705,8 @@ describe('gameHandlers (memory mode)', () => {
 
     expect(moveRes.statusCode).toBe(409);
     expect(moveRes.payload?.code).toBe('invalid_status_transition');
-    expect(moveRes.payload?.fromStatus).toBe('finished');
-    expect(moveRes.payload?.toStatus).toBe('active');
+    expect(moveRes.payload?.details).toEqual({ fromStatus: 'finished', toStatus: 'active' });
+    expect(moveRes.payload?.error).toEqual(expect.any(String));
   });
 
   it('includes chess move count and tempo in user history response', async () => {

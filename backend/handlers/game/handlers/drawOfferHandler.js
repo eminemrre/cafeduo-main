@@ -11,7 +11,8 @@ const {
   normalizeGameStatus,
   GAME_STATUS,
 } = require('../../../utils/gameStateMachine');
-const { mapTransitionError } = require('../utils/errorHelpers');
+const { sendTransitionError } = require('../utils/errorHelpers');
+const { sendApiProblem } = require('../../../utils/routeHelpers');
 const { applyDbSettlement, applyMemorySettlement } = require('../settlementUtils');
 const { normalizeDrawOfferAction, normalizeDrawOffer } = require('../drawOfferUtils');
 
@@ -32,7 +33,11 @@ const createDrawOfferHandler = (deps) => {
     const action = normalizeDrawOfferAction(req.body?.action);
     const actorName = String(req.user?.username || '').trim();
     if (!action) {
-      return res.status(400).json({ error: 'Geçersiz beraberlik aksiyonu.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'Geçersiz beraberlik aksiyonu.',
+      });
     }
 
     if (await isDbConnected()) {
@@ -51,20 +56,30 @@ const createDrawOfferHandler = (deps) => {
 
         if (result.rows.length === 0) {
           await client.query('ROLLBACK');
-          return res.status(404).json({ error: 'Oyun bulunamadı.' });
+          return sendApiProblem(res, {
+            status: 404,
+            code: 'GAME_NOT_FOUND',
+            message: 'Oyun bulunamadı.',
+          });
         }
 
         const game = result.rows[0];
         const actorParticipant = normalizeParticipantName(actorName, game);
         if (!actorParticipant) {
           await client.query('ROLLBACK');
-          return res.status(403).json({ error: 'Bu oyunda beraberlik işlemi yapma yetkin yok.' });
+          return sendApiProblem(res, {
+            status: 403,
+            code: 'FORBIDDEN',
+            message: 'Bu oyunda beraberlik işlemi yapma yetkin yok.',
+          });
         }
         if (!isChessGameType(game.game_type)) {
           await client.query('ROLLBACK');
-          return res
-            .status(400)
-            .json({ error: 'Beraberlik teklifi sadece satranç oyununda kullanılabilir.' });
+          return sendApiProblem(res, {
+            status: 400,
+            code: 'DRAW_OFFER_CHESS_ONLY',
+            message: 'Beraberlik teklifi sadece satranç oyununda kullanılabilir.',
+          });
         }
         const drawOfferStatus = assertRequiredGameStatus({
           currentStatus: game.status,
@@ -73,7 +88,7 @@ const createDrawOfferHandler = (deps) => {
         });
         if (!drawOfferStatus.ok) {
           await client.query('ROLLBACK');
-          return res.status(409).json(mapTransitionError(drawOfferStatus));
+          return sendTransitionError(res, drawOfferStatus, 409);
         }
 
         const nowIso = new Date().toISOString();
@@ -99,7 +114,11 @@ const createDrawOfferHandler = (deps) => {
           }
           if (isPendingByOpponent) {
             await client.query('ROLLBACK');
-            return res.status(409).json({ error: 'Rakibin beraberlik teklifine önce yanıt ver.' });
+            return sendApiProblem(res, {
+              status: 409,
+              code: 'DRAW_OFFER_PENDING',
+              message: 'Rakibin beraberlik teklifine önce yanıt ver.',
+            });
           }
 
           const nextOffer = {
@@ -138,7 +157,11 @@ const createDrawOfferHandler = (deps) => {
         if (action === 'cancel') {
           if (!isPendingByActor) {
             await client.query('ROLLBACK');
-            return res.status(409).json({ error: 'İptal edilecek aktif beraberlik teklifin yok.' });
+            return sendApiProblem(res, {
+              status: 409,
+              code: 'DRAW_OFFER_NOT_FOUND',
+              message: 'İptal edilecek aktif beraberlik teklifin yok.',
+            });
           }
           const nextOffer = {
             ...pendingOffer,
@@ -177,7 +200,11 @@ const createDrawOfferHandler = (deps) => {
         if (action === 'reject') {
           if (!isPendingByOpponent) {
             await client.query('ROLLBACK');
-            return res.status(409).json({ error: 'Yanıtlanacak rakip beraberlik teklifi yok.' });
+            return sendApiProblem(res, {
+              status: 409,
+              code: 'DRAW_OFFER_NOT_FOUND',
+              message: 'Yanıtlanacak rakip beraberlik teklifi yok.',
+            });
           }
           const nextOffer = {
             ...pendingOffer,
@@ -215,7 +242,11 @@ const createDrawOfferHandler = (deps) => {
 
         if (!isPendingByOpponent) {
           await client.query('ROLLBACK');
-          return res.status(409).json({ error: 'Onaylanacak rakip beraberlik teklifi yok.' });
+          return sendApiProblem(res, {
+            status: 409,
+            code: 'DRAW_OFFER_NOT_FOUND',
+            message: 'Onaylanacak rakip beraberlik teklifi yok.',
+          });
         }
 
         const nextOffer = {
@@ -254,7 +285,7 @@ const createDrawOfferHandler = (deps) => {
         });
         if (!drawTransition.ok) {
           await client.query('ROLLBACK');
-          return res.status(409).json(mapTransitionError(drawTransition));
+          return sendTransitionError(res, drawTransition, 409);
         }
 
         const settlement = await applyDbSettlement({
@@ -294,7 +325,11 @@ const createDrawOfferHandler = (deps) => {
       } catch (err) {
         await client.query('ROLLBACK');
         logger.error('Draw offer error', err);
-        return res.status(500).json({ error: 'Beraberlik teklifi işlenemedi.' });
+        return sendApiProblem(res, {
+          status: 500,
+          code: 'INTERNAL_ERROR',
+          message: 'Beraberlik teklifi işlenemedi.',
+        });
       } finally {
         client.release();
       }
@@ -302,19 +337,29 @@ const createDrawOfferHandler = (deps) => {
 
     const game = getMemoryGames().find((item) => String(item.id) === String(id));
     if (!game) {
-      return res.status(404).json({ error: 'Oyun bulunamadı.' });
+      return sendApiProblem(res, {
+        status: 404,
+        code: 'GAME_NOT_FOUND',
+        message: 'Oyun bulunamadı.',
+      });
     }
     const actorParticipant = normalizeParticipantName(actorName, {
       host_name: game.hostName,
       guest_name: game.guestName,
     });
     if (!actorParticipant) {
-      return res.status(403).json({ error: 'Bu oyunda beraberlik işlemi yapma yetkin yok.' });
+      return sendApiProblem(res, {
+        status: 403,
+        code: 'FORBIDDEN',
+        message: 'Bu oyunda beraberlik işlemi yapma yetkin yok.',
+      });
     }
     if (!isChessGameType(game.gameType)) {
-      return res
-        .status(400)
-        .json({ error: 'Beraberlik teklifi sadece satranç oyununda kullanılabilir.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'DRAW_OFFER_CHESS_ONLY',
+        message: 'Beraberlik teklifi sadece satranç oyununda kullanılabilir.',
+      });
     }
     const drawOfferStatus = assertRequiredGameStatus({
       currentStatus: game.status,
@@ -322,7 +367,7 @@ const createDrawOfferHandler = (deps) => {
       context: 'draw_offer_memory',
     });
     if (!drawOfferStatus.ok) {
-      return res.status(409).json(mapTransitionError(drawOfferStatus));
+      return sendTransitionError(res, drawOfferStatus, 409);
     }
 
     const nowIso = new Date().toISOString();
@@ -346,7 +391,11 @@ const createDrawOfferHandler = (deps) => {
         return res.json({ success: true, drawOffer: pendingOffer, pending: true });
       }
       if (isPendingByOpponent) {
-        return res.status(409).json({ error: 'Rakibin beraberlik teklifine önce yanıt ver.' });
+        return sendApiProblem(res, {
+          status: 409,
+          code: 'DRAW_OFFER_PENDING',
+          message: 'Rakibin beraberlik teklifine önce yanıt ver.',
+        });
       }
       const nextOffer = {
         status: 'pending',
@@ -373,7 +422,11 @@ const createDrawOfferHandler = (deps) => {
 
     if (action === 'cancel') {
       if (!isPendingByActor) {
-        return res.status(409).json({ error: 'İptal edilecek aktif beraberlik teklifin yok.' });
+        return sendApiProblem(res, {
+          status: 409,
+          code: 'DRAW_OFFER_NOT_FOUND',
+          message: 'İptal edilecek aktif beraberlik teklifin yok.',
+        });
       }
       const nextOffer = {
         ...pendingOffer,
@@ -401,7 +454,11 @@ const createDrawOfferHandler = (deps) => {
 
     if (action === 'reject') {
       if (!isPendingByOpponent) {
-        return res.status(409).json({ error: 'Yanıtlanacak rakip beraberlik teklifi yok.' });
+        return sendApiProblem(res, {
+          status: 409,
+          code: 'DRAW_OFFER_NOT_FOUND',
+          message: 'Yanıtlanacak rakip beraberlik teklifi yok.',
+        });
       }
       const nextOffer = {
         ...pendingOffer,
@@ -428,7 +485,11 @@ const createDrawOfferHandler = (deps) => {
     }
 
     if (!isPendingByOpponent) {
-      return res.status(409).json({ error: 'Onaylanacak rakip beraberlik teklifi yok.' });
+      return sendApiProblem(res, {
+        status: 409,
+        code: 'DRAW_OFFER_NOT_FOUND',
+        message: 'Onaylanacak rakip beraberlik teklifi yok.',
+      });
     }
     const drawTransition = assertGameStatusTransition({
       fromStatus: normalizeGameStatus(game.status),
@@ -436,7 +497,7 @@ const createDrawOfferHandler = (deps) => {
       context: 'draw_offer_accept_memory',
     });
     if (!drawTransition.ok) {
-      return res.status(409).json(mapTransitionError(drawTransition));
+      return sendTransitionError(res, drawTransition, 409);
     }
 
     const nextOffer = {

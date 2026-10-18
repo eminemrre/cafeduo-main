@@ -1,5 +1,6 @@
 const { Chess } = require('chess.js');
 const { GAME_STATUS } = require('../utils/gameStateMachine');
+const { sendApiProblem } = require('../utils/routeHelpers');
 
 const createGameMoveService = ({
   pool,
@@ -14,7 +15,7 @@ const createGameMoveService = ({
   buildChessStateFromEngine,
   assertGameStatusTransition,
   assertRequiredGameStatus,
-  mapTransitionError,
+  sendTransitionError,
   sanitizeLiveSubmission,
   getGameParticipants,
   pickWinnerFromResults,
@@ -107,7 +108,11 @@ const createGameMoveService = ({
 
         if (gameResult.rows.length === 0) {
           await client.query('ROLLBACK');
-          return res.status(404).json({ error: 'Oyun bulunamadı.' });
+          return sendApiProblem(res, {
+            status: 404,
+            code: 'GAME_NOT_FOUND',
+            message: 'Oyun bulunamadı.',
+          });
         }
 
         const game = gameResult.rows[0];
@@ -116,7 +121,11 @@ const createGameMoveService = ({
         const adminActor = isAdminActor(req.user);
         if (!actorParticipant && !adminActor) {
           await client.query('ROLLBACK');
-          return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
+          return sendApiProblem(res, {
+            status: 403,
+            code: 'FORBIDDEN',
+            message: 'Bu oyunun oyuncusu değilsin.',
+          });
         }
 
         const currentState =
@@ -125,7 +134,11 @@ const createGameMoveService = ({
         if (chessMove) {
           if (!isChessGameType(game.game_type)) {
             await client.query('ROLLBACK');
-            return res.status(400).json({ error: 'Bu oyun türü satranç hamlesi kabul etmiyor.' });
+            return sendApiProblem(res, {
+              status: 400,
+              code: 'CHESS_MOVE_NOT_ALLOWED',
+              message: 'Bu oyun türü satranç hamlesi kabul etmiyor.',
+            });
           }
 
           const chessMoveStatus = assertRequiredGameStatus({
@@ -135,7 +148,7 @@ const createGameMoveService = ({
           });
           if (!chessMoveStatus.ok) {
             await client.query('ROLLBACK');
-            return res.status(409).json(mapTransitionError(chessMoveStatus));
+            return sendTransitionError(res, chessMoveStatus, 409);
           }
 
           const resolvedColor = adminActor
@@ -145,13 +158,21 @@ const createGameMoveService = ({
             : resolveParticipantColor(actorParticipant, game);
           if (resolvedColor !== 'w' && resolvedColor !== 'b') {
             await client.query('ROLLBACK');
-            return res.status(403).json({ error: 'Bu satranç oyunu için hamle yetkin yok.' });
+            return sendApiProblem(res, {
+              status: 403,
+              code: 'FORBIDDEN',
+              message: 'Bu satranç oyunu için hamle yetkin yok.',
+            });
           }
 
           const safeMove = sanitizeChessMovePayload(chessMove);
           if (!safeMove) {
             await client.query('ROLLBACK');
-            return res.status(400).json({ error: 'Geçersiz satranç hamlesi formatı.' });
+            return sendApiProblem(res, {
+              status: 400,
+              code: 'VALIDATION_ERROR',
+              message: 'Geçersiz satranç hamlesi formatı.',
+            });
           }
 
           const currentChessState =
@@ -235,7 +256,11 @@ const createGameMoveService = ({
 
           if (chess.turn() !== resolvedColor) {
             await client.query('ROLLBACK');
-            return res.status(409).json({ error: 'Sıra sende değil.' });
+            return sendApiProblem(res, {
+              status: 409,
+              code: 'NOT_YOUR_TURN',
+              message: 'Sıra sende değil.',
+            });
           }
 
           // chess.js v1 yasadışı hamlede null DÖNMEZ, Error FIRLATIR — yakalayıp
@@ -248,7 +273,11 @@ const createGameMoveService = ({
           }
           if (!appliedMove) {
             await client.query('ROLLBACK');
-            return res.status(400).json({ error: 'Yasadışı hamle.' });
+            return sendApiProblem(res, {
+              status: 400,
+              code: 'ILLEGAL_MOVE',
+              message: 'Yasadışı hamle.',
+            });
           }
 
           const nextChessState = buildChessStateFromEngine(chess, currentChessState, appliedMove);
@@ -320,7 +349,7 @@ const createGameMoveService = ({
           });
           if (!chessTransition.ok) {
             await client.query('ROLLBACK');
-            return res.status(409).json(mapTransitionError(chessTransition));
+            return sendTransitionError(res, chessTransition, 409);
           }
           const moveSan = String(appliedMove.san || '').slice(0, 64);
           const updateQuery =
@@ -379,17 +408,25 @@ const createGameMoveService = ({
           });
           if (!liveSubmissionStatus.ok) {
             await client.query('ROLLBACK');
-            return res.status(409).json(mapTransitionError(liveSubmissionStatus));
+            return sendTransitionError(res, liveSubmissionStatus, 409);
           }
           if (!actorParticipant) {
             await client.query('ROLLBACK');
-            return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
+            return sendApiProblem(res, {
+              status: 403,
+              code: 'FORBIDDEN',
+              message: 'Bu oyunun oyuncusu değilsin.',
+            });
           }
 
           const safeLive = sanitizeLiveSubmission(liveSubmission);
           if (safeLive.mode && safeLive.mode !== String(game.game_type || '').trim()) {
             await client.query('ROLLBACK');
-            return res.status(400).json({ error: 'Canlı ilerleme oyun türü eşleşmiyor.' });
+            return sendApiProblem(res, {
+              status: 400,
+              code: 'GAME_TYPE_MISMATCH',
+              message: 'Canlı ilerleme oyun türü eşleşmiyor.',
+            });
           }
 
           const currentLive =
@@ -487,12 +524,16 @@ const createGameMoveService = ({
           });
           if (!scoreSubmissionStatus.ok) {
             await client.query('ROLLBACK');
-            return res.status(409).json(mapTransitionError(scoreSubmissionStatus));
+            return sendTransitionError(res, scoreSubmissionStatus, 409);
           }
 
           if (!actorParticipant) {
             await client.query('ROLLBACK');
-            return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
+            return sendApiProblem(res, {
+              status: 403,
+              code: 'FORBIDDEN',
+              message: 'Bu oyunun oyuncusu değilsin.',
+            });
           }
 
           const scorePayload =
@@ -569,7 +610,7 @@ const createGameMoveService = ({
           });
           if (!gameStateUpdateStatus.ok) {
             await client.query('ROLLBACK');
-            return res.status(409).json(mapTransitionError(gameStateUpdateStatus));
+            return sendTransitionError(res, gameStateUpdateStatus, 409);
           }
 
           const mergedState = {
@@ -605,7 +646,7 @@ const createGameMoveService = ({
         });
         if (!legacyMoveStatus.ok) {
           await client.query('ROLLBACK');
-          return res.status(409).json(mapTransitionError(legacyMoveStatus));
+          return sendTransitionError(res, legacyMoveStatus, 409);
         }
 
         const hostName = String(game.host_name || '')
@@ -629,7 +670,11 @@ const createGameMoveService = ({
 
         if (resolvedPlayer !== 'host' && resolvedPlayer !== 'guest') {
           await client.query('ROLLBACK');
-          return res.status(403).json({ error: 'Bu hamleyi yapmaya yetkin yok.' });
+          return sendApiProblem(res, {
+            status: 403,
+            code: 'FORBIDDEN',
+            message: 'Bu hamleyi yapmaya yetkin yok.',
+          });
         }
 
         const query =
@@ -648,7 +693,11 @@ const createGameMoveService = ({
       } catch (err) {
         await client.query('ROLLBACK');
         logger.error('Game move update error', err);
-        return res.status(500).json({ error: 'Hamle kaydedilemedi.' });
+        return sendApiProblem(res, {
+          status: 500,
+          code: 'INTERNAL_ERROR',
+          message: 'Hamle kaydedilemedi.',
+        });
       } finally {
         client.release();
       }
@@ -656,7 +705,11 @@ const createGameMoveService = ({
 
     const game = getMemoryGames().find((item) => String(item.id) === String(id));
     if (!game) {
-      return res.status(404).json({ error: 'Oyun bulunamadı.' });
+      return sendApiProblem(res, {
+        status: 404,
+        code: 'GAME_NOT_FOUND',
+        message: 'Oyun bulunamadı.',
+      });
     }
 
     const actorParticipant = normalizeParticipantName(actorName, {
@@ -665,12 +718,20 @@ const createGameMoveService = ({
     });
     const adminActor = isAdminActor(req.user);
     if (!actorParticipant && !adminActor) {
-      return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
+      return sendApiProblem(res, {
+        status: 403,
+        code: 'FORBIDDEN',
+        message: 'Bu oyunun oyuncusu değilsin.',
+      });
     }
 
     if (chessMove) {
       if (!isChessGameType(game.gameType)) {
-        return res.status(400).json({ error: 'Bu oyun türü satranç hamlesi kabul etmiyor.' });
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'CHESS_MOVE_NOT_ALLOWED',
+          message: 'Bu oyun türü satranç hamlesi kabul etmiyor.',
+        });
       }
       const chessMoveStatus = assertRequiredGameStatus({
         currentStatus: game.status,
@@ -678,7 +739,7 @@ const createGameMoveService = ({
         context: 'chess_move_memory',
       });
       if (!chessMoveStatus.ok) {
-        return res.status(409).json(mapTransitionError(chessMoveStatus));
+        return sendTransitionError(res, chessMoveStatus, 409);
       }
 
       const resolvedColor = adminActor
@@ -690,12 +751,20 @@ const createGameMoveService = ({
             guest_name: game.guestName,
           });
       if (resolvedColor !== 'w' && resolvedColor !== 'b') {
-        return res.status(403).json({ error: 'Bu satranç oyunu için hamle yetkin yok.' });
+        return sendApiProblem(res, {
+          status: 403,
+          code: 'FORBIDDEN',
+          message: 'Bu satranç oyunu için hamle yetkin yok.',
+        });
       }
 
       const safeMove = sanitizeChessMovePayload(chessMove);
       if (!safeMove) {
-        return res.status(400).json({ error: 'Geçersiz satranç hamlesi formatı.' });
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'VALIDATION_ERROR',
+          message: 'Geçersiz satranç hamlesi formatı.',
+        });
       }
 
       const currentChessState =
@@ -770,7 +839,11 @@ const createGameMoveService = ({
       }
 
       if (chess.turn() !== resolvedColor) {
-        return res.status(409).json({ error: 'Sıra sende değil.' });
+        return sendApiProblem(res, {
+          status: 409,
+          code: 'NOT_YOUR_TURN',
+          message: 'Sıra sende değil.',
+        });
       }
 
       // chess.js v1 yasadışı hamlede Error fırlatır (null dönmez) — yakala, 400 dön.
@@ -781,7 +854,11 @@ const createGameMoveService = ({
         appliedMove = null;
       }
       if (!appliedMove) {
-        return res.status(400).json({ error: 'Yasadışı hamle.' });
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'ILLEGAL_MOVE',
+          message: 'Yasadışı hamle.',
+        });
       }
 
       const nextChessState = buildChessStateFromEngine(chess, currentChessState, appliedMove);
@@ -840,7 +917,7 @@ const createGameMoveService = ({
         context: 'chess_move_memory',
       });
       if (!memoryChessTransition.ok) {
-        return res.status(409).json(mapTransitionError(memoryChessTransition));
+        return sendTransitionError(res, memoryChessTransition, 409);
       }
       game.status = nextMemoryStatus;
       if (winner || gameOver) {
@@ -889,15 +966,23 @@ const createGameMoveService = ({
         context: 'live_submission_memory',
       });
       if (!liveSubmissionStatus.ok) {
-        return res.status(409).json(mapTransitionError(liveSubmissionStatus));
+        return sendTransitionError(res, liveSubmissionStatus, 409);
       }
       if (!actorParticipant) {
-        return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
+        return sendApiProblem(res, {
+          status: 403,
+          code: 'FORBIDDEN',
+          message: 'Bu oyunun oyuncusu değilsin.',
+        });
       }
 
       const safeLive = sanitizeLiveSubmission(liveSubmission);
       if (safeLive.mode && safeLive.mode !== String(game.gameType || '').trim()) {
-        return res.status(400).json({ error: 'Canlı ilerleme oyun türü eşleşmiyor.' });
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'GAME_TYPE_MISMATCH',
+          message: 'Canlı ilerleme oyun türü eşleşmiyor.',
+        });
       }
 
       const liveState =
@@ -986,17 +1071,25 @@ const createGameMoveService = ({
         context: 'score_submission_memory',
       });
       if (!scoreSubmissionStatus.ok) {
-        return res.status(409).json(mapTransitionError(scoreSubmissionStatus));
+        return sendTransitionError(res, scoreSubmissionStatus, 409);
       }
       if (!actorParticipant) {
-        return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
+        return sendApiProblem(res, {
+          status: 403,
+          code: 'FORBIDDEN',
+          message: 'Bu oyunun oyuncusu değilsin.',
+        });
       }
       const canonicalParticipant = normalizeParticipantName(actorName, {
         host_name: game.hostName,
         guest_name: game.guestName,
       });
       if (!canonicalParticipant) {
-        return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
+        return sendApiProblem(res, {
+          status: 403,
+          code: 'FORBIDDEN',
+          message: 'Bu oyunun oyuncusu değilsin.',
+        });
       }
       game.gameState = game.gameState || {};
       game.gameState.results = game.gameState.results || {};
@@ -1057,7 +1150,7 @@ const createGameMoveService = ({
         context: 'game_state_update_memory',
       });
       if (!gameStateUpdateStatus.ok) {
-        return res.status(409).json(mapTransitionError(gameStateUpdateStatus));
+        return sendTransitionError(res, gameStateUpdateStatus, 409);
       }
 
       game.gameState = { ...(game.gameState || {}), ...gameState };
@@ -1075,7 +1168,7 @@ const createGameMoveService = ({
       context: 'legacy_move_memory',
     });
     if (!legacyMoveStatus.ok) {
-      return res.status(409).json(mapTransitionError(legacyMoveStatus));
+      return sendTransitionError(res, legacyMoveStatus, 409);
     }
 
     const hostName = String(game.hostName || '')
@@ -1101,7 +1194,11 @@ const createGameMoveService = ({
     } else if (resolvedPlayer === 'guest') {
       game.player2Move = String(move || '').slice(0, 64);
     } else {
-      return res.status(403).json({ error: 'Bu hamleyi yapmaya yetkin yok.' });
+      return sendApiProblem(res, {
+        status: 403,
+        code: 'FORBIDDEN',
+        message: 'Bu hamleyi yapmaya yetkin yok.',
+      });
     }
 
     emitRealtimeUpdate(id, {

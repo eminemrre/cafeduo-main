@@ -4,28 +4,6 @@ const DEFAULT_TRANSITION_MESSAGE = 'Geçersiz durum geçişi.';
 const DEFAULT_TRANSITION_CODE = 'invalid_transition';
 
 /**
- * Legacy body for a rejected game state transition.
- * Still used by the draw-offer and move handlers until they move to sendTransitionError.
- * @param {Object} transitionResult - Result from assertGameStatusTransition
- * @returns {Object} Error response body
- */
-const mapTransitionError = (transitionResult) => {
-  if (!transitionResult) {
-    return {
-      error: DEFAULT_TRANSITION_MESSAGE,
-      code: DEFAULT_TRANSITION_CODE,
-    };
-  }
-
-  return {
-    error: transitionResult.message || DEFAULT_TRANSITION_MESSAGE,
-    code: transitionResult.code || DEFAULT_TRANSITION_CODE,
-    fromStatus: transitionResult.from,
-    toStatus: transitionResult.to,
-  };
-};
-
-/**
  * Answer a rejected game state transition with the shared error contract.
  * @param {Object} res - Express response object
  * @param {Object} transitionResult - Result from assertGameStatusTransition
@@ -43,6 +21,5 @@ const sendTransitionError = (res, transitionResult, status = 409) =>
   });
 
 module.exports = {
-  mapTransitionError,
   sendTransitionError,
 };

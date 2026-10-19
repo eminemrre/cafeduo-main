@@ -38,7 +38,7 @@ export function ProfileActivity({
         aria-label="Envanterin"
         className="riso-focus p-5 border-b-2 border-carbon bg-paper-deep"
       >
-        <h3 className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.16em] mb-3 flex items-center gap-1.5 text-carbon-soft">
+        <h3 className="font-riso-mono text-xs font-bold uppercase tracking-[0.16em] mb-3 flex items-center gap-1.5 text-carbon-soft">
           <Package size={11} aria-hidden="true" strokeWidth={2.5} /> Envanterin
         </h3>
         <div className="min-h-12">
@@ -71,7 +71,7 @@ export function ProfileActivity({
               {inventory.data.map((item) => (
                 <li
                   key={item.id}
-                  className="max-w-full break-words border-2 border-carbon bg-paper px-2 py-1 font-riso-mono text-[0.65rem] font-bold uppercase tracking-wider text-carbon"
+                  className="max-w-full break-words border-2 border-carbon bg-paper px-2 py-1 font-riso-mono text-xs font-bold uppercase tracking-wider text-carbon"
                 >
                   {item.item_title}
                 </li>
@@ -86,7 +86,7 @@ export function ProfileActivity({
         aria-label="Son oyunların"
         className="riso-focus p-5 bg-paper"
       >
-        <h3 className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.16em] mb-3 flex items-center gap-1.5 text-carbon-soft">
+        <h3 className="font-riso-mono text-xs font-bold uppercase tracking-[0.16em] mb-3 flex items-center gap-1.5 text-carbon-soft">
           <Clock size={11} aria-hidden="true" strokeWidth={2.5} /> Son oyunların
         </h3>
         <div className="min-h-12">
@@ -139,7 +139,7 @@ export function ProfileActivity({
                     {validDate ? (
                       <time
                         dateTime={date.toISOString()}
-                        className="mt-1 block font-riso-mono text-[0.65rem] text-carbon-muted"
+                        className="mt-1 block font-riso-mono text-xs text-carbon-muted"
                       >
                         {dateFormat.format(date)}
                       </time>

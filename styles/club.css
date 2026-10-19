@@ -126,7 +126,7 @@
   text-decoration-color: #17140f70;
 }
 .club-entry-note {
-  font-size: 11px;
+  font-size: 12px;
   color: #4a4540;
   margin-top: 14px;
 }
@@ -248,7 +248,7 @@
 }
 .club-notation {
   font-family: 'Onest', system-ui, sans-serif;
-  font-size: 10px;
+  font-size: 12px;
   color: #4a4540;
   line-height: 1.7;
   max-width: 85%;
@@ -256,7 +256,7 @@
   padding: 8px 0;
 }
 .club-board-under > button {
-  font-size: 11px;
+  font-size: 12px;
   color: #2a251c;
   min-height: 44px;
   padding: 8px 0 8px 8px;
@@ -270,7 +270,7 @@
   min-height: 20px;
 }
 .club-board-note {
-  font-size: 10px;
+  font-size: 12px;
   color: #4a4540;
   margin-top: 5px;
   line-height: 1.5;
@@ -390,7 +390,7 @@
 }
 .club-game-number {
   font-family: 'Onest', system-ui, sans-serif;
-  font-size: 10px;
+  font-size: 12px;
   color: #4a4540;
 }
 .club-game-mark {
@@ -408,7 +408,7 @@
   color: #967316;
 }
 .club-game-tag {
-  font-size: 10px;
+  font-size: 12px;
   color: #4a4540;
   display: block;
   margin-bottom: 5px;
@@ -426,7 +426,7 @@
 }
 .club-game-description small {
   display: block;
-  font-size: 10px;
+  font-size: 12px;
   margin-top: 8px;
   color: #4a4540;
 }
@@ -475,7 +475,7 @@
 .club-members-note {
   border: 1px solid #17140f1f;
   padding: 27px;
-  transform: rotate(-2deg);
+  transform: none;
   background: #ede3c8;
 }
 .club-members-note > span {
@@ -602,7 +602,7 @@
     font-size: 17px;
   }
   .club-index > span:nth-child(2) {
-    font-size: 10px;
+    font-size: 12px;
   }
   .club-index > a {
     width: 100%;
@@ -715,7 +715,7 @@
   padding: 8px 11px;
   border: 1px solid #17140f1f;
   border-radius: 0;
-  font-size: 11px;
+  font-size: 12px;
   color: #2a251c;
   background: #ffffff;
 }
@@ -767,7 +767,7 @@
   inset: 6px 0 20px;
   border-radius: 48% 44% 40% 45%;
   background: #d9eaef;
-  transform: rotate(-4deg);
+  transform: none;
   z-index: -1;
 }
 .club-scene-halo::after {
@@ -808,7 +808,7 @@
   letter-spacing: -0.09em;
 }
 .club-scene-stamp > small {
-  font-size: 9px;
+  font-size: 12px;
   line-height: 1.2;
   text-align: center;
 }
@@ -822,7 +822,7 @@
   padding: 15px 21px;
   background: #ffffff;
   border: 1px solid #17140f;
-  transform: rotate(-5deg);
+  transform: none;
   z-index: 2;
   pointer-events: none;
 }
@@ -872,7 +872,7 @@
   color: #ffffff;
   font-family: 'Baloo 2', system-ui, sans-serif;
   font-size: 24px;
-  transform: rotate(-6deg);
+  transform: none;
 }
 .club-journey-table i {
   margin-left: 20px;
@@ -899,7 +899,7 @@
   padding: 21px;
   border: 1px solid #17140f;
   background: #ffffff;
-  transform: rotate(4deg);
+  transform: none;
   font-size: 13px;
   line-height: 1.7;
 }
@@ -950,7 +950,7 @@
 }
 .club-game-row:hover .club-game-mark,
 .club-game-row:focus-visible .club-game-mark {
-  transform: rotate(-8deg) translateY(-3px);
+  transform: translateY(-3px);
 }
 .club-game-row:hover .club-game-action > span,
 .club-game-row:focus-visible .club-game-action > span {
@@ -982,7 +982,7 @@
   gap: 13px;
 }
 .club-last-call > div > span {
-  font-size: 11px;
+  font-size: 12px;
   color: #4a4540;
 }
 .club-piece {
@@ -1009,15 +1009,15 @@
 @keyframes club-ticket-float {
   0%,
   100% {
-    transform: translateY(0) rotate(-5deg);
+    transform: translateY(0) ;
   }
   50% {
-    transform: translateY(-7px) rotate(-3deg);
+    transform: translateY(-7px) ;
   }
 }
 @keyframes club-stamp-turn {
   to {
-    transform: rotate(360deg);
+    transform: none;
   }
 }
 @keyframes club-reveal {
@@ -1114,7 +1114,7 @@ html[data-landing-motion='off'] {
     line-height: 1.5;
   }
   .club-motion-control {
-    font-size: 11px;
+    font-size: 12px;
     padding-inline: 8px;
     gap: 5px;
   }

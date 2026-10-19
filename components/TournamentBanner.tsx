@@ -51,7 +51,7 @@ export const TournamentBanner: React.FC<TournamentBannerProps> = ({
           <Trophy size={22} strokeWidth={2.4} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-riso-mono text-[0.65rem] uppercase tracking-[0.18em] text-carbon-soft">
+          <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
             Aktif Turnuva · {tournament.game_type || 'Tüm oyunlar'}
           </p>
           <h3 className="font-riso-display text-sm sm:text-lg text-carbon truncate">

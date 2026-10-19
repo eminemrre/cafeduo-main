@@ -125,7 +125,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                     <Wallet size={14} className="text-carbon" />
                     <span className="font-riso-mono text-sm font-bold text-carbon">
                       {user.points}
-                      <span className="ml-1 text-[0.65rem] uppercase tracking-wider opacity-80">
+                      <span className="ml-1 text-xs uppercase tracking-wider opacity-80">
                         CP
                       </span>
                     </span>

@@ -109,7 +109,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
         </div>
 
         <div className="inline-flex items-baseline gap-2 border-2 border-carbon bg-riso-mustard px-3 py-1.5 self-start sm:self-auto">
-          <span className="font-riso-mono text-[0.7rem] font-bold uppercase tracking-wider text-carbon">
+          <span className="font-riso-mono text-xs font-bold uppercase tracking-wider text-carbon">
             Bakiye:
           </span>
           <span className="font-riso-display text-lg text-carbon">
@@ -154,7 +154,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                             {getRewardIcon(reward.icon)}
                           </div>
                           <div className="text-right">
-                            <p className="font-riso-mono text-[0.65rem] uppercase tracking-wider text-carbon-muted">
+                            <p className="font-riso-mono text-xs uppercase tracking-wider text-carbon-muted">
                               Fiyat
                             </p>
                             <span className="font-riso-display text-xl text-carbon">
@@ -251,10 +251,10 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                           {item.title}
                         </h4>
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="inline-flex items-center gap-1 border-2 border-carbon bg-riso-pink/30 px-2 py-0.5 font-riso-mono text-[0.65rem] font-bold uppercase tracking-wider text-carbon">
+                          <span className="inline-flex items-center gap-1 border-2 border-carbon bg-riso-pink/30 px-2 py-0.5 font-riso-mono text-xs font-bold uppercase tracking-wider text-carbon">
                             {typeLabel}
                           </span>
-                          <span className="font-riso-mono text-[0.65rem] uppercase tracking-wider text-carbon-soft">
+                          <span className="font-riso-mono text-xs uppercase tracking-wider text-carbon-soft">
                             SKT: {expirationDate.toLocaleDateString('tr-TR')}
                           </span>
                         </div>
@@ -286,7 +286,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                             aria-label={`Kupon kodu: ${item.code}`}
                           />
                         </div>
-                        <code className="block w-full text-center font-riso-mono text-[0.7rem] sm:text-xs font-bold tracking-wider text-carbon break-all px-1">
+                        <code className="block w-full text-center font-riso-mono text-xs sm:text-xs font-bold tracking-wider text-carbon break-all px-1">
                           {item.code}
                         </code>
                       </div>

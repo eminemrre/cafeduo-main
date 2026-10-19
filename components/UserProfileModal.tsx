@@ -149,7 +149,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
               <div className="min-w-0 flex-1">
                 <h2 className="font-riso-display text-2xl text-carbon truncate">{user.username}</h2>
-                <span className="block mt-0.5 font-riso-mono text-[0.7rem] uppercase tracking-[0.16em] text-carbon-muted">
+                <span className="block mt-0.5 font-riso-mono text-xs uppercase tracking-[0.16em] text-carbon-muted">
                   {isPreview ? 'CafeDuo oyuncusu' : `ID: #${user.id.toString().padStart(6, '0')}`}
                 </span>
               </div>
@@ -209,7 +209,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     }}
                   >
                     <Briefcase size={11} strokeWidth={2.4} className="text-carbon-muted" />
-                    <span className="min-w-0 truncate font-riso-mono text-[0.7rem] uppercase tracking-wider text-carbon">
+                    <span className="min-w-0 truncate font-riso-mono text-xs uppercase tracking-wider text-carbon">
                       {user.department || 'Bölüm Girilmedi'}
                     </span>
                     {isEditable && !isPreview && (
@@ -286,7 +286,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       }}
                     />
                   </div>
-                  <p className="mt-1.5 text-right font-riso-mono text-[0.65rem] uppercase tracking-wider text-carbon-muted">
+                  <p className="mt-1.5 text-right font-riso-mono text-xs uppercase tracking-wider text-carbon-muted">
                     {user.points} CP
                   </p>
                 </div>
@@ -296,7 +296,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           </div>
           {/* Footer strip */}
           <div className="shrink-0 border-t-2 border-carbon bg-riso-mustard px-4 py-2 text-center">
-            <span className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.2em] text-carbon">
+            <span className="font-riso-mono text-xs font-bold uppercase tracking-[0.2em] text-carbon">
               {isPreview ? 'CafeDuo · Oyuncu' : 'CafeDuo Üye Kartı · Güncel'}
             </span>
           </div>
@@ -354,7 +354,7 @@ const StatCell: React.FC<StatCellProps> = ({ icon, label, value, tone, borderLef
       {icon}
     </div>
     <span className="block font-riso-display text-2xl text-carbon">{value}</span>
-    <span className="block font-riso-mono text-[0.6rem] uppercase tracking-[0.16em] text-carbon-muted">
+    <span className="block font-riso-mono text-xs uppercase tracking-[0.16em] text-carbon-muted">
       {label}
     </span>
   </div>

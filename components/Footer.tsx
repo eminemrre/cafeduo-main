@@ -47,13 +47,13 @@ export const Footer: React.FC = () => {
             <p className="mt-3 font-riso-body text-sm leading-6 text-carbon-soft">
               Kahve molana oyun, yeni karşılaşmalar ve güzel ödüller ekle.
             </p>
-            <p className="mt-4 font-riso-mono text-[0.7rem] tracking-wider uppercase text-carbon-muted">
+            <p className="mt-4 font-riso-mono text-xs tracking-wider uppercase text-carbon-muted">
               © {year} tüm hakları saklıdır
             </p>
           </RevealItem>
 
           <RevealItem>
-            <p className="font-riso-mono text-[0.7rem] font-bold tracking-wider uppercase text-carbon-soft">
+            <p className="font-riso-mono text-xs font-bold tracking-wider uppercase text-carbon-soft">
               Yasal
             </p>
             <Link
@@ -67,7 +67,7 @@ export const Footer: React.FC = () => {
           </RevealItem>
 
           <RevealItem>
-            <p className="font-riso-mono text-[0.7rem] font-bold tracking-wider uppercase text-carbon-soft mb-3">
+            <p className="font-riso-mono text-xs font-bold tracking-wider uppercase text-carbon-soft mb-3">
               İletişim
             </p>
             <div className="flex items-center gap-2.5">

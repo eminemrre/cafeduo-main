@@ -121,7 +121,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                           >
                             {hostName}
                           </button>
-                          <span className="font-riso-mono text-[0.7rem] font-bold bg-riso-pink text-carbon border-2 border-carbon px-2 py-0.5 tracking-wider">
+                          <span className="font-riso-mono text-xs font-bold bg-riso-pink text-carbon border-2 border-carbon px-2 py-0.5 tracking-wider">
                             Masa {req.table}
                           </span>
                         </div>
@@ -142,7 +142,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                       </button>
                     ) : (
                       <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <span className="font-riso-mono text-[0.7rem] uppercase font-bold tracking-wider border-2 border-carbon bg-riso-pink/15 text-riso-pink-deep px-3 py-1.5">
+                        <span className="font-riso-mono text-xs uppercase font-bold tracking-wider border-2 border-carbon bg-riso-pink/15 text-riso-pink-deep px-3 py-1.5">
                           SENİN LOBİN
                         </span>
                         <button

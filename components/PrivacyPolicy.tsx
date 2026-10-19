@@ -14,7 +14,6 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router';
 import {
-  Shield,
   Lock,
   Eye,
   Trash2,
@@ -39,17 +38,11 @@ export const PrivacyPolicy: React.FC = () => {
     <div className="riso-kantin min-h-screen bg-paper text-carbon py-12 sm:py-20 px-4 relative overflow-x-hidden">
       <div className="max-w-3xl mx-auto">
         {/* Hero */}
-        <header className="text-center mb-10 sm:mb-12 border-2 border-carbon bg-paper riso-shadow-md p-6 sm:p-10">
-          <p className="font-riso-mono text-[11px] sm:text-xs uppercase tracking-[0.18em] text-carbon-soft mb-3">
-            Veri Güvenliği Protokolü
-          </p>
-          <div className="inline-flex h-16 w-16 items-center justify-center border-2 border-carbon bg-riso-blue mb-4">
-            <Shield size={32} className="text-paper" strokeWidth={2.2} />
-          </div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl leading-[1.15] font-riso-display text-carbon tracking-[0.04em] mb-2 break-words uppercase">
+        <header className="mb-10 bg-paper px-6 py-8 sm:mb-12 sm:px-10 sm:py-12 border-b-[3px] border-dotted border-carbon/35">
+          <h1 className="font-riso-display text-3xl leading-[1.05] text-carbon sm:text-4xl md:text-5xl break-words">
             Gizlilik Politikası ve KVKK Aydınlatma Metni
           </h1>
-          <p className="text-sm text-carbon-muted font-riso-body mt-3">
+          <p className="mt-4 text-sm text-carbon-muted font-riso-body">
             Son güncelleme: {new Date().toLocaleDateString('tr-TR')}
           </p>
         </header>
@@ -233,19 +226,17 @@ interface PolicySectionProps {
  *  a numbered/iconned heading and a free-form body. Keeps the layout
  *  uniform across all 8 sections — change once, reflected everywhere. */
 const PolicySection: React.FC<PolicySectionProps> = ({ number, title, icon, iconBg, children }) => (
-  <Reveal as="section" className="border-2 border-carbon bg-paper-deep p-5 sm:p-6 riso-shadow-sm">
-    <header className="flex items-center gap-3 mb-4 pb-3 border-b-2 border-carbon">
-      <div
-        className={`flex h-10 w-10 shrink-0 items-center justify-center border-2 border-carbon ${iconBg}`}
-      >
+  <Reveal as="section" className="bg-paper-deep p-5 sm:p-6">
+    <header className="flex items-center gap-3 mb-4 pb-3 border-b-[3px] border-dotted border-carbon/35">
+      <div className={`flex h-10 w-10 shrink-0 items-center justify-center ${iconBg}`}>
         {icon}
       </div>
-      <h2 className="font-riso-display text-lg sm:text-xl font-bold text-carbon uppercase tracking-[0.04em]">
+      <h2 className="font-riso-display text-xl text-carbon sm:text-2xl">
         <span className="text-carbon-muted mr-2">{number}.</span>
         {title}
       </h2>
     </header>
-    <div className="text-carbon text-sm sm:text-base leading-relaxed">{children}</div>
+    <div className="text-carbon text-sm sm:text-base leading-relaxed max-w-[36rem]">{children}</div>
   </Reveal>
 );
 

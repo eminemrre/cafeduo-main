@@ -245,7 +245,7 @@ body {
   min-width: 65px;
 }
 .duo-status-stats span {
-  font-size: 11px;
+  font-size: 12px;
   display: flex;
   gap: 5px;
   align-items: center;
@@ -491,6 +491,15 @@ html::-webkit-scrollbar-thumb {
 }
 .text-riso-redox {
   color: #b8241a;
+}
+.text-riso-pink-deep {
+  color: #c4265f;
+}
+.text-riso-blue-deep {
+  color: #0b6aa8;
+}
+.text-riso-mustard-deep {
+  color: #8a6608;
 }
 
 /* =====================================================================

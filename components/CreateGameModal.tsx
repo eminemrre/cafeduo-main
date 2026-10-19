@@ -279,7 +279,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
               <div>
                 <p
                   id={gameTypeLabelId}
-                  className="block font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.18em] text-carbon-soft mb-2"
+                  className="block font-riso-mono text-xs font-bold uppercase tracking-[0.18em] text-carbon-soft mb-2"
                 >
                   OYUN TÜRÜ SEÇ
                 </p>
@@ -306,7 +306,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                         <div className="flex h-full flex-col">
                           <div className="mb-2 flex items-start justify-between">
                             <span
-                              className={`inline-flex border-2 border-carbon px-1.5 py-0.5 font-riso-mono text-[0.55rem] sm:text-[0.65rem] font-bold uppercase tracking-[0.1em] sm:tracking-[0.12em] ${TONE_BG[game.tone]}`}
+                              className={`inline-flex border-2 border-carbon px-1.5 py-0.5 font-riso-mono text-xs sm:text-xs font-bold uppercase tracking-[0.1em] sm:tracking-[0.12em] ${TONE_BG[game.tone]}`}
                             >
                               {game.category}
                             </span>
@@ -324,7 +324,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                           </div>
 
                           {game.minPoints > 0 && (
-                            <div className="hidden sm:block font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.14em] mt-auto pt-2 border-t-2 border-carbon">
+                            <div className="hidden sm:block font-riso-mono text-xs font-bold uppercase tracking-[0.14em] mt-auto pt-2 border-t-2 border-carbon">
                               MIN {game.minPoints} PUAN
                             </div>
                           )}
@@ -342,7 +342,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
 
               {/* Points slider */}
               <div>
-                <label className="flex justify-between font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.18em] mb-2">
+                <label className="flex justify-between font-riso-mono text-xs font-bold uppercase tracking-[0.18em] mb-2">
                   <span className="text-carbon-soft">ENERJİ (PUAN) YATIRIMI</span>
                   <span className="text-riso-pink-deep">{`${points} / ${maxPoints}`}</span>
                 </label>
@@ -410,7 +410,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
               {/* Chess tempo (conditional) */}
               {gameType === 'Retro Satranç' && (
                 <div>
-                  <label className="block font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.18em] text-carbon-soft mb-2">
+                  <label className="block font-riso-mono text-xs font-bold uppercase tracking-[0.18em] text-carbon-soft mb-2">
                     SATRANÇ TEMPOSU
                   </label>
                   <div className="grid grid-cols-2 gap-2">
@@ -482,7 +482,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                       <p className="font-riso-display text-sm uppercase tracking-wider text-carbon">
                         Bu turnuvaya katıl
                       </p>
-                      <p className="font-riso-mono text-[0.65rem] text-carbon-muted truncate">
+                      <p className="font-riso-mono text-xs text-carbon-muted truncate">
                         {activeTournament.name}
                         {activeTournament.game_type
                           ? ` · ${activeTournament.game_type}`

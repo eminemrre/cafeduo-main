@@ -78,7 +78,7 @@ export const Modal: React.FC<ModalProps> = ({
             <header className="flex items-start justify-between gap-4 px-6 pt-5 pb-4 border-b-2 border-carbon bg-paper-deep">
               <div className="flex flex-col gap-1">
                 {eyebrow && (
-                  <span className="font-riso-mono text-[0.6875rem] uppercase tracking-[0.16em] text-riso-pink-deep font-bold">
+                  <span className="font-riso-mono text-xs uppercase tracking-[0.16em] text-riso-pink-deep font-bold">
                     {eyebrow}
                   </span>
                 )}

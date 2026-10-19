@@ -26,7 +26,7 @@ export const Badge: React.FC<BadgeProps> = ({ tone = 'neutral', children, classN
   <span
     className={
       'inline-flex items-center px-2 py-0.5 border-2 font-riso-body ' +
-      `text-[0.6875rem] font-bold uppercase tracking-[0.08em] ${toneClass[tone]} ${className}`
+      `text-xs font-bold uppercase tracking-[0.08em] ${toneClass[tone]} ${className}`
     }
   >
     {children}

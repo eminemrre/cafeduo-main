@@ -32,7 +32,7 @@ export const TH: React.FC<React.ThHTMLAttributes<HTMLTableCellElement>> = ({
   <th
     {...rest}
     className={
-      'px-4 py-3 text-[0.6875rem] uppercase tracking-[0.12em] font-bold font-riso-body ' +
+      'px-4 py-3 text-xs uppercase tracking-[0.12em] font-bold font-riso-body ' +
       `text-carbon-soft ${className}`
     }
   >

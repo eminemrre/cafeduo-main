@@ -139,19 +139,19 @@ export const Leaderboard: React.FC = () => {
         <table className="w-full text-left font-riso-body">
           <thead className="border-b-2 border-carbon bg-paper-deep">
             <tr>
-              <th className="px-3 py-2.5 text-center w-16 font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.14em] text-carbon-soft">
+              <th className="px-3 py-2.5 text-center w-16 font-riso-mono text-xs font-bold uppercase tracking-[0.14em] text-carbon-soft">
                 Sıra
               </th>
-              <th className="px-3 py-2.5 font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.14em] text-carbon-soft">
+              <th className="px-3 py-2.5 font-riso-mono text-xs font-bold uppercase tracking-[0.14em] text-carbon-soft">
                 Kullanıcı
               </th>
-              <th className="hidden px-3 py-2.5 font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.14em] text-carbon-soft md:table-cell">
+              <th className="hidden px-3 py-2.5 font-riso-mono text-xs font-bold uppercase tracking-[0.14em] text-carbon-soft md:table-cell">
                 Bölüm
               </th>
-              <th className="px-3 py-2.5 text-right font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.14em] text-carbon-soft">
+              <th className="px-3 py-2.5 text-right font-riso-mono text-xs font-bold uppercase tracking-[0.14em] text-carbon-soft">
                 Puan
               </th>
-              <th className="hidden px-3 py-2.5 text-right font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.14em] text-carbon-soft sm:table-cell">
+              <th className="hidden px-3 py-2.5 text-right font-riso-mono text-xs font-bold uppercase tracking-[0.14em] text-carbon-soft sm:table-cell">
                 Galibiyet
               </th>
             </tr>

@@ -133,7 +133,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block mb-1.5 font-riso-mono text-[0.7rem] uppercase tracking-[0.12em] text-carbon-soft">
+            <label className="block mb-1.5 font-riso-mono text-xs uppercase tracking-[0.12em] text-carbon-soft">
               Ad
             </label>
             <input
@@ -149,7 +149,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
           </div>
 
           <div>
-            <label className="block mb-1.5 font-riso-mono text-[0.7rem] uppercase tracking-[0.12em] text-carbon-soft">
+            <label className="block mb-1.5 font-riso-mono text-xs uppercase tracking-[0.12em] text-carbon-soft">
               Oyun türü
             </label>
             <select
@@ -168,7 +168,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block mb-1.5 font-riso-mono text-[0.7rem] uppercase tracking-[0.12em] text-carbon-soft">
+              <label className="block mb-1.5 font-riso-mono text-xs uppercase tracking-[0.12em] text-carbon-soft">
                 Başlangıç
               </label>
               <input
@@ -183,7 +183,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
               />
             </div>
             <div>
-              <label className="block mb-1.5 font-riso-mono text-[0.7rem] uppercase tracking-[0.12em] text-carbon-soft">
+              <label className="block mb-1.5 font-riso-mono text-xs uppercase tracking-[0.12em] text-carbon-soft">
                 Bitiş
               </label>
               <input
@@ -199,7 +199,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="font-riso-mono text-[0.7rem] uppercase tracking-[0.12em] text-carbon-soft">
+              <label className="font-riso-mono text-xs uppercase tracking-[0.12em] text-carbon-soft">
                 Ödül Sıralaması
               </label>
               <button
@@ -207,7 +207,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
                 onClick={addTier}
                 disabled={tournamentForm.tiers.length >= 10}
                 data-testid="tournament-add-tier"
-                className="riso-focus inline-flex items-center gap-1 border-2 border-carbon bg-paper-deep px-2 py-1 font-riso-mono text-[0.65rem] uppercase tracking-wider text-carbon hover:bg-riso-mustard transition-colors disabled:opacity-50"
+                className="riso-focus inline-flex items-center gap-1 border-2 border-carbon bg-paper-deep px-2 py-1 font-riso-mono text-xs uppercase tracking-wider text-carbon hover:bg-riso-mustard transition-colors disabled:opacity-50"
               >
                 <Plus size={12} /> Kademe ekle
               </button>
@@ -256,12 +256,12 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
             </div>
 
             {rewardsLoading && (
-              <p className="mt-2 font-riso-mono text-[0.7rem] text-carbon-muted">
+              <p className="mt-2 font-riso-mono text-xs text-carbon-muted">
                 Ödüller yükleniyor...
               </p>
             )}
             {!rewardsLoading && activeRewards.length === 0 && (
-              <p className="mt-2 font-riso-mono text-[0.7rem] text-riso-redox">
+              <p className="mt-2 font-riso-mono text-xs text-riso-redox">
                 Bu kafede aktif ödül yok. Önce 'Ödül Yönetimi' sekmesinden ödül ekle.
               </p>
             )}
@@ -314,12 +314,12 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <span
-                          className={`inline-flex items-center font-riso-mono text-[0.65rem] uppercase tracking-wider px-2 py-0.5 border-2 border-carbon ${status.klass}`}
+                          className={`inline-flex items-center font-riso-mono text-xs uppercase tracking-wider px-2 py-0.5 border-2 border-carbon ${status.klass}`}
                         >
                           {status.label}
                         </span>
                         {t.game_type && (
-                          <span className="font-riso-mono text-[0.65rem] uppercase tracking-wider text-carbon-muted">
+                          <span className="font-riso-mono text-xs uppercase tracking-wider text-carbon-muted">
                             {t.game_type}
                           </span>
                         )}
@@ -327,10 +327,10 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
                       <h4 className="font-riso-display text-base text-carbon truncate">
                         {t.name}
                       </h4>
-                      <p className="font-riso-mono text-[0.7rem] text-carbon-muted">
+                      <p className="font-riso-mono text-xs text-carbon-muted">
                         {formatLocal(t.start_at)} → {formatLocal(t.end_at)}
                       </p>
-                      <p className="mt-1 font-riso-mono text-[0.7rem] text-carbon-muted">
+                      <p className="mt-1 font-riso-mono text-xs text-carbon-muted">
                         {t.prize_tiers.length} ödül kademesi
                       </p>
                     </div>

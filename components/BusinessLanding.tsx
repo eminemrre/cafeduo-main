@@ -128,7 +128,7 @@ const NumbersBar: React.FC = () => (
             {n.icon}
           </span>
           <div>
-            <p className="font-riso-mono text-[0.65rem] uppercase tracking-[0.16em] text-carbon-soft">
+            <p className="font-riso-mono text-xs uppercase tracking-[0.16em] text-carbon-soft">
               {n.label}
             </p>
             <p className="font-riso-display text-xl text-carbon">{n.value}</p>
@@ -273,7 +273,7 @@ const PricingSection: React.FC = () => (
       >
         <div className="flex flex-col gap-2 border-b border-carbon/20 pb-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="font-riso-mono text-[0.7rem] uppercase tracking-[0.18em] text-carbon-soft">
+            <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
               CafeDuo Pro
             </p>
             <p className="mt-2 font-riso-display text-5xl leading-none text-carbon">
@@ -449,7 +449,7 @@ const ClosingCta: React.FC = () => (
             <span>E-posta gönder</span>
             <ArrowUpRight size={16} className="opacity-70" />
           </a>
-          <p className="font-riso-mono text-[0.7rem] uppercase tracking-[0.14em] text-paper/60">
+          <p className="font-riso-mono text-xs uppercase tracking-[0.14em] text-paper/60">
             Cevap genelde 1 saatte gelir.
           </p>
         </div>

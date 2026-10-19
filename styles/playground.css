@@ -140,7 +140,7 @@
   top: 32%;
   border-radius: 15% 15% 38% 38%;
   background: linear-gradient(110deg, #eef6f8 5%, #eddec3 80%);
-  transform: rotate(-12deg);
+  transform: none;
 }
 .cafe-ceramic-cup::before {
   content: '';
@@ -174,7 +174,7 @@
     4px 4px #ad527b,
     6px 6px #ac557d,
     12px 20px 18px #a349742a;
-  transform: rotate(9deg);
+  transform: none;
 }
 .cafe-blue-token {
   position: absolute;
@@ -186,11 +186,11 @@
   display: grid;
   place-items: center;
   background: #1fb3ff;
-  color: #ffd0dd;
+  color: #17140f;
   font-family: 'Onest', system-ui, sans-serif;
   font-weight: 800;
   font-size: 27px;
-  transform: rotate(20deg);
+  transform: none;
 }
 .cafe-scene-chapters {
   display: flex;
@@ -229,13 +229,13 @@
   font-size: 13px;
 }
 .club-home .club-index > span:first-child {
-  color: #eef6f8;
+  color: #17140f;
   font-family: 'Onest', system-ui, sans-serif;
   font-style: normal;
   font-size: 15px;
 }
 .club-home .club-index a {
-  color: #eef6f8;
+  color: #17140f;
 }
 .club-demo-section {
   width: min(1180px, calc(100% - 80px));
@@ -268,7 +268,7 @@
 .club-demo-copy > span {
   display: block;
   margin-top: 20px;
-  font-size: 11px;
+  font-size: 12px;
   color: #4a4540;
 }
 .club-demo-section .club-board-scene {
@@ -344,7 +344,7 @@
   background: #edc0d3;
   border: 0;
   border-radius: 0;
-  transform: rotate(-3deg);
+  transform: none;
 }
 .club-last-call {
   background: #d9eaef;
@@ -369,7 +369,7 @@
     gap: 10px;
   }
   .cafe-scene-chapters button {
-    font-size: 10px;
+    font-size: 12px;
   }
   .club-demo-section {
     gap: 55px;
@@ -419,7 +419,7 @@
   }
   .club-hero-meta .club-kicker {
     max-width: 170px;
-    font-size: 10px;
+    font-size: 12px;
   }
   .cafe-scene {
     height: clamp(310px, 90vw, 460px);
@@ -428,7 +428,7 @@
     gap: 16px;
   }
   .cafe-scene-chapters button {
-    font-size: 11px;
+    font-size: 12px;
   }
   .cafe-pink-knight {
     font-size: 150px;
@@ -443,7 +443,7 @@
     gap: 18px;
   }
   .club-home .club-index > span:nth-child(2) {
-    font-size: 10px;
+    font-size: 12px;
   }
   .club-demo-section {
     width: calc(100% - 40px);
@@ -587,25 +587,23 @@
   background: #eef6f8 !important;
 }
 .owner-landing > section:last-child {
-  background: #1fb3ff;
+  background: #17140f;
 }
 .owner-landing h2:not(.owner-pilot h2),
 .owner-landing h3 {
-  font-family: 'Onest', system-ui, sans-serif;
-  font-weight: 650;
-  letter-spacing: -0.045em;
-}
-.owner-landing .font-riso-display {
-  font-family: 'Onest', system-ui, sans-serif;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 .owner-landing [aria-label='Fiyatlandırma'] .riso-shadow-md {
-  border: 1px solid #1fb3ff30;
+  border: 0;
   border-radius: 0;
   background: #ffffff;
 }
 .owner-landing [aria-label='Fiyatlandırma'] a.bg-carbon {
   background: #1fb3ff;
   border-radius: 0;
+  color: #17140f;
 }
 .owner-landing summary {
   min-height: 44px;

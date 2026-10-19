@@ -125,7 +125,7 @@ export const Achievements: React.FC<AchievementsProps> = ({ userId }) => {
                     {ach.title}
                   </h3>
                   <span
-                    className={`inline-flex shrink-0 items-center gap-1 border-2 border-carbon px-1.5 py-0.5 font-riso-mono text-[0.65rem] font-bold ${
+                    className={`inline-flex shrink-0 items-center gap-1 border-2 border-carbon px-1.5 py-0.5 font-riso-mono text-xs font-bold ${
                       ach.unlocked ? 'bg-riso-mustard text-carbon' : 'bg-paper text-carbon-muted'
                     }`}
                   >
@@ -137,7 +137,7 @@ export const Achievements: React.FC<AchievementsProps> = ({ userId }) => {
                 </p>
 
                 {ach.unlocked && (
-                  <p className="mt-2 font-riso-mono text-[0.65rem] uppercase tracking-wider text-riso-spring">
+                  <p className="mt-2 font-riso-mono text-xs uppercase tracking-wider text-riso-spring">
                     Kazanıldı: {new Date(ach.unlockedAt!).toLocaleDateString('tr-TR')}
                   </p>
                 )}

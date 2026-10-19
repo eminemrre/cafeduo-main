@@ -69,7 +69,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
           <div className="min-h-0 overflow-y-auto overscroll-contain p-5" aria-busy={saving}>
             <p
               role={saving ? 'status' : undefined}
-              className="mb-3 min-h-8 font-riso-mono text-[0.7rem] uppercase tracking-[0.16em] text-carbon-soft"
+              className="mb-3 min-h-8 font-riso-mono text-xs uppercase tracking-[0.16em] text-carbon-soft"
             >
               {saving ? 'Avatar kaydediliyor…' : '16 avatar · Kendine birini seç'}
             </p>

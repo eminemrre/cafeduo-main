@@ -537,7 +537,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
         {/* Header */}
         <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
           <div>
-            <p className="text-[0.6875rem] uppercase tracking-[0.14em] text-riso-pink-deep font-semibold mb-2 flex items-center gap-2">
+            <p className="text-xs uppercase tracking-[0.14em] text-riso-pink-deep font-semibold mb-2 flex items-center gap-2">
               <ShieldCheck size={14} />
               <span>CafeDuo · Yönetim</span>
             </p>
@@ -724,7 +724,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
               <section className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
                 {/* Cafe list */}
                 <Card className="p-6 h-fit">
-                  <p className="text-[0.6875rem] uppercase tracking-[0.1em] font-semibold text-carbon-muted mb-4">
+                  <p className="text-xs uppercase tracking-[0.1em] font-semibold text-carbon-muted mb-4">
                     Kafeler
                   </p>
                   {cafes.length === 0 ? (
@@ -768,7 +768,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                   <Card className="p-8">
                     <header className="flex items-start justify-between gap-4 mb-6">
                       <div>
-                        <p className="text-[0.6875rem] uppercase tracking-[0.1em] text-riso-pink-deep font-semibold mb-1">
+                        <p className="text-xs uppercase tracking-[0.1em] text-riso-pink-deep font-semibold mb-1">
                           Konum Detayları
                         </p>
                         <h2 className="font-riso-display text-[1.5rem] text-carbon font-semibold tracking-[-0.01em]">
@@ -868,7 +868,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                       </div>
 
                       <Card variant="muted" className="p-5">
-                        <p className="text-[0.6875rem] uppercase tracking-[0.1em] font-semibold text-riso-pink-deep mb-3">
+                        <p className="text-xs uppercase tracking-[0.1em] font-semibold text-riso-pink-deep mb-3">
                           Birincil Konum
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -915,7 +915,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                       </Card>
 
                       <Card variant="muted" className="p-5">
-                        <p className="text-[0.6875rem] uppercase tracking-[0.1em] font-semibold text-carbon-muted mb-3">
+                        <p className="text-xs uppercase tracking-[0.1em] font-semibold text-carbon-muted mb-3">
                           İkincil Konum · Opsiyonel
                         </p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -968,7 +968,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                           DAILY_WHEEL_SLICES). Daily game limit stays
                           configurable per cafe. */}
                       <Card variant="muted" className="p-5">
-                        <p className="text-[0.6875rem] uppercase tracking-[0.1em] font-semibold text-riso-blue mb-3">
+                        <p className="text-xs uppercase tracking-[0.1em] font-semibold text-riso-blue mb-3">
                           Bu Kafenin Kuralları
                         </p>
                         <Input

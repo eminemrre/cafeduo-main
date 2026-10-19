@@ -106,7 +106,7 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
       <div className="relative z-10 w-full max-w-lg bg-paper border-2 border-carbon riso-shadow-md max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)] flex flex-col">
         <div className="flex items-center justify-between border-b-2 border-carbon px-4 sm:px-5 py-3 shrink-0">
           <div className="min-w-0">
-            <p className="font-riso-mono text-[0.65rem] uppercase tracking-[0.18em] text-carbon-soft">
+            <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
               Turnuva Sıralaması
             </p>
             <h3 className="font-riso-display text-lg uppercase tracking-wide text-carbon truncate">
@@ -158,7 +158,7 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
                         initials={String(row.username || '?')
                           .substring(0, 2)
                           .toUpperCase()}
-                        initialsClassName="font-riso-display text-[0.65rem] font-bold"
+                        initialsClassName="font-riso-display text-xs font-bold"
                       />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -166,7 +166,7 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
                         {row.username}
                       </p>
                       {prize && (
-                        <p className="font-riso-mono text-[0.65rem] uppercase tracking-wider text-riso-pink-deep">
+                        <p className="font-riso-mono text-xs uppercase tracking-wider text-riso-pink-deep">
                           Ödül: {prize}
                         </p>
                       )}
@@ -175,7 +175,7 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
                       <p className="font-riso-mono text-base font-bold text-riso-mustard-deep">
                         {formatPoints(row.total_points)}
                       </p>
-                      <p className="font-riso-mono text-[0.6rem] uppercase tracking-wider text-carbon-muted">
+                      <p className="font-riso-mono text-xs uppercase tracking-wider text-carbon-muted">
                         {row.games_counted} oyun
                       </p>
                     </div>

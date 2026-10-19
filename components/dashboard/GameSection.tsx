@@ -205,6 +205,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
             </p>
           </div>
           <button
+            type="button"
             onClick={onRejoinGame}
             className="duo-button riso-focus shrink-0 px-5 py-3 bg-paper text-carbon font-riso-display text-lg sm:text-xl uppercase border-2 border-carbon riso-shadow-sm transition-all"
           >

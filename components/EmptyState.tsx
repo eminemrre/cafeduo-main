@@ -87,6 +87,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
         {secondaryAction && (
           <button
+            type="button"
             onClick={secondaryAction.onClick}
             className="text-carbon-muted hover:text-carbon-soft transition-colors text-sm underline underline-offset-4"
           >

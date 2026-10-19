@@ -322,6 +322,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
             <p className="mt-2 text-xs text-carbon-muted sm:text-sm">{participants}</p>
           </div>
           <button
+            type="button"
             onClick={onLeave}
             className="riso-focus riso-press border-2 border-carbon bg-riso-pink text-carbon riso-shadow-sm px-3 py-1.5 font-riso-display text-xs uppercase tracking-[0.14em] font-bold"
           >

@@ -269,6 +269,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
               {QUIZ_GAME_TYPE}
             </h2>
             <button
+              type="button"
               onClick={onLeave}
               className="riso-focus riso-press shrink-0 px-3 py-2 border-2 border-carbon bg-riso-pink text-carbon riso-shadow-sm transition-all font-riso-display text-xs uppercase tracking-[0.16em]"
             >
@@ -391,6 +392,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
                           : '';
                 return (
                   <button
+                    type="button"
                     key={`${roundIndex}-${idx}`}
                     data-testid={`knowledge-option-${idx}`}
                     onClick={() => handleAnswer(idx)}

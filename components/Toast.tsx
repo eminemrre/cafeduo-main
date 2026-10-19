@@ -59,6 +59,7 @@ export const Toast: React.FC<ToastProps> = ({
       {iconMap[type]}
       <p className="font-medium text-sm flex-1 font-riso-body">{message}</p>
       <button
+        type="button"
         onClick={onClose}
         aria-label="Bildirimi kapat"
         className="text-carbon-muted hover:text-carbon p-1 border-2 border-transparent hover:border-carbon hover:bg-paper transition-colors"

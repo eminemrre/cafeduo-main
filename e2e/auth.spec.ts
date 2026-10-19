@@ -6,8 +6,8 @@ const openAuthModal = async (page: import('@playwright/test').Page) => {
 
   const buttonCandidates = [
     page.locator('[data-testid="hero-login-button"]').first(),
-    page.getByRole('button', { name: /OTURUM AÇ|GİRİŞ YAP/i }).first(),
-    page.locator('main').getByRole('button', { name: /OTURUM AÇ|GİRİŞ YAP/i }).first(),
+    page.getByRole('button', { name: /Giriş yap|OTURUM AÇ|GİRİŞ YAP/i }).first(),
+    page.locator('main').getByRole('button', { name: /Giriş yap|OTURUM AÇ|GİRİŞ YAP/i }).first(),
   ];
 
   let clicked = false;
@@ -36,7 +36,7 @@ const openAuthModal = async (page: import('@playwright/test').Page) => {
 const switchToRegisterMode = async (page: import('@playwright/test').Page) => {
   const candidates = [
     page.locator('button:has-text("KAYIT OL")').first(),
-    page.getByRole('button', { name: /Kayıt Ol|KAYIT OL/i }).first(),
+    page.getByRole('button', { name: /Kayıt ol|Kayıt Ol|KAYIT OL/i }).first(),
   ];
 
   for (const candidate of candidates) {
@@ -86,7 +86,7 @@ test.describe('Authentication Flow', () => {
     await page.getByPlaceholder('Kullanıcı adı').fill(username);
     await page.locator('[data-testid="auth-email-input"]').fill(email);
     await page.locator('[data-testid="auth-password-input"]').fill(password);
-    await page.locator('[data-testid="auth-submit-button"], form button[type="submit"]').first().click({ force: true });
+    await page.locator('[data-testid="auth-submit-button"]').click({ force: true });
 
     const startedAt = Date.now();
     let hasAuthCookie = false;
@@ -114,7 +114,7 @@ test.describe('Authentication Flow', () => {
     await openAuthModal(page);
     await page.locator('[data-testid="auth-email-input"]').fill(session.credentials.email);
     await page.locator('[data-testid="auth-password-input"]').fill(session.credentials.password);
-    await page.locator('[data-testid="auth-submit-button"], form button[type="submit"]').first().click({ force: true });
+    await page.locator('[data-testid="auth-submit-button"]').click({ force: true });
 
     const checkInHeadingInitial = page.getByText('Kafeye Giriş');
     const dashboardTabInitial = page.locator('[data-testid="dashboard-tab-games"]').first();
@@ -228,7 +228,7 @@ test.describe('Authentication Flow', () => {
     await openAuthModal(page);
     await page.locator('[data-testid="auth-email-input"]').fill('nonexistent@example.com');
     await page.locator('[data-testid="auth-password-input"]').fill('wrongpass123');
-    await page.locator('[data-testid="auth-submit-button"], form button[type="submit"]').first().click({ force: true });
+    await page.locator('[data-testid="auth-submit-button"]').click({ force: true });
 
     await expect(page.locator('[data-testid="auth-email-input"]')).toBeVisible();
   });

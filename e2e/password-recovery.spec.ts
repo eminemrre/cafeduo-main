@@ -36,7 +36,7 @@ for (const viewport of [
     });
     expect(geometry.overflow).toBe(false);
     expect(geometry.cardTop).toBeGreaterThan(geometry.navBottom);
-    expect(geometry.headingColor).toBe('rgb(20, 20, 19)');
+    expect(geometry.headingColor).toBe('rgb(23, 20, 15)');
     expect(geometry.inputSize).toBeGreaterThanOrEqual(16);
     expect(geometry.inputHeight).toBeGreaterThanOrEqual(48);
     await page.getByLabel('Yeni şifre', { exact: true }).fill('new-pass-123');

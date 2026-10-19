@@ -40,7 +40,11 @@ for (const viewport of [
     for (const title of ['Bir kahvelik oyun', 'Nasıl işler', 'Menü']) {
       await expect(page.getByRole('heading', { level: 2, name: title })).toBeAttached();
     }
-    await expect(page.locator('#oduller .cdl-menu-masthead')).toHaveAttribute('data-landing-revealed', 'true');
+    // On short screens the menu section is taller than the viewport, so centring the section
+    // skips its masthead; bring the masthead itself into view, as a reader scrolling past would.
+    const masthead = page.locator('#oduller .cdl-menu-masthead');
+    await masthead.scrollIntoViewIfNeeded();
+    await expect(masthead).toHaveAttribute('data-landing-revealed', 'true');
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);
 
     // The closing sentence hands the e-mail to the sign-up modal.

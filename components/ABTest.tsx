@@ -27,7 +27,7 @@ export const ABTest: React.FC<ABTestProps> = ({ testName, variantA, variantB }) 
       setVariant(newVariant);
 
       if (process.env.NODE_ENV === 'development') {
-        console.warn(`📊 A/B Test Exposure: ${testName} -> Variant ${newVariant}`);
+        console.warn(`A/B test exposure: ${testName} -> variant ${newVariant}`);
       }
     } catch {
       // Fallback to deterministic default when storage is unavailable.

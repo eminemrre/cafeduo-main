@@ -390,7 +390,8 @@ export const RetroChess: React.FC<RetroChessProps> = ({
   const fetchGameSnapshot = useCallback(
     async (silent = false) => {
       if (!gameId || isBot) return;
-      // 🔒 CRITICAL FIX: If another request is in-flight, mark as pending and retry after
+      // Overlapping requests could let a stale snapshot land last, so a request made
+      // meanwhile is queued and replayed once the current one settles.
       if (requestInFlightRef.current) {
         pendingSnapshotRef.current = true;
         return;
@@ -419,7 +420,6 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       } finally {
         requestInFlightRef.current = false;
         if (!silent) setLoading(false);
-        // 🔒 CRITICAL FIX: If a snapshot was requested while we were in-flight, fetch again
         if (pendingSnapshotRef.current) {
           pendingSnapshotRef.current = false;
           window.setTimeout(() => fetchGameSnapshot(silent), 0);
@@ -466,7 +466,8 @@ export const RetroChess: React.FC<RetroChessProps> = ({
 
     const handleRealtime = (payload: GameStateUpdatedPayload) => {
       if (String(payload?.gameId || '') !== String(gameId)) return;
-      // 🔒 SECURITY: Validate payload structure
+      // The server also relays update_game_state from the other player's client without
+      // checking its shape, so anything malformed is dropped here.
       if (payload.type && typeof payload.type !== 'string') return;
       if (payload.chess && typeof payload.chess !== 'object') return;
       lastRealtimeAtRef.current = Date.now();
@@ -654,7 +655,6 @@ export const RetroChess: React.FC<RetroChessProps> = ({
         const cloned = loadChess(sandbox.fen());
         setChess(cloned);
         clearSelection();
-        // 🎵 Rich sound feedback for bot mode
         if (cloned.isCheckmate()) {
           playGameSfx('success', 0.45);
         } else if (cloned.isCheck()) {
@@ -699,7 +699,6 @@ export const RetroChess: React.FC<RetroChessProps> = ({
         const winner = normalizeWinner(result?.winner || result?.gameState?.chess?.winner);
         if (winner) setServerWinner(winner);
 
-        // 🎵 Rich sound feedback for multiplayer
         if (engine.isCheckmate()) {
           playGameSfx('success', 0.45);
         } else if (engine.isCheck()) {

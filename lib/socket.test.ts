@@ -58,8 +58,8 @@ describe('socketService', () => {
     handlers.get('connect')?.();
     handlers.get('connect_error')?.({ message: 'network down' });
 
-    expect(warnSpy).toHaveBeenCalledWith('✅ Socket connected:', 'socket-1');
-    expect(errorSpy).toHaveBeenCalledWith('❌ Socket connection error:', 'network down');
+    expect(warnSpy).toHaveBeenCalledWith('Socket connected:', 'socket-1');
+    expect(errorSpy).toHaveBeenCalledWith('Socket connection error:', 'network down');
 
     warnSpy.mockRestore();
     errorSpy.mockRestore();
@@ -74,9 +74,9 @@ describe('socketService', () => {
       socketService.connect();
       handlers.get('connect_error')?.({ message });
 
-      expect(errorSpy).toHaveBeenCalledWith('❌ Socket connection error:', message);
+      expect(errorSpy).toHaveBeenCalledWith('Socket connection error:', message);
       expect(warnSpy).toHaveBeenCalledWith(
-        '⚠️ Socket authentication failed - user may need to re-login'
+        'Socket authentication failed - user may need to re-login'
       );
 
       errorSpy.mockRestore();
@@ -91,8 +91,8 @@ describe('socketService', () => {
     handlers.get('disconnect')?.('io server disconnect');
     handlers.get('disconnect')?.('transport close');
 
-    expect(warnSpy).toHaveBeenCalledWith('❌ Socket disconnected:', 'io server disconnect');
-    expect(warnSpy).toHaveBeenCalledWith('❌ Socket disconnected:', 'transport close');
+    expect(warnSpy).toHaveBeenCalledWith('Socket disconnected:', 'io server disconnect');
+    expect(warnSpy).toHaveBeenCalledWith('Socket disconnected:', 'transport close');
     expect(mockSocket.connect).toHaveBeenCalledTimes(1);
 
     warnSpy.mockRestore();

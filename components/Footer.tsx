@@ -25,16 +25,6 @@ export const Footer: React.FC = () => {
       className="duo-footer riso-kantin relative mt-8 border-t-2 border-carbon bg-paper-deep"
       role="contentinfo"
     >
-      {/* Halftone strip across the footer */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-multiply"
-        style={{
-          backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
-          backgroundSize: '5px 5px',
-        }}
-      />
-
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
         <RevealGroup className="grid md:grid-cols-3 gap-8 items-start">
           <RevealItem>

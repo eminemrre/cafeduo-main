@@ -1,8 +1,6 @@
 /**
- * Select — Riso Kantin primitive.
- *
- * Native <select> with full Riso styling: paper background, ink border,
- * custom chevron, no rounded corners. Keeps native a11y + mobile UX
+ * Select — the v2 field as a native <select>: ice fill, 3 px ink underline,
+ * custom chevron, square. Keeps native a11y + mobile UX
  * (Headless UI not on the dep list and a custom listbox would break
  * mobile select pickers).
  */
@@ -49,7 +47,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
       {label && (
         <label
           htmlFor={fieldId}
-          className="mb-1.5 block font-riso-body text-xs font-semibold uppercase tracking-[0.12em] text-carbon-soft"
+          className="mb-2 block font-candy-body text-[0.9375rem] font-medium text-carbon"
         >
           {label}
         </label>
@@ -65,12 +63,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
             hasError ? `${fieldId}-err` : helperText ? `${fieldId}-help` : undefined
           }
           className={[
-            'duo-input block w-full appearance-none font-riso-body text-base text-carbon',
-            'bg-paper border-2 border-carbon',
-            'pl-3.5 pr-10 py-2.5',
-            'riso-focus',
+            'duo-input block w-full appearance-none font-candy-body text-base text-carbon',
+            'pl-3.5 pr-10',
+            'duo-focus',
             disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
-            hasError ? 'border-riso-redox' : '',
+            hasError ? 'border-b-candy-danger!' : '',
             className,
           ]
             .filter(Boolean)
@@ -95,7 +92,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         />
       </div>
       {hasError && (
-        <p id={`${fieldId}-err`} className="mt-1.5 text-sm font-medium text-riso-redox">
+        <p id={`${fieldId}-err`} className="mt-1.5 text-sm font-medium text-candy-danger">
           {errorText}
         </p>
       )}

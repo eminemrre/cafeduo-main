@@ -59,7 +59,7 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
       />
 
       <div>
-        <h3 className="mb-3 font-riso-body text-[0.9375rem] font-semibold text-carbon">
+        <h3 className="mb-3 font-candy-body text-[0.9375rem] font-semibold text-carbon">
           Haritadan konum seç
         </h3>
         <MapLocationPicker
@@ -97,7 +97,7 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
       </div>
 
       <Card variant="muted" className="p-5">
-        <h3 className="mb-3 font-riso-body text-[0.9375rem] font-semibold text-carbon">
+        <h3 className="mb-3 font-candy-body text-[0.9375rem] font-semibold text-carbon">
           Birincil konum
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -108,7 +108,7 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
             value={formData.latitude}
             onChange={(e) => onFormChange({ ...formData, latitude: e.target.value })}
             placeholder="37.741000"
-            className="cc-mono"
+            className="[font-variant-numeric:tabular-nums]"
           />
           <Input
             label="Boylam"
@@ -117,7 +117,7 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
             value={formData.longitude}
             onChange={(e) => onFormChange({ ...formData, longitude: e.target.value })}
             placeholder="29.101000"
-            className="cc-mono"
+            className="[font-variant-numeric:tabular-nums]"
           />
         </div>
         <div className="mt-4">
@@ -140,7 +140,7 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
       </Card>
 
       <Card variant="muted" className="p-5">
-        <h3 className="mb-3 font-riso-body text-[0.9375rem] font-semibold text-carbon">
+        <h3 className="mb-3 font-candy-body text-[0.9375rem] font-semibold text-carbon">
           İkincil konum <span className="font-normal text-carbon-soft">(isteğe bağlı)</span>
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -150,7 +150,7 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
             step="0.000001"
             value={formData.secondaryLatitude}
             onChange={(e) => onFormChange({ ...formData, secondaryLatitude: e.target.value })}
-            className="cc-mono"
+            className="[font-variant-numeric:tabular-nums]"
           />
           <Input
             label="Ek Boylam"
@@ -158,7 +158,7 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
             step="0.000001"
             value={formData.secondaryLongitude}
             onChange={(e) => onFormChange({ ...formData, secondaryLongitude: e.target.value })}
-            className="cc-mono"
+            className="[font-variant-numeric:tabular-nums]"
           />
         </div>
         <div className="mt-4">

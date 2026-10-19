@@ -1,5 +1,5 @@
 /**
- * MapLocationPicker — shared Riso Kantin map picker for cafe location editing.
+ * MapLocationPicker — the shared map picker for cafe location editing.
  *
  * Renders a Leaflet map with:
  *   - A target switcher (Primary / Secondary location pair)
@@ -9,7 +9,7 @@
  *
  * The component is purely the map; the lat/lng/radius **inputs** themselves
  * remain in the parent so callers can pick their own layout. The shared map
- * keeps Leaflet's loading + tile-attribution + Riso colour scheme in one
+ * keeps Leaflet's loading + tile-attribution + the v2 colour scheme in one
  * place so both AdminDashboard's cafe editor and cafe-admin's
  * LocationManager stay in sync.
  *
@@ -323,7 +323,7 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
   return (
     <div className={`bg-paper-deep p-4 space-y-4 ${className}`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-[0.8125rem] text-carbon-soft font-riso-body">
+        <p className="text-[0.8125rem] text-carbon-soft font-candy-body">
           Haritaya tıkladığın nokta seçili konuma yazılır.
         </p>
         {allowSecondary && (
@@ -332,7 +332,7 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
               type="button"
               onClick={() => setMapTarget('primary')}
               aria-pressed={mapTarget === 'primary'}
-              className={`riso-focus min-h-11 text-[0.9375rem] font-semibold transition-[color,box-shadow] ${
+              className={`duo-focus min-h-11 text-[0.9375rem] font-semibold transition-[color,box-shadow] ${
                 mapTarget === 'primary'
                   ? 'text-carbon shadow-[inset_0_-3px_0_#17140f]'
                   : 'text-carbon-muted hover:text-carbon'
@@ -344,7 +344,7 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
               type="button"
               onClick={() => setMapTarget('secondary')}
               aria-pressed={mapTarget === 'secondary'}
-              className={`riso-focus min-h-11 text-[0.9375rem] font-semibold transition-[color,box-shadow] ${
+              className={`duo-focus min-h-11 text-[0.9375rem] font-semibold transition-[color,box-shadow] ${
                 mapTarget === 'secondary'
                   ? 'text-carbon shadow-[inset_0_-3px_0_#17140f]'
                   : 'text-carbon-muted hover:text-carbon'
@@ -371,12 +371,12 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Adres, kampüs veya kafe ara..."
-                className="duo-input min-w-0 flex-1 px-3 text-base text-carbon placeholder:text-carbon-muted riso-focus"
+                className="duo-input min-w-0 flex-1 px-3 text-base text-carbon placeholder:text-carbon-muted duo-focus"
               />
               <button
                 type="submit"
                 disabled={searchLoading || !searchQuery.trim()}
-                className="riso-focus inline-flex min-h-[52px] items-center justify-center gap-2 bg-carbon px-4 text-[0.9375rem] font-semibold text-paper transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
+                className="duo-focus inline-flex min-h-[52px] items-center justify-center gap-2 bg-carbon px-4 text-[0.9375rem] font-semibold text-paper transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
               >
                 <Search size={15} />
                 {searchLoading ? 'Aranıyor...' : 'Adres ara'}
@@ -389,7 +389,7 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
               <button
                 type="button"
                 onClick={handleUseDeviceLocation}
-                className="duo-quiet riso-focus gap-2"
+                className="duo-quiet duo-focus gap-2"
               >
                 <LocateFixed size={15} />
                 Cihaz konumumu kullan
@@ -398,7 +398,7 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
             <button
               type="button"
               onClick={handleClear}
-              className="duo-quiet riso-focus gap-2"
+              className="duo-quiet duo-focus gap-2"
               aria-label={`${activeTargetName === 'Ana konum' ? 'Ana konumu' : 'İkinci konumu'} temizle`}
             >
               <Trash2 size={15} />
@@ -471,7 +471,7 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
           </Leaflet.MapContainer>
         </div>
       ) : (
-        <div className="h-[130px] bg-paper-dim flex items-center justify-center text-sm text-carbon-soft px-4 text-center font-riso-body">
+        <div className="h-[130px] bg-paper-dim flex items-center justify-center text-sm text-carbon-soft px-4 text-center font-candy-body">
           {mapLoadError || 'Harita yükleniyor...'}
         </div>
       )}
@@ -505,7 +505,7 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
         </div>
       </div>
 
-      <p className="text-[0.8125rem] text-carbon-soft font-riso-body">
+      <p className="text-[0.8125rem] text-carbon-soft font-candy-body">
         Haritada tıkladığın nokta, seçili hedefe (
         {mapTarget === 'primary' ? 'ana konum' : 'ikinci konum'}) otomatik yazılır. Yarıçap halkası
         içinde kalan kullanıcılar check-in yapabilir.

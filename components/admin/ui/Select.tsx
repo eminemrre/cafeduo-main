@@ -1,8 +1,8 @@
 /**
- * Admin Select — Riso Kantin re-skin (PR #24). API preserved.
+ * Admin Select — the v2 field as a native <select>. API preserved.
  *
  * Custom-rendered listbox (used by AssignCafeAdminModal). Same keyboard nav
- * + outside-click contract, recoloured to Riso tokens.
+ * + outside-click contract, in the v2 tokens.
  */
 import React, { useEffect, useId, useRef, useState, useCallback } from 'react';
 import { ChevronDown, Check } from 'lucide-react';
@@ -103,10 +103,10 @@ export const Select: React.FC<SelectProps> = ({
       {label && (
         <label
           htmlFor={triggerId}
-          className="font-riso-body text-[0.9375rem] font-medium text-carbon"
+          className="font-candy-body text-[0.9375rem] font-medium text-carbon"
         >
           {label}
-          {required && <span className="text-riso-redox ml-0.5">*</span>}
+          {required && <span className="text-candy-danger ml-0.5">*</span>}
         </label>
       )}
       <div className="relative">
@@ -123,9 +123,9 @@ export const Select: React.FC<SelectProps> = ({
           data-testid={testId}
           className={
             'duo-input w-full px-3.5 text-left ' +
-            'font-riso-body text-base ' +
+            'font-candy-body text-base ' +
             'flex items-center justify-between gap-2 ' +
-            'riso-focus transition-colors duration-150 ' +
+            'duo-focus transition-colors duration-150 ' +
             (disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-paper-dim')
           }
         >
@@ -171,7 +171,7 @@ export const Select: React.FC<SelectProps> = ({
                       }
                     >
                       <div className="flex flex-col">
-                        <span className="font-riso-body text-base font-medium">{opt.label}</span>
+                        <span className="font-candy-body text-base font-medium">{opt.label}</span>
                         {opt.description && (
                           <span className="text-sm text-carbon-muted">{opt.description}</span>
                         )}

@@ -6,6 +6,7 @@
 const { isAdminActor } = require('../validation');
 const { sendApiError } = require('../../../utils/routeHelpers');
 const { isChessGameType, createInitialChessState } = require('../chessUtils');
+const { rollbackQuietly } = require('../../../utils/transaction');
 
 const createCreateGameHandler = (deps) => {
   const {
@@ -61,7 +62,7 @@ const createCreateGameHandler = (deps) => {
           : (() => null)();
 
         if (existingGame) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(409).json({
             error: 'Önce mevcut oyunu tamamla veya lobiye dön.',
             game: existingGame,
@@ -123,7 +124,7 @@ const createCreateGameHandler = (deps) => {
               await client.query('RELEASE SAVEPOINT daily_count_lookup');
               const todaysGames = Number(countRes.rows[0]?.count ?? 0);
               if (todaysGames >= limit) {
-                await client.query('ROLLBACK');
+                await rollbackQuietly(client);
                 return res.status(429).json({
                   error: `Bu kafede günlük oyun sınırına (${limit}) ulaştın. Yarın tekrar dene.`,
                   code: 'DAILY_GAME_LIMIT_REACHED',
@@ -154,7 +155,7 @@ const createCreateGameHandler = (deps) => {
         const rawTournamentId = Number(req.body?.tournamentId);
         if (Number.isInteger(rawTournamentId) && rawTournamentId > 0) {
           if (!actorCafeId) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.status(400).json({
               error: 'Turnuvaya katılmak için bir kafede check-in olman gerekiyor.',
               code: 'TOURNAMENT_REQUIRES_CHECKIN',
@@ -170,7 +171,7 @@ const createCreateGameHandler = (deps) => {
             );
             await client.query('RELEASE SAVEPOINT tournament_lookup');
             if (tournRes.rows.length === 0) {
-              await client.query('ROLLBACK');
+              await rollbackQuietly(client);
               return res.status(400).json({
                 error: 'Bu turnuva şu an aktif değil veya kafenle eşleşmiyor.',
                 code: 'TOURNAMENT_NOT_ACCEPTING_GAMES',
@@ -178,7 +179,7 @@ const createCreateGameHandler = (deps) => {
             }
             const tourn = tournRes.rows[0];
             if (tourn.game_type && tourn.game_type !== gameType) {
-              await client.query('ROLLBACK');
+              await rollbackQuietly(client);
               return res.status(400).json({
                 error: `Bu turnuva sadece ${tourn.game_type} oyunlarını kabul ediyor.`,
                 code: 'TOURNAMENT_GAME_TYPE_MISMATCH',
@@ -242,7 +243,7 @@ const createCreateGameHandler = (deps) => {
         });
         return res.status(201).json(createdGame);
       } catch (err) {
-        await client.query('ROLLBACK');
+        await rollbackQuietly(client);
         return sendApiError(res, logger, 'Create game error', err, 'Oyun kurulamadı.');
       } finally {
         client.release();

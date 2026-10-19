@@ -12,6 +12,7 @@ const {
 } = require('../../../utils/gameStateMachine');
 const { mapTransitionError } = require('../utils/errorHelpers');
 const { applyDbSettlement, applyMemorySettlement } = require('../settlementUtils');
+const { rollbackQuietly } = require('../../../utils/transaction');
 
 const createFinishGameHandler = (deps) => {
   const {
@@ -43,13 +44,13 @@ const createFinishGameHandler = (deps) => {
           : null;
 
         if (!game) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(404).json({ error: 'Oyun bulunamadı.' });
         }
         const actorParticipant = depsNormalizeParticipantName(actorName, game);
         const adminActor = isAdminActor(req.user);
         if (!actorParticipant && !adminActor) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(403).json({ error: 'Bu oyunu kapatma yetkin yok.' });
         }
 
@@ -76,12 +77,12 @@ const createFinishGameHandler = (deps) => {
         const settlementAlreadyApplied = Boolean(currentGameState?.settlementApplied);
 
         if (requestedWinnerRaw && !winnerFromRequest && adminActor && !derivedWinner) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(400).json({ error: 'Geçersiz kazanan bilgisi.' });
         }
 
         if (!adminActor && requestedWinnerRaw && !derivedWinner) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(409).json({
             error: 'Sonuç henüz sunucu tarafından belirlenmedi. Önce tüm skorlar tamamlanmalı.',
             code: 'server_result_pending',
@@ -89,7 +90,7 @@ const createFinishGameHandler = (deps) => {
         }
 
         if (!finalWinner && !isChessDraw && !manualWinnerAllowed) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(409).json({
             error: 'Sonuç henüz sunucu tarafından belirlenmedi. Her iki oyuncu skoru tamamlamalı.',
             code: 'server_result_pending',
@@ -139,7 +140,7 @@ const createFinishGameHandler = (deps) => {
                 settlementApplied: true,
               });
             }
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.json({ success: true, winner: null, alreadyFinished: true, draw: true });
           }
           if (storedWinner.toLowerCase() === targetWinner.toLowerCase()) {
@@ -182,10 +183,10 @@ const createFinishGameHandler = (deps) => {
                 settlementApplied: true,
               });
             }
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.json({ success: true, winner: game.winner || null, alreadyFinished: true });
           }
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(409).json({ error: 'Oyun zaten farklı bir sonuçla tamamlandı.' });
         }
 
@@ -195,7 +196,7 @@ const createFinishGameHandler = (deps) => {
           context: 'finish_game',
         });
         if (!finishTransition.ok) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(409).json(mapTransitionError(finishTransition));
         }
 
@@ -236,7 +237,7 @@ const createFinishGameHandler = (deps) => {
         });
         return res.json({ success: true, winner: finalWinner || null, draw: Boolean(isChessDraw) });
       } catch (err) {
-        await client.query('ROLLBACK');
+        await rollbackQuietly(client);
         logger.error('Finish game error', err);
         return res.status(500).json({ error: 'Oyun tamamlanamadı.' });
       } finally {

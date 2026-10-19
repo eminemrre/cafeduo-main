@@ -12,7 +12,6 @@ import { useLocation, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NAV_ITEMS } from '../constants';
 import { DURATION, EASE } from '../lib/motion';
-import { HoverUnderline } from './ui/HoverUnderline';
 import { menuBackdrop, menuItem, menuPanel } from './ui/motionVariants';
 import type { User } from '../types';
 
@@ -70,25 +69,25 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
   return (
     <>
       <nav
-        className={`duo-nav ${isHomePage || isBusinessPage ? 'club-nav' : ''} riso-kantin`}
+        className="duo-nav duo-scope"
         role="navigation"
         aria-label="Ana navigasyon"
       >
         <div className="duo-nav-bar">
           <button
             type="button"
-            className="duo-brand riso-focus transition-opacity hover:opacity-85"
+            className="duo-brand duo-focus transition-opacity hover:opacity-85"
             onClick={() => {
               if (isLoggedIn) navigate('/dashboard');
               else scrollToSection('home');
             }}
             aria-label="Ana sayfa"
           >
-            <div className="flex h-9 w-9 items-center justify-center bg-riso-pink text-carbon">
+            <div className="flex h-9 w-9 items-center justify-center bg-candy-lokum text-carbon">
               <Coffee size={18} strokeWidth={2.5} />
             </div>
-            <span className="font-riso-display text-[28px] leading-none text-carbon">
-              Cafe<span className="text-riso-pink-deep">Duo</span>
+            <span className="font-candy-display text-[28px] leading-none text-carbon">
+              Cafe<span className="text-candy-lokum-deep">Duo</span>
               <span className="sr-only">CafeDuo</span>
             </span>
           </button>
@@ -100,15 +99,15 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                   <button
                     key={item.id}
                     onClick={() => scrollToSection(item.id)}
-                    className="duo-nav-link riso-focus"
+                    className="duo-nav-link duo-focus"
                   >
-                    <HoverUnderline>{item.label}</HoverUnderline>
+                    {item.label}
                   </button>
                 ))}
                 <button
                   onClick={goToBusiness}
                   aria-current={isBusinessPage ? 'page' : undefined}
-                  className={`duo-nav-link duo-nav-business riso-focus transition-all ${
+                  className={`duo-nav-link duo-nav-business duo-focus transition-all ${
                     isBusinessPage
                       ? 'text-carbon shadow-[inset_0_-3px_0_#17140f]'
                       : 'bg-paper text-carbon hover:shadow-[inset_0_-3px_0_#17140f]'
@@ -121,7 +120,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
             ) : (
               <div className="flex items-center gap-2">
                 {user && !isHomePage && (
-                  <div className="flex min-h-11 items-center gap-2 bg-riso-spring px-3">
+                  <div className="flex min-h-11 items-center gap-2 bg-candy-fistik px-3">
                     <Wallet size={16} className="text-carbon" aria-hidden="true" />
                     <span className="text-[15px] font-semibold text-carbon [font-variant-numeric:tabular-nums]">
                       {user.points} puan
@@ -131,7 +130,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                 <button
                   onClick={onLogout}
                   data-testid="logout-button"
-                  className="duo-quiet riso-focus gap-2 px-2"
+                  className="duo-quiet duo-focus gap-2 px-2"
                 >
                   <LogOut size={16} aria-hidden="true" />
                   <span>Çıkış</span>
@@ -146,7 +145,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
             aria-expanded={isOpen}
             aria-controls="mobile-menu"
             aria-label={isOpen ? 'Menüyü kapat' : 'Menüyü aç'}
-            className="duo-menu-toggle riso-focus md:hidden"
+            className="duo-menu-toggle duo-focus md:hidden"
           >
             <AnimatePresence initial={false} mode="wait">
               <motion.span
@@ -188,11 +187,11 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
               initial="hidden"
               animate="show"
               exit="exit"
-              className="duo-mobile-menu riso-kantin flex flex-col gap-3 md:hidden"
+              className="duo-mobile-menu duo-scope flex flex-col gap-3 md:hidden"
               aria-hidden={false}
             >
               <motion.div variants={menuItem} className="flex items-center justify-between">
-                <span className="font-riso-display text-lg text-carbon">Menü</span>
+                <span className="font-candy-display text-[1.75rem] leading-none text-carbon">Menü</span>
                 {!isLoggedIn && <Bell size={18} className="text-carbon-muted" />}
               </motion.div>
               {!isLoggedIn ? (
@@ -202,7 +201,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                       key={item.id}
                       variants={menuItem}
                       onClick={() => scrollToSection(item.id)}
-                      className="riso-focus flex items-center justify-between border-b-2 border-paper-dim py-3 font-riso-body text-base font-semibold text-carbon transition-colors hover:text-riso-pink-deep"
+                      className="duo-focus flex items-center justify-between border-b-[3px] border-dotted border-carbon/25 py-3 font-candy-body text-base font-semibold text-carbon transition-colors hover:text-candy-lokum-deep"
                     >
                       {item.label}
                       <ChevronRight size={20} className="text-carbon-muted" />
@@ -212,7 +211,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                     variants={menuItem}
                     onClick={goToBusiness}
                     aria-current={isBusinessPage ? 'page' : undefined}
-                    className="riso-focus mt-2 flex min-h-12 items-center justify-between bg-riso-pink px-4 font-riso-body text-base font-semibold text-carbon"
+                    className="duo-focus mt-2 flex min-h-12 items-center justify-between bg-candy-lokum px-4 font-candy-body text-base font-semibold text-carbon"
                   >
                     <span className="flex items-center gap-2">
                       <Store size={20} /> Kafe Sahipleri
@@ -225,7 +224,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                   {user && !isHomePage && (
                     <motion.div
                       variants={menuItem}
-                      className="flex items-center justify-between border-b-2 border-paper-dim py-3 font-riso-body text-base font-semibold text-carbon"
+                      className="flex items-center justify-between border-b-[3px] border-dotted border-carbon/25 py-3 font-candy-body text-base font-semibold text-carbon"
                     >
                       <span className="flex items-center gap-2">
                         <Wallet size={20} /> Cüzdan
@@ -239,7 +238,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                       onLogout?.();
                       setIsOpen(false);
                     }}
-                    className="riso-focus mt-3 flex min-h-12 w-full items-center justify-center gap-3 bg-carbon font-riso-body text-base font-semibold text-paper hover:bg-carbon-soft transition-colors"
+                    className="duo-focus mt-3 flex min-h-12 w-full items-center justify-center gap-3 bg-carbon font-candy-body text-base font-semibold text-paper hover:bg-carbon-soft transition-colors"
                   >
                     <LogOut size={20} /> Çıkış Yap
                   </motion.button>

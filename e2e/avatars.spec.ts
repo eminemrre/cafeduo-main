@@ -24,41 +24,41 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 568, height: 320 }
     await expect(picker.locator('[data-avatar-state="loaded"]')).toHaveCount(16);
     const images = picker.locator('img');
     expect(await images.evaluateAll(nodes => nodes.every(node => (node as HTMLImageElement).naturalWidth > 0))).toBe(true);
-    await expect(picker.getByTestId('avatar-option-kupon')).toHaveAttribute('aria-label', 'Avatar: kupon');
+    await expect(picker.getByTestId('avatar-option-kahve')).toHaveAttribute('aria-label', 'Avatar: kahve');
     const bounds = await picker.locator('.max-w-md').boundingBox();
     expect(bounds!.y).toBeGreaterThanOrEqual(0);
     expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height + 1);
-    await picker.getByTestId('avatar-option-duo').focus();
+    await picker.getByTestId('avatar-option-masa').focus();
     await page.keyboard.press('Enter');
     await expect(picker).toHaveCount(0);
     await expect(opener).toBeFocused();
-    await expect(profile.locator('[data-avatar-state="loaded"] img')).toHaveAttribute('src', '/avatars/pixel-art-v9/duo.svg');
+    await expect(profile.locator('[data-avatar-state="loaded"] img')).toHaveAttribute('src', '/avatars/bottts-v9/masa.svg');
     await expect(profile.locator('[data-avatar-state="loaded"] span')).toHaveCount(0);
     await page.keyboard.press('Escape');
     const liveDashboardAvatar = page.getByRole('button', { name: 'Profilini aç' }).locator('[data-avatar-state="loaded"] img');
-    await expect(liveDashboardAvatar).toHaveAttribute('src', '/avatars/pixel-art-v9/duo.svg');
+    await expect(liveDashboardAvatar).toHaveAttribute('src', '/avatars/bottts-v9/masa.svg');
     await page.getByRole('button', { name: 'Profilini aç' }).click();
-    await expect(profile.locator('[data-avatar-state="loaded"] img')).toHaveAttribute('src', '/avatars/pixel-art-v9/duo.svg');
+    await expect(profile.locator('[data-avatar-state="loaded"] img')).toHaveAttribute('src', '/avatars/bottts-v9/masa.svg');
     await profile.getByRole('button', { name: 'Bölümü düzenle' }).click();
     await profile.getByRole('combobox', { name: 'Bölüm' }).selectOption('İşletme');
     await profile.getByRole('button', { name: 'Bölümü kaydet' }).click();
     await expect(profile.getByRole('combobox')).toHaveCount(0);
-    await expect(profile.locator('[data-avatar-state="loaded"] img')).toHaveAttribute('src', '/avatars/pixel-art-v9/duo.svg');
+    await expect(profile.locator('[data-avatar-state="loaded"] img')).toHaveAttribute('src', '/avatars/bottts-v9/masa.svg');
     await page.keyboard.press('Escape');
-    await expect(liveDashboardAvatar).toHaveAttribute('src', '/avatars/pixel-art-v9/duo.svg');
+    await expect(liveDashboardAvatar).toHaveAttribute('src', '/avatars/bottts-v9/masa.svg');
     await page.reload();
     const dashboardAvatar = page.getByRole('button', { name: 'Profilini aç' }).locator('[data-avatar-state="loaded"] img');
-    await expect(dashboardAvatar).toHaveAttribute('src', '/avatars/pixel-art-v9/duo.svg');
+    await expect(dashboardAvatar).toHaveAttribute('src', '/avatars/bottts-v9/masa.svg');
     await page.getByRole('button', { name: 'Profilini aç' }).click();
     await page.getByRole('button', { name: 'Avatar seç' }).click();
-    await expect(page.getByTestId('avatar-option-duo')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByTestId('avatar-option-masa')).toHaveAttribute('aria-pressed', 'true');
     expect(remoteRequests).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);
   });
 }
 
 test('@smoke a failed avatar asset shows initials and another choice still loads', async ({ page, request, baseURL }) => {
-  await page.route('**/avatars/pixel-art-v9/kahve.svg', route => route.abort());
+  await page.route('**/avatars/bottts-v9/kahve.svg', route => route.abort());
   await openDashboard(page, request, baseURL || DEFAULT_E2E_APP_BASE_URL);
   await page.getByRole('button', { name: 'Profilini aç' }).click();
   await page.getByRole('button', { name: 'Avatar seç' }).click();
@@ -70,7 +70,7 @@ test('@smoke a failed avatar asset shows initials and another choice still loads
   await expect(profile.locator('[data-avatar-state="error"] img')).toHaveCount(0);
   await profile.getByRole('button', { name: 'Avatar seç' }).click();
   await picker.getByTestId('avatar-option-masa').click();
-  await expect(profile.locator('[data-avatar-state="loaded"] img')).toHaveAttribute('src', '/avatars/pixel-art-v9/masa.svg');
+  await expect(profile.locator('[data-avatar-state="loaded"] img')).toHaveAttribute('src', '/avatars/bottts-v9/masa.svg');
   await expect(profile.locator('[data-avatar-state="error"]')).toHaveCount(0);
 });
 
@@ -85,7 +85,7 @@ test('@smoke pending and failed avatar saves preserve the confirmed shared profi
   await picker.getByTestId('avatar-option-kahve').click();
   await expect(picker).toHaveCount(0);
   await page.keyboard.press('Escape');
-  await expect(dashboardOpener.locator('img')).toHaveAttribute('src', '/avatars/pixel-art-v9/kahve.svg');
+  await expect(dashboardOpener.locator('img')).toHaveAttribute('src', '/avatars/bottts-v9/kahve.svg');
   await dashboardOpener.click();
   await profile.getByRole('button', { name: 'Avatar seç' }).click();
   let release!: () => void;
@@ -100,19 +100,19 @@ test('@smoke pending and failed avatar saves preserve the confirmed shared profi
     }
     return route.continue();
   });
-  await picker.getByTestId('avatar-option-duo').click();
+  await picker.getByTestId('avatar-option-masa').click();
   await expect(picker.getByRole('status')).toHaveText('Avatar kaydediliyor…');
-  await expect(picker.getByTestId('avatar-option-duo')).toBeDisabled();
+  await expect(picker.getByTestId('avatar-option-masa')).toBeDisabled();
   await expect(picker.getByRole('button', { name: 'Kapat', exact: true })).toBeFocused();
-  expect(await dashboardOpener.locator('img').getAttribute('src')).toBe('/avatars/pixel-art-v9/kahve.svg');
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cafe_user')!).avatar_url)).toBe('https://api.dicebear.com/9.x/pixel-art/svg?seed=kahve');
+  expect(await dashboardOpener.locator('img').getAttribute('src')).toBe('/avatars/bottts-v9/kahve.svg');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cafe_user')!).avatar_url)).toBe('https://api.dicebear.com/9.x/bottts/svg?seed=kahve');
   release();
   await expect(picker.getByRole('alert')).toContainText('Avatar kaydedilemedi');
   await expect(picker.getByTestId('avatar-option-kahve')).toHaveAttribute('aria-pressed', 'true');
-  await picker.getByTestId('avatar-option-duo').click();
+  await picker.getByTestId('avatar-option-masa').click();
   await expect(picker).toHaveCount(0);
   await page.keyboard.press('Escape');
-  await expect(dashboardOpener.locator('img')).toHaveAttribute('src', '/avatars/pixel-art-v9/duo.svg');
-  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cafe_user')!).avatar_url)).toBe('https://api.dicebear.com/9.x/pixel-art/svg?seed=duo');
+  await expect(dashboardOpener.locator('img')).toHaveAttribute('src', '/avatars/bottts-v9/masa.svg');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cafe_user')!).avatar_url)).toBe('https://api.dicebear.com/9.x/bottts/svg?seed=masa');
   expect(attempts).toBe(2);
 });

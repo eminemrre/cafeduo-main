@@ -1,11 +1,11 @@
 /**
- * PrivacyPolicy — Riso Kantin redesign.
+ * PrivacyPolicy — the v2 policy page.
  *
  * Previously rendered text-white on cream paper (invisible title) plus
- * leftover cyber-dark email box and a neon-shadow back button. Rewritten
+ * leftover dark email box and a glowy back button. Rewritten
  * here as a clean printed-zine document: ink text on paper-deep sections
  * with spot-coloured icon chips per section, ink-bordered cards, and a
- * proper Riso press-button back link.
+ * a proper back link.
  *
  * Also fixes "scroll to top on mount": when a user opens this route from
  * elsewhere in the SPA (e.g. footer link), browsers don't reset scroll
@@ -35,24 +35,24 @@ export const PrivacyPolicy: React.FC = () => {
   }, []);
 
   return (
-    <div className="riso-kantin min-h-screen bg-paper text-carbon py-12 sm:py-20 px-4 relative overflow-x-hidden">
+    <div className="duo-scope min-h-screen bg-paper text-carbon py-12 sm:py-20 px-4 relative overflow-x-hidden">
       <div className="max-w-3xl mx-auto">
         {/* Hero */}
         <header className="mb-10 bg-paper px-6 py-8 sm:mb-12 sm:px-10 sm:py-12 border-b-[3px] border-dotted border-carbon/35">
-          <h1 className="font-riso-display text-3xl leading-[1.05] text-carbon sm:text-4xl md:text-5xl break-words">
+          <h1 className="font-candy-display text-3xl leading-[1.05] text-carbon sm:text-4xl md:text-5xl break-words">
             Gizlilik Politikası ve KVKK Aydınlatma Metni
           </h1>
-          <p className="mt-4 text-sm text-carbon-muted font-riso-body">
+          <p className="mt-4 text-sm text-carbon-muted font-candy-body">
             Son güncelleme: {new Date().toLocaleDateString('tr-TR')}
           </p>
         </header>
 
-        <div className="space-y-6 sm:space-y-8 text-carbon font-riso-body">
+        <div className="space-y-6 sm:space-y-8 text-carbon font-candy-body">
           <PolicySection
             number={1}
             title="Veri Sorumlusu"
             icon={<Users size={20} />}
-            iconBg="bg-riso-blue text-carbon"
+            iconBg="bg-candy-gok text-carbon"
           >
             <p>
               6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında, kişisel
@@ -65,7 +65,7 @@ export const PrivacyPolicy: React.FC = () => {
             number={2}
             title="Toplanan Kişisel Veriler"
             icon={<FileText size={20} />}
-            iconBg="bg-riso-pink text-carbon"
+            iconBg="bg-candy-lokum text-carbon"
           >
             <p className="mb-3">Platformumuz üzerinden aşağıdaki kişisel veriler toplanmaktadır:</p>
             <ul className="list-disc list-inside space-y-2 ml-2 sm:ml-4">
@@ -91,7 +91,7 @@ export const PrivacyPolicy: React.FC = () => {
             number={3}
             title="Verilerin İşlenme Amaçları"
             icon={<Eye size={20} />}
-            iconBg="bg-riso-mustard text-carbon"
+            iconBg="bg-candy-limon text-carbon"
           >
             <ul className="list-disc list-inside space-y-2 ml-2 sm:ml-4">
               <li>Üyelik kaydının oluşturulması ve hesap yönetimi</li>
@@ -106,7 +106,7 @@ export const PrivacyPolicy: React.FC = () => {
             number={4}
             title="Kişisel Verilerin İşlenmesinin Hukuki Dayanağı"
             icon={<Lock size={20} />}
-            iconBg="bg-riso-spring text-carbon"
+            iconBg="bg-candy-fistik text-carbon"
           >
             <p className="mb-3">
               KVKK'nın 5. maddesinde belirtilen aşağıdaki hukuki sebeplere dayanılarak
@@ -124,7 +124,7 @@ export const PrivacyPolicy: React.FC = () => {
             number={5}
             title="Verilerin Saklanma Süresi"
             icon={<Clock size={20} />}
-            iconBg="bg-riso-mustard text-carbon"
+            iconBg="bg-candy-limon text-carbon"
           >
             <p>
               Kişisel verileriniz, işleme amaçlarının gerektirdiği süre boyunca ve yasal saklama
@@ -137,7 +137,7 @@ export const PrivacyPolicy: React.FC = () => {
             number={6}
             title="KVKK Kapsamındaki Haklarınız"
             icon={<Trash2 size={20} />}
-            iconBg="bg-riso-redox text-paper"
+            iconBg="bg-candy-danger text-paper"
           >
             <p className="mb-3">KVKK'nın 11. maddesi uyarınca aşağıdaki haklara sahipsiniz:</p>
             <ul className="list-disc list-inside space-y-2 ml-2 sm:ml-4">
@@ -162,15 +162,15 @@ export const PrivacyPolicy: React.FC = () => {
             number={7}
             title="İletişim"
             icon={<Mail size={20} />}
-            iconBg="bg-riso-pink text-carbon"
+            iconBg="bg-candy-lokum text-carbon"
           >
             <p className="mb-3">
               KVKK kapsamındaki haklarınızı kullanmak için aşağıdaki kanallardan bizimle iletişime
               geçebilirsiniz:
             </p>
-            <div className="mt-3 bg-paper border-2 border-carbon p-4">
-              <p className="font-riso-mono text-sm text-carbon">
-                <strong className="text-riso-pink-deep">E-posta:</strong> cafeduotr@gmail.com
+            <div className="mt-3 bg-paper p-4">
+              <p className="text-sm text-carbon">
+                <strong className="font-semibold">E-posta:</strong> cafeduotr@gmail.com
               </p>
             </div>
           </PolicySection>
@@ -179,7 +179,7 @@ export const PrivacyPolicy: React.FC = () => {
             number={8}
             title="Çerez Politikası"
             icon={<Cookie size={20} />}
-            iconBg="bg-riso-mustard text-carbon"
+            iconBg="bg-candy-limon text-carbon"
           >
             <p className="mb-3">
               Web sitemiz, kullanıcı deneyimini iyileştirmek için çerezler kullanmaktadır.
@@ -203,10 +203,10 @@ export const PrivacyPolicy: React.FC = () => {
         <div className="mt-10 sm:mt-12 text-center">
           <Link
             to="/"
-            className="riso-focus riso-press inline-flex items-center gap-2 border-2 border-carbon bg-riso-pink text-carbon px-6 py-3 font-riso-display font-bold text-sm uppercase tracking-[0.12em] riso-shadow-md transition-all hover:-translate-y-[1px]"
+            className="duo-focus inline-flex min-h-12 items-center gap-2 bg-carbon px-6 font-candy-body text-[0.9375rem] font-semibold text-paper transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
           >
-            <ArrowLeft size={16} />
-            Ana Sayfaya Dön
+            <ArrowLeft size={16} aria-hidden="true" />
+            Ana sayfaya dön
           </Link>
         </div>
       </div>
@@ -231,7 +231,7 @@ const PolicySection: React.FC<PolicySectionProps> = ({ number, title, icon, icon
       <div className={`flex h-10 w-10 shrink-0 items-center justify-center ${iconBg}`}>
         {icon}
       </div>
-      <h2 className="font-riso-display text-xl text-carbon sm:text-2xl">
+      <h2 className="font-candy-display text-[1.75rem] leading-none text-carbon">
         <span className="text-carbon-muted mr-2">{number}.</span>
         {title}
       </h2>

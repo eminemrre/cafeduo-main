@@ -530,12 +530,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     user.isAdmin ? 'Yönetici' : user.role === 'cafe_admin' ? 'Kafe yöneticisi' : 'Oyuncu';
 
   return (
-    <div className="riso-kantin min-h-screen pt-32 pb-[calc(8rem+env(safe-area-inset-bottom))] px-4">
+    <div className="duo-scope min-h-screen pt-32 pb-[calc(8rem+env(safe-area-inset-bottom))] px-4">
       <div className="max-w-[1280px] mx-auto">
         {/* Header */}
         <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
           <div>
-            <h1 className="font-riso-display text-[2rem] sm:text-[2.5rem] text-carbon leading-[0.98]">
+            <h1 className="font-candy-display text-[2rem] sm:text-[2.5rem] text-carbon leading-[0.98]">
               Yönetim
             </h1>
             <p className="text-[0.9375rem] text-carbon-soft mt-2">
@@ -615,7 +615,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                     userPointDrafts[String(user.id)] ?? String(user.points ?? 0)
                                   }
                                   onChange={(e) => handlePointDraftChange(user.id, e.target.value)}
-                                  className="duo-input duo-input--sm w-20 px-2 text-center text-[0.875rem] [font-variant-numeric:tabular-nums] riso-focus focus:bg-paper"
+                                  className="duo-input duo-input--sm w-20 px-2 text-center text-[0.875rem] [font-variant-numeric:tabular-nums] duo-focus focus:bg-paper"
                                 />
                                 <Button
                                   size="sm"
@@ -718,7 +718,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
               <section className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
                 {/* Cafe list */}
                 <Card variant="muted" className="p-5 h-fit">
-                  <h2 className="mb-4 font-riso-display text-[1.75rem] leading-none text-carbon">
+                  <h2 className="mb-4 font-candy-display text-[1.75rem] leading-none text-carbon">
                     Kafeler
                   </h2>
                   {cafes.length === 0 ? (
@@ -734,7 +734,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                             onClick={() => handleCafeSelect(String(c.id))}
                             aria-current={active ? 'true' : undefined}
                             className={
-                              'riso-focus min-h-11 text-left px-3 transition-colors ' +
+                              'duo-focus min-h-11 text-left px-3 transition-colors ' +
                               (active
                                 ? 'bg-carbon text-paper font-semibold'
                                 : 'hover:bg-paper-dim text-carbon')
@@ -763,7 +763,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                   <Card className="p-0 sm:p-2">
                     <header className="flex items-start justify-between gap-4 mb-6">
                       <div>
-                        <h2 className="font-riso-display text-[2rem] leading-[0.98] text-carbon">
+                        <h2 className="font-candy-display text-[2rem] leading-[0.98] text-carbon">
                           {selectedCafe.name}
                         </h2>
                         <p className="mt-1.5 text-[0.8125rem] text-carbon-soft">
@@ -812,7 +812,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                       />
 
                       <div>
-                        <h3 className="mb-3 font-riso-body text-[0.9375rem] font-semibold text-carbon">
+                        <h3 className="mb-3 font-candy-body text-[0.9375rem] font-semibold text-carbon">
                           Haritadan konum seç
                         </h3>
                         <MapLocationPicker
@@ -863,7 +863,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                       </div>
 
                       <Card variant="muted" className="p-5">
-                        <h3 className="mb-3 font-riso-body text-[0.9375rem] font-semibold text-carbon">
+                        <h3 className="mb-3 font-candy-body text-[0.9375rem] font-semibold text-carbon">
                           Birincil konum
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -875,7 +875,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                             onChange={(e) =>
                               setEditCafeData({ ...editCafeData, latitude: e.target.value })
                             }
-                            className="cc-mono"
+                            className="[font-variant-numeric:tabular-nums]"
                           />
                           <Input
                             label="Boylam"
@@ -888,7 +888,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                 longitude: e.target.value,
                               })
                             }
-                            className="cc-mono"
+                            className="[font-variant-numeric:tabular-nums]"
                           />
                         </div>
                         <div className="mt-4">
@@ -910,7 +910,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                       </Card>
 
                       <Card variant="muted" className="p-5">
-                        <h3 className="mb-3 font-riso-body text-[0.9375rem] font-semibold text-carbon">
+                        <h3 className="mb-3 font-candy-body text-[0.9375rem] font-semibold text-carbon">
                           İkincil konum <span className="font-normal text-carbon-soft">(isteğe bağlı)</span>
                         </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -925,7 +925,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                 secondaryLatitude: e.target.value,
                               })
                             }
-                            className="cc-mono"
+                            className="[font-variant-numeric:tabular-nums]"
                           />
                           <Input
                             label="Ek Boylam"
@@ -938,7 +938,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                 secondaryLongitude: e.target.value,
                               })
                             }
-                            className="cc-mono"
+                            className="[font-variant-numeric:tabular-nums]"
                           />
                         </div>
                         <div className="mt-4">
@@ -963,7 +963,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                           DAILY_WHEEL_SLICES). Daily game limit stays
                           configurable per cafe. */}
                       <Card variant="muted" className="p-5">
-                        <h3 className="mb-3 font-riso-body text-[0.9375rem] font-semibold text-carbon">
+                        <h3 className="mb-3 font-candy-body text-[0.9375rem] font-semibold text-carbon">
                           Bu kafenin kuralları
                         </h3>
                         <Input

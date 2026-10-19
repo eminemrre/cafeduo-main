@@ -32,28 +32,20 @@ interface ToastContextType {
 
 const ToastContext = createContext<ToastContextType | undefined>(undefined);
 
-// Toast ikonları
+// Toast icons: the state colours of DESIGN.md at their text depth (AA on paper).
 const ToastIcon = ({ type }: { type: ToastType }) => {
   switch (type) {
     case 'success':
-      return <CheckCircle className="w-5 h-5 text-green-500" />;
+      return <CheckCircle className="w-5 h-5 shrink-0 text-[#177A41]" aria-hidden="true" />;
     case 'error':
-      return <XCircle className="w-5 h-5 text-riso-redox" />;
+      return <XCircle className="w-5 h-5 shrink-0 text-[#B8241A]" aria-hidden="true" />;
     case 'warning':
-      return <AlertCircle className="w-5 h-5 text-riso-mustard-deep" />;
+      return <AlertCircle className="w-5 h-5 shrink-0 text-[#8A6608]" aria-hidden="true" />;
     case 'loading':
-      return <Loader2 className="w-5 h-5 text-blue-500 animate-spin" />;
+      return <Loader2 className="w-5 h-5 shrink-0 text-carbon animate-spin" aria-hidden="true" />;
     default:
       return null;
   }
-};
-
-// Toast renkleri
-const ToastStyles = {
-  success: 'border-l-4 border-green-500 bg-gray-900',
-  error: 'border-l-4 border-riso-redox bg-gray-900',
-  warning: 'border-l-4 border-yellow-500 bg-gray-900',
-  loading: 'border-l-4 border-blue-500 bg-gray-900',
 };
 
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -102,23 +94,24 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             <motion.div
               key={t.id}
               layout
-              initial={{ x: 100, opacity: 0, scale: 0.9 }}
-              animate={{ x: 0, opacity: 1, scale: 1 }}
-              exit={{ x: 100, opacity: 0, scale: 0.9 }}
-              transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-              className={`${ToastStyles[t.type]} rounded-lg shadow-lg p-4 flex items-center gap-3 pointer-events-auto  w-full sm:w-[360px]`}
+              initial={{ y: 16, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 16, opacity: 0 }}
+              transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+              role={t.type === 'error' ? 'alert' : 'status'}
+              className="duo-float pointer-events-auto flex w-full items-center gap-3 bg-paper py-3 pl-4 pr-2 text-carbon sm:w-[360px]"
             >
               <ToastIcon type={t.type} />
-              <p className="text-white text-sm flex-1">{t.message}</p>
-              <motion.button
+              <p className="flex-1 text-[0.9375rem] leading-snug">{t.message}</p>
+              <button
+                type="button"
                 data-testid="toast-close"
+                aria-label="Bildirimi kapat"
                 onClick={() => dismissToast(t.id)}
-                className="text-gray-400 hover:text-white transition-colors p-1 rounded hover:bg-paper-deep"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+                className="duo-focus inline-flex h-11 w-11 shrink-0 items-center justify-center text-carbon-soft transition-colors hover:bg-paper-deep hover:text-carbon"
               >
                 <X className="w-4 h-4" />
-              </motion.button>
+              </button>
             </motion.div>
           ))}
         </AnimatePresence>

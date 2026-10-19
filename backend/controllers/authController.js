@@ -9,6 +9,7 @@ const { sendPasswordResetEmail } = require('../services/emailService');
 const { revokeToken } = require('../utils/tokenRevocation');
 const { getRequiredJwtSecret } = require('../utils/securityConfig');
 const { setCsrfCookie, clearCsrfCookie } = require('../middleware/csrf');
+const { rollbackQuietly } = require('../utils/transaction');
 
 const JWT_SECRET = getRequiredJwtSecret();
 const PASSWORD_RESET_TOKEN_TTL_MINUTES = Number(process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES || 30);
@@ -547,7 +548,7 @@ const authController = {
           );
           await client.query('COMMIT');
         } catch (transactionError) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           throw transactionError;
         } finally {
           client.release();

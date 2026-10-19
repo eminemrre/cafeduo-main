@@ -886,11 +886,11 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       <div className="max-w-6xl mx-auto text-carbon" data-testid="retro-chess">
         <header className="duo-game-head mb-6">
           <div className="min-w-0">
-            <span className="duo-game-chip bg-riso-blue">Klasik · {clockState.label}</span>
+            <span className="duo-game-chip bg-candy-gok">Klasik · {clockState.label}</span>
             <h2 className="duo-game-title">Retro Satranç</h2>
             <p className="duo-game-sub truncate">Rakip: {opponentLabel}</p>
           </div>
-          <button type="button" onClick={handleLeave} className="duo-quiet riso-focus shrink-0">
+          <button type="button" onClick={handleLeave} className="duo-quiet duo-focus shrink-0">
             <span className="duo-sentence">Oyundan Çık</span>
           </button>
         </header>
@@ -929,17 +929,17 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                   // the last move tinted limon, the selection ringed in lokum.
                   const baseClass =
                     isLastMoveFrom || isLastMoveTo
-                      ? 'bg-riso-mustard'
+                      ? 'bg-candy-limon'
                       : isLight
                         ? 'bg-[#F2F9FB]'
                         : 'bg-[#7FC9EE]';
-                  const selectedClass = isSelected ? 'ring-4 ring-inset ring-riso-pink z-10' : '';
+                  const selectedClass = isSelected ? 'ring-4 ring-inset ring-candy-lokum z-10' : '';
                   const legalClass = isLegal
                     ? piece
-                      ? 'ring-4 ring-inset ring-riso-pink/70'
-                      : 'before:absolute before:inset-0 before:m-auto before:w-3 before:h-3 before:bg-riso-pink before:z-10'
+                      ? 'ring-4 ring-inset ring-candy-lokum/70'
+                      : 'before:absolute before:inset-0 before:m-auto before:w-3 before:h-3 before:bg-candy-lokum before:z-10'
                     : '';
-                  const checkClass = isInCheck ? 'animate-check-pulse !bg-riso-redox/40' : '';
+                  const checkClass = isInCheck ? 'animate-check-pulse !bg-candy-danger/40' : '';
 
                   return (
                     <button
@@ -949,7 +949,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                       aria-label={`Kare ${square}`}
                       onClick={() => handleSquareClick(square)}
                       disabled={loading || submitting || serverStatus === 'finished'}
-                      className={`riso-focus relative aspect-square transition-colors duration-200 ease-out ${baseClass} ${selectedClass} ${legalClass} ${checkClass} disabled:cursor-not-allowed`}
+                      className={`duo-focus relative aspect-square transition-colors duration-200 ease-out ${baseClass} ${selectedClass} ${legalClass} ${checkClass} disabled:cursor-not-allowed`}
                     >
                       {piece && (
                         <span
@@ -1060,7 +1060,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                 type="button"
                 onClick={() => void fetchGameSnapshot()}
                 disabled={loading || submitting || isBot}
-                className="duo-quiet riso-focus"
+                className="duo-quiet duo-focus"
               >
                 Senkronu yenile
               </button>
@@ -1071,7 +1071,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
               {moveLog.length === 0 ? (
                 <p className="mt-2 text-sm text-carbon-muted">Henüz hamle yapılmadı.</p>
               ) : (
-                <ol className="mt-1 max-h-64 overflow-y-auto custom-scrollbar pr-1 text-sm font-riso-mono">
+                <ol className="mt-1 max-h-64 overflow-y-auto custom-scrollbar pr-1 text-sm font-candy-mono">
                   {moveLog.map((entry, index) => (
                     <li key={`${entry.ts}-${index}`} className="duo-leader-row">
                       <span className="text-carbon">

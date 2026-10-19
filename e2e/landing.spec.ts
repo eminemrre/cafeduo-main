@@ -6,13 +6,11 @@ test.describe('Public Landing Pages', () => {
     await page.goto(baseURL || DEFAULT_E2E_APP_BASE_URL);
     const fonts = await page.evaluate(async () => {
       const fonts = [
-        { family: 'Familjen Grotesk', style: 'normal', weight: '400' },
-        { family: 'Unbounded Variable', style: 'normal', weight: '400' },
-        { family: 'JetBrains Mono Variable', style: 'normal', weight: '400' },
-        { family: 'Fraunces Variable', style: 'normal', weight: '400' },
-        { family: 'Fraunces Variable', style: 'italic', weight: '400' },
         { family: 'Baloo 2', style: 'normal', weight: '800' },
         { family: 'Onest', style: 'normal', weight: '400' },
+        { family: 'Onest', style: 'normal', weight: '500' },
+        { family: 'Onest', style: 'normal', weight: '600' },
+        { family: 'Onest', style: 'normal', weight: '700' },
       ];
       return Promise.all(fonts.map(async ({ family, style, weight }) => {
         const faces = await document.fonts.load(
@@ -27,12 +25,10 @@ test.describe('Public Landing Pages', () => {
       }));
     });
     expect(fonts).toEqual([
-      { family: 'Familjen Grotesk', style: 'normal', loaded: true },
-      { family: 'Unbounded Variable', style: 'normal', loaded: true },
-      { family: 'JetBrains Mono Variable', style: 'normal', loaded: true },
-      { family: 'Fraunces Variable', style: 'normal', loaded: true },
-      { family: 'Fraunces Variable', style: 'italic', loaded: true },
       { family: 'Baloo 2', style: 'normal', loaded: true },
+      { family: 'Onest', style: 'normal', loaded: true },
+      { family: 'Onest', style: 'normal', loaded: true },
+      { family: 'Onest', style: 'normal', loaded: true },
       { family: 'Onest', style: 'normal', loaded: true },
     ]);
   });
@@ -104,13 +100,12 @@ test.describe('Public Landing Pages', () => {
     await page.setViewportSize({ width: 320, height: 568 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto(`${baseURL || DEFAULT_E2E_APP_BASE_URL}/kafeler`);
-    const question = page.locator('summary').filter({ hasText: 'Müşteri verileri nasıl korunur?' });
-    await question.scrollIntoViewIfNeeded();
-    await question.focus();
-    await page.keyboard.press('Enter');
-    await expect(question.locator('..')).toHaveAttribute('open', '');
-    const privacy = question.locator('..').getByRole('link', { name: 'Gizlilik Politikası' });
+    // The answers are reading text: the question is the run-in, the link sits in its answer.
+    const faq = page.getByRole('region', { name: 'Sıkça sorulan sorular' });
+    await expect(faq.getByText('Müşteri verileri nasıl korunur?')).toBeVisible();
+    const privacy = faq.getByRole('link', { name: 'Gizlilik Politikası' });
     await expect(privacy).toHaveAttribute('href', '/gizlilik');
+    await privacy.scrollIntoViewIfNeeded();
     await privacy.focus();
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/gizlilik$/);

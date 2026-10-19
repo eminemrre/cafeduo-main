@@ -1,5 +1,5 @@
 /**
- * Riso Kantin — paylaşılan framer-motion variant'ları.
+ * Paylaşılan framer-motion variant'ları (v2).
  * Pazarlama sayfalarındaki scroll-reveal + stagger için tek kaynak.
  * Süre/eğri değerleri lib/motion.ts token'larından gelir.
  * Saf veri (test-nötr); animasyon/erişilebilirlik mantığı Reveal.tsx içinde.
@@ -7,7 +7,7 @@
 import type { Variants } from 'framer-motion';
 import { DURATION, EASE, STAGGER } from '../../lib/motion';
 
-/** Tekil blok girişi — Riso entrances, house curve ile. */
+/** Tekil blok girişi — the house curve. */
 export const fadeUp: Variants = {
   hidden: { opacity: 0, y: 16 },
   show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: EASE.brand } },
@@ -37,7 +37,7 @@ export const popIn: Variants = {
   show: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.35, ease: EASE.brand } },
 };
 
-/** Hover/tap mikro-etkileşim — Riso "shift" (hafif yukarı kayma). */
+/** Hover/tap mikro-etkileşim — a small lift. */
 export const hoverShift = {
   whileHover: { y: -3, transition: { duration: DURATION.fast, ease: EASE.brand } },
   whileTap: { y: 0, scale: 0.99 },

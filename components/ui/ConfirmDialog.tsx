@@ -1,5 +1,5 @@
 /**
- * ConfirmDialog — window.confirm'in Riso Kantin karşılığı.
+ * ConfirmDialog — window.confirm'in v2 karşılığı.
  *
  * Promise tabanlı kullanım, mevcut sync confirm akışlarının minimal değişimle
  * async'e çevrilebilmesi için:
@@ -71,7 +71,7 @@ export function useConfirm() {
       }
     >
       {options && (
-        <p className="whitespace-pre-line font-riso-body text-carbon">{options.message}</p>
+        <p className="whitespace-pre-line font-candy-body text-carbon">{options.message}</p>
       )}
     </Modal>
   );

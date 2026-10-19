@@ -88,7 +88,7 @@ const PasswordResetForm: React.FC<{ token: string }> = ({ token }) => {
             <p className="duo-recovery-description" role="status">
               {successMessage}
             </p>
-            <Link to="/?auth=login" className="duo-recovery-cta riso-focus">
+            <Link to="/?auth=login" className="duo-recovery-cta duo-focus">
               Giriş yap <ArrowRight size={18} aria-hidden="true" />
             </Link>
           </>
@@ -99,7 +99,7 @@ const PasswordResetForm: React.FC<{ token: string }> = ({ token }) => {
               E-postandaki bağlantının tamamını aç. Yeni bir bağlantı almak için giriş ekranındaki
               “Şifremi unuttum” seçeneğini kullanabilirsin.
             </p>
-            <Link to="/?auth=login" className="duo-recovery-cta riso-focus">
+            <Link to="/?auth=login" className="duo-recovery-cta duo-focus">
               Giriş ekranına git <ArrowRight size={18} aria-hidden="true" />
             </Link>
           </>
@@ -159,7 +159,7 @@ const PasswordResetForm: React.FC<{ token: string }> = ({ token }) => {
               />
               <button
                 type="button"
-                className="duo-recovery-visibility riso-focus"
+                className="duo-recovery-visibility duo-focus"
                 aria-pressed={showPasswords}
                 disabled={loading}
                 onClick={() => setShowPasswords((shown) => !shown)}
@@ -176,7 +176,7 @@ const PasswordResetForm: React.FC<{ token: string }> = ({ token }) => {
             {error && (
               <p className="duo-recovery-help">
                 Bağlantının süresi dolduysa{' '}
-                <Link to="/?auth=login" className="riso-focus">
+                <Link to="/?auth=login" className="duo-focus">
                   giriş ekranındaki “Şifremi unuttum” seçeneğinden
                 </Link>{' '}
                 yeni bir bağlantı isteyebilirsin.
@@ -184,7 +184,7 @@ const PasswordResetForm: React.FC<{ token: string }> = ({ token }) => {
             )}
           </>
         )}
-        <Link to="/" className="duo-recovery-back riso-focus">
+        <Link to="/" className="duo-recovery-back duo-focus">
           <ArrowLeft size={16} aria-hidden="true" /> Ana sayfaya dön
         </Link>
       </div>

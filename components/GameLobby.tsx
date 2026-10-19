@@ -48,7 +48,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
         <motion.button
           onClick={onCreateGameClick}
           disabled={isInGame}
-          className="duo-lobby-action riso-focus bg-riso-pink text-carbon disabled:cursor-not-allowed"
+          className="duo-lobby-action duo-focus bg-candy-lokum text-carbon disabled:cursor-not-allowed"
         >
           <Gamepad2 size={28} strokeWidth={2.4} aria-hidden="true" />
           {isInGame ? <span>Oyundasın</span> : <span className="duo-sentence">Oyun Kur</span>}
@@ -57,7 +57,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
         <motion.button
           onClick={onQuickJoin}
           disabled={quickJoinDisabled || quickJoinBusy}
-          className="duo-lobby-action riso-focus bg-paper-deep text-carbon hover:bg-paper-dim disabled:cursor-not-allowed"
+          className="duo-lobby-action duo-focus bg-paper-deep text-carbon hover:bg-paper-dim disabled:cursor-not-allowed"
           data-testid="quick-join-button"
         >
           <Swords size={28} strokeWidth={2.4} aria-hidden="true" />
@@ -99,7 +99,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                     <div className="flex min-w-0 items-center gap-4">
                       <button
                         onClick={() => onViewProfile(hostName)}
-                        className="riso-focus w-12 h-12 shrink-0 bg-carbon text-paper font-riso-display text-2xl flex items-center justify-center transition-transform hover:-translate-y-0.5"
+                        className="duo-focus w-12 h-12 shrink-0 bg-carbon text-paper font-candy-display text-2xl flex items-center justify-center transition-transform hover:-translate-y-0.5"
                         title="Profili Görüntüle"
                       >
                         {hostName.charAt(0).toUpperCase()}
@@ -108,11 +108,11 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                         <div className="flex items-center gap-x-3 gap-y-1 flex-wrap">
                           <button
                             onClick={() => onViewProfile(hostName)}
-                            className="riso-focus font-riso-body font-semibold text-lg text-carbon underline decoration-transparent decoration-[3px] underline-offset-4 transition-colors hover:decoration-carbon"
+                            className="duo-focus font-candy-body font-semibold text-lg text-carbon underline decoration-transparent decoration-[3px] underline-offset-4 transition-colors hover:decoration-carbon"
                           >
                             {hostName}
                           </button>
-                          <span className="font-riso-mono text-[15px] font-semibold bg-paper text-carbon px-2 py-0.5">
+                          <span className="font-candy-mono text-[15px] font-semibold bg-paper text-carbon px-2 py-0.5">
                             {tableLabel(req.table)}
                           </span>
                         </div>
@@ -128,18 +128,18 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                       <button
                         onClick={() => onJoinGame(Number(req.id))}
                         disabled={isInGame}
-                        className="duo-button riso-focus w-full sm:w-auto min-h-12 px-6 bg-riso-pink text-carbon font-semibold text-[15px] transition-transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="duo-button duo-focus w-full sm:w-auto min-h-12 px-6 bg-candy-lokum text-carbon font-semibold text-[15px] transition-transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         {isInGame ? 'Zaten oyundasın' : 'Oyuna katıl'}
                       </button>
                     ) : (
                       <div className="flex items-center gap-4 w-full sm:w-auto">
                         <span className="bg-paper px-3 py-1.5 text-[15px] font-semibold text-carbon">
-                          <span className="duo-sentence">SENİN LOBİN</span>
+                          Senin lobin
                         </span>
                         <button
                           onClick={() => onCancelGame(req.id)}
-                          className="duo-quiet riso-focus"
+                          className="duo-quiet duo-focus"
                           data-testid={`cancel-game-${req.id}`}
                         >
                           <span className="duo-sentence">İPTAL ET</span>

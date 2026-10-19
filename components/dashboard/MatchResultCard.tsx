@@ -47,7 +47,7 @@ const deriveOutcome = (winner: string, currentUsername: string): Outcome => {
 
 /** Points and rewards are fıstık; every other outcome sits on the ice well. */
 const SURFACE: Record<Outcome, string> = {
-  win: 'bg-riso-spring',
+  win: 'bg-candy-fistik',
   lose: 'bg-paper-deep',
   draw: 'bg-paper-deep',
   pending: 'bg-paper-deep',
@@ -79,14 +79,14 @@ const AnimatedPoints: React.FC<{ value: number }> = ({ value }) => {
   }, [value, reduceMotion]);
 
   return (
-    <span className="font-riso-mono text-[40px] font-bold leading-none tracking-[-0.02em] text-carbon tabular-nums">
+    <span className="font-candy-mono text-[40px] font-bold leading-none tracking-[-0.02em] text-carbon tabular-nums">
       {display > 0 ? `+${display}` : display}
     </span>
   );
 };
 
 const StatChip: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <span className="inline-flex items-center gap-1.5 bg-paper px-2.5 py-1 font-riso-mono text-sm text-carbon">
+  <span className="inline-flex items-center gap-1.5 bg-paper px-2.5 py-1 font-candy-mono text-sm text-carbon">
     <span className="text-carbon-muted">{label}</span>
     <span className="font-bold">{value}</span>
   </span>
@@ -140,7 +140,7 @@ export const MatchResultCard: React.FC<MatchResultCardProps> = ({
       <p className="text-[15px] font-medium">
         <span className="duo-sentence">Maç Sonucu</span>
       </p>
-      <p className="mt-1 font-riso-display text-[40px] leading-[0.98] tracking-[-0.01em]">
+      <p className="mt-1 font-candy-display text-[40px] leading-[0.98] tracking-[-0.01em]">
         {/* The sentinel titles keep their capitals in the source; a winner's name keeps its own case. */}
         <span className={outcome === 'lose' ? undefined : 'duo-sentence'}>{title}</span>
       </p>
@@ -164,8 +164,8 @@ export const MatchResultCard: React.FC<MatchResultCardProps> = ({
           type="button"
           onClick={onDismiss}
           disabled={dismissing}
-          className={`duo-button riso-focus min-h-12 px-5 font-riso-body text-base font-semibold transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${
-            outcome === 'win' ? 'bg-carbon text-paper' : 'bg-riso-pink text-carbon'
+          className={`duo-button duo-focus min-h-12 px-5 font-candy-body text-base font-semibold transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${
+            outcome === 'win' ? 'bg-carbon text-paper' : 'bg-candy-lokum text-carbon'
           }`}
         >
           {dismissing ? 'Lobiye dönülüyor...' : 'Sonucu gördüm, lobiye dön'}

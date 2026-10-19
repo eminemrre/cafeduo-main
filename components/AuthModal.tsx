@@ -338,13 +338,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setHasSubmitted(false);
   };
 
-  /** Riso Kantin: ink-bordered paper input with focus ring. No neon glow. */
+  /** The v2 field: ice fill, 3 px ink underline, one focus ring. */
   const inputBaseClass =
-    'w-full min-h-12 duo-input text-carbon font-riso-body text-base leading-6 outline-none transition-all duration-150 placeholder:text-carbon-muted pl-11 pr-12 cursor-text focus:bg-paper';
+    'w-full min-h-12 duo-input text-carbon font-candy-body text-base leading-6 outline-none transition-all duration-150 placeholder:text-carbon-muted pl-11 pr-12 cursor-text focus:bg-paper';
   const inputBorderClass = '';
-  const inputErrorClass = 'border-b-riso-redox!';
+  const inputErrorClass = 'border-b-candy-danger!';
   const iconBaseClass =
-    'absolute left-4 top-1/2 -translate-y-1/2 text-carbon-muted pointer-events-none transition-colors group-focus-within:text-carbon group-[.is-error]:text-riso-redox z-10';
+    'absolute left-4 top-1/2 -translate-y-1/2 text-carbon-muted pointer-events-none transition-colors group-focus-within:text-carbon group-[.is-error]:text-candy-danger z-10';
 
   if (!isOpen) return null;
 
@@ -377,7 +377,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         />
 
         {/* Modal Container */}
-        <div className="duo-auth-shell riso-kantin relative w-full max-w-[480px] max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100vh-2rem)]">
+        <div className="duo-auth-shell duo-scope relative w-full max-w-[480px] max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100vh-2rem)]">
           <motion.div
             ref={dialogRef}
             tabIndex={-1}
@@ -396,16 +396,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <div className="min-w-0">
                 <h2
                   id="auth-dialog-title"
-                  className="font-riso-display text-carbon text-3xl md:text-4xl"
+                  className="font-candy-display text-carbon text-3xl md:text-4xl"
                 >
                   {title}
                 </h2>
-                <p className="font-riso-body text-sm text-carbon-soft mt-1">{subtitle}</p>
+                <p className="font-candy-body text-sm text-carbon-soft mt-1">{subtitle}</p>
               </div>
               <button
                 onClick={onClose}
                 aria-label="Kapat"
-                className="duo-auth-close riso-focus shrink-0 w-9 h-9 bg-paper-deep text-carbon hover:bg-carbon hover:text-paper flex items-center justify-center transition-colors"
+                className="duo-auth-close duo-focus shrink-0 w-9 h-9 bg-paper-deep text-carbon hover:bg-carbon hover:text-paper flex items-center justify-center transition-colors"
               >
                 <X size={18} />
               </button>
@@ -420,7 +420,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     type="button"
                     onClick={() => switchMode('login')}
                     aria-pressed={mode === 'login'}
-                    className={`h-11 font-riso-display text-lg transition-colors ${
+                    className={`h-11 font-candy-body text-[0.9375rem] font-semibold transition-colors ${
                       mode === 'login'
                         ? 'text-carbon shadow-[inset_0_-3px_0_#17140f]'
                         : 'text-carbon-muted hover:text-carbon'
@@ -432,7 +432,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     type="button"
                     onClick={() => switchMode('register')}
                     aria-pressed={mode === 'register'}
-                    className={`h-11 font-riso-display text-lg transition-colors ${
+                    className={`h-11 font-candy-body text-[0.9375rem] font-semibold transition-colors ${
                       mode === 'register'
                         ? 'text-carbon shadow-[inset_0_-3px_0_#17140f]'
                         : 'text-carbon-muted hover:text-carbon'
@@ -444,13 +444,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               )}
 
               {error && (
-                <div className="bg-riso-redox/15 text-carbon px-4 py-3 font-riso-body text-sm flex items-center gap-3">
-                  <AlertTriangle size={18} className="shrink-0 text-riso-redox" />
+                <div className="bg-candy-danger/15 text-carbon px-4 py-3 font-candy-body text-sm flex items-center gap-3">
+                  <AlertTriangle size={18} className="shrink-0 text-candy-danger" />
                   <span>{error}</span>
                 </div>
               )}
               {forgotMessage && (
-                <div className="bg-riso-blue/15 text-carbon px-4 py-3 font-riso-body text-sm">
+                <div className="bg-candy-gok/15 text-carbon px-4 py-3 font-candy-body text-sm">
                   {forgotMessage}
                 </div>
               )}
@@ -483,7 +483,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       />
                       {!fieldErrors.username && touched.username && username && (
                         <Check
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-riso-spring"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-candy-fistik"
                           size={18}
                         />
                       )}
@@ -491,7 +491,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     {fieldErrors.username && touched.username && (
                       <p
                         role="alert"
-                        className="text-riso-redox text-xs flex items-center gap-1 font-riso-body"
+                        className="text-candy-danger text-xs flex items-center gap-1 font-candy-body"
                       >
                         <AlertTriangle size={12} /> {fieldErrors.username}
                       </p>
@@ -545,7 +545,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   />
                   {!fieldErrors.email && touched.email && email && (
                     <Check
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-riso-spring"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-candy-fistik"
                       size={18}
                     />
                   )}
@@ -553,7 +553,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 {fieldErrors.email && touched.email && (
                   <p
                     role="alert"
-                    className="text-riso-redox text-xs flex items-center gap-1 font-riso-body"
+                    className="text-candy-danger text-xs flex items-center gap-1 font-candy-body"
                   >
                     <AlertTriangle size={12} /> {fieldErrors.email}
                   </p>
@@ -597,7 +597,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     {fieldErrors.password && touched.password && (
                       <p
                         role="alert"
-                        className="text-riso-redox text-xs flex items-center gap-1 font-riso-body"
+                        className="text-candy-danger text-xs flex items-center gap-1 font-candy-body"
                       >
                         <AlertTriangle size={12} /> {fieldErrors.password}
                       </p>
@@ -613,7 +613,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                       setError('');
                       setForgotMessage('');
                     }}
-                    className="text-sm font-riso-body text-carbon hover:text-riso-pink-deep underline decoration-2 decoration-carbon hover:decoration-riso-pink-deep underline-offset-4 transition-colors block text-right w-full"
+                    className="text-sm font-candy-body text-carbon hover:text-candy-lokum-deep underline decoration-2 decoration-carbon hover:decoration-candy-lokum-deep underline-offset-4 transition-colors block text-right w-full"
                   >
                     Şifremi unuttum
                   </button>
@@ -628,7 +628,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
-                      <div className="w-4 h-4 border-2 border-carbon border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-[3px] border-carbon border-t-transparent animate-spin" />
                       {isForgotPasswordMode
                         ? 'Bağlantı gönderiliyor...'
                         : mode === 'login'
@@ -650,31 +650,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <div className="space-y-2 text-center">
                 {mode === 'login' && !isForgotPasswordMode && (
-                  <p className="text-sm font-riso-body text-carbon-soft">
+                  <p className="text-sm font-candy-body text-carbon-soft">
                     Hesabınız yok mu?{' '}
                     <button
                       type="button"
                       onClick={() => switchMode('register')}
-                      className="text-riso-pink-deep hover:text-carbon font-bold underline decoration-2 underline-offset-4"
+                      className="text-candy-lokum-deep hover:text-carbon font-bold underline decoration-2 underline-offset-4"
                     >
                       Kayıt olun
                     </button>
                   </p>
                 )}
                 {mode === 'register' && !isForgotPasswordMode && (
-                  <p className="text-sm font-riso-body text-carbon-soft">
+                  <p className="text-sm font-candy-body text-carbon-soft">
                     Zaten hesabınız var mı?{' '}
                     <button
                       type="button"
                       onClick={() => switchMode('login')}
-                      className="text-riso-pink-deep hover:text-carbon font-bold underline decoration-2 underline-offset-4"
+                      className="text-candy-lokum-deep hover:text-carbon font-bold underline decoration-2 underline-offset-4"
                     >
                       Giriş yapın
                     </button>
                   </p>
                 )}
                 {mode === 'login' && isForgotPasswordMode && (
-                  <p className="text-sm font-riso-body text-carbon-soft">
+                  <p className="text-sm font-candy-body text-carbon-soft">
                     Şifrenizi hatırladınız mı?{' '}
                     <button
                       type="button"
@@ -682,7 +682,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         setIsForgotPasswordMode(false);
                         setError('');
                       }}
-                      className="text-riso-pink-deep hover:text-carbon font-bold underline decoration-2 underline-offset-4"
+                      className="text-candy-lokum-deep hover:text-carbon font-bold underline decoration-2 underline-offset-4"
                     >
                       Giriş ekranına dön
                     </button>

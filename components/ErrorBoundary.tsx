@@ -37,29 +37,28 @@ export class ErrorBoundary extends Component<Props, State> {
         : 'Önbelleği Temizle ve Ana Sayfaya Dön';
 
       return (
-        <div className="min-h-screen bg-paper  text-white flex flex-col items-center justify-center p-4">
-          <div className="border-2 border-carbon bg-paper riso-shadow-sm max-w-2xl w-full p-6 sm:p-8">
-            <div className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft mb-3">
-              Sistem TR-X // Hata Yakalandı
-            </div>
-            <div className="flex items-center gap-4 mb-6">
-              <div className="p-3 bg-red-600/90 border border-red-300/60">
-                <AlertTriangle size={32} className="text-white" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-riso-redox uppercase tracking-[0.08em]">
-                  Uygulama Hatası
-                </h1>
-                <p className="text-carbon-muted">Beklenmedik bir hata oluştu.</p>
-              </div>
-            </div>
+        <div className="duo-scope min-h-screen bg-paper text-carbon flex flex-col items-center justify-center px-5 py-10">
+          <div className="w-full max-w-xl bg-paper-deep p-6 sm:p-8">
+            <AlertTriangle size={28} strokeWidth={2.2} className="text-candy-danger" aria-hidden="true" />
+            <h1 className="mt-4 font-candy-display text-[2rem] leading-[0.98] text-carbon">
+              Uygulama Hatası
+            </h1>
+            <p className="mt-3 text-[0.9375rem] leading-6 text-carbon-soft">
+              Beklenmedik bir hata oluştu. Sayfayı yenilemek çoğu zaman yeter; aşağıdaki ayrıntılar
+              destek ekibine yardımcı olur.
+            </p>
 
-            <div className="bg-black/50 p-4 font-mono text-sm text-riso-redox overflow-auto max-h-64 mb-6 border border-red-900/30 custom-scrollbar">
-              <p className="font-bold mb-2">{this.state.error?.toString()}</p>
-              <pre className="whitespace-pre-wrap text-xs opacity-70">
-                {this.state.errorInfo?.componentStack}
-              </pre>
-            </div>
+            <details className="mt-5 bg-paper p-4">
+              <summary className="duo-focus cursor-pointer text-[0.9375rem] font-semibold text-carbon">
+                Hata ayrıntıları
+              </summary>
+              <div className="mt-3 max-h-64 overflow-auto custom-scrollbar text-[0.8125rem] text-carbon-soft">
+                <p className="font-semibold text-carbon">{this.state.error?.toString()}</p>
+                <pre className="mt-2 whitespace-pre-wrap font-candy-mono">
+                  {this.state.errorInfo?.componentStack}
+                </pre>
+              </div>
+            </details>
 
             <button
               onClick={() => {
@@ -71,7 +70,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 localStorage.clear();
                 safeGoHome();
               }}
-              className="bg-red-600 hover:bg-riso-redox text-white px-6 py-3 font-medium transition-colors w-full uppercase tracking-[0.08em] border border-red-300/45"
+              className="duo-focus mt-6 min-h-12 w-full bg-carbon px-6 text-[0.9375rem] font-semibold text-paper transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
             >
               {actionLabel}
             </button>

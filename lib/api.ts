@@ -194,12 +194,20 @@ const parseApiError = async (response: ApiErrorResponse): Promise<string> => {
     }
   }
 
+  // A gateway error (the API restarting or out of reach) carries the proxy's own
+  // HTML page or nothing at all; neither means anything to a player.
+  if (response.status >= 500) {
+    return response.status === 502 || response.status === 503 || response.status === 504
+      ? 'Sunucuya şu an ulaşılamıyor. Birkaç saniye sonra tekrar dene.'
+      : 'Sunucuda bir sorun oluştu. Birkaç saniye sonra tekrar dene.';
+  }
+
   const textPayload = await readText();
-  if (textPayload) {
+  if (textPayload && !/^\s*</.test(textPayload)) {
     return withRetryHint(textPayload);
   }
 
-  return withRetryHint(`HTTP ${response.status}`);
+  return withRetryHint(`İstek tamamlanamadı (${response.status}).`);
 };
 
 /**

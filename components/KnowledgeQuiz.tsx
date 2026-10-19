@@ -170,7 +170,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
       setFloatingScore('+1');
       window.setTimeout(() => setFloatingScore(null), 800);
     } else {
-      setFloatingScore(isTimeout ? '⏱' : '✕');
+      setFloatingScore(isTimeout ? 'Süre' : 'Yanlış');
       window.setTimeout(() => setFloatingScore(null), 700);
     }
 
@@ -253,11 +253,11 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
       <div className="max-w-2xl mx-auto text-carbon" data-testid="knowledge-quiz">
         <header className="duo-game-head mb-6">
           <div className="min-w-0">
-            <span className="duo-game-chip bg-riso-mustard">{maxRounds} soru</span>
+            <span className="duo-game-chip bg-candy-limon">{maxRounds} soru</span>
             <h2 className="duo-game-title">{QUIZ_GAME_TYPE}</h2>
             <p className="duo-game-sub truncate">Rakip: {targetName}</p>
           </div>
-          <button type="button" onClick={onLeave} className="duo-quiet riso-focus shrink-0">
+          <button type="button" onClick={onLeave} className="duo-quiet duo-focus shrink-0">
             <span className="duo-sentence">Oyundan Çık</span>
           </button>
         </header>
@@ -269,14 +269,14 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
           <div className="duo-meter flex-1">
             <span
               className={`transition-[width] duration-1000 ease-linear ${
-                timeWarning ? 'bg-riso-redox' : 'bg-riso-blue'
+                timeWarning ? 'bg-candy-danger' : 'bg-candy-gok'
               }`}
               style={{ width: `${Math.max(0, Math.min(100, elapsedFraction * 100))}%` }}
             />
           </div>
           <span
-            className={`w-12 shrink-0 text-right font-riso-mono text-base font-bold ${
-              timeWarning ? 'text-riso-redox' : 'text-carbon'
+            className={`w-12 shrink-0 text-right font-candy-mono text-base font-bold ${
+              timeWarning ? 'text-candy-danger' : 'text-carbon'
             }`}
           >
             {timeLeft} sn
@@ -291,7 +291,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
             </span>
             <div className="duo-meter mt-2">
               <span
-                className="bg-riso-blue transition-all duration-500 ease-out"
+                className="bg-candy-gok transition-all duration-500 ease-out"
                 style={{ width: `${((roundIndex + 1) / maxRounds) * 100}%` }}
               />
             </div>
@@ -316,7 +316,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
           className={`relative overflow-hidden bg-paper-deep p-4 sm:p-5 ${feedbackAnimation === 'correct' ? 'animate-flash-green' : feedbackAnimation === 'incorrect' ? 'animate-flash-red animate-shake' : ''}`}
         >
           {/* PixiJS overlay — sits above floatingScore (z-30 vs z-20) so confetti
-              renders ON TOP of the "+1" / "✕" text. */}
+              renders ON TOP of the "+1" / "Yanlış" text. */}
           <QuizStageCanvas
             ref={quizStageRef}
             className="pointer-events-none absolute inset-0 z-30 h-full w-full"
@@ -324,7 +324,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
           {floatingScore && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
               <span
-                className={`font-riso-display text-6xl animate-float-up ${floatingScore === '+1' ? 'text-[#177A41]' : 'text-riso-redox'}`}
+                className={`font-candy-display text-6xl animate-float-up ${floatingScore === '+1' ? 'text-[#177A41]' : 'text-candy-danger'}`}
               >
                 {floatingScore}
               </span>
@@ -332,7 +332,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
           )}
           <p
             data-testid="knowledge-question"
-            className="mb-4 font-riso-body text-lg font-semibold leading-snug text-carbon md:text-xl"
+            className="mb-4 font-candy-body text-lg font-semibold leading-snug text-carbon md:text-xl"
           >
             {currentQuestion.question}
           </p>
@@ -348,11 +348,11 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
                   : isCorrect
                     ? 'bg-[#177A41] text-paper'
                     : isPicked
-                      ? 'bg-riso-redox text-paper'
+                      ? 'bg-candy-danger text-paper'
                       : 'bg-paper text-carbon-muted opacity-55';
               const letterClass =
                 selectedOption === null
-                  ? 'bg-riso-mustard text-carbon'
+                  ? 'bg-candy-limon text-carbon'
                   : isCorrect || isPicked
                     ? 'bg-paper text-carbon'
                     : 'bg-paper-dim text-carbon-muted';
@@ -362,7 +362,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
                   data-testid={`knowledge-option-${idx}`}
                   onClick={() => handleAnswer(idx)}
                   disabled={selectedOption !== null || live.done || live.resolvingMatch}
-                  className={`riso-focus min-h-[52px] text-left px-3 py-2.5 transition-[transform,background-color] duration-200 font-riso-body disabled:cursor-not-allowed ${stateClass}`}
+                  className={`duo-focus min-h-[52px] text-left px-3 py-2.5 transition-[transform,background-color] duration-200 font-candy-body disabled:cursor-not-allowed ${stateClass}`}
                 >
                   <span className="flex items-center gap-3">
                     <span

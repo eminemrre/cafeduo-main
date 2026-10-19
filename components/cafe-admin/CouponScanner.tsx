@@ -60,7 +60,7 @@ export const CouponScanner: React.FC<CouponScannerProps> = ({
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       <div className="bg-paper-deep p-6 sm:p-8">
-        <h2 className="font-riso-display text-[1.75rem] leading-none text-carbon mb-6 flex items-center gap-2">
+        <h2 className="font-candy-display text-[1.75rem] leading-none text-carbon mb-6 flex items-center gap-2">
           <QrCode aria-hidden="true" />
           Kupon kullan
         </h2>
@@ -69,7 +69,7 @@ export const CouponScanner: React.FC<CouponScannerProps> = ({
           type="button"
           onClick={() => setScannerOpen(true)}
           data-testid="open-qr-scanner-button"
-          className="riso-focus w-full mb-6 min-h-12 bg-carbon text-paper px-4 font-riso-body text-[0.9375rem] font-semibold flex items-center justify-center gap-2 transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
+          className="duo-focus w-full mb-6 min-h-12 bg-carbon text-paper px-4 font-candy-body text-[0.9375rem] font-semibold flex items-center justify-center gap-2 transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
         >
           <Camera size={18} />
           Kamerayla QR Oku
@@ -79,7 +79,7 @@ export const CouponScanner: React.FC<CouponScannerProps> = ({
           <div>
             <label
               htmlFor="coupon-code-input"
-              className="block text-[0.9375rem] font-medium text-carbon mb-2 font-riso-body"
+              className="block text-[0.9375rem] font-medium text-carbon mb-2 font-candy-body"
             >
               Kupon Kodu{' '}
               <span className="font-normal text-carbon-muted">(manuel giriş)</span>
@@ -90,7 +90,7 @@ export const CouponScanner: React.FC<CouponScannerProps> = ({
               value={couponCode}
               onChange={(event) => onCouponCodeChange(event.target.value.toUpperCase())}
               placeholder="CD-XXXX-XXXX-XXXX"
-              className="duo-input riso-focus w-full px-4 text-carbon placeholder:text-carbon-muted font-riso-mono text-lg tracking-[0.04em] focus:bg-paper"
+              className="duo-input duo-focus w-full px-4 text-carbon placeholder:text-carbon-muted font-candy-mono text-lg tracking-[0.04em] focus:bg-paper"
             />
           </div>
 
@@ -101,52 +101,52 @@ export const CouponScanner: React.FC<CouponScannerProps> = ({
 
         {status !== 'idle' && (
           <div
-            className={`mt-6 p-4 flex items-center gap-3 ${ status === 'success' ? 'bg-riso-spring/25 text-carbon' : 'bg-riso-redox/20 text-carbon' }`}
+            className={`mt-6 p-4 flex items-center gap-3 ${ status === 'success' ? 'bg-candy-fistik/25 text-carbon' : 'bg-candy-danger/20 text-carbon' }`}
             role="status"
             aria-live="polite"
           >
             {status === 'success' ? (
               <CheckCircle size={20} className="text-[#177A41] shrink-0" />
             ) : (
-              <XCircle size={20} className="text-riso-redox shrink-0" />
+              <XCircle size={20} className="text-candy-danger shrink-0" />
             )}
-            <p className="font-medium font-riso-body">{message}</p>
+            <p className="font-medium font-candy-body">{message}</p>
           </div>
         )}
       </div>
 
       <div className="bg-paper-deep p-6 sm:p-8 relative overflow-hidden">
-        <h2 className="font-riso-display text-[1.75rem] leading-none text-carbon mb-6">
+        <h2 className="font-candy-display text-[1.75rem] leading-none text-carbon mb-6">
           Son işlem
         </h2>
 
         {lastItem ? (
           <div className="space-y-4">
             <div className="p-4 bg-paper">
-              <div className="text-[0.8125rem] text-carbon-soft mb-1 font-riso-body">
+              <div className="text-[0.8125rem] text-carbon-soft mb-1 font-candy-body">
                 Ürün
               </div>
-              <div className="text-lg font-bold text-carbon font-riso-body">{lastItemTitle}</div>
+              <div className="text-lg font-bold text-carbon font-candy-body">{lastItemTitle}</div>
             </div>
             <div className="p-4 bg-paper">
-              <div className="text-[0.8125rem] text-carbon-soft mb-1 font-riso-body">
+              <div className="text-[0.8125rem] text-carbon-soft mb-1 font-candy-body">
                 Kupon Kodu
               </div>
-              <div className="text-lg font-riso-mono text-carbon font-semibold">
+              <div className="text-lg font-candy-mono text-carbon font-semibold">
                 {lastItem.code}
               </div>
             </div>
             <div className="p-4 bg-paper">
-              <div className="text-[0.8125rem] text-carbon-soft mb-1 font-riso-body">
+              <div className="text-[0.8125rem] text-carbon-soft mb-1 font-candy-body">
                 İşlem Zamanı
               </div>
-              <div className="text-carbon font-riso-body">{new Date().toLocaleString('tr-TR')}</div>
+              <div className="text-carbon font-candy-body">{new Date().toLocaleString('tr-TR')}</div>
             </div>
           </div>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-carbon-soft py-12">
             <Coffee size={32} strokeWidth={2} className="mb-3 text-carbon-muted" aria-hidden="true" />
-            <p className="font-riso-body text-sm">Henüz işlem yapılmadı</p>
+            <p className="font-candy-body text-sm">Henüz işlem yapılmadı</p>
           </div>
         )}
       </div>

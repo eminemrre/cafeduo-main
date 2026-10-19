@@ -148,17 +148,17 @@ export const createChessBoardStage = async (
     const c = squareCenter(square);
     if (!c) return;
     // Crimson + orange double burst — feels like a clash
-    burst(c.x, c.y, 0xff3045, 14, 3.5);
-    burst(c.x, c.y, 0xffb340, 8, 2.8);
+    burst(c.x, c.y, 0xd62f2f, 14, 3.5);
+    burst(c.x, c.y, 0xffd23f, 8, 2.8);
   };
 
   const playCheckmate = (square: string): void => {
     const c = squareCenter(square);
     if (!c) return;
     // Larger gold celebration
-    burst(c.x, c.y, 0xffd338, 30, 4.5);
-    burst(c.x, c.y, 0x39ff6a, 18, 3.2);
-    burst(c.x, c.y, 0x10e7ff, 14, 2.4);
+    burst(c.x, c.y, 0xffd23f, 30, 4.5);
+    burst(c.x, c.y, 0xb6d31b, 18, 3.2);
+    burst(c.x, c.y, 0x1fb3ff, 14, 2.4);
   };
 
   const setLastMove = (from: string | null, to: string | null): void => {
@@ -190,9 +190,9 @@ export const createChessBoardStage = async (
         checkRing
           .clear()
           .circle(0, 0, pulse)
-          .stroke({ width: 3, color: 0xff3045, alpha: 0.85 })
+          .stroke({ width: 3, color: 0xd62f2f, alpha: 0.85 })
           .circle(0, 0, pulse - 4)
-          .stroke({ width: 1.5, color: 0xff8080, alpha: 0.5 });
+          .stroke({ width: 1.5, color: 0xff5c8a, alpha: 0.5 });
       } else {
         checkRing.visible = false;
       }
@@ -223,7 +223,7 @@ export const createChessBoardStage = async (
         .clear()
         .moveTo(tr.fromX, tr.fromY)
         .lineTo(tr.toX, tr.toY)
-        .stroke({ width: 4, color: 0xffd338, alpha: Math.max(0, tr.life * 0.75) });
+        .stroke({ width: 4, color: 0xffd23f, alpha: Math.max(0, tr.life * 0.75) });
       if (tr.life <= 0) {
         trailLayer.removeChild(tr.g);
         tr.g.destroy();

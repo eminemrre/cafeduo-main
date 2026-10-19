@@ -1,6 +1,7 @@
 // eslint-disable-next-line no-redeclare
 const crypto = require('crypto');
 const db = require('../db');
+const { rollbackQuietly } = require('../utils/transaction');
 
 /**
  * Per-redemption unique coupon code. Same format as commerceHandlers
@@ -119,13 +120,13 @@ const storeController = {
         userId,
       ]);
       if (userResult.rows.length === 0) {
-        await client.query('ROLLBACK');
+        await rollbackQuietly(client);
         return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı' });
       }
 
       const userPoints = userResult.rows[0].points;
       if (userPoints < itemToBuy.price) {
-        await client.query('ROLLBACK');
+        await rollbackQuietly(client);
         return res.status(400).json({ success: false, message: 'Yetersiz bakiye (Cyber-Creds)' });
       }
 
@@ -137,7 +138,7 @@ const storeController = {
         [userId, itemToBuy.id]
       );
       if (existingItem.rows.length > 0) {
-        await client.query('ROLLBACK');
+        await rollbackQuietly(client);
         return res.status(400).json({ success: false, message: 'Bu eşyaya zaten sahipsiniz' });
       }
 
@@ -169,7 +170,7 @@ const storeController = {
         }
       }
       if (!insertResult) {
-        await client.query('ROLLBACK');
+        await rollbackQuietly(client);
         return res
           .status(500)
           .json({ success: false, message: 'Kupon oluşturulamadı, lütfen tekrar deneyin.' });
@@ -184,7 +185,7 @@ const storeController = {
         remainingPoints: userPoints - itemToBuy.price,
       });
     } catch (error) {
-      await client.query('ROLLBACK');
+      await rollbackQuietly(client);
       console.error('buyItem error:', error);
       res.status(500).json({ success: false, message: 'Satın alma işlemi sırasında hata oluştu' });
     } finally {

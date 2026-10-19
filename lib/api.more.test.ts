@@ -199,6 +199,21 @@ describe('API Layer additional coverage', () => {
     );
   });
 
+  it('never shows the proxy HTML page when the API is unreachable (502)', async () => {
+    (fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      status: 502,
+      json: async () => {
+        throw new Error('not json');
+      },
+      text: async () => '<html><body><h1>502 Bad Gateway</h1></body></html>',
+    });
+
+    await expect(api.games.list()).rejects.toThrow(
+      'Sunucuya şu an ulaşılamıyor. Birkaç saniye sonra tekrar dene.'
+    );
+  });
+
   it('throws HTTP status when error body is not json/text', async () => {
     (fetch as jest.Mock).mockResolvedValueOnce({
       ok: false,
@@ -208,7 +223,7 @@ describe('API Layer additional coverage', () => {
       },
     });
 
-    await expect(api.games.list()).rejects.toThrow('HTTP 500');
+    await expect(api.games.list()).rejects.toThrow('Sunucuda bir sorun oluştu. Birkaç saniye sonra tekrar dene.');
   });
 
   it('surfaces plain-text rate-limit message and retry hint', async () => {

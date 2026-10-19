@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 
 <head>
@@ -29,21 +29,79 @@
 
   <!-- Canonical URL -->
   <link rel="canonical" href="https://cafeduotr.com" />
-  <link rel="icon"
-    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#FBF7EE">
-  <meta name="background-color" content="#FBF7EE">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <meta name="theme-color" content="#FFFFFF">
+  <meta name="background-color" content="#FFFFFF">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="CafeDuo">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="application-name" content="CafeDuo">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <script src="/route-flag.js"></script>
+  <style>
+    html[data-shell='app'] .cdl-static {
+      display: none;
+    }
+  </style>
 </head>
 
 <body>
-  <div id="root"></div>
+  <!-- A static copy of the landing's first screen: what crawlers and a page
+       without JavaScript read. React replaces it on mount (ClubLanding). -->
+  <div id="root">
+    <div class="duo-app riso-kantin riso-kantin-app min-h-screen font-riso-body cdl-static">
+      <header class="cdl cdl-header">
+        <a href="/" class="cdl-wordmark" aria-label="CafeDuo, ana sayfa">CafeDuo</a>
+        <nav class="cdl-nav" aria-label="Sayfa bölümleri">
+          <a href="/#oyunlar">Oyunlar</a>
+          <a href="/#oduller">Ödüller</a>
+          <a href="/kafeler">Kafeler için</a>
+        </nav>
+        <div class="cdl-header-actions">
+          <a class="cdl-quiet" href="/?auth=login">Giriş yap</a>
+          <a class="cdl-button" href="/?auth=register">Kaydol</a>
+        </div>
+      </header>
+      <main id="main-content">
+        <div class="club-landing" data-motion="off">
+          <div class="cdl">
+            <section id="ust" class="cdl-field cdl-hero" aria-labelledby="cdl-hero-title">
+              <div class="cdl-tent">
+                <div class="cdl-tent-stack">
+                  <div class="cdl-tent-card">
+                    <i class="cdl-scallop cdl-scallop-tl" aria-hidden="true"></i>
+                    <i class="cdl-scallop cdl-scallop-tr" aria-hidden="true"></i>
+                    <h1 id="cdl-hero-title">
+                      <span class="cdl-tent-line-1">Rakibin</span>
+                      <span class="cdl-tent-line-2">yan masada.</span>
+                    </h1>
+                    <p class="cdl-tent-offer">
+                      Aynı kafedeki biriyle satranç, bilgi yarışı ya da düello oyna; kazandığın puanı
+                      kafenin ödüllerinde harca.
+                    </p>
+                    <p class="cdl-tent-meta">
+                      <span>İlk 100 puan hediye</span>
+                      <i class="cdl-diamond" aria-hidden="true"></i>
+                      <span>Her gün çark</span>
+                    </p>
+                    <div class="cdl-tent-foot">
+                      <p class="cdl-tent-scan">Telefonla okut: cafeduotr.com</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <nav class="cdl-hero-links" aria-label="Sayfa bölümleri">
+                <a href="/#oyunlar">Oyunlar</a>
+                <a href="/#oduller">Ödüller</a>
+                <a href="/kafeler">Kafeler için</a>
+              </nav>
+            </section>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
   <script type="module" src="/index.tsx"></script>
 </body>
 

@@ -4,6 +4,7 @@ const {
   normalizePointsUpdatePayload,
 } = require('../utils/adminValidation');
 const { executeDataMode, sendApiError, sendApiProblem } = require('../utils/routeHelpers');
+const { rollbackQuietly } = require('../utils/transaction');
 
 const createAdminHandlers = ({
   pool,
@@ -606,7 +607,7 @@ const createAdminHandlers = ({
             [cafeId]
           );
           if (cafeResult.rows.length === 0) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return sendApiProblem(res, {
               status: 404,
               code: 'CAFE_NOT_FOUND',
@@ -617,7 +618,7 @@ const createAdminHandlers = ({
           const cafeCountResult = await client.query('SELECT COUNT(*)::int AS count FROM cafes');
           const totalCafes = Number(cafeCountResult.rows[0]?.count || 0);
           if (totalCafes <= 1) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return sendApiProblem(res, {
               status: 400,
               code: 'LAST_CAFE_DELETION_FORBIDDEN',
@@ -680,7 +681,7 @@ const createAdminHandlers = ({
             [cafeId]
           );
           if (deleteCafeResult.rows.length === 0) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return sendApiProblem(res, {
               status: 404,
               code: 'CAFE_NOT_FOUND',

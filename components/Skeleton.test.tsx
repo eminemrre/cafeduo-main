@@ -17,7 +17,8 @@ describe('Skeleton components', () => {
 
     const root = container.firstElementChild as HTMLElement;
     expect(root).toHaveClass('relative', 'overflow-hidden', 'h-8', 'w-20');
-    expect(container.querySelectorAll('.absolute').length).toBeGreaterThan(0);
+    // v2: a flat ice-deep block that pulses; no gradient sweep.
+    expect(root).toHaveClass('bg-paper-dim', 'animate-pulse');
   });
 
   it('renders requested number of text lines', () => {
@@ -34,7 +35,7 @@ describe('Skeleton components', () => {
 
     const grid = render(<SkeletonGrid count={4} columns={2} />);
     expect(grid.container.querySelector('div.md\\:grid-cols-2')).toBeInTheDocument();
-    expect(grid.container.querySelectorAll('div.border-gray-800')).toHaveLength(4);
+    expect(grid.container.querySelectorAll('div.bg-paper-deep.p-6')).toHaveLength(4);
 
     const stats = render(<SkeletonStats />);
     expect(stats.container.querySelectorAll('.relative.overflow-hidden')).toHaveLength(7);
@@ -78,6 +79,6 @@ describe('Skeleton components', () => {
   it('renders three-dot loader animation nodes', () => {
     const { container } = render(<DotLoader className="loader-test" />);
     expect(container.querySelector('.loader-test')).toBeInTheDocument();
-    expect(container.querySelectorAll('.bg-blue-500')).toHaveLength(3);
+    expect(container.querySelectorAll('.bg-carbon.animate-pulse')).toHaveLength(3);
   });
 });

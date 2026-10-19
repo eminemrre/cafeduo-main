@@ -1,336 +1,278 @@
-/** Cafe-owner landing: shared ceramic identity and native, readable sections. */
-import React from 'react';
-import {
-  ArrowUpRight,
-  Check,
-  ChevronDown,
-  Clock,
-  MessageCircle,
-  Repeat,
-  Sparkles,
-  TrendingUp,
-  Users,
-} from 'lucide-react';
-import { CafeScene3D } from './CafeScene3D';
-import { LandingExperience, LandingMotionControl, useLandingMotion } from './LandingExperience';
+/**
+ * Café-owner landing (/kafeler), the Vitrin register of DESIGN.md: the same table stationery as
+ * the player landing, written for the owner. The pilot card is the first screen, the set-up is
+ * an order slip, the benefits are colour sheets, the price list is set like the café's menu,
+ * the answers are reading text, and the close is a sentence whose blank is the café's name.
+ * Terms are fixed by the business (PRODUCT.md): Pro ₺800/ay, yıllık ₺6.400; the first two pilot
+ * cafés get the first month free for a 20-minute feedback session and the use of their name.
+ */
+import React, { useState } from 'react';
+import { ArrowUpRight } from 'lucide-react';
+import { LandingExperience } from './LandingExperience';
+import { toyImage } from './landing/landingContent';
+import { CONTACT_EMAIL, DEFAULT_PILOT_MESSAGE, pilotMailto, whatsappLink } from '../lib/ownerContact';
 
-const WHATSAPP_NUMBER = '905538542535';
-const WHATSAPP_PREFILL = encodeURIComponent(
-  'Selam, cafeduotr.com pilot programı için yazıyorum. Kafem hakkında konuşabilir miyiz?'
-);
-const CONTACT_EMAIL = 'info@cafeduotr.com';
+const whatsappHref = whatsappLink();
 
-const whatsappHref = `https://wa.me/${WHATSAPP_NUMBER}?text=${WHATSAPP_PREFILL}`;
-const mailtoHref = `mailto:${CONTACT_EMAIL}?subject=Pilot%20Ba%C5%9Fvuru&body=Kafemin%20ad%C4%B1%3A%20%0AKonum%3A%20%0AInstagram%3A%20%0A`;
+const external = { target: '_blank', rel: 'noopener noreferrer' } as const;
 
-export const BusinessLanding: React.FC = () => (
-  <LandingExperience>
-    <div className="owner-landing riso-kantin riso-kantin-app">
-      <HeroSection />
-      <NumbersBar />
-      <HowItWorksOwner />
-      <ValueProps />
-      <PricingSection />
-      <FaqSection />
-      <ClosingCta />
-    </div>
-  </LandingExperience>
-);
+const HERO_FACTS = [
+  { what: 'İlk 2 kafe, ilk ay', value: 'ücretsiz' },
+  { what: 'Kurulum', value: 'birlikte' },
+  { what: 'Sözleşme', value: 'istediğiniz an iptal' },
+  { what: 'CafeDuo Pro', value: '₺800/ay' },
+] as const;
 
-const HeroSection: React.FC = () => {
-  const motion = useLandingMotion();
-  return (
-    <section aria-label="Kafe sahipleri için ana bölüm" className="owner-hero">
-      <div className="owner-container owner-hero-layout">
-        <div className="owner-intro">
-          <div className="club-hero-meta">
-            <p className="club-kicker">Kafeniz için CafeDuo</p>
-            <LandingMotionControl />
-          </div>
+/** The pilot card: what the owner gets, on one sheet of the table's stationery. The page's
+ *  primary action (Pilota başvur) lives in the header, so the card carries none of its own. */
+const Hero: React.FC = () => (
+  <section
+    id="ust"
+    className="cdl-field cdl-hero cdl-owner-hero"
+    aria-label="Kafe sahipleri için ana bölüm"
+  >
+    <div className="cdl-tent">
+      <div className="cdl-tent-stack">
+        <div className="cdl-tent-card cdl-owner-card" data-landing-reveal>
+          <i className="cdl-scallop cdl-scallop-tl" aria-hidden="true" />
+          <i className="cdl-scallop cdl-scallop-tr" aria-hidden="true" />
           <h1>
-            Kahve sizden.
-            <br />
-            <em>Oyun bizden.</em>
+            <span className="cdl-tent-line-1">Kahve sizden.</span>{' '}
+            <span className="cdl-tent-line-2">Oyun bizden.</span>
           </h1>
-          <p className="owner-intro-copy">
-            Masalarınızda oyun başlasın. Müşterileriniz puan biriktirsin, sizin seçtiğiniz ödüllerle
-            kafenize yeniden gelsin.
+          <p className="cdl-tent-offer">
+            Masalarınızda oyun başlasın; müşterileriniz puan biriktirsin, seçtiğiniz ödüller için
+            yeniden gelsin.
           </p>
-          <div className="owner-hero-actions">
-            <a
-              href={whatsappHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="owner-primary riso-focus"
-            >
-              Pilota başvur <ArrowUpRight size={18} aria-hidden="true" />
+          <ul className="cdl-owner-facts" aria-label="Anahtar sayılar">
+            {HERO_FACTS.map((fact) => (
+              <li className="cdl-slip-row" key={fact.what}>
+                <span className="cdl-slip-what">{fact.what}</span>
+                <span className="cdl-slip-dots" aria-hidden="true" />
+                <span className="cdl-slip-value">{fact.value}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="cdl-owner-card-foot">
+            <a className="cdl-quiet" href="#nasil-calisir">
+              Nasıl işler
             </a>
-            <button
-              type="button"
-              className="owner-secondary riso-focus"
-              onClick={() => {
-                document
-                  .getElementById('nasil-calisir')
-                  ?.scrollIntoView({ behavior: motion?.enabled ? 'smooth' : 'instant' });
-              }}
-            >
-              Nasıl çalışır <ChevronDown size={17} aria-hidden="true" />
-            </button>
+            <a className="cdl-quiet" href="#fiyat">
+              Fiyat
+            </a>
           </div>
         </div>
-        <CafeScene3D />
       </div>
-      <aside
-        aria-label="Pilot programı özet kartı"
-        className="owner-container owner-pilot"
-        data-landing-reveal
-      >
-        <div>
-          <p className="club-kicker">İlk 2 kafe için</p>
-          <h2>Bir ay birlikte deneyelim.</h2>
-          <p>
-            İlk ay ücretsiz. Kurulumu birlikte yapıyoruz. Pilot sonunda 20 dakika geri bildirim ve
-            kafe adınızı kullanma izni karşılığında.
-          </p>
-        </div>
-        <a
-          href={whatsappHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="owner-primary riso-focus"
-        >
-          WhatsApp’tan konuşalım <ArrowUpRight size={18} aria-hidden="true" />
-        </a>
-      </aside>
-    </section>
-  );
-};
-
-const NUMBERS = [
-  { icon: <Clock size={18} />, label: 'Kurulum', value: 'Birlikte hazırlıyoruz' },
-  { icon: <Repeat size={18} />, label: 'Sözleşme', value: 'İstediğin an iptal' },
-  { icon: <Sparkles size={18} />, label: 'Pilot', value: '1 ay ücretsiz' },
-];
-
-const NumbersBar: React.FC = () => (
-  <section aria-label="Anahtar sayılar" className="border-t border-carbon/15 bg-paper">
-    <div
-      data-landing-reveal
-      className="mx-auto grid max-w-6xl grid-cols-1 divide-y divide-carbon/15 px-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0 sm:px-6"
-    >
-      {NUMBERS.map((n) => (
-        <div
-          data-landing-reveal
-          key={n.label}
-          className="flex items-center gap-4 px-2 py-6 sm:px-6"
-        >
-          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center border border-carbon text-carbon">
-            {n.icon}
-          </span>
-          <div>
-            <p className="font-riso-mono text-xs uppercase tracking-[0.16em] text-carbon-soft">
-              {n.label}
-            </p>
-            <p className="font-riso-display text-xl text-carbon">{n.value}</p>
-          </div>
-        </div>
-      ))}
     </div>
+    <img
+      className="cdl-hero-cup cdl-owner-cup"
+      src={toyImage('cup')}
+      width={720}
+      height={720}
+      alt=""
+      aria-hidden="true"
+      decoding="async"
+    />
   </section>
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
-// How It Works — owner POV (inline numbers, no floating badges)
-// ─────────────────────────────────────────────────────────────────────────────
-const STEPS = [
-  {
-    n: '01',
-    title: 'Kafenizi tanıtın',
-    body: 'Kafenizin konumunu, masalarını ve sunmak istediğiniz ödülleri birlikte hazırlıyoruz.',
-  },
-  {
-    n: '02',
-    title: 'Müşteriler oynar',
-    body: 'Masa QR koduyla CafeDuo’yu açar, oyunlara katılır ve puan biriktirirler.',
-  },
-  {
-    n: '03',
-    title: 'Sizin ödülünüzü alırlar',
-    body: 'Puanlarını kahve, indirim veya tatlı kuponuna çevirirler. Kupon QR ile kasada gösterilir.',
-  },
-];
+/** The offer itself, as a strip of the pilot's colour. */
+const Pilot: React.FC = () => (
+  <section className="cdl-field cdl-owner-pilot" aria-label="Pilot programı özet kartı">
+    <div className="cdl-owner-pilot-copy">
+      <h2 data-landing-reveal>Bir ay birlikte deneyelim</h2>
+      <p data-landing-reveal>
+        İlk iki kafe için ilk ay ücretsiz. Kurulumu birlikte yapıyoruz; pilot sonunda 20 dakikalık
+        bir geri bildirim ve kafenizin adını kullanma izni karşılığında.
+      </p>
+    </div>
+    <a className="cdl-button cdl-owner-pilot-action" href={whatsappHref} {...external}>
+      WhatsApp’tan konuşalım <ArrowUpRight size={18} aria-hidden="true" />
+    </a>
+  </section>
+);
 
-const HowItWorksOwner: React.FC = () => (
+const SET_UP = [
+  {
+    label: 'Kurulumda',
+    rows: [
+      { what: 'Kafenin konumu ve masaları', value: 'birlikte' },
+      { what: 'Ödüller ve puan karşılıkları', value: 'siz seçersiniz' },
+      { what: 'Masa QR kodları', value: 'hazırlıyoruz' },
+    ],
+  },
+  {
+    label: 'Masada',
+    rows: [
+      { what: 'Müşteri masadaki QR’ı okutur', value: 'tarayıcıda' },
+      { what: 'Yan masayla bir oyun açar', value: '3 oyun' },
+      { what: 'Kazandığı puan hesabına geçer', value: 'maç bitince' },
+    ],
+  },
+  {
+    label: 'Kasada',
+    rows: [
+      { what: 'Puanını ödül kuponuna çevirir', value: 'menüden' },
+      { what: 'Kuponu kafe panelinden okutursunuz', value: 'tek sefer' },
+    ],
+  },
+] as const;
+
+/** The set-up, printed as the order slip. */
+const HowItWorks: React.FC = () => (
   <section
     id="nasil-calisir"
+    className="cdl-field cdl-slip"
     aria-label="Nasıl çalışır"
-    className="border-t border-carbon/15 bg-paper py-20 sm:py-28"
   >
-    <div className="mx-auto max-w-6xl px-4 sm:px-6">
-      <header className="mb-14 max-w-2xl">
-        <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">Akış</p>
-        <h2 className="mt-3 font-riso-display text-[2rem] leading-tight tracking-tight text-carbon sm:text-[2.6rem]">
-          Bir masadan başlayan oyun.
-        </h2>
-      </header>
-
-      <div data-landing-reveal className="grid grid-cols-1 gap-x-12 gap-y-10 md:grid-cols-3">
-        {STEPS.map((s) => (
-          <div data-landing-reveal key={s.n} className="relative">
-            <div className="flex items-baseline gap-3">
-              <span className="font-riso-display text-2xl text-carbon-soft">{s.n}</span>
-              <span className="h-px flex-1 bg-carbon/20" />
-            </div>
-            <h3 className="mt-4 font-riso-display text-xl leading-tight text-carbon">{s.title}</h3>
-            <p className="mt-3 font-riso-body text-[15px] leading-relaxed text-carbon-soft">
-              {s.body}
-            </p>
-          </div>
-        ))}
-      </div>
+    <div className="cdl-slip-copy">
+      <h2 id="cdl-owner-slip-title" data-landing-reveal>
+        Bir masadan başlar
+      </h2>
+      <p data-landing-reveal>
+        Uygulama yüklemek yok: müşteri masadaki kodla tarayıcıdan girer, aynı kafedeki biriyle
+        oynar, puanını sizin ödüllerinizde harcar.
+      </p>
+    </div>
+    <div className="cdl-slip-sheet" data-landing-reveal>
+      {SET_UP.map((group) => (
+        <div className="cdl-slip-group" key={group.label}>
+          <h3>{group.label}</h3>
+          <ul>
+            {group.rows.map((row) => (
+              <li className="cdl-slip-row" key={row.what}>
+                <span className="cdl-slip-what">{row.what}</span>
+                <span className="cdl-slip-dots" aria-hidden="true" />
+                <span className="cdl-slip-value">{row.value}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+      <p className="cdl-slip-result">
+        <span>Pilot sonunda değerlendirme</span>
+        <span>20 dakika</span>
+      </p>
     </div>
   </section>
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Value props — owner-side benefits, flat outlines
-// ─────────────────────────────────────────────────────────────────────────────
 const BENEFITS = [
   {
-    icon: <Repeat size={20} />,
+    tone: 'gok',
     title: 'Geri dönen müşteri',
-    body: 'Müşterilerinize, biriktirdikleri puanları kafenizin ödüllerinde kullanma fırsatı sunun.',
+    text: 'Biriktirilen puanlar yalnızca sizin kafenizin ödüllerinde harcanır; ödül için yeniden gelmenin bir sebebi olur.',
+    toy: 'knight',
   },
   {
-    icon: <TrendingUp size={20} />,
-    title: 'Masada birlikte geçirilen zaman',
-    body: 'Kahvenin yanına satranç, bilgi yarışması ve düello ekleyin. Etkisini pilotta birlikte değerlendirelim.',
+    tone: 'limon',
+    title: 'Masada geçen zaman',
+    text: 'Kahvenin yanına satranç, bilgi yarışı ve düello. Etkisini pilotta birlikte değerlendiririz.',
+    toy: 'quiz',
   },
   {
-    icon: <Users size={20} />,
+    tone: 'lokum',
     title: 'Arkadaş getiren müşteri',
-    body: 'Liderlik tablosu ve düellolarla arkadaşların birlikte oynayabileceği bir buluşma noktası oluşturun.',
+    text: 'Rakip yan masada: düellolar ve liderlik tablosu, arkadaşların birlikte geldiği bir buluşma noktası olur.',
+    toy: 'target',
   },
   {
-    icon: <Sparkles size={20} />,
+    tone: 'fistik',
     title: 'Kafenize ait ödüller',
-    body: 'Ödül seçeneklerini ve puanlarını siz belirleyin; müşterileriniz oyun deneyimini kafenizle ilişkilendirsin.',
+    text: 'Ödülleri ve puanlarını siz belirlersiniz; kahve, tatlı ya da indirim. Kupon kasada QR ile okutulur.',
+    toy: 'coin',
   },
-];
+] as const;
 
-const ValueProps: React.FC = () => (
-  <section aria-label="Faydalar" className="border-t border-carbon/15 bg-paper py-20 sm:py-28">
-    <div className="mx-auto max-w-6xl px-4 sm:px-6">
-      <header className="mb-14 max-w-2xl">
-        <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
-          Sahibe katkı
-        </p>
-        <h2 className="mt-3 font-riso-display text-[2rem] leading-tight tracking-tight text-carbon sm:text-[2.6rem]">
-          Kafenizin günlüğüne neler ekler?
-        </h2>
-      </header>
-
-      <div data-landing-reveal className="grid grid-cols-1 gap-x-12 gap-y-10 md:grid-cols-2">
-        {BENEFITS.map((b) => (
-          <div data-landing-reveal key={b.title} className="flex items-start gap-4">
-            <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center border border-carbon text-carbon">
-              {b.icon}
-            </span>
-            <div>
-              <h3 className="font-riso-display text-lg leading-tight text-carbon">{b.title}</h3>
-              <p className="mt-2 font-riso-body text-[15px] leading-relaxed text-carbon-soft">
-                {b.body}
-              </p>
-            </div>
+/** The benefits: four colour sheets stacking like the games on the player landing. */
+const Benefits: React.FC = () => (
+  <section className="cdl-field cdl-sheets cdl-owner-sheets" aria-label="Faydalar">
+    <h2 id="cdl-owner-sheets-title" data-landing-reveal>
+      Kafenize ne katar
+    </h2>
+    <ol className="cdl-sheet-stack">
+      {BENEFITS.map((benefit, index) => (
+        <li
+          key={benefit.title}
+          className={`cdl-sheet cdl-sheet-${benefit.tone}`}
+          style={{ '--sheet-index': index } as React.CSSProperties}
+        >
+          <div className="cdl-sheet-copy">
+            <h3 data-landing-reveal>{benefit.title}</h3>
+            <p data-landing-reveal>{benefit.text}</p>
           </div>
-        ))}
-      </div>
-    </div>
+          <img
+            className="cdl-sheet-toy"
+            src={toyImage(benefit.toy)}
+            width={720}
+            height={720}
+            alt=""
+            aria-hidden="true"
+            loading="lazy"
+            decoding="async"
+            data-landing-reveal
+          />
+        </li>
+      ))}
+    </ol>
   </section>
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Pricing — single Pro card, pilot inline
-// ─────────────────────────────────────────────────────────────────────────────
-const PricingSection: React.FC = () => (
-  <section aria-label="Fiyatlandırma" className="border-t border-carbon/15 bg-paper py-20 sm:py-28">
-    <div className="mx-auto max-w-3xl px-4 sm:px-6">
-      <header className="mb-12 text-left">
-        <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
-          Şeffaf fiyat
-        </p>
-        <h2 className="mt-3 font-riso-display text-[2rem] leading-tight tracking-tight text-carbon sm:text-[2.6rem]">
-          Önce deneyin, sonra konuşuruz.
-        </h2>
-        <p className="mt-3 font-riso-body text-[15px] leading-relaxed text-carbon-soft">
-          Pilot sonunda birlikte değerlendirelim. Devam etmek isterseniz planınızı konuşalım.
-        </p>
-      </header>
+const PRICES = [
+  {
+    label: 'CafeDuo Pro',
+    items: [
+      { name: 'Aylık', price: '₺800', note: 'Sınırsız müşteri ve oyun, kafe paneli' },
+      { name: 'Yıllık', price: '₺6.400', note: 'Dört ay hediye; ayda ₺533’e denk gelir' },
+    ],
+  },
+  {
+    label: 'Pilot',
+    items: [
+      {
+        name: 'İlk 2 kafe, ilk ay',
+        price: '₺0',
+        note: '20 dakikalık geri bildirim ve kafe adınızı kullanma izni karşılığında',
+      },
+    ],
+  },
+  {
+    label: 'Pakette',
+    items: [
+      { name: 'Kafe paneli ve analitik', price: 'dahil' },
+      { name: 'Kupon ve çark yönetimi', price: 'dahil' },
+      { name: 'Turnuvalar', price: 'dahil' },
+      { name: 'Gizlilik ve veri yönetimi', price: 'dahil' },
+      { name: 'WhatsApp destek hattı', price: 'dahil' },
+    ],
+  },
+] as const;
 
-      <div
-        data-landing-reveal
-        className="border-2 border-carbon bg-paper p-7 riso-shadow-md sm:p-9"
-      >
-        <div className="flex flex-col gap-2 border-b border-carbon/20 pb-6 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
-              CafeDuo Pro
-            </p>
-            <p className="mt-2 font-riso-display text-5xl leading-none text-carbon">
-              ₺800<span className="font-riso-body text-lg text-carbon-soft"> /ay</span>
-            </p>
-          </div>
-          <p className="font-riso-mono text-xs uppercase tracking-[0.14em] text-carbon-soft">
-            Yıllık ₺6.400 · 4 ay hediye
-          </p>
+/** The price list, set the way the café's own menu sets prices. */
+const Prices: React.FC = () => (
+  <section id="fiyat" className="cdl-field cdl-owner-prices" aria-label="Fiyatlandırma">
+    <h2 data-landing-reveal>Fiyat</h2>
+    <div className="cdl-owner-price-list">
+      {PRICES.map((group) => (
+        <div className="cdl-owner-price-group" key={group.label} data-landing-reveal>
+          <h3>{group.label}</h3>
+          <ul>
+            {group.items.map((item) => (
+              <li key={item.name}>
+                <p className="cdl-owner-price-row">
+                  <span>{item.name}</span>
+                  <span className="cdl-owner-price">{item.price}</span>
+                </p>
+                {'note' in item && <p className="cdl-owner-price-note">{item.note}</p>}
+              </li>
+            ))}
+          </ul>
         </div>
-
-        <ul className="mt-6 grid grid-cols-1 gap-x-8 gap-y-3 font-riso-body text-[15px] text-carbon sm:grid-cols-2">
-          <li className="flex items-start gap-2">
-            <Check size={16} className="mt-1 shrink-0" /> Sınırsız müşteri & oyun
-          </li>
-          <li className="flex items-start gap-2">
-            <Check size={16} className="mt-1 shrink-0" /> Kafe paneli + analitik
-          </li>
-          <li className="flex items-start gap-2">
-            <Check size={16} className="mt-1 shrink-0" /> Kupon ve çark yönetimi
-          </li>
-          <li className="flex items-start gap-2">
-            <Check size={16} className="mt-1 shrink-0" /> Gizlilik ve veri yönetimi
-          </li>
-          <li className="flex items-start gap-2">
-            <Check size={16} className="mt-1 shrink-0" /> WhatsApp destek hattı
-          </li>
-          <li className="flex items-start gap-2">
-            <Check size={16} className="mt-1 shrink-0" /> İstediğin an iptal
-          </li>
-        </ul>
-
-        <div className="mt-7 flex flex-col items-start justify-between gap-4 border-t border-carbon/20 pt-6 sm:flex-row sm:items-center">
-          <p className="font-riso-body text-sm text-carbon">
-            <span className="font-bold text-riso-pink-deep">İlk 2 pilot kafe</span> için ilk ay{' '}
-            <span className="font-bold">₺0</span> — vaka çalışması karşılığında.
-          </p>
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="riso-focus inline-flex items-center gap-2 bg-carbon px-5 py-3 font-riso-body text-sm font-bold uppercase tracking-[0.1em] text-paper transition-transform hover:translate-y-[-1px]"
-          >
-            Pilot için yaz <ArrowUpRight size={16} className="opacity-70" />
-          </a>
-        </div>
-      </div>
-
-      <p className="mt-6 font-riso-body text-sm text-carbon-soft">
-        3+ şubeli zincir kafelere özel teklif için{' '}
-        <a
-          href={whatsappHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline decoration-carbon decoration-2 underline-offset-2 hover:text-riso-pink-deep"
-        >
-          WhatsApp&apos;tan yazın
+      ))}
+      <p className="cdl-owner-price-chain" data-landing-reveal>
+        Üç ve daha fazla şubeli zincirler için teklif:{' '}
+        <a href={whatsappHref} {...external}>
+          WhatsApp’tan yazın
         </a>
         .
       </p>
@@ -338,17 +280,22 @@ const PricingSection: React.FC = () => (
   </section>
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
-// FAQ — concise answers grounded in the current product.
-// ─────────────────────────────────────────────────────────────────────────────
-const FAQS = [
+const FAQS: Array<{ q: string; a: React.ReactNode }> = [
   {
     q: 'Uygulama yüklemek gerekiyor mu?',
-    a: 'Hayır. Müşterileriniz masa QR koduyla CafeDuo’yu telefonlarının tarayıcısında açabilir. Dileyenler ana ekranına da ekleyebilir.',
+    a: 'Hayır. Müşterileriniz masa QR koduyla CafeDuo’yu telefonlarının tarayıcısında açar; dileyen ana ekranına ekler.',
+  },
+  {
+    q: 'Kafede olmayan biri oynayabilir mi?',
+    a: 'Hayır. Check-in yalnızca kafenin içinde çalışır: belirlediğiniz konum yarıçapında (varsayılan 150 m) ya da masanın doğrulama koduyla.',
+  },
+  {
+    q: 'Hangi oyunlar var?',
+    a: 'Retro Satranç (3+2 ya da 5+0 tempo), Bilgi Yarışı (on kısa soru) ve Nişancı Düellosu (beş tur). Her biri bir kahvelik sürer.',
   },
   {
     q: 'Pilot bittikten sonra ne olur?',
-    a: 'İlk ayın sonunda deneyimi birlikte değerlendiririz. Devam etmek isterseniz Pro planın koşullarını konuşuruz; pilot başvurusu otomatik bir ödeme başlatmaz.',
+    a: 'İlk ayın sonunda deneyimi birlikte değerlendiririz. Devam etmek isterseniz Pro planı konuşuruz; pilot başvurusu otomatik bir ödeme başlatmaz.',
   },
   {
     q: 'Müşteri verileri nasıl korunur?',
@@ -356,106 +303,90 @@ const FAQS = [
       <>
         Parolalar açık metin olarak saklanmaz; yönetim işlemleri yetkili hesaplarla yapılır. Hangi
         verilerin işlendiğini ve taleplerinizi nasıl iletebileceğinizi{' '}
-        <a href="/gizlilik" className="riso-focus underline decoration-current underline-offset-4">
-          Gizlilik Politikası
-        </a>{' '}
-        sayfasında bulabilirsiniz.
+        <a href="/gizlilik">Gizlilik Politikası</a> sayfasında bulabilirsiniz.
       </>
     ),
   },
   {
     q: 'Kuponu kasada nasıl doğrularım?',
-    a: 'Müşterinin kupon kodunu kafe panelinizden kontrol edersiniz. Sistem kuponun geçerliliğini ve kullanılıp kullanılmadığını denetler; kullanım onaylandığında kupon tekrar kullanılamaz.',
+    a: 'Müşterinin kuponunu kafe panelinizden okutursunuz. Sistem kuponun geçerliliğini denetler; onaylanan kupon bir daha kullanılamaz.',
   },
   {
     q: 'Başlamak için ne hazırlamalıyım?',
-    a: 'Kafenizin konumu, masa sayısı ve sunmak istediğiniz ödüller yeterli. WhatsApp üzerinden iletişime geçin; paneli ve masa QR kodlarını birlikte hazırlayalım.',
+    a: 'Kafenizin konumu, masa sayısı ve sunmak istediğiniz ödüller yeterli. Paneli ve masa QR kodlarını birlikte hazırlarız.',
   },
 ];
 
-const FaqSection: React.FC = () => (
-  <section
-    aria-label="Sıkça sorulan sorular"
-    className="border-t border-carbon/15 bg-paper py-20 sm:py-28"
-  >
-    <div className="mx-auto max-w-3xl px-4 sm:px-6">
-      <header data-landing-reveal className="mb-10 text-left">
-        <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
-          Sık sorulanlar
+/** The answers, set as reading text: everything answered at a glance, nothing to open. */
+const Questions: React.FC = () => (
+  <section id="sorular" className="cdl-field cdl-owner-faq" aria-label="Sıkça sorulan sorular">
+    <h2 data-landing-reveal>Sorular</h2>
+    <div className="cdl-owner-faq-text">
+      {FAQS.map((item) => (
+        <p key={item.q} data-landing-reveal>
+          <strong>{item.q}</strong> {item.a}
         </p>
-        <h2 className="mt-3 font-riso-display text-[2rem] leading-tight tracking-tight text-carbon sm:text-[2.6rem]">
-          Aklınıza gelen ilkler.
-        </h2>
-      </header>
-
-      <div className="divide-y divide-carbon/20 border-y border-carbon/20">
-        {FAQS.map((f, i) => (
-          <details key={i} className="group py-5">
-            <summary className="riso-focus flex cursor-pointer list-none items-start justify-between gap-4 font-riso-body text-base font-semibold text-carbon">
-              <span className="flex-1">{f.q}</span>
-              <span
-                aria-hidden="true"
-                className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full border border-carbon text-carbon transition-transform group-open:rotate-45"
-              >
-                +
-              </span>
-            </summary>
-            <p className="mt-3 max-w-2xl font-riso-body text-[15px] leading-relaxed text-carbon-soft">
-              {f.a}
-            </p>
-          </details>
-        ))}
-      </div>
+      ))}
     </div>
   </section>
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Closing — carbon (dark) for premium close
-// ─────────────────────────────────────────────────────────────────────────────
-const ClosingCta: React.FC = () => (
-  <section aria-label="Son çağrı" className="relative bg-carbon py-20 text-paper sm:py-28">
-    <div className="mx-auto max-w-4xl px-4 sm:px-6">
-      <div data-landing-reveal className="grid gap-8 md:grid-cols-12 md:items-end">
-        <div data-landing-reveal className="md:col-span-7">
-          <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-paper/70">
-            Sıra sizde
-          </p>
-          <h2 className="mt-3 font-riso-display text-[2.2rem] leading-tight tracking-tight sm:text-[3rem]">
-            İlk 2 kafeden biri olun.
-          </h2>
-          <p className="mt-4 max-w-xl font-riso-body text-[15px] leading-relaxed text-paper/85">
-            1 ay tamamen ücretsiz. 20 dakika geri bildirim + isim kullanım izni karşılığında.
-            Kurulumu birlikte yapıyoruz.
-          </p>
-        </div>
-
-        <div data-landing-reveal className="flex flex-col gap-3 md:col-span-5">
-          <a
-            href={whatsappHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="riso-focus inline-flex items-center justify-between border-2 border-paper bg-paper px-5 py-3 font-riso-body text-sm font-bold uppercase tracking-[0.1em] text-carbon transition-transform hover:translate-y-[-1px]"
-          >
-            <span className="inline-flex items-center gap-2">
-              <MessageCircle size={16} /> WhatsApp ile başvur
-            </span>
-            <ArrowUpRight size={16} />
-          </a>
-          <a
-            href={mailtoHref}
-            className="riso-focus inline-flex items-center justify-between border-2 border-paper/40 px-5 py-3 font-riso-body text-sm font-bold uppercase tracking-[0.1em] text-paper transition-colors hover:border-paper"
-          >
-            <span>E-posta gönder</span>
-            <ArrowUpRight size={16} className="opacity-70" />
-          </a>
-          <p className="font-riso-mono text-xs uppercase tracking-[0.14em] text-paper/60">
-            Cevap genelde 1 saatte gelir.
-          </p>
-        </div>
+/** The close: the blank is the café's name, and it goes straight into the WhatsApp message.
+ *  The link is a real link, so it opens in a new tab and can be copied or opened
+ *  with the middle button like any other. */
+const Close: React.FC = () => {
+  const [name, setName] = useState('');
+  const message = name.trim()
+    ? `Selam, ${name.trim()} için CafeDuo pilot programına başvurmak istiyorum.`
+    : DEFAULT_PILOT_MESSAGE;
+  return (
+    <section className="cdl-field cdl-cta" aria-label="Son çağrı">
+      <div className="cdl-cta-form">
+        <p className="cdl-cta-sentence">
+          <label htmlFor="cdl-owner-cafe">Pilot için</label>
+          <input
+            id="cdl-owner-cafe"
+            className="cdl-cta-input"
+            type="text"
+            name="cafe"
+            autoComplete="organization"
+            placeholder="kafenizin adı"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+          />
+          <span className="cdl-cta-tail">
+            <span>ile</span>
+            <a
+              className="cdl-cta-submit"
+              href={whatsappLink(message)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              başvurun
+            </a>
+          </span>
+        </p>
+        <p className="cdl-cta-note" data-landing-reveal>
+          Mesaj WhatsApp’ta hazır açılır, göndermeden önce düzenleyebilirsiniz. E-postayı tercih
+          ederseniz: <a href={pilotMailto}>{CONTACT_EMAIL}</a>
+        </p>
       </div>
+    </section>
+  );
+};
+
+export const BusinessLanding: React.FC = () => (
+  <LandingExperience>
+    <div className="cdl">
+      <Hero />
+      <Pilot />
+      <HowItWorks />
+      <Benefits />
+      <Prices />
+      <Questions />
+      <Close />
     </div>
-  </section>
+  </LandingExperience>
 );
 
 export default BusinessLanding;

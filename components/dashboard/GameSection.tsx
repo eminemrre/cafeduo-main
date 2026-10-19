@@ -195,11 +195,11 @@ export const GameSection: React.FC<GameSectionProps> = ({
         : serverActiveGame.hostName;
 
     return (
-      <div className="duo-card bg-riso-pink text-carbon p-5 sm:p-6 mb-8">
+      <div className="duo-card bg-candy-lokum text-carbon p-5 sm:p-6 mb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="min-w-0">
             <h3 className="duo-lobby-heading mb-2">Oyunun seni bekliyor.</h3>
-            <p className="font-riso-body text-base text-carbon">
+            <p className="font-candy-body text-base text-carbon">
               <span className="font-bold underline">{opponentLabel}</span> ile olan
               <span className="font-bold"> {serverActiveGame.gameType}</span> karşılaşması
               beklemede.
@@ -207,7 +207,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
           </div>
           <button
             onClick={onRejoinGame}
-            className="duo-button riso-focus shrink-0 min-h-12 px-5 bg-carbon text-paper font-riso-body text-base font-semibold transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
+            className="duo-button duo-focus shrink-0 min-h-12 px-5 bg-carbon text-paper font-candy-body text-base font-semibold transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
           >
             Oyuna dön
           </button>
@@ -248,7 +248,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
         </h3>
 
         {historyLoading ? (
-          <p role="status" className="font-riso-body text-base text-carbon-muted">
+          <p role="status" className="font-candy-body text-base text-carbon-muted">
             Oyun geçmişi yükleniyor...
           </p>
         ) : (gameHistory?.length ?? 0) === 0 ? (
@@ -270,12 +270,12 @@ export const GameSection: React.FC<GameSectionProps> = ({
                       {item.gameType}
                     </span>
                     <span
-                      className={`text-[15px] font-semibold ${item.didWin ? 'text-[#177A41]' : 'text-riso-redox'}`}
+                      className={`text-[15px] font-semibold ${item.didWin ? 'text-[#177A41]' : 'text-candy-danger'}`}
                     >
                       {item.didWin ? 'Kazandın' : 'Kaybettin'}
                     </span>
                   </div>
-                  <p className="mt-2 truncate font-riso-body text-sm text-carbon-soft">
+                  <p className="mt-2 truncate font-candy-body text-sm text-carbon-soft">
                     Rakip: <span className="font-semibold text-carbon">{item.opponentName}</span>
                     {' · '}Masa {item.table}
                   </p>
@@ -297,7 +297,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
                     <button
                       type="button"
                       onClick={() => void openHistoryDetail(item)}
-                      className="duo-quiet riso-focus"
+                      className="duo-quiet duo-focus"
                     >
                       Hamleleri incele
                     </button>

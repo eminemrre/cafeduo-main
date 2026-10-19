@@ -136,7 +136,7 @@ describe('GameLobby', () => {
 
       render(<GameLobby {...defaultProps} requests={[ownGame]} />);
 
-      expect(screen.getByText('SENİN LOBİN')).toBeInTheDocument();
+      expect(screen.getByText('Senin lobin')).toBeInTheDocument();
       expect(screen.queryByText('Oyuna katıl')).not.toBeInTheDocument();
     });
 
@@ -148,7 +148,7 @@ describe('GameLobby', () => {
 
       render(<GameLobby {...defaultProps} requests={[ownGameDifferentCase]} />);
 
-      expect(screen.getByText('SENİN LOBİN')).toBeInTheDocument();
+      expect(screen.getByText('Senin lobin')).toBeInTheDocument();
       expect(screen.queryByText('Oyuna katıl')).not.toBeInTheDocument();
       expect(screen.getByText('İPTAL ET')).toBeInTheDocument();
     });

@@ -358,7 +358,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="max-w-6xl mx-auto">
           {/* Geri butonu */}
           <div className="mb-6">
-            <button type="button" onClick={handleBackToLobby} className="duo-quiet riso-focus gap-2">
+            <button type="button" onClick={handleBackToLobby} className="duo-quiet duo-focus gap-2">
               <ArrowLeft size={18} strokeWidth={2.4} aria-hidden="true" />
               Lobiye dön
             </button>
@@ -408,7 +408,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             />
           ) : (
             <div className="bg-paper-deep p-8 text-center">
-              <p className="font-riso-display text-[28px] leading-none text-carbon">Bu oyunu tanımıyoruz</p>
+              <p className="font-candy-display text-[28px] leading-none text-carbon">Bu oyunu tanımıyoruz</p>
               <p className="mt-2 text-carbon-soft">{activeGameType}</p>
               <RetroButton onClick={handleBackToLobby} variant="secondary" className="mt-4">
                 Lobiye Dön
@@ -459,7 +459,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 onClick={() => setMainTab(tab.id as typeof mainTab)}
                 data-testid={`dashboard-tab-${tab.id}`}
                 aria-pressed={mainTab === tab.id}
-                className="duo-dashboard-tab riso-focus"
+                className="duo-dashboard-tab duo-focus"
               >
                 <Icon size={20} aria-hidden="true" />
                 <span>{tab.label}</span>

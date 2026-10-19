@@ -14,6 +14,7 @@ const {
 const { mapTransitionError } = require('../utils/errorHelpers');
 const { applyDbSettlement, applyMemorySettlement } = require('../settlementUtils');
 const { normalizeDrawOfferAction, normalizeDrawOffer } = require('../drawOfferUtils');
+const { rollbackQuietly } = require('../../../utils/transaction');
 
 const createDrawOfferHandler = (deps) => {
   const {
@@ -50,18 +51,18 @@ const createDrawOfferHandler = (deps) => {
         );
 
         if (result.rows.length === 0) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(404).json({ error: 'Oyun bulunamadı.' });
         }
 
         const game = result.rows[0];
         const actorParticipant = normalizeParticipantName(actorName, game);
         if (!actorParticipant) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(403).json({ error: 'Bu oyunda beraberlik işlemi yapma yetkin yok.' });
         }
         if (!isChessGameType(game.game_type)) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res
             .status(400)
             .json({ error: 'Beraberlik teklifi sadece satranç oyununda kullanılabilir.' });
@@ -72,7 +73,7 @@ const createDrawOfferHandler = (deps) => {
           context: 'draw_offer',
         });
         if (!drawOfferStatus.ok) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(409).json(mapTransitionError(drawOfferStatus));
         }
 
@@ -94,11 +95,11 @@ const createDrawOfferHandler = (deps) => {
 
         if (action === 'offer') {
           if (isPendingByActor) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.json({ success: true, drawOffer: pendingOffer, pending: true });
           }
           if (isPendingByOpponent) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.status(409).json({ error: 'Rakibin beraberlik teklifine önce yanıt ver.' });
           }
 
@@ -137,7 +138,7 @@ const createDrawOfferHandler = (deps) => {
 
         if (action === 'cancel') {
           if (!isPendingByActor) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.status(409).json({ error: 'İptal edilecek aktif beraberlik teklifin yok.' });
           }
           const nextOffer = {
@@ -176,7 +177,7 @@ const createDrawOfferHandler = (deps) => {
 
         if (action === 'reject') {
           if (!isPendingByOpponent) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.status(409).json({ error: 'Yanıtlanacak rakip beraberlik teklifi yok.' });
           }
           const nextOffer = {
@@ -214,7 +215,7 @@ const createDrawOfferHandler = (deps) => {
         }
 
         if (!isPendingByOpponent) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(409).json({ error: 'Onaylanacak rakip beraberlik teklifi yok.' });
         }
 
@@ -253,7 +254,7 @@ const createDrawOfferHandler = (deps) => {
           context: 'draw_offer_accept',
         });
         if (!drawTransition.ok) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(409).json(mapTransitionError(drawTransition));
         }
 
@@ -292,7 +293,7 @@ const createDrawOfferHandler = (deps) => {
         });
         return res.json({ success: true, winner: null, draw: true, drawOffer: nextOffer });
       } catch (err) {
-        await client.query('ROLLBACK');
+        await rollbackQuietly(client);
         logger.error('Draw offer error', err);
         return res.status(500).json({ error: 'Beraberlik teklifi işlenemedi.' });
       } finally {

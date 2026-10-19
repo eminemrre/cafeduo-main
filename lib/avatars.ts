@@ -1,77 +1,80 @@
 /**
  * Avatar catalog for CafeDuo profiles.
  *
- * The curated DiceBear v9 images are served locally. Stored profile URLs keep
- * the existing HTTP API format for compatibility with the backend.
+ * The curated DiceBear images are served locally: soft toy robots in the
+ * candy palette, the same register as the 3D toys on the landing (DESIGN.md).
+ * Stored profile URLs keep the existing HTTP API format for compatibility
+ * with the backend.
  *
  * The picker exposes a curated set of seeds (`AVATAR_SEEDS`) so users can't
  * mint arbitrary URLs. The backend (`profileHandlers.updateUserStats`) also
- * regex-validates the stored URL, locking us to the `pixel-art` style — that
- * matches the riso/print aesthetic of the rest of the app.
+ * regex-validates the stored URL, locking us to the DiceBear v9 styles we
+ * serve; legacy `pixel-art` URLs stay valid so old accounts keep working.
  */
-export const AVATAR_STYLE = 'pixel-art' as const;
+export const AVATAR_STYLE = 'bottts' as const;
+
+/** The legacy style some accounts still carry; still accepted, still rendered. */
+const LEGACY_AVATAR_STYLE = 'pixel-art' as const;
 
 /**
- * 16 curated seeds. Names are intentionally a mix of CafeDuo vocabulary
- * (cafe, masa, neon…) and short fantasy syllables so the picker has visual
- * variety without revealing user identity. Order matters — first 4 are
- * the "safe default" set we render before the user has picked anything.
+ * 16 curated seeds, named after the café's own things so the picker reads as
+ * the product's world. Order matters — the first four are the "safe default"
+ * set rendered before the user has picked anything.
  */
 export const AVATAR_SEEDS = [
   'kahve',
   'masa',
-  'neon',
-  'duo',
-  'riso',
-  'pixel',
-  'turbo',
-  'plaza',
-  'orbit',
-  'cyber',
-  'glitch',
-  'echo',
-  'mango',
+  'fincan',
+  'tabak',
+  'kruvasik',
+  'tepsi',
+  'bardak',
+  'kahveci',
   'kantin',
-  'jeton',
-  'kupon',
+  'plaza',
+  'demleme',
+  'espresso',
+  'latte',
+  'cay',
+  'tarife',
+  'sampanya',
 ] as const;
 
 export type AvatarSeed = (typeof AVATAR_SEEDS)[number];
 
 /**
- * Build a DiceBear avatar URL. We always pass `pixel-art` and only the seed
- * is user-controllable — keeps the backend regex (`^https://api\.dicebear\.com/9\.x/pixel-art/svg\?seed=...$`)
- * happy.
- *
- * Allowed seed characters: letters, digits, dash, underscore. Anything outside
- * that range gets sanitised so we never produce a URL the backend would
- * reject (e.g. if we ever fall back to `currentUser.username` which can hold
- * a wider charset).
+ * Build a DiceBear avatar URL. We always pass the curated style and only the
+ * seed is user-controllable — keeps the backend regex
+ * (`^https://api\.dicebear\.com/9\.x/(bottts|pixel-art)/svg\?seed=…$`) happy.
  */
 export const getAvatarUrl = (seed: string | null | undefined): string => {
   const safe =
-    String(seed ?? 'duo')
+    String(seed ?? 'kahve')
       .replace(/[^A-Za-z0-9_-]/g, '')
-      .slice(0, 32) || 'duo';
+      .slice(0, 32) || 'kahve';
   return `https://api.dicebear.com/9.x/${AVATAR_STYLE}/svg?seed=${safe}`;
 };
 
 /**
- * Extract the seed from a stored avatar_url. Returns `null` if the URL is
+ * Extract the seed from a stored avatar_url. Returns `null` when the URL is
  * empty / unrecognised — callers fall back to initials or username.
  */
 export const seedFromAvatarUrl = (url: string | null | undefined): string | null => {
   if (!url) return null;
   const match =
-    /^https:\/\/api\.dicebear\.com\/9\.x\/pixel-art\/svg\?seed=([A-Za-z0-9_-]{1,32})$/.exec(url);
+    /^https:\/\/api\.dicebear\.com\/9\.x\/(?:bottts|pixel-art)\/svg\?seed=([A-Za-z0-9_-]{1,32})$/.exec(
+      url
+    );
   return match ? match[1] : null;
 };
 
-/** Curated images work without contacting DiceBear; existing custom seeds stay compatible. */
+/** Curated images work without contacting DiceBear; legacy seeds keep their original URL. */
 export const getAvatarImageSrc = (url: string | null | undefined): string | null => {
   if (!url) return null;
+  const isCuratedStyle = url.startsWith(`https://api.dicebear.com/9.x/${AVATAR_STYLE}/`);
+  if (!isCuratedStyle) return url;
   const seed = seedFromAvatarUrl(url);
   return seed && AVATAR_SEEDS.some((option) => option === seed)
-    ? `/avatars/pixel-art-v9/${seed}.svg`
+    ? `/avatars/bottts-v9/${seed}.svg`
     : url;
 };

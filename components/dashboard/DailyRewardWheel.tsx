@@ -166,7 +166,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
         mid: start + sweep / 2,
         fill: SLICE_FILL[idx % SLICE_FILL.length],
         fontSize,
-        label: slice.gift ? '★' : `+${slice.points}`,
+        label: slice.gift ? 'Hediye' : `+${slice.points}`,
       };
     });
   }, [slices]);
@@ -249,11 +249,11 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
 
   return (
     <div
-      className="duo-card bg-riso-spring p-5 sm:p-6 relative overflow-hidden"
+      className="duo-card bg-candy-fistik p-5 sm:p-6 relative overflow-hidden"
       data-testid="daily-reward-wheel"
     >
       <div className="mb-4 min-w-0">
-        <h3 className="font-riso-display text-[28px] leading-none text-carbon">Günün çarkı</h3>
+        <h3 className="font-candy-display text-[28px] leading-none text-carbon">Günün çarkı</h3>
         <p className="mt-1.5 truncate text-sm text-carbon">
           {status?.cafeName ? status.cafeName : 'Bu kafenin çarkı'} · günde 1 kez
         </p>
@@ -266,7 +266,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
       )}
 
       {error && !loading && (
-        <div role="alert" className="mb-3 bg-paper p-3 text-sm text-carbon font-riso-body">
+        <div role="alert" className="mb-3 bg-paper p-3 text-sm text-carbon font-candy-body">
           {error}
         </div>
       )}
@@ -321,7 +321,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
                           y={CY - SLICE_R * 0.62}
                           textAnchor="middle"
                           dominantBaseline="middle"
-                          className="font-riso-display"
+                          className="font-candy-display"
                           style={{ fontSize: `${g.fontSize}px`, fontWeight: 800 }}
                           fill="#17140f"
                         >
@@ -365,11 +365,11 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
                       className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
                     >
                       {justGift !== null ? (
-                        <div className="duo-float flex items-center gap-2 bg-paper px-4 py-2 text-center font-riso-body text-lg font-semibold text-carbon">
+                        <div className="duo-float flex items-center gap-2 bg-paper px-4 py-2 text-center font-candy-body text-lg font-semibold text-carbon">
                           <Gift size={20} aria-hidden="true" /> {justGift}
                         </div>
                       ) : (
-                        <div className="duo-float bg-paper px-4 py-2 font-riso-body text-2xl font-bold text-carbon [font-variant-numeric:tabular-nums]">
+                        <div className="duo-float bg-paper px-4 py-2 font-candy-body text-2xl font-bold text-carbon [font-variant-numeric:tabular-nums]">
                           +{justWon} puan
                         </div>
                       )}
@@ -388,7 +388,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
               when the user just won a coupon, since the points balance
               didn't change. */}
           {justGift && (
-            <div role="status" className="mb-3 bg-paper p-3 text-sm text-carbon font-riso-body">
+            <div role="status" className="mb-3 bg-paper p-3 text-sm text-carbon font-candy-body">
               <strong>Tebrikler!</strong> {justGift} kuponun envanterine eklendi. Kasada QR kodu
               okutarak teslim alabilirsin.
             </div>
@@ -400,7 +400,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
             onClick={handleSpin}
             disabled={spinning || status.alreadySpunToday || slices.length === 0}
             data-testid="wheel-spin-button"
-            className="duo-button riso-focus flex min-h-12 w-full items-center justify-center gap-2 bg-carbon px-4 font-riso-body text-base font-semibold text-paper transition-transform hover:-translate-y-0.5 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-carbon/45 disabled:hover:translate-y-0"
+            className="duo-button duo-focus flex min-h-12 w-full items-center justify-center gap-2 bg-carbon px-4 font-candy-body text-base font-semibold text-paper transition-transform hover:-translate-y-0.5 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-carbon/45 disabled:hover:translate-y-0"
           >
             <RotateCw size={18} className={spinning ? 'animate-spin' : ''} />
             {spinning

@@ -30,7 +30,7 @@ export function TabBar<T extends string>({ tabs, value, onChange }: TabBarProps<
             onClick={() => onChange(t.id)}
             className={
               'relative inline-flex min-h-12 items-center gap-2 px-0.5 ' +
-              'font-riso-body font-semibold text-[0.9375rem] riso-focus transition-[color,box-shadow] duration-150 whitespace-nowrap ' +
+              'font-candy-body font-semibold text-[0.9375rem] duo-focus transition-[color,box-shadow] duration-150 whitespace-nowrap ' +
               (active
                 ? 'text-carbon shadow-[inset_0_-3px_0_#17140f]'
                 : 'text-carbon-muted hover:text-carbon hover:shadow-[inset_0_-3px_0_#17140f40]')

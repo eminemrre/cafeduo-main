@@ -53,7 +53,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
   const locationLabel = (() => {
     if (tableVerificationCode.trim()) {
       return {
-        color: 'text-riso-blue',
+        color: 'text-candy-gok',
         icon: <KeyRound size={14} />,
         text: 'Masa koduyla doğrulanacak',
       };
@@ -61,19 +61,19 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
     switch (locationStatus) {
       case 'ready':
         return {
-          color: 'text-riso-spring',
+          color: 'text-candy-fistik',
           icon: <CheckCircle size={14} />,
           text: 'Konum alındı',
         };
       case 'requesting':
         return {
-          color: 'text-riso-blue',
+          color: 'text-candy-gok',
           icon: <LocateFixed size={14} className="animate-pulse" />,
           text: 'Konum alınıyor...',
         };
       case 'denied':
         return {
-          color: 'text-riso-redox',
+          color: 'text-candy-danger',
           icon: <AlertTriangle size={14} />,
           text: 'Konum alınamadı',
         };
@@ -89,7 +89,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
 
   return (
     <div
-      className="duo-checkin riso-kantin-app relative min-h-screen overflow-hidden px-4"
+      className="duo-checkin duo-scope-app relative min-h-screen overflow-hidden px-4"
       data-testid="cafe-selection-shell"
     >
       <div className="mx-auto w-full max-w-md">
@@ -100,7 +100,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
           transition={{ duration: shouldReduceMotion ? 0 : 0.4, ease: 'easeOut' }}
           className="mb-8 text-center"
         >
-          <h1 className="duo-checkin-heading mb-2 inline-block font-riso-display text-carbon">
+          <h1 className="duo-checkin-heading mb-2 inline-block font-candy-display text-carbon">
             Kafeye Giriş
           </h1>
           <p className="mt-3 text-sm text-carbon-muted">
@@ -117,20 +117,20 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
             delay: shouldReduceMotion ? 0 : 0.1,
           }}
         >
-          <Card tone="paper" shadow="md" halftone={false} data-testid="cafe-selection-card">
+          <Card tone="paper" data-testid="cafe-selection-card">
             {/* Error banner */}
             {error && (
               <div
                 role="alert"
                 aria-live="polite"
                 data-testid="cafe-selection-error"
-                className="mb-5 border-2 border-riso-redox bg-paper p-3.5"
+                className="mb-5 bg-candy-danger/10 p-3.5"
               >
                 <div className="flex items-start gap-2.5">
-                  <AlertTriangle size={18} className="mt-0.5 shrink-0 text-riso-redox" />
+                  <AlertTriangle size={18} className="mt-0.5 shrink-0 text-candy-danger" />
                   <div className="min-w-0">
-                    <p className="font-riso-display text-sm font-bold uppercase tracking-wider text-riso-redox">
-                      Giriş Başarısız
+                    <p className="font-candy-body text-[0.9375rem] font-semibold text-carbon">
+                      Giriş başarısız
                     </p>
                     <p className="mt-1 text-sm leading-relaxed text-carbon">{error}</p>
                   </div>
@@ -177,7 +177,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                   type="button"
                   disabled={loading}
                   onClick={() => setShowVerificationField(true)}
-                  className="riso-focus inline-flex w-full items-center justify-between gap-2 bg-paper-deep px-3 py-2.5 text-left text-sm font-medium text-carbon hover:bg-paper-dim transition-colors"
+                  className="duo-focus inline-flex w-full items-center justify-between gap-2 bg-paper-deep px-3 py-2.5 text-left text-sm font-medium text-carbon hover:bg-paper-dim transition-colors"
                   data-testid="checkin-show-verification"
                 >
                   <span className="flex items-center gap-2">
@@ -241,7 +241,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                 data-testid="checkin-submit-button"
                 leadingIcon={
                   loading ? (
-                    <span className="h-4 w-4 animate-spin border-2 border-carbon/30 border-t-carbon rounded-full" />
+                    <span className="h-4 w-4 animate-spin border-2 border-carbon/30 border-t-carbon" />
                   ) : (
                     <Coffee size={20} />
                   )

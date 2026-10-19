@@ -2,19 +2,18 @@ import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router';
 import { Navbar } from './components/Navbar';
 import { LandingExperience } from './components/LandingExperience';
-import { ClubLanding, LandingFooter, LandingHeader } from './components/landing/ClubLanding';
-import { Footer } from './components/Footer';
+import { LandingPage, LandingFooter, LandingHeader } from './components/landing/LandingPage';
 import { AuthModal } from './components/AuthModal';
 
 import { User, UserProfileUpdates } from './types';
 import { api } from './lib/api';
 import { socketService } from './lib/socket';
 import { lazyWithRetry } from './lib/lazyWithRetry';
+import { whatsappLink } from './lib/ownerContact';
 import { CafeSelection } from './components/CafeSelection';
 import { CookieConsent } from './components/CookieConsent';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { DecodeText } from './components/ui/DecodeText';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
 
@@ -53,15 +52,8 @@ const PageLoader = () => (
     aria-label="Sayfa yükleniyor"
     className="min-h-screen flex flex-col items-center justify-center text-carbon"
   >
-    <div
-      aria-hidden="true"
-      className="w-14 h-14 border-4 border-carbon border-t-transparent rounded-full animate-spin"
-    ></div>
-    <DecodeText
-      text="YÜKLENİYOR"
-      className="mt-4 font-riso-mono text-[11px] uppercase tracking-[0.3em] text-carbon-muted"
-      data-testid="page-loader-decode"
-    />
+    <div aria-hidden="true" className="h-10 w-10 border-4 border-carbon border-t-transparent animate-spin" />
+    <p className="mt-4 text-[0.9375rem] text-carbon-soft">Yükleniyor…</p>
   </div>
 );
 
@@ -122,6 +114,8 @@ const AppContent: React.FC = () => {
   const location = useLocation();
   const previousPathRef = useRef(location.pathname);
   const isLanding = location.pathname === '/';
+  // The two public pages share the landing's header, footer and cookie notice.
+  const isPublicPage = isLanding || location.pathname === '/kafeler';
 
   // Socket IO Connection
   useEffect(() => {
@@ -191,7 +185,7 @@ const AppContent: React.FC = () => {
 
     // Check for Daily Bonus
     if (userData.bonusReceived) {
-      toast.success('🎉 Günlük giriş ödülü: 10 PUAN!');
+      toast.success('Günlük giriş ödülü: 10 puan');
     } else {
       toast.success(`Hoş geldin, ${userData.username}!`);
     }
@@ -206,7 +200,7 @@ const AppContent: React.FC = () => {
     }
   };
 
-  const enterClub = (email?: string) => {
+  const joinCafe = (email?: string) => {
     if (!user) return openRegister(email);
     navigate(user.isAdmin ? '/admin' : user.role === 'cafe_admin' ? '/cafe-admin' : '/dashboard');
   };
@@ -248,17 +242,19 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="duo-app riso-kantin riso-kantin-app min-h-screen font-riso-body selection:bg-riso-pink selection:text-carbon">
+    <div className="duo-app duo-scope duo-scope-app min-h-screen font-candy-body selection:bg-candy-lokum selection:text-carbon">
       <a href="#main-content" className="skip-link">
         İçeriğe atla
       </a>
       {/* The landing has its own header and footer line; other routes keep the shared ones. */}
-      {isLanding ? (
+      {isPublicPage ? (
         <LandingHeader
           isLoggedIn={!!user}
-          onJoin={enterClub}
+          onJoin={joinCafe}
           onLogin={openLogin}
           onLogout={handleLogout}
+          page={isLanding ? 'players' : 'owners'}
+          ownerActionHref={whatsappLink()}
         />
       ) : (
         <Navbar isLoggedIn={!!user} user={user} onLogout={handleLogout} />
@@ -272,9 +268,9 @@ const AppContent: React.FC = () => {
               element={
                 <PageFrame>
                   <LandingExperience>
-                    <ClubLanding
+                    <LandingPage
                       isLoggedIn={!!user}
-                      onJoin={enterClub}
+                      onJoin={joinCafe}
                       onLogin={openLogin}
                       onLogout={handleLogout}
                     />
@@ -364,7 +360,7 @@ const AppContent: React.FC = () => {
         </Suspense>
       </main>
 
-      {isLanding ? <LandingFooter /> : <Footer />}
+      <LandingFooter />
 
       <AuthModal
         isOpen={isAuthOpen}
@@ -373,7 +369,7 @@ const AppContent: React.FC = () => {
         initialEmail={authEmail}
         onLoginSuccess={handleLoginSuccess}
       />
-      <CookieConsent variant={isLanding ? 'landing' : 'default'} />
+      <CookieConsent variant={isPublicPage ? 'landing' : 'default'} />
     </div>
   );
 };

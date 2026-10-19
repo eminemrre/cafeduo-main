@@ -75,7 +75,7 @@ export const Modal: React.FC<ModalProps> = ({
           >
             <header className="flex items-start justify-between gap-4 px-6 pt-5 pb-4 border-b-[3px] border-dotted border-carbon/35 bg-paper">
               <div className="flex flex-col gap-1.5">
-                <h2 id={titleId} className="font-riso-display text-[1.75rem] leading-none text-carbon">
+                <h2 id={titleId} className="font-candy-display text-[1.75rem] leading-none text-carbon">
                   {title}
                 </h2>
                 {eyebrow && <p className="text-[0.8125rem] text-carbon-soft">{eyebrow}</p>}
@@ -84,7 +84,7 @@ export const Modal: React.FC<ModalProps> = ({
                 type="button"
                 onClick={onClose}
                 aria-label="Kapat"
-                className="riso-focus inline-flex h-11 w-11 shrink-0 items-center justify-center bg-paper-deep text-carbon hover:bg-carbon hover:text-paper transition-colors"
+                className="duo-focus inline-flex h-11 w-11 shrink-0 items-center justify-center bg-paper-deep text-carbon hover:bg-carbon hover:text-paper transition-colors"
               >
                 <X size={18} />
               </button>

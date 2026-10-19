@@ -7,6 +7,7 @@ const { isAdminActor } = require('../validation');
 const { isChessGameType, activateChessClockState } = require('../chessUtils');
 const { assertGameStatusTransition } = require('../../../utils/gameStateMachine');
 const { mapTransitionError } = require('../utils/errorHelpers');
+const { rollbackQuietly } = require('../../../utils/transaction');
 
 const createJoinGameHandler = (deps) => {
   const {
@@ -49,11 +50,11 @@ const createJoinGameHandler = (deps) => {
           : null;
 
         if (!game) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(404).json({ error: 'Oyun bulunamadı.' });
         }
         if (String(game.host_name || '').toLowerCase() === guestName.toLowerCase()) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(400).json({ error: 'Kendi oyununa katılamazsın.' });
         }
 
@@ -63,14 +64,14 @@ const createJoinGameHandler = (deps) => {
             toStatus: GAME_STATUS.ACTIVE,
             context: 'join_game',
           });
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(409).json(mapTransitionError(finishedJoinTransition));
         }
 
         const requiredStake = Math.max(0, Math.floor(Number(game.points || 0)));
         const actorPoints = Number(req.user?.points);
         if (!adminActor && Number.isFinite(actorPoints) && actorPoints < requiredStake) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(400).json({
             error: `Bu oyuna katılmak için en az ${requiredStake} puan gerekli.`,
           });
@@ -100,7 +101,7 @@ const createJoinGameHandler = (deps) => {
             });
           }
 
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(409).json({ error: 'Oyun dolu.' });
         }
 
@@ -110,7 +111,7 @@ const createJoinGameHandler = (deps) => {
           context: 'join_game',
         });
         if (!joinTransition.ok) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(409).json(mapTransitionError(joinTransition));
         }
 
@@ -119,7 +120,7 @@ const createJoinGameHandler = (deps) => {
           : null;
 
         if (playerBusy) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(409).json({ error: 'Bu kullanıcı zaten aktif bir oyunda.' });
         }
 
@@ -142,7 +143,7 @@ const createJoinGameHandler = (deps) => {
           : null;
 
         if (!joinedGame) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(409).json({ error: 'Bu oyun artık katılıma uygun değil.' });
         }
 
@@ -172,7 +173,7 @@ const createJoinGameHandler = (deps) => {
         });
         return res.json({ success: true, game: joinedGame });
       } catch (err) {
-        await client.query('ROLLBACK');
+        await rollbackQuietly(client);
         logger.error('Join game error', err);
         return res.status(500).json({ error: 'Oyuna katılım sırasında hata oluştu.' });
       } finally {

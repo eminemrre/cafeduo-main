@@ -124,9 +124,9 @@ export const FOOTER_COLUMNS = [
   {
     label: 'Sayfa',
     links: [
-      { label: 'Oyunlar', href: '#oyunlar' },
-      { label: 'Ödüller', href: '#oduller' },
-      { label: 'Nasıl işler', href: '#nasil' },
+      { label: 'Oyunlar', href: '/#oyunlar' },
+      { label: 'Ödüller', href: '/#oduller' },
+      { label: 'Nasıl işler', href: '/#nasil' },
     ],
   },
   {

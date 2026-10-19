@@ -40,26 +40,20 @@ export default defineConfig(({ mode }) => {
       react(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
+        includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'route-flag.js'],
         manifest: {
           name: 'CafeDuo - Kafe Oyun Platformu',
           short_name: 'CafeDuo',
-          description: 'Kafelerde arkadaşlarınla oyun oyna, puan kazan, ödüller al!',
-          theme_color: '#0f141a',
-          background_color: '#0f141a',
+          description: 'Kafede yan masadakiyle oyna, puan kazan, kafenin ödüllerinde harca.',
+          theme_color: '#FFFFFF',
+          background_color: '#FFFFFF',
           display: 'standalone',
           start_url: '/',
           icons: [
-            {
-              src: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>',
-              sizes: '192x192',
-              type: 'image/svg+xml',
-            },
-            {
-              src: 'data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>☕</text></svg>',
-              sizes: '512x512',
-              type: 'image/svg+xml',
-            },
+            { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+            { src: '/icon-512.png', sizes: '512x512', type: 'image/png' },
+            { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+            { src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' },
           ],
         },
         workbox: {

@@ -108,7 +108,7 @@ describe('DailyRewardWheel', () => {
     expect(screen.getByText('+500')).toBeInTheDocument();
   });
 
-  it('hediye dilimi yıldız (★) etiketi gösterir, emoji değil', async () => {
+  it('hediye dilimi bir kelimeyle yazılır, emoji ya da sembol değil', async () => {
     (api.wheel.get as jest.Mock).mockResolvedValue(
       makeStatus({
         wheel: [
@@ -120,7 +120,7 @@ describe('DailyRewardWheel', () => {
 
     render(<DailyRewardWheel cafeId={1} />);
     await waitFor(() => screen.getByTestId('wheel-slice-1'));
-    expect(screen.getByText('★')).toBeInTheDocument();
+    expect(screen.getByText('Hediye')).toBeInTheDocument();
   });
 
   // ─── Spin sonucu ─────────────────────────────────────────────────────────

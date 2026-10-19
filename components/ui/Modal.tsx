@@ -1,12 +1,7 @@
 /**
- * Modal — Riso Kantin primitive.
- *
- * Dim backdrop + a centered Card with offset shadows. Closes on backdrop
- * click, Escape key, or explicit close button. Uses framer-motion for the
- * "stamped down" entrance animation (offset shadow appears as the modal
- * settles into place — mirrors the Button press idiom).
- *
- * Body scroll is locked while open.
+ * Modal — the shared dialog shell in the v2 language: paper floating on the ink
+ * scrim with the one soft shadow (DESIGN.md), a Baloo title, a dotted rule under
+ * the header and an ice footer for the actions.
  */
 
 import React, { useEffect } from 'react';
@@ -67,10 +62,10 @@ export const Modal: React.FC<ModalProps> = ({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[120] flex items-center justify-center p-4"
           data-testid={testId}
         >
-          {/* Backdrop — ink with halftone dots */}
+          {/* Backdrop — the ink scrim */}
           <button
             type="button"
             aria-label="Modal'ı kapat"
@@ -84,19 +79,15 @@ export const Modal: React.FC<ModalProps> = ({
             initial={{ opacity: 0, y: 18, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 18, scale: 0.96 }}
-            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-            className={[
-              'relative w-full bg-paper border-2 border-carbon',
-              'riso-shadow-md riso-halftone',
-              SIZE_CLASS[size],
-            ].join(' ')}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className={['duo-float relative w-full bg-paper', SIZE_CLASS[size]].join(' ')}
           >
             {(title || showClose) && (
-              <div className="flex items-start justify-between gap-4 border-b-2 border-carbon p-5 sm:p-6">
+              <div className="flex items-start justify-between gap-4 border-b-[3px] border-dotted border-carbon/35 p-5 sm:p-6">
                 {title && (
                   <h2
                     id="modal-title"
-                    className="font-riso-display text-2xl sm:text-3xl text-carbon"
+                    className="font-candy-display text-[1.75rem] leading-none text-carbon"
                   >
                     {title}
                   </h2>
@@ -106,7 +97,7 @@ export const Modal: React.FC<ModalProps> = ({
                     type="button"
                     onClick={onClose}
                     aria-label="Kapat"
-                    className="riso-focus shrink-0 border-2 border-carbon bg-paper p-1.5 text-carbon hover:bg-riso-pink hover:text-carbon transition-colors"
+                    className="duo-focus inline-flex h-11 w-11 shrink-0 items-center justify-center bg-paper-deep text-carbon hover:bg-carbon hover:text-paper transition-colors"
                   >
                     <X size={18} />
                   </button>
@@ -115,7 +106,7 @@ export const Modal: React.FC<ModalProps> = ({
             )}
             <div className="p-5 sm:p-6">{children}</div>
             {footer && (
-              <div className="flex flex-wrap items-center justify-end gap-3 border-t-2 border-carbon bg-paper-deep p-4 sm:p-5">
+              <div className="flex flex-wrap items-center justify-end gap-3 bg-paper-deep p-4 sm:p-5">
                 {footer}
               </div>
             )}

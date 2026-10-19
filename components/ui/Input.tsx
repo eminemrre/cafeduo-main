@@ -1,8 +1,6 @@
 /**
- * Input — Riso Kantin primitive.
- *
- * Crisp 2px ink border, paper surface, no rounded corners (Riso = print).
- * Focus ring is the three-layer ink+pink+blue offset; matches Button focus.
+ * Input — the v2 field (DESIGN.md, input): ice fill, 3 px ink underline, square,
+ * label above. Focus is the 3 px ink ring every control shares.
  *
  * Renders an optional <label>, error message, and helper text. Pass an
  * `icon` to mount a leading lucide-react icon.
@@ -32,7 +30,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       {label && (
         <label
           htmlFor={fieldId}
-          className="mb-1.5 block font-riso-body text-xs font-semibold uppercase tracking-[0.12em] text-carbon-soft"
+          className="mb-2 block font-candy-body text-[0.9375rem] font-medium text-carbon"
         >
           {label}
         </label>
@@ -55,13 +53,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
             hasError ? `${fieldId}-err` : helperText ? `${fieldId}-help` : undefined
           }
           className={[
-            'duo-input block w-full font-riso-body text-base text-carbon',
-            'bg-paper border-2 border-carbon',
-            'px-3.5 py-2.5',
+            'duo-input block w-full font-candy-body text-base text-carbon',
+            'px-3.5',
             icon ? 'pl-10' : '',
-            'riso-focus placeholder:text-carbon-muted',
+            'duo-focus focus:bg-paper placeholder:text-carbon-muted',
             disabled ? 'cursor-not-allowed opacity-50' : '',
-            hasError ? 'border-riso-redox' : '',
+            hasError ? 'border-b-candy-danger!' : '',
             className,
           ]
             .filter(Boolean)
@@ -70,7 +67,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         />
       </div>
       {hasError && (
-        <p id={`${fieldId}-err`} className="mt-1.5 text-sm font-medium text-riso-redox">
+        <p id={`${fieldId}-err`} className="mt-1.5 text-sm font-medium text-candy-danger">
           {errorText}
         </p>
       )}

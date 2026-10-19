@@ -21,6 +21,12 @@ colors:
   board-dark: "#7FC9EE"
   success: "#177A41"
   danger: "#D62F2F"
+  ink-raised: "#2A251C"
+  lokum-text: "#C4265F"
+  gok-text: "#0B6AA8"
+  limon-text: "#8A6608"
+  fistik-text: "#5F7A0C"
+  danger-text: "#B8241A"
 typography:
   display-xl:
     fontFamily: Baloo 2
@@ -64,6 +70,18 @@ typography:
     fontWeight: 800
     lineHeight: 0.98
     letterSpacing: -0.01em
+  title-mobile:
+    fontFamily: Baloo 2
+    fontSize: 2rem
+    fontWeight: 800
+    lineHeight: 0.98
+    letterSpacing: -0.01em
+  heading:
+    fontFamily: Baloo 2
+    fontSize: 1.75rem
+    fontWeight: 800
+    lineHeight: 1
+    letterSpacing: -0.01em
   statement:
     fontFamily: Onest
     fontSize: 2.25rem
@@ -88,6 +106,18 @@ typography:
     fontWeight: 500
     lineHeight: 1.4
     letterSpacing: 0em
+  small:
+    fontFamily: Onest
+    fontSize: 0.875rem
+    fontWeight: 400
+    lineHeight: 1.45
+    letterSpacing: 0em
+  meta:
+    fontFamily: Onest
+    fontSize: 0.8125rem
+    fontWeight: 400
+    lineHeight: 1.4
+    letterSpacing: 0em
   button:
     fontFamily: Onest
     fontSize: 1rem
@@ -97,6 +127,13 @@ typography:
   score:
     fontFamily: Onest
     fontSize: 2.5rem
+    fontWeight: 700
+    lineHeight: 1
+    letterSpacing: -0.02em
+    fontFeature: "'tnum' 1"
+  stat:
+    fontFamily: Onest
+    fontSize: 1.5rem
     fontWeight: 700
     lineHeight: 1
     letterSpacing: -0.02em
@@ -162,7 +199,7 @@ components:
     rounded: "{rounded.none}"
     height: 72px
   cell-quiet-on-ink:
-    backgroundColor: "#2A251C"
+    backgroundColor: "{colors.ink-raised}"
     textColor: "{colors.paper}"
     typography: "{typography.button}"
     rounded: "{rounded.none}"
@@ -233,6 +270,20 @@ components:
     backgroundColor: "{colors.danger}"
     textColor: "{colors.paper}"
     rounded: "{rounded.none}"
+  text-link:
+    textColor: "{colors.gok-text}"
+    typography: "{typography.label}"
+  text-emphasis:
+    textColor: "{colors.lokum-text}"
+  text-caution:
+    textColor: "{colors.limon-text}"
+    typography: "{typography.meta}"
+  text-points:
+    textColor: "{colors.fistik-text}"
+    typography: "{typography.label}"
+  text-loss:
+    textColor: "{colors.danger-text}"
+    typography: "{typography.label}"
 ---
 
 ## Overview
@@ -285,6 +336,10 @@ surfaces (ice and white, one candy accent per game).
 - **Ice (#EEF6F8)** and **ice-deep (#D9EAEF)** are the Masa ground and wells; **paper (#FFFFFF)**
   is the surface on top of them (the tent, the slip, the sheets' content, the menu bars).
 - **Success (#177A41)** and **danger (#D62F2F)** are for states only, never decoration.
+- **Candy as text** never runs at fill strength. Where a hue must colour text (a link, an
+  emphasised word, a state word), it runs at its text depth, all AA on paper and ice:
+  lokum-text #C4265F, gok-text #0B6AA8, limon-text #8A6608, fistik-text #5F7A0C,
+  danger-text #B8241A. **Ink-raised (#2A251C)** is the quiet cell on ink.
 
 A game keeps its colour on every surface: its chip, its lobby row marker, its 3D toy and its
 sheet on the landing. No other colour is introduced for a game. The landing's running order is
@@ -302,8 +357,10 @@ paper (the sentence) → ink (footer).
   all**, and **Golos Text renders ğ as a plain g** — the visible production bug of v1.
 - Both faces are self-hosted through `@fontsource`; every face must render
   `ı İ ş Ş ğ Ğ ç Ç ö Ö ü Ü`. Verify with `python3 /tmp/glyphcheck.py <woff2>` before adding a face.
-- Seven steps, no more: display-xl / display-lg / title / statement / lead / body / label, plus the
-  wordmark and the container-sized masthead. The masthead (`.cdl-menu-masthead`) is `37.5cqw`
+- Vitrin uses seven steps: display-xl / display-lg / title / statement / lead / body / label, plus
+  the wordmark and the container-sized masthead. Masa screens add the dense steps a panel needs:
+  title-mobile (32 px) and heading (28 px, a panel section's name) in Baloo 2; small (14 px),
+  meta (13 px, dates, codes, secondary lines) and stat (24 px tabular numbers) in Onest. The masthead (`.cdl-menu-masthead`) is `37.5cqw`
   because "MENÜ" measures 2.65em in Baloo 2 800.
 - Sentence case everywhere. No letter-spaced uppercase labels. Nothing readable below 12 px;
   12–13 px only for secondary metadata. A statement (the closing sentence) stays at or below 36 px

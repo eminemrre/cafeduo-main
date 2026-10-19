@@ -8,7 +8,7 @@ import { AvatarImage } from './ui/AvatarImage';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Trophy, Medal } from 'lucide-react';
 import { PAU_DEPARTMENTS } from '../constants';
-import { Card, Select, } from './ui';
+import { Card, Select } from './ui';
 
 interface LeaderboardUser {
   id: number;
@@ -57,25 +57,25 @@ export const Leaderboard: React.FC = () => {
   const getRankBadge = (index: number): React.ReactNode => {
     if (index === 0)
       return (
-        <span className="inline-flex h-9 w-9 items-center justify-center border-2 border-carbon bg-riso-mustard">
+        <span className="inline-flex h-9 w-9 items-center justify-center bg-riso-mustard">
           <Trophy size={18} strokeWidth={2.4} className="text-carbon" />
         </span>
       );
     if (index === 1)
       return (
-        <span className="inline-flex h-9 w-9 items-center justify-center border-2 border-carbon bg-paper-deep">
+        <span className="inline-flex h-9 w-9 items-center justify-center bg-paper-dim">
           <Medal size={18} strokeWidth={2.4} className="text-carbon-soft" />
         </span>
       );
     if (index === 2)
       return (
-        <span className="inline-flex h-9 w-9 items-center justify-center border-2 border-carbon bg-riso-pink">
+        <span className="inline-flex h-9 w-9 items-center justify-center bg-riso-pink">
           <Medal size={18} strokeWidth={2.4} className="text-carbon" />
         </span>
       );
     return (
-      <span className="inline-flex h-9 w-9 items-center justify-center font-riso-mono text-sm font-bold text-carbon-muted">
-        #{index + 1}
+      <span className="inline-flex h-9 w-9 items-center justify-center text-sm font-semibold text-carbon-muted [font-variant-numeric:tabular-nums]">
+        {index + 1}
       </span>
     );
   };
@@ -83,42 +83,32 @@ export const Leaderboard: React.FC = () => {
   return (
     <Card tone="paper" shadow="md" data-testid="leaderboard-card">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <p className="font-riso-mono text-xs font-bold uppercase tracking-[0.18em] text-carbon-soft">
-            // Sistem TR-X · Sıralama Motoru
-          </p>
-          <h2 className="mt-1.5 flex items-center gap-2 font-riso-display text-2xl text-carbon sm:text-3xl">
-            <Trophy size={24} strokeWidth={2.4} className="text-riso-mustard-deep" />
-            Liderlik Tablosu
-          </h2>
-          <div className="mt-1 h-2 w-32">
-          </div>
-        </div>
+        <h2 className="font-riso-display text-[32px] leading-none text-carbon sm:text-[40px]">
+          Liderlik Tablosu
+        </h2>
 
         <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
-          <div className="inline-flex border-2 border-carbon bg-paper">
-            <button
-              type="button"
-              onClick={() => setFilterType('general')}
-              className={`riso-focus px-3 py-1.5 font-riso-body text-xs font-bold tracking-[0.14em] transition-colors ${
-                filterType === 'general'
-                  ? 'bg-riso-pink text-carbon'
-                  : 'text-carbon hover:bg-paper-deep'
-              }`}
-            >
-              GENEL
-            </button>
-            <button
-              type="button"
-              onClick={() => setFilterType('department')}
-              className={`riso-focus border-l-2 border-carbon px-3 py-1.5 font-riso-body text-xs font-bold tracking-[0.14em] transition-colors ${
-                filterType === 'department'
-                  ? 'bg-riso-pink text-carbon'
-                  : 'text-carbon hover:bg-paper-deep'
-              }`}
-            >
-              BÖLÜM
-            </button>
+          <div className="flex gap-6" role="group" aria-label="Sıralama türü">
+            {(
+              [
+                ['general', 'Genel'],
+                ['department', 'Bölüm'],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={filterType === value}
+                onClick={() => setFilterType(value)}
+                className={`riso-focus min-h-11 font-riso-body text-[15px] font-semibold transition-colors ${
+                  filterType === value
+                    ? 'text-carbon shadow-[inset_0_-3px_0_#17140f]'
+                    : 'text-carbon-muted hover:text-carbon'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
           </div>
 
           {filterType === 'department' && (
@@ -134,23 +124,23 @@ export const Leaderboard: React.FC = () => {
         </div>
       </div>
 
-      <div className="mt-6 overflow-x-auto border-2 border-carbon">
+      <div className="mt-6 overflow-x-auto">
         <table className="w-full text-left font-riso-body">
-          <thead className="border-b-2 border-carbon bg-paper-deep">
+          <thead className="bg-paper-deep">
             <tr>
-              <th className="px-3 py-2.5 text-center w-16 font-riso-mono text-xs font-bold uppercase tracking-[0.14em] text-carbon-soft">
+              <th className="px-3 py-2.5 text-center w-16 text-[13px] font-semibold text-carbon-soft">
                 Sıra
               </th>
-              <th className="px-3 py-2.5 font-riso-mono text-xs font-bold uppercase tracking-[0.14em] text-carbon-soft">
+              <th className="px-3 py-2.5 text-[13px] font-semibold text-carbon-soft">
                 Kullanıcı
               </th>
-              <th className="hidden px-3 py-2.5 font-riso-mono text-xs font-bold uppercase tracking-[0.14em] text-carbon-soft md:table-cell">
+              <th className="hidden px-3 py-2.5 text-[13px] font-semibold text-carbon-soft md:table-cell">
                 Bölüm
               </th>
-              <th className="px-3 py-2.5 text-right font-riso-mono text-xs font-bold uppercase tracking-[0.14em] text-carbon-soft">
+              <th className="px-3 py-2.5 text-right text-[13px] font-semibold text-carbon-soft">
                 Puan
               </th>
-              <th className="hidden px-3 py-2.5 text-right font-riso-mono text-xs font-bold uppercase tracking-[0.14em] text-carbon-soft sm:table-cell">
+              <th className="hidden px-3 py-2.5 text-right text-[13px] font-semibold text-carbon-soft sm:table-cell">
                 Galibiyet
               </th>
             </tr>
@@ -160,7 +150,7 @@ export const Leaderboard: React.FC = () => {
               <tr>
                 <td
                   colSpan={5}
-                  className="p-8 text-center font-riso-body text-carbon-muted animate-pulse"
+                  className="p-8 text-center font-riso-body text-carbon-muted"
                 >
                   Yükleniyor...
                 </td>
@@ -181,29 +171,29 @@ export const Leaderboard: React.FC = () => {
               users.map((user, index) => (
                 <tr
                   key={user.id}
-                  className="border-b-2 border-paper-dim last:border-b-0 transition-colors hover:bg-paper-deep"
+                  className="border-b border-paper-dim last:border-b-0 transition-colors hover:bg-paper-deep"
                 >
                   <td className="px-3 py-2.5 text-center">
                     <div className="flex justify-center">{getRankBadge(index)}</div>
                   </td>
                   <td className="px-3 py-2.5">
                     <div className="flex items-center gap-3">
-                      <div className="relative flex h-9 w-9 items-center justify-center border-2 border-carbon bg-riso-blue font-riso-display text-xs font-bold text-carbon overflow-hidden">
+                      <div className="relative flex h-9 w-9 shrink-0 items-center justify-center bg-riso-blue text-[13px] font-semibold text-carbon overflow-hidden">
                         <AvatarImage
                           src={user.avatar_url}
                           initials={user.username.substring(0, 2).toUpperCase()}
                         />
                       </div>
-                      <span className="font-riso-body font-bold text-carbon">{user.username}</span>
+                      <span className="min-w-0 truncate font-riso-body font-semibold text-carbon">{user.username}</span>
                     </div>
                   </td>
                   <td className="hidden px-3 py-2.5 font-riso-body text-sm text-carbon-muted md:table-cell">
                     {user.department || '—'}
                   </td>
-                  <td className="px-3 py-2.5 text-right font-riso-mono font-bold text-riso-mustard-deep">
+                  <td className="px-3 py-2.5 text-right font-semibold text-carbon [font-variant-numeric:tabular-nums]">
                     {user.points.toLocaleString()}
                   </td>
-                  <td className="hidden px-3 py-2.5 text-right font-riso-mono text-sm text-carbon-soft sm:table-cell">
+                  <td className="hidden px-3 py-2.5 text-right text-sm text-carbon-soft [font-variant-numeric:tabular-nums] sm:table-cell">
                     {user.wins}
                   </td>
                 </tr>

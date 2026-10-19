@@ -1359,7 +1359,7 @@ body:has(.cdl) {
   box-shadow: 0 12px 34px rgba(23, 20, 15, 0.22);
 }
 
-.cdl-cookie h3 {
+.cdl-cookie h2 {
   margin: 0;
   font-family: 'Baloo 2', system-ui, sans-serif;
   font-weight: 800;
@@ -1414,7 +1414,7 @@ body:has(.cdl) {
     box-shadow: 0 10px 24px rgba(23, 20, 15, 0.18);
   }
 
-  .cdl-cookie h3,
+  .cdl-cookie h2,
   .cdl-cookie-more {
     display: none;
   }

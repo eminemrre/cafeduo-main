@@ -32,7 +32,7 @@ import { RewardSection } from './dashboard/RewardSection';
 import { DailyRewardWheel } from './dashboard/DailyRewardWheel';
 
 // Icons
-import { Trophy, Gift, Gamepad2 } from 'lucide-react';
+import { Trophy, Gift, Gamepad2, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../lib/api';
 
@@ -355,14 +355,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
   if (activeGameId) {
     return (
       <div className="min-h-screen bg-paper text-carbon pt-[calc(6rem+env(safe-area-inset-top))] md:pt-24 pb-[calc(8rem+env(safe-area-inset-bottom))] px-4 relative overflow-hidden">
-        {/* Cyber glitch animation retired in PR #25 — game-end toast covers it */}
-        <div className="absolute inset-0 opacity-0 opacity-[0.06] pointer-events-none" />
         <div className="max-w-6xl mx-auto">
           {/* Geri butonu */}
           <div className="mb-6">
-            <RetroButton onClick={handleBackToLobby} variant="secondary">
-              ← Lobiye Dön
-            </RetroButton>
+            <button type="button" onClick={handleBackToLobby} className="duo-quiet riso-focus gap-2">
+              <ArrowLeft size={18} strokeWidth={2.4} aria-hidden="true" />
+              Lobiye dön
+            </button>
           </div>
 
           {gameResult && (
@@ -408,9 +407,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
               onMatchSettled={handleMatchSettled}
             />
           ) : (
-            <div className="border-2 border-carbon bg-paper border-riso-redox/30 rounded-xl p-8 text-center">
-              <p className="text-riso-redox font-bold text-xl">Bilinmeyen Oyun Türü</p>
-              <p className="text-carbon-muted mt-2">{activeGameType}</p>
+            <div className="bg-paper-deep p-8 text-center">
+              <p className="font-riso-display text-[28px] leading-none text-carbon">Bu oyunu tanımıyoruz</p>
+              <p className="mt-2 text-carbon-soft">{activeGameType}</p>
               <RetroButton onClick={handleBackToLobby} variant="secondary" className="mt-4">
                 Lobiye Dön
               </RetroButton>

@@ -2,15 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Gamepad2, Swords } from 'lucide-react';
 import { GameRequest, User } from '../types';
-
-/** Each game keeps its one colour everywhere (DESIGN.md): its chip in a lobby row
- * is the same fill as its toy and its sheet on the landing. */
-const gameChipFill = (gameType: string) => {
-  if (gameType === 'Retro Satranç') return 'bg-riso-blue';
-  if (gameType === 'Bilgi Yarışı') return 'bg-riso-mustard';
-  if (gameType === 'Nişancı Düellosu') return 'bg-riso-pink';
-  return 'bg-paper-dim';
-};
+import { gameChipFill } from '../lib/gameColors';
 
 /** Table codes already read "MASA05"; bare numbers and labels get the word. */
 const tableLabel = (table: unknown) => {

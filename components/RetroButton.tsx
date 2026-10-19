@@ -1,15 +1,15 @@
 /**
- * RetroButton — Riso Kantin press-button primitive.
+ * RetroButton — the shared press button in the v2 language (DESIGN.md).
  *
- * Four variants in the Riso Kantin palette: each is a flat, ink-bordered
- * paper sticker with a 6px hard-shadow offset. Click presses the sticker
- * down (translate + drop shadow) like an old print-shop stamp.
+ * Flat rectangles with real edges: no border, no shadow. Hover lifts the
+ * button 2 px, a press scales it to 0.98. Ink text on candy, paper text on
+ * ink and danger.
  *
  * Variants:
- *   - primary: bg-riso-pink (signature CTA color)
- *   - secondary: bg-paper (neutral, less emphasis)
- *   - danger: bg-riso-redox (destructive actions)
- *   - ghost: transparent, ink-text only (tertiary)
+ *   - primary: lokum fill (the one primary action of an area)
+ *   - secondary: ice fill (a neutral second action)
+ *   - danger: danger fill (destructive actions)
+ *   - ghost: no box, an ink underline on hover (tertiary)
  */
 
 import React from 'react';
@@ -35,37 +35,25 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
 }) => {
   // Touch-friendly minimum sizes (44x44px for accessibility)
   const sizeStyles = {
-    sm: 'min-h-[40px] px-4 py-2 text-sm',
+    sm: 'min-h-[44px] px-4 py-2 text-sm',
     md: 'min-h-[48px] px-6 py-3 text-sm md:text-base',
     lg: 'min-h-[56px] px-8 py-3.5 text-base md:text-lg',
   };
 
   const baseStyles =
     'duo-button font-riso-body font-semibold tracking-normal select-none touch-manipulation ' +
-    'border-2 border-carbon relative transition-all duration-150 ease-out ' +
-    'focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-paper focus:ring-carbon';
+    'relative transition-[transform,background-color,text-decoration-color] duration-150 ease-out riso-focus';
 
   const variants: Record<NonNullable<RetroButtonProps['variant']>, string> = {
-    primary:
-      'bg-riso-pink text-carbon riso-shadow-md ' +
-      'hover:-translate-y-[1px] hover:shadow-[5px_5px_0_0_rgba(20,20,19,1)] ' +
-      'active:translate-y-[1px] active:translate-x-[1px] active:shadow-[2px_2px_0_0_rgba(20,20,19,1)]',
-    secondary:
-      'bg-paper text-carbon riso-shadow-sm ' +
-      'hover:-translate-y-[1px] hover:bg-paper-deep hover:shadow-[5px_5px_0_0_rgba(20,20,19,1)] ' +
-      'active:translate-y-[1px] active:translate-x-[1px] active:shadow-[2px_2px_0_0_rgba(20,20,19,1)]',
-    danger:
-      'bg-riso-redox text-paper riso-shadow-md ' +
-      'hover:-translate-y-[1px] hover:shadow-[5px_5px_0_0_rgba(20,20,19,1)] ' +
-      'active:translate-y-[1px] active:translate-x-[1px] active:shadow-[2px_2px_0_0_rgba(20,20,19,1)]',
+    primary: 'bg-riso-pink text-carbon hover:-translate-y-0.5',
+    secondary: 'bg-paper-deep text-carbon hover:-translate-y-0.5 hover:bg-paper-dim',
+    danger: 'bg-riso-redox text-paper hover:-translate-y-0.5',
     ghost:
-      'bg-transparent text-carbon ' +
-      'hover:bg-paper-deep hover:-translate-y-[1px] ' +
-      'active:translate-y-[1px]',
+      'bg-transparent text-carbon underline decoration-transparent decoration-[3px] underline-offset-[6px] hover:decoration-carbon',
   };
 
   const disabledStyles = disabled
-    ? 'opacity-40 cursor-not-allowed grayscale-[40%] hover:translate-y-0 hover:translate-x-0'
+    ? 'opacity-45 cursor-not-allowed hover:translate-y-0'
     : 'cursor-pointer';
 
   return (

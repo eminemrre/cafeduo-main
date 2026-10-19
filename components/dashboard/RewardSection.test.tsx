@@ -158,7 +158,7 @@ describe('RewardSection', () => {
 
       // Shop tab aktif görünüyor mu?
       const shopTab = screen.getByTestId('shop-tab');
-      expect(shopTab).toHaveClass('bg-riso-pink');
+      expect(shopTab).toHaveAttribute('aria-pressed', 'true');
       expect(shopTab).toHaveTextContent('Mağaza');
 
       // Inventory tab görünüyor mu?
@@ -222,8 +222,8 @@ describe('RewardSection', () => {
       );
 
       // Shop aktif
-      expect(screen.getByTestId('shop-tab')).toHaveClass('bg-riso-pink');
-      expect(screen.getByTestId('inventory-tab')).not.toHaveClass('bg-riso-pink');
+      expect(screen.getByTestId('shop-tab')).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByTestId('inventory-tab')).toHaveAttribute('aria-pressed', 'false');
 
       // Inventory'e geç
       rerender(
@@ -240,8 +240,8 @@ describe('RewardSection', () => {
       );
 
       // Inventory aktif
-      expect(screen.getByTestId('inventory-tab')).toHaveClass('bg-riso-pink');
-      expect(screen.getByTestId('shop-tab')).not.toHaveClass('bg-riso-pink');
+      expect(screen.getByTestId('inventory-tab')).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByTestId('shop-tab')).toHaveAttribute('aria-pressed', 'false');
     });
   });
 
@@ -569,7 +569,7 @@ describe('RewardSection', () => {
         />
       );
 
-      expect(screen.getByText(/KULLANILDI/i)).toBeInTheDocument();
+      expect(screen.getByText('Kullanıldı')).toBeInTheDocument();
     });
 
     it('should display "SÜRESİ DOLDU" stamp for expired coupons', () => {
@@ -586,7 +586,7 @@ describe('RewardSection', () => {
         />
       );
 
-      expect(screen.getByText(/SÜRESİ DOLDU/i)).toBeInTheDocument();
+      expect(screen.getByText('Süresi doldu')).toBeInTheDocument();
     });
 
     it('should display expiration date for valid coupons', () => {

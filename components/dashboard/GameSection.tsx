@@ -8,6 +8,7 @@ import React, { useMemo, useState } from 'react';
 import { GameHistoryEntry, GameRequest, User } from '../../types';
 import type { Tournament } from '../../types';
 import { GameLobby } from '../GameLobby';
+import { gameChipFill } from '../../lib/gameColors';
 import { CreateGameModal } from '../CreateGameModal';
 import { SkeletonGrid } from '../Skeleton';
 import { api } from '../../lib/api';
@@ -194,7 +195,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
         : serverActiveGame.hostName;
 
     return (
-      <div className="duo-card bg-riso-pink text-carbon p-5 sm:p-6 mb-8 border border-carbon/20">
+      <div className="duo-card bg-riso-pink text-carbon p-5 sm:p-6 mb-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="min-w-0">
             <h3 className="duo-lobby-heading mb-2">Oyunun seni bekliyor.</h3>
@@ -206,7 +207,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
           </div>
           <button
             onClick={onRejoinGame}
-            className="duo-button riso-focus shrink-0 px-5 py-3 bg-paper text-carbon font-riso-display text-lg sm:text-xl uppercase border-2 border-carbon riso-shadow-sm transition-all"
+            className="duo-button riso-focus shrink-0 min-h-12 px-5 bg-carbon text-paper font-riso-body text-base font-semibold transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
           >
             Oyuna dön
           </button>
@@ -241,76 +242,72 @@ export const GameSection: React.FC<GameSectionProps> = ({
       </div>
 
       {/* Oyun Geçmişi */}
-      <div className="duo-card bg-paper border border-carbon/20 p-5 sm:p-6">
-        <div className="border-b border-carbon/20 pb-4 mb-5 flex justify-between items-end">
-          <h3 className="duo-lobby-heading text-carbon">Son oyunların</h3>
-          <span className="font-riso-mono text-xs font-bold text-riso-pink-deep">Geçmiş</span>
-        </div>
+      <section aria-labelledby="duo-history-heading">
+        <h3 id="duo-history-heading" className="duo-lobby-heading mb-5 text-carbon">
+          Son oyunların
+        </h3>
 
-        <div>
-          {historyLoading ? (
-            <p className="text-base font-riso-body text-carbon-muted animate-pulse">
-              Oyun geçmişi yükleniyor...
-            </p>
-          ) : (gameHistory?.length ?? 0) === 0 ? (
-            <div className="rounded-xl border border-dashed border-carbon/20 bg-paper-deep p-6 text-center text-sm leading-6 text-carbon-muted">
-              İlk oyunundan sonra sonuçlarını burada görebilirsin.
-            </div>
-          ) : (
-            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-              {gameHistory.slice(0, 10).map((item) => (
-                <article
-                  key={item.id}
-                  className="bg-paper border-l-4 border-y border-r border-carbon p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-transform hover:translate-x-2"
-                  style={{
-                    borderLeftColor: item.didWin ? '#b6d31b' : '#ff5c8a',
-                  }}
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="font-riso-display text-2xl text-carbon uppercase tracking-widest truncate mb-1">
+        {historyLoading ? (
+          <p role="status" className="font-riso-body text-base text-carbon-muted">
+            Oyun geçmişi yükleniyor...
+          </p>
+        ) : (gameHistory?.length ?? 0) === 0 ? (
+          <p className="bg-paper-deep p-6 text-center text-sm leading-6 text-carbon-soft">
+            İlk oyunundan sonra sonuçlarını burada görebilirsin.
+          </p>
+        ) : (
+          <ol className="space-y-2">
+            {gameHistory.slice(0, 10).map((item) => (
+              <li
+                key={item.id}
+                className="flex flex-col gap-3 bg-paper-deep p-4 md:flex-row md:items-center md:justify-between"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                    <span
+                      className={`inline-flex px-3 py-1 text-[15px] font-medium text-carbon ${gameChipFill(item.gameType)}`}
+                    >
                       {item.gameType}
-                    </p>
-                    <p className="font-riso-body text-sm text-carbon-soft font-bold uppercase tracking-wide">
-                      Rakip: <span className="text-carbon font-semibold">{item.opponentName}</span>{' '}
-                      // Masa {item.table}
-                    </p>
-                    {item.gameType === 'Retro Satranç' && (
-                      <p className="text-xs text-riso-blue font-riso-mono mt-2">
-                        Tempo: {item.chessTempo || '-'} | Hamle: {item.moveCount ?? 0}
-                      </p>
-                    )}
+                    </span>
+                    <span
+                      className={`text-[15px] font-semibold ${item.didWin ? 'text-[#177A41]' : 'text-riso-redox'}`}
+                    >
+                      {item.didWin ? 'Kazandın' : 'Kaybettin'}
+                    </span>
                   </div>
+                  <p className="mt-2 truncate font-riso-body text-sm text-carbon-soft">
+                    Rakip: <span className="font-semibold text-carbon">{item.opponentName}</span>
+                    {' · '}Masa {item.table}
+                  </p>
+                  {item.gameType === 'Retro Satranç' && (
+                    <p className="mt-1 text-[13px] text-carbon-muted [font-variant-numeric:tabular-nums]">
+                      Tempo: {item.chessTempo || '-'} · Hamle: {item.moveCount ?? 0}
+                    </p>
+                  )}
+                </div>
 
-                  <div className="flex flex-col md:items-end gap-2">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`px-3 py-1 font-riso-mono text-xs font-bold uppercase tracking-wider border-2 border-carbon ${
-                          item.didWin ? 'bg-riso-blue text-carbon' : 'bg-paper text-riso-pink-deep'
-                        }`}
-                      >
-                        {item.didWin ? 'ZAFER' : 'MAĞLUBİYET'}
-                      </span>
-                      <span className="font-riso-mono text-xs text-carbon-soft border-2 border-carbon bg-paper px-2 py-1">
-                        {new Date(item.createdAt).toLocaleDateString('tr-TR')}
-                      </span>
-                    </div>
-
-                    {item.gameType === 'Retro Satranç' && (
-                      <button
-                        type="button"
-                        onClick={() => void openHistoryDetail(item)}
-                        className="text-xs font-riso-body font-bold text-riso-blue hover:text-riso-pink-deep transition-colors uppercase tracking-widest underline decoration-riso-blue decoration-2 underline-offset-4"
-                      >
-                        Hamleleri incele &rarr;
-                      </button>
-                    )}
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
+                <div className="flex items-center gap-4 md:flex-col md:items-end md:gap-1">
+                  <time
+                    dateTime={item.createdAt}
+                    className="text-[13px] text-carbon-muted [font-variant-numeric:tabular-nums]"
+                  >
+                    {new Date(item.createdAt).toLocaleDateString('tr-TR')}
+                  </time>
+                  {item.gameType === 'Retro Satranç' && (
+                    <button
+                      type="button"
+                      onClick={() => void openHistoryDetail(item)}
+                      className="duo-quiet riso-focus"
+                    >
+                      Hamleleri incele
+                    </button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
 
       {/* Create Game Modal */}
       <CreateGameModal

@@ -30,8 +30,13 @@ body {
   border-radius: 0;
   border-width: 0;
 }
-.duo-input {
+/* Square every form control (iOS rounds them by default). */
+input.duo-input,
+select.duo-input,
+textarea.duo-input {
   border-radius: 0;
+}
+.duo-input {
   border-width: 0;
   border-bottom: 3px solid #17140f;
   background: #eef6f8;
@@ -62,9 +67,9 @@ body {
   gap: 10px;
   color: #17140f;
   font-family: 'Baloo 2', system-ui, sans-serif;
-  font-size: 18px;
-  font-weight: 750;
-  letter-spacing: -0.055em;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 .duo-brand > span:first-child {
   width: 37px;
@@ -78,13 +83,13 @@ body {
 }
 .duo-brand em {
   font-style: normal;
-  color: #d8246f;
+  color: #c4265f;
 }
 .duo-nav-link {
   padding: 11px 13px;
-  color: #555550;
-  font-size: 13px;
-  font-weight: 550;
+  color: #4a4540;
+  font-size: 15px;
+  font-weight: 500;
   border-radius: 0;
 }
 .duo-nav-link:hover {
@@ -130,16 +135,17 @@ body {
   padding: 28px 28px 22px;
 }
 .duo-auth-header h2 {
-  font-size: 25px;
-  letter-spacing: -0.04em;
+  font-size: 32px;
+  line-height: 0.98;
+  letter-spacing: -0.01em;
   text-transform: none;
 }
 .duo-auth-label {
   display: block;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 500;
   margin-bottom: 8px;
-  color: #2a251c;
+  color: #17140f;
 }
 .duo-auth-tabs {
   display: flex;
@@ -155,8 +161,9 @@ body {
   padding: 0;
   text-transform: none;
   letter-spacing: 0;
-  font-family: 'Baloo 2', system-ui, sans-serif;
-  font-size: 18px;
+  font-family: 'Onest', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
   background: transparent;
 }
 .duo-auth-close {
@@ -172,17 +179,15 @@ body {
 }
 .duo-dashboard-tabs {
   display: flex;
-  gap: 6px;
-  border-bottom: 1px solid #17140f20;
-  padding-bottom: 12px;
+  gap: 24px;
 }
 .duo-dashboard-tab {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 44px;
-  padding: 12px 20px;
+  min-height: 48px;
+  padding: 0 2px;
   border-radius: 0;
   color: #4a4540;
   font-size: 15px;
@@ -194,8 +199,8 @@ body {
   box-shadow: inset 0 -3px 0 #17140f;
 }
 .duo-dashboard-tab:hover:not([aria-pressed='true']) {
-  background: #eef6f8;
   color: #17140f;
+  box-shadow: inset 0 -3px 0 #17140f40;
 }
 .duo-dashboard-tab[aria-pressed='true']:hover {
   background: transparent;
@@ -228,9 +233,11 @@ body {
   flex-shrink: 0;
 }
 .duo-status-profile h3 {
-  font-size: 24px;
-  font-weight: 650;
-  letter-spacing: -0.035em;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.01em;
 }
 .duo-status-profile p {
   color: #4a4540;
@@ -239,13 +246,22 @@ body {
 }
 .duo-status-stats {
   display: flex;
-  gap: 26px;
+  gap: 8px;
 }
+/* Each number sits in an ice well; the points well is fıstık (points are fıstık). */
 .duo-status-stats > div {
-  min-width: 65px;
+  min-width: 96px;
+  padding: 10px 14px;
+  background: #eef6f8;
+}
+.duo-status-stats > [data-testid='user-points'] {
+  background: #b6d31b;
+}
+.duo-status-stats > [data-testid='user-points'] span {
+  color: #17140f;
 }
 .duo-status-stats span {
-  font-size: 12px;
+  font-size: 13px;
   display: flex;
   gap: 5px;
   align-items: center;
@@ -253,13 +269,16 @@ body {
   margin-bottom: 5px;
 }
 .duo-status-stats strong {
-  font-family: 'Baloo 2', system-ui, sans-serif;
-  font-size: 21px;
-  letter-spacing: -0.03em;
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 .duo-table-status {
-  font-size: 12px;
-  font-weight: 550;
+  font-size: 13px;
+  font-weight: 600;
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -339,16 +358,16 @@ body {
   text-align: center;
 }
 .duo-checkin-heading {
-  font-size: clamp(29px, 6vw, 40px);
-  line-height: 1.2;
-  letter-spacing: -0.045em;
+  font-size: clamp(32px, 6vw, 40px);
+  line-height: 0.98;
+  letter-spacing: -0.01em;
 }
 .duo-cookie-card {
   border-radius: 0;
   border-width: 1px;
   box-shadow: 0 10px 40px #17140f18;
 }
-.duo-cookie-card h3 {
+.duo-cookie-card h2 {
   text-transform: none;
   letter-spacing: -0.02em;
   font-size: 15px;
@@ -380,37 +399,27 @@ body {
     padding: 10px 12px;
     border-radius: 0;
   }
-  .duo-brand {
-    font-size: 17px;
-  }
   .duo-status {
     grid-template-columns: 1fr;
     gap: 22px;
     padding: 12px 0 4px;
   }
-  .duo-status-profile h3 {
-    font-size: 22px;
-  }
   .duo-status-stats {
     width: 100%;
-    gap: 0;
-    border-top: 1px solid #17140f20;
-    padding-top: 18px;
   }
   .duo-status-stats > div {
     flex: 1;
-    padding-left: 18px;
-    border-left: 1px solid #17140f15;
+    min-width: 0;
   }
-  .duo-status-stats > div:first-child {
-    padding-left: 0;
-    border-left: 0;
+  .duo-dashboard-tabs {
+    gap: 0;
+    justify-content: space-between;
   }
   .duo-dashboard-tab {
     flex: 1;
-    padding: 11px 8px;
-    gap: 5px;
-    font-size: 12px;
+    padding: 0 4px;
+    gap: 6px;
+    font-size: 15px;
   }
   .duo-dashboard-tab svg {
     width: 17px;
@@ -455,10 +464,7 @@ html::-webkit-scrollbar-thumb {
 }
 
 .duo-reward-tabs {
-  padding: 4px;
-  border-radius: 0;
-  background: #eef6f8;
-  gap: 3px;
+  gap: 24px;
 }
 .duo-reward-tabs button {
   min-height: 44px;

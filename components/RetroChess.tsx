@@ -305,7 +305,9 @@ export const RetroChess: React.FC<RetroChessProps> = ({
   };
 
   const concludeGame = useCallback(
-    (winnerFromState: string | null, engine: Chess) => {
+    // knownMoveCount: the server's move log length — a board restored from a FEN
+    // has no engine history, so the result card would otherwise report 0 moves.
+    (winnerFromState: string | null, engine: Chess, knownMoveCount = 0) => {
       if (concludeRef.current) return;
       concludeRef.current = true;
       const winner = normalizeWinner(winnerFromState);
@@ -327,7 +329,10 @@ export const RetroChess: React.FC<RetroChessProps> = ({
           console.error('RetroChess finish sync failed', err);
         });
       }
-      const stats = { kind: 'chess' as const, moveCount: engine.history().length };
+      const stats = {
+        kind: 'chess' as const,
+        moveCount: Math.max(engine.history().length, knownMoveCount),
+      };
       window.setTimeout(() => onGameEnd(winner || 'Berabere', points, stats), 700);
     },
     [currentUser.username, gameId, isBot, onGameEnd]
@@ -372,7 +377,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
       const gameOverByBoard =
         Boolean(snapshot.gameState?.chess?.isGameOver) || nextEngine.isGameOver();
       if (gameOverByServer || gameOverByBoard) {
-        concludeGame(winner, nextEngine);
+        concludeGame(winner, nextEngine, incomingMoves.length);
         return;
       }
 
@@ -530,7 +535,11 @@ export const RetroChess: React.FC<RetroChessProps> = ({
         );
         setDrawOffer(incomingOffer);
         if (payload.chess.isGameOver || engine.isGameOver() || payload.status === 'finished') {
-          concludeGame(winner, engine);
+          concludeGame(
+            winner,
+            engine,
+            Array.isArray(payload.chess.moveHistory) ? payload.chess.moveHistory.length : 0
+          );
           return;
         }
         setMessage(`Sıra: ${engine.turn() === 'w' ? 'Beyaz' : 'Siyah'}.`);
@@ -706,7 +715,13 @@ export const RetroChess: React.FC<RetroChessProps> = ({
           result?.status === 'finished' ||
           engine.isGameOver()
         ) {
-          concludeGame(winner, engine);
+          concludeGame(
+            winner,
+            engine,
+            Array.isArray(result?.gameState?.chess?.moveHistory)
+              ? result.gameState.chess.moveHistory.length
+              : 0
+          );
           return;
         }
         setMessage(`Hamle gönderildi. Sıra: ${engine.turn() === 'w' ? 'Beyaz' : 'Siyah'}.`);
@@ -844,102 +859,49 @@ export const RetroChess: React.FC<RetroChessProps> = ({
   };
 
   const turnLabel = turn === 'w' ? 'Beyaz' : 'Siyah';
-  const moveCount = chess.history().length;
+  // A board restored from a FEN has no engine history; the server's move log does.
+  const moveCount = Math.max(chess.history().length, moveLog.length);
   const statusLabel = serverStatus === 'finished' ? 'Bitti' : 'Aktif';
+  const clockRunning = serverStatus !== 'finished';
+
+  const renderClock = (side: 'w' | 'b') => {
+    const active = clockRunning && turn === side;
+    const label = side === 'w' ? 'Beyaz' : 'Siyah';
+    return (
+      <div className={`duo-stat ${active ? 'duo-stat--ink' : ''}`}>
+        <span className="duo-stat-label">
+          {label}
+          {playerColor === side ? ' · sen' : ''}
+        </span>
+        <span className="duo-stat-value duo-stat-value--score">
+          {formatClock(side === 'w' ? displayClock.white : displayClock.black)}
+        </span>
+      </div>
+    );
+  };
 
   return (
     <>
       <ConnectionOverlay gameId={gameId} />
-      <div
-        className="max-w-4xl mx-auto border-2 border-carbon bg-paper riso-shadow-md p-4 sm:p-6 text-carbon relative overflow-hidden"
-        data-testid="retro-chess"
-      >
-        {/* Decorative riso confetti accents */}
-        <div
-          aria-hidden="true"
-          className="absolute top-3 right-3 h-2 w-12 bg-riso-mustard rotate-[-4deg] hidden sm:block pointer-events-none"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute top-6 right-16 h-2 w-6 bg-riso-pink rotate-[6deg] hidden sm:block pointer-events-none"
-        />
-
-        <div className="relative z-10">
-          <div className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft mb-2">
-            Sistem TR-X // Satranç Çekirdeği
+      <div className="max-w-6xl mx-auto text-carbon" data-testid="retro-chess">
+        <header className="duo-game-head mb-6">
+          <div className="min-w-0">
+            <span className="duo-game-chip bg-riso-blue">Klasik · {clockState.label}</span>
+            <h2 className="duo-game-title">Retro Satranç</h2>
+            <p className="duo-game-sub truncate">Rakip: {opponentLabel}</p>
           </div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-riso-display text-2xl sm:text-3xl uppercase tracking-[0.08em] leading-none">
-              Retro Satranç (Klasik)
-            </h2>
-            <button
-              onClick={handleLeave}
-              className="riso-focus riso-press font-riso-display text-xs sm:text-sm px-3 py-2 border-2 border-carbon bg-riso-pink text-carbon riso-shadow-sm transition-all uppercase tracking-[0.16em]"
-            >
-              Oyundan Çık
-            </button>
+          <button type="button" onClick={handleLeave} className="duo-quiet riso-focus shrink-0">
+            <span className="duo-sentence">Oyundan Çık</span>
+          </button>
+        </header>
+
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-12 lg:gap-x-10">
+          <div className="grid grid-cols-2 gap-2 lg:col-span-5 lg:col-start-8 lg:row-start-1">
+            {renderClock(orientation === 'w' ? 'b' : 'w')}
+            {renderClock(orientation)}
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4 text-center">
-            <div className="border-2 border-carbon bg-paper-deep p-3">
-              <div className="text-xs text-carbon-muted">Durum</div>
-              <div className="font-bold text-carbon">{statusLabel}</div>
-            </div>
-            <div
-              className={`border-2 border-carbon p-3 ${isMyTurn ? 'bg-riso-spring/40 animate-pulse' : 'bg-paper-deep'}`}
-              data-testid="retro-chess-turn-tile"
-            >
-              <div className="text-xs text-carbon-muted">
-                {playerColor ? (
-                  <>
-                    Sen:{' '}
-                    <span className="font-bold">{playerColor === 'w' ? 'Beyaz' : 'Siyah'}</span>
-                  </>
-                ) : (
-                  'Sıra'
-                )}
-              </div>
-              <div className="font-bold text-carbon">
-                {playerColor ? (isMyTurn ? 'Sıra sende' : 'Sıra rakipte') : turnLabel}
-              </div>
-            </div>
-            <div className="border-2 border-carbon bg-paper-deep p-3">
-              <div className="text-xs text-carbon-muted">Tempo</div>
-              <div className="font-bold text-carbon">{clockState.label}</div>
-            </div>
-            <div className="border-2 border-carbon bg-paper-deep p-3">
-              <div className="text-xs text-carbon-muted">Rakip</div>
-              <div className="font-bold truncate text-carbon">{opponentLabel}</div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 text-center">
-            <div className="border-2 border-carbon bg-paper-deep p-3">
-              <div className="text-xs text-carbon-muted">Beyaz Süre</div>
-              <div className="font-bold text-carbon">{formatClock(displayClock.white)}</div>
-            </div>
-            <div className="border-2 border-carbon bg-paper-deep p-3">
-              <div className="text-xs text-carbon-muted">Hamle</div>
-              <div className="font-bold text-carbon">{moveCount}</div>
-            </div>
-            <div className="border-2 border-carbon bg-paper-deep p-3">
-              <div className="text-xs text-carbon-muted">Siyah Süre</div>
-              <div className="font-bold text-carbon">{formatClock(displayClock.black)}</div>
-            </div>
-          </div>
-
-          <p className="text-sm text-carbon-muted mb-1 pl-3 border-l-2 border-carbon">{message}</p>
-          {liveResultLabel && <p className="text-xs text-carbon-soft mb-3">{liveResultLabel}</p>}
-          {serverWinner && <p className="text-xs text-riso-spring mb-3">Kazanan: {serverWinner}</p>}
-          {pendingDrawOffer && (
-            <p className="text-xs text-carbon-soft mb-3">
-              {isPendingOfferByActor
-                ? 'Gönderdiğin beraberlik teklifi için rakip yanıtı bekleniyor.'
-                : `${pendingDrawOffer.offeredBy} beraberlik teklifi gönderdi.`}
-            </p>
-          )}
-
-          <div className="w-full max-w-[620px] mx-auto border-2 border-carbon p-2 sm:p-3 bg-paper riso-shadow-md">
+          <div className="w-full max-w-[620px] mx-auto lg:col-span-7 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:mx-0">
             <div
               ref={boardGridRef}
               className="relative grid grid-cols-8 gap-0"
@@ -963,18 +925,21 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                   const isInCheck =
                     chess.isCheck() && piece?.type === 'k' && piece.color === chess.turn();
 
-                  // Alternating paper tones — light = paper (cream), dark = paper-deep (warm beige)
-                  const baseClass = isLight ? 'bg-paper' : 'bg-paper-deep';
-
-                  // Ink border on every square; selection/check/last-move recolour the border + ring
-                  const selectedClass = isSelected
-                    ? 'ring-4 ring-riso-mustard z-10 scale-[1.04]'
-                    : '';
+                  // DESIGN.md board: light squares board-light, dark squares board-dark,
+                  // the last move tinted limon, the selection ringed in lokum.
+                  const baseClass =
+                    isLastMoveFrom || isLastMoveTo
+                      ? 'bg-riso-mustard'
+                      : isLight
+                        ? 'bg-[#F2F9FB]'
+                        : 'bg-[#7FC9EE]';
+                  const selectedClass = isSelected ? 'ring-4 ring-inset ring-riso-pink z-10' : '';
                   const legalClass = isLegal
-                    ? 'before:absolute before:inset-0 before:m-auto before:w-3 before:h-3 before:rounded-full before:bg-riso-pink before:border-2 before:border-carbon before:z-10'
+                    ? piece
+                      ? 'ring-4 ring-inset ring-riso-pink/70'
+                      : 'before:absolute before:inset-0 before:m-auto before:w-3 before:h-3 before:bg-riso-pink before:z-10'
                     : '';
-                  const lastMoveClass = isLastMoveFrom || isLastMoveTo ? 'bg-riso-mustard/35' : '';
-                  const checkClass = isInCheck ? 'animate-check-pulse bg-riso-redox/40' : '';
+                  const checkClass = isInCheck ? 'animate-check-pulse !bg-riso-redox/40' : '';
 
                   return (
                     <button
@@ -984,7 +949,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
                       aria-label={`Kare ${square}`}
                       onClick={() => handleSquareClick(square)}
                       disabled={loading || submitting || serverStatus === 'finished'}
-                      className={`relative aspect-square border border-carbon transition-all duration-200 ease-out ${baseClass} ${selectedClass} ${legalClass} ${lastMoveClass} ${checkClass} disabled:cursor-not-allowed`}
+                      className={`riso-focus relative aspect-square transition-colors duration-200 ease-out ${baseClass} ${selectedClass} ${legalClass} ${checkClass} disabled:cursor-not-allowed`}
                     >
                       {piece && (
                         <span
@@ -1008,83 +973,124 @@ export const RetroChess: React.FC<RetroChessProps> = ({
             </div>
           </div>
 
-          {canUseChessMatchActions && (
-            <div className="mt-5 grid grid-cols-1 sm:grid-cols-3 gap-2">
-              {!pendingDrawOffer && (
-                <RetroButton onClick={() => void submitDrawOffer('offer')} disabled={submitting}>
-                  Beraberlik Teklif Et
-                </RetroButton>
-              )}
-              {isPendingOfferByActor && (
-                <RetroButton
-                  onClick={() => void submitDrawOffer('cancel')}
-                  disabled={submitting}
-                  variant="secondary"
-                >
-                  Teklifi Geri Çek
-                </RetroButton>
-              )}
-              {isPendingOfferByOpponent && (
-                <RetroButton onClick={() => void submitDrawOffer('accept')} disabled={submitting}>
-                  Beraberliği Kabul Et
-                </RetroButton>
-              )}
-              {isPendingOfferByOpponent && (
-                <RetroButton
-                  onClick={() => void submitDrawOffer('reject')}
-                  disabled={submitting}
-                  variant="secondary"
-                >
-                  Teklifi Reddet
-                </RetroButton>
-              )}
-              <RetroButton
-                onClick={() => void resignAndLeave(false)}
-                disabled={submitting}
-                variant="danger"
+          <div className="min-w-0 self-start lg:col-span-5 lg:col-start-8 lg:row-start-2">
+            <div className="grid grid-cols-2 gap-2">
+              <div className="duo-stat">
+                <span className="duo-stat-label">Durum</span>
+                <span className="duo-stat-value">{statusLabel}</span>
+              </div>
+              <div
+                className={`duo-stat ${isMyTurn ? 'duo-stat--gok' : ''}`}
+                data-testid="retro-chess-turn-tile"
               >
-                Teslim Ol
-              </RetroButton>
+                <span className="duo-stat-label">
+                  {playerColor ? `Sen: ${playerColor === 'w' ? 'Beyaz' : 'Siyah'}` : 'Sıra'}
+                </span>
+                <span className="duo-stat-value">
+                  {playerColor ? (isMyTurn ? 'Sıra sende' : 'Sıra rakipte') : turnLabel}
+                </span>
+              </div>
+              <div className="duo-stat">
+                <span className="duo-stat-label">Hamle</span>
+                <span className="duo-stat-value">{moveCount}</span>
+              </div>
+              <div className="duo-stat">
+                <span className="duo-stat-label">Tempo</span>
+                <span className="duo-stat-value">{clockState.label}</span>
+              </div>
             </div>
-          )}
 
-          <div className="mt-5 flex flex-col sm:flex-row gap-2">
-            <RetroButton
-              onClick={() => void fetchGameSnapshot()}
-              disabled={loading || submitting || isBot}
-            >
-              Senkronu Yenile
-            </RetroButton>
-            <RetroButton onClick={handleLeave} variant="secondary">
-              Lobiye Dön
-            </RetroButton>
-          </div>
+            <div className="mt-5 space-y-1" aria-live="polite">
+              <p className="duo-game-status">{message}</p>
+              {liveResultLabel && <p className="text-sm text-carbon-muted">{liveResultLabel}</p>}
+              {serverWinner && (
+                <p className="text-sm font-semibold text-carbon">Kazanan: {serverWinner}</p>
+              )}
+              {pendingDrawOffer && (
+                <p className="text-sm text-carbon-muted">
+                  {isPendingOfferByActor
+                    ? 'Gönderdiğin beraberlik teklifi için rakip yanıtı bekleniyor.'
+                    : `${pendingDrawOffer.offeredBy} beraberlik teklifi gönderdi.`}
+                </p>
+              )}
+            </div>
 
-          <div className="mt-5 border-2 border-carbon bg-paper-deep p-3 max-h-56 overflow-y-auto custom-scrollbar riso-shadow-sm">
-            <h3 className="font-riso-display text-sm text-carbon mb-2 tracking-widest uppercase">
-              HAMLE GEÇMİŞİ
-            </h3>
-            {moveLog.length === 0 ? (
-              <p className="text-xs text-carbon-muted">Henüz hamle yapılmadı.</p>
-            ) : (
-              <ol className="space-y-1 text-xs font-riso-mono">
-                {moveLog.map((entry, index) => (
-                  <li
-                    key={`${entry.ts}-${index}`}
-                    className="flex items-center justify-between gap-2 border-b border-carbon-muted pb-1"
+            {canUseChessMatchActions && (
+              <div className="duo-game-actions mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {!pendingDrawOffer && (
+                  <RetroButton onClick={() => void submitDrawOffer('offer')} disabled={submitting}>
+                    Beraberlik teklif et
+                  </RetroButton>
+                )}
+                {isPendingOfferByActor && (
+                  <RetroButton
+                    onClick={() => void submitDrawOffer('cancel')}
+                    disabled={submitting}
+                    variant="secondary"
                   >
-                    <span className="text-carbon">
-                      {index + 1}. {entry.san} ({entry.from}→{entry.to})
-                    </span>
-                    <span className="text-carbon-muted">
-                      {Number.isFinite(Number(entry.spentMs))
-                        ? `${Math.round(Number(entry.spentMs) / 1000)} sn`
-                        : ''}
-                    </span>
-                  </li>
-                ))}
-              </ol>
+                    Teklifi geri çek
+                  </RetroButton>
+                )}
+                {isPendingOfferByOpponent && (
+                  <RetroButton onClick={() => void submitDrawOffer('accept')} disabled={submitting}>
+                    Beraberliği kabul et
+                  </RetroButton>
+                )}
+                {isPendingOfferByOpponent && (
+                  <RetroButton
+                    onClick={() => void submitDrawOffer('reject')}
+                    disabled={submitting}
+                    variant="secondary"
+                  >
+                    Teklifi reddet
+                  </RetroButton>
+                )}
+                <RetroButton
+                  onClick={() => void resignAndLeave(false)}
+                  disabled={submitting}
+                  variant="danger"
+                >
+                  Teslim ol
+                </RetroButton>
+              </div>
             )}
+
+            <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-1">
+              <button
+                type="button"
+                onClick={() => void fetchGameSnapshot()}
+                disabled={loading || submitting || isBot}
+                className="duo-quiet riso-focus"
+              >
+                Senkronu yenile
+              </button>
+            </div>
+
+            <section className="duo-tear mt-6 pt-4" aria-label="Hamle geçmişi">
+              <h3 className="text-[15px] font-semibold text-carbon">Hamle geçmişi</h3>
+              {moveLog.length === 0 ? (
+                <p className="mt-2 text-sm text-carbon-muted">Henüz hamle yapılmadı.</p>
+              ) : (
+                <ol className="mt-1 max-h-64 overflow-y-auto custom-scrollbar pr-1 text-sm font-riso-mono">
+                  {moveLog.map((entry, index) => (
+                    <li key={`${entry.ts}-${index}`} className="duo-leader-row">
+                      <span className="text-carbon">
+                        {index + 1}. {entry.san}{' '}
+                        <span className="text-carbon-muted">
+                          ({entry.from}→{entry.to})
+                        </span>
+                      </span>
+                      <span className="duo-leader-dots" aria-hidden="true" />
+                      <span className="duo-leader-value text-carbon">
+                        {Number.isFinite(Number(entry.spentMs))
+                          ? `${Math.round(Number(entry.spentMs) / 1000)} sn`
+                          : '–'}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </section>
           </div>
         </div>
       </div>

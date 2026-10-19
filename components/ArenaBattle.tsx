@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Crosshair, RadioTower, Target, Trophy } from 'lucide-react';
+import { Crosshair } from 'lucide-react';
 import { User } from '../types';
 import { RetroButton } from './RetroButton';
 import { playGameSfx } from '../lib/gameAudio';
@@ -296,136 +296,104 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
       : `${currentUser.username} / ${target}`;
 
   return (
-    <div
-      className="border-2 border-carbon bg-paper riso-shadow-md mx-auto max-w-3xl p-4 sm:p-6 text-carbon relative overflow-hidden"
-      data-testid="arena-battle"
-    >
+    <div className="mx-auto max-w-3xl text-carbon" data-testid="arena-battle">
       <ConnectionOverlay gameId={gameId} />
-      {/* Riso confetti accents */}
-      <div
-        aria-hidden="true"
-        className="absolute top-3 right-3 h-2 w-12 bg-riso-mustard rotate-[-4deg] hidden sm:block pointer-events-none"
-      />
-      <div
-        aria-hidden="true"
-        className="absolute top-6 right-16 h-2 w-6 bg-riso-pink rotate-[6deg] hidden sm:block pointer-events-none"
-      />
-      <div className="relative z-10">
-        <div className="mb-5 flex items-start justify-between gap-4 border-b-2 border-carbon pb-4">
-          <div>
-            <p className="font-riso-mono text-xs font-bold uppercase tracking-[0.14em] text-riso-blue">
-              LIVE TARGET LOCK
-            </p>
-            <h2 className="font-riso-display text-2xl text-carbon sm:text-4xl uppercase tracking-[0.06em]">
-              {AIM_GAME_TYPE}
-            </h2>
-            <p className="mt-2 text-xs text-carbon-muted sm:text-sm">{participants}</p>
-          </div>
-          <button
-            onClick={onLeave}
-            className="riso-focus riso-press border-2 border-carbon bg-riso-pink text-carbon riso-shadow-sm px-3 py-1.5 font-riso-display text-xs uppercase tracking-[0.14em] font-bold"
-          >
-            Oyundan Çık
-          </button>
+      <header className="duo-game-head mb-6">
+        <div className="min-w-0">
+          <span className="duo-game-chip bg-riso-pink">{MAX_ROUNDS} tur</span>
+          <h2 className="duo-game-title">{AIM_GAME_TYPE}</h2>
+          <p className="duo-game-sub truncate">{participants}</p>
         </div>
+        <button type="button" onClick={onLeave} className="duo-quiet riso-focus shrink-0">
+          <span className="duo-sentence">Oyundan Çık</span>
+        </button>
+      </header>
 
-        <div className="mb-5 grid grid-cols-3 gap-3 text-center">
-          <div className="inline-flex items-center justify-center gap-2 border-2 border-carbon bg-paper-deep px-3 py-2 text-carbon font-riso-body">
-            <Target size={18} />
-            <span className="font-bold uppercase text-xs">Tur</span>
-            <strong className="font-riso-display">
-              {Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}
-            </strong>
-          </div>
-          <div className="inline-flex items-center justify-center gap-2 border-2 border-carbon bg-riso-blue text-carbon px-3 py-2 font-riso-body">
-            <Trophy size={18} />
-            <span className="font-bold uppercase text-xs">Sen</span>
-            <strong className="font-riso-display">{live.playerScore}</strong>
-          </div>
-          <div className="inline-flex items-center justify-center gap-2 border-2 border-carbon bg-riso-pink text-carbon px-3 py-2 font-riso-body">
-            <RadioTower size={18} />
-            <span className="font-bold uppercase text-xs">Rakip</span>
-            <strong className="font-riso-display">{live.opponentScore}</strong>
-          </div>
+      <div className="mb-5 grid grid-cols-3 gap-2">
+        <div className="duo-stat">
+          <span className="duo-stat-label">Tur</span>
+          <span className="duo-stat-value">
+            {Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}
+          </span>
         </div>
-
-        <div className="relative aspect-[2/1] border-2 border-carbon bg-paper-deep mb-5 overflow-hidden">
-          {/* PixiJS WebGL overlay — fills the stage, renders animated reticle + hit effects */}
-          <AimBattleStageCanvas ref={pixiStageRef} className="absolute inset-0 h-full w-full" />
-          {/* CSS reticle kept as a11y/test fallback and for environments without WebGL */}
-          <div className="absolute inset-0 opacity-20 pointer-events-none" />
-          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 h-12 w-12 border-2 border-carbon pointer-events-none" />
-          <div
-            className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 text-carbon pointer-events-none opacity-0"
-            style={{ left: `${gauge}%` }}
-            data-testid="arena-reticle"
-            aria-hidden="true"
-          >
-            <Crosshair size={42} />
-          </div>
-          <div className="pointer-events-none absolute bottom-4 left-4 right-4 flex items-center justify-between text-xs font-riso-mono text-carbon-muted">
-            <span>0</span>
-            <span className="text-riso-spring font-bold border-2 border-carbon bg-paper px-2 py-0.5">
-              MERKEZ 50
-            </span>
-            <span>100</span>
-          </div>
+        <div className="duo-stat duo-stat--lokum">
+          <span className="duo-stat-label">Sen</span>
+          <span className="duo-stat-value duo-stat-value--score">{live.playerScore}</span>
         </div>
-
-        <div className="mb-5 border-2 border-carbon bg-paper-deep p-4">
-          <div className="mb-2 flex items-center justify-between text-xs">
-            <span className="font-riso-mono text-xs font-bold uppercase tracking-[0.14em] text-riso-blue">
-              Nişan Kilidi
-            </span>
-            <span className="text-riso-mustard-deep font-riso-mono font-bold">
-              {Math.round(gauge)}% / isabet {Math.round(accuracy)}%
-            </span>
-          </div>
-          <div className="h-2 border-2 border-carbon bg-paper-dim overflow-hidden">
-            <div
-              className="h-full bg-riso-blue transition-[width]"
-              style={{ width: `${accuracy}%` }}
-            />
-          </div>
-          <p className="mt-3 text-sm text-carbon-muted">{message}</p>
+        <div className="duo-stat">
+          <span className="duo-stat-label">Rakip</span>
+          <span className="duo-stat-value duo-stat-value--score">{live.opponentScore}</span>
         </div>
+      </div>
 
-        <div className="mb-5 grid grid-cols-2 gap-3 text-xs">
-          <div className="border-2 border-carbon bg-paper-deep p-3">
-            <div className="text-carbon-muted font-riso-mono uppercase tracking-wider">
-              Son Atışın
-            </div>
-            <div className="mt-1 font-bold text-carbon font-riso-body">
-              {playerShot === null ? '-' : `${Math.round(playerShot)}% - ${shotLabel(playerShot)}`}
-            </div>
-          </div>
-          <div className="border-2 border-carbon bg-paper-deep p-3">
-            <div className="text-carbon-muted font-riso-mono uppercase tracking-wider">
-              Rakip Atışı
-            </div>
-            <div className="mt-1 font-bold text-carbon font-riso-body">
-              {opponentShot === null
-                ? '-'
-                : `${Math.round(opponentShot)}% - ${shotLabel(opponentShot)}`}
-            </div>
-          </div>
+      <div className="relative mb-5 aspect-[2/1] overflow-hidden bg-paper-deep">
+        {/* PixiJS WebGL overlay — fills the stage, renders animated reticle + hit effects */}
+        <AimBattleStageCanvas ref={pixiStageRef} className="absolute inset-0 h-full w-full" />
+        {/* CSS reticle kept as a11y/test fallback and for environments without WebGL */}
+        <div
+          className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 text-carbon pointer-events-none opacity-0"
+          style={{ left: `${gauge}%` }}
+          data-testid="arena-reticle"
+          aria-hidden="true"
+        >
+          <Crosshair size={42} />
         </div>
+        <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex items-center justify-between font-riso-mono text-xs text-carbon-muted">
+          <span>0</span>
+          <span className="bg-paper px-2 py-0.5 font-semibold text-carbon">Merkez 50</span>
+          <span>100</span>
+        </div>
+      </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <RetroButton
-            onClick={fire}
-            disabled={!canFire}
-            data-testid="arena-fire-button"
-            className="flex-1"
-          >
-            ATEŞ ET
+      <div className="mb-5">
+        <div className="mb-2 flex items-baseline justify-between gap-3">
+          <span className="text-[15px] font-semibold text-carbon">Nişan kilidi</span>
+          <span className="font-riso-mono text-sm font-semibold text-carbon">
+            {Math.round(gauge)}% · isabet {Math.round(accuracy)}%
+          </span>
+        </div>
+        <div className="duo-meter">
+          <span className="bg-riso-pink transition-[width]" style={{ width: `${accuracy}%` }} />
+        </div>
+        <p className="duo-game-status mt-3" aria-live="polite">
+          {message}
+        </p>
+      </div>
+
+      <ul className="duo-tear mb-6 pt-3 text-[15px]">
+        <li className="duo-leader-row">
+          <span className="text-carbon-muted">Son atışın</span>
+          <span className="duo-leader-dots" aria-hidden="true" />
+          <span className="duo-leader-value text-carbon">
+            {playerShot === null ? '–' : `${Math.round(playerShot)}% · ${shotLabel(playerShot)}`}
+          </span>
+        </li>
+        <li className="duo-leader-row">
+          <span className="text-carbon-muted">Rakip atışı</span>
+          <span className="duo-leader-dots" aria-hidden="true" />
+          <span className="duo-leader-value text-carbon">
+            {opponentShot === null
+              ? '–'
+              : `${Math.round(opponentShot)}% · ${shotLabel(opponentShot)}`}
+          </span>
+        </li>
+      </ul>
+
+      <div className="duo-game-actions flex flex-col gap-3 sm:flex-row">
+        <RetroButton
+          onClick={fire}
+          disabled={!canFire}
+          data-testid="arena-fire-button"
+          size="lg"
+          className="flex-1"
+        >
+          Ateş et
+        </RetroButton>
+        {live.done && (
+          <RetroButton onClick={onLeave} variant="secondary" size="lg" className="flex-1">
+            Lobiye dön
           </RetroButton>
-          {live.done && (
-            <RetroButton onClick={onLeave} variant="secondary" className="flex-1">
-              Lobiye Dön
-            </RetroButton>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

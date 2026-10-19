@@ -272,17 +272,26 @@ body {
   gap: 14px;
 }
 .duo-lobby-action {
-  min-height: 86px;
-  padding: 18px;
+  min-height: 72px;
+  padding: 0 20px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 13px;
+  gap: 12px;
   border-radius: 0;
-  border: 1px solid #17140f;
-  box-shadow: 0 3px 0 #17140f;
-  font-weight: 650;
+  border: 0;
+  box-shadow: none;
+  font-weight: 600;
   font-size: 16px;
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease;
+}
+.duo-lobby-action:not(:disabled):hover {
+  transform: translateY(-2px);
+}
+.duo-lobby-action:not(:disabled):active {
+  transform: scale(0.98);
 }
 .duo-lobby-action svg {
   width: 24px;
@@ -292,35 +301,39 @@ body {
   opacity: 0.45;
 }
 .duo-lobby-heading {
-  font-size: 22px;
-  font-weight: 650;
-  letter-spacing: -0.035em;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.01em;
 }
 .duo-lobby-row {
+  border: 0;
   border-radius: 0;
-  border-width: 1px;
   box-shadow: none;
-  margin: 0 0 12px;
+  margin: 0 0 8px;
+  background: #eef6f8;
+  transition: background-color 160ms ease;
 }
 .duo-lobby-row:hover {
-  box-shadow: 0 6px 18px #17140f08;
+  background: #d9eaef;
 }
 .duo-lobby-empty {
   opacity: 1;
-  border-color: #17140f25;
+  border: 0;
   border-radius: 0;
   background: #eef6f8;
-  padding: 38px 18px;
-  margin: 6px 0;
+  padding: 40px 20px;
+  margin: 0;
 }
 .duo-lobby-empty h4 {
   font-size: 20px;
   font-weight: 600;
 }
 .duo-lobby-empty p {
-  max-width: 310px;
-  font-size: 14px;
-  line-height: 1.6;
+  max-width: 320px;
+  font-size: 15px;
+  line-height: 1.55;
   color: #4a4540;
   margin-top: 10px;
   text-align: center;
@@ -403,9 +416,9 @@ body {
     width: 17px;
   }
   .duo-lobby-action {
-    min-height: 70px;
-    padding: 14px;
-    font-size: 13px;
+    min-height: 72px;
+    padding: 0 14px;
+    font-size: 15px;
     gap: 8px;
   }
   .duo-auth-header {
@@ -470,7 +483,6 @@ html::-webkit-scrollbar-thumb {
   outline-offset: 3px;
   box-shadow: none;
 }
-
 
 /* =====================================================================
  * Design v2 — the candy set is a fill palette. Where the candy hue is
@@ -555,4 +567,192 @@ html::-webkit-scrollbar-thumb {
 /* Dashed outlines become the language's perforation. */
 [class*='border-dashed'] {
   border-style: dotted;
+}
+
+/* =====================================================================
+ * Design v2 — the game screens (Masa register). The page is the table:
+ * no framed card, ice wells for the numbers, one candy fill per game,
+ * 4 px dotted leaders and 3 px dotted tear lines as the only lines.
+ * ===================================================================== */
+
+/* Sentence case for labels whose source string is kept in capitals. */
+.duo-sentence {
+  display: inline-block;
+  text-transform: lowercase;
+}
+.duo-sentence::first-letter {
+  text-transform: uppercase;
+}
+
+.duo-game-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.duo-game-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  color: #17140f;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.duo-game-title {
+  margin-top: 10px;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(36px, 6vw, 40px);
+  line-height: 0.98;
+  letter-spacing: -0.01em;
+  color: #17140f;
+}
+.duo-game-sub {
+  margin-top: 8px;
+  font-size: 15px;
+  color: #4a4540;
+}
+
+/* The second action: no box, an ink underline on hover. */
+.duo-quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 4px;
+  background: none;
+  border: 0;
+  color: #17140f;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: underline 3px transparent;
+  text-underline-offset: 6px;
+  transition: text-decoration-color 160ms ease;
+  cursor: pointer;
+}
+.duo-quiet:hover {
+  text-decoration-color: #17140f;
+}
+.duo-quiet:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* A number in an ice well: small label above, tabular value below. */
+.duo-stat {
+  min-width: 0;
+  padding: 12px 14px;
+  background: #eef6f8;
+  color: #17140f;
+}
+.duo-stat-label {
+  display: block;
+  font-size: 15px;
+  font-weight: 500;
+  color: #4a4540;
+}
+.duo-stat-value {
+  display: block;
+  margin-top: 2px;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The running side reads as the slip's inverted bar; the player's turn takes the game colour. */
+.duo-stat--ink {
+  background: #17140f;
+  color: #ffffff;
+}
+.duo-stat--ink .duo-stat-label {
+  color: #ffffff;
+}
+.duo-stat--gok {
+  background: #1fb3ff;
+}
+.duo-stat--limon {
+  background: #ffd23f;
+}
+.duo-stat--lokum {
+  background: #ff5c8a;
+}
+.duo-stat--gok .duo-stat-label,
+.duo-stat--limon .duo-stat-label,
+.duo-stat--lokum .duo-stat-label {
+  color: #17140f;
+}
+.duo-stat-value--score {
+  font-size: clamp(36px, 8vw, 40px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+/* The running status line under the scoreboard. */
+.duo-game-status {
+  font-size: 15px;
+  line-height: 1.45;
+  color: #17140f;
+}
+
+/* Slip rows: what ··· value, with the landing's 4 px dotted leader. */
+.duo-leader-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 0;
+}
+.duo-leader-dots {
+  flex: 1 1 24px;
+  min-width: 24px;
+  margin-bottom: 4px;
+  border-bottom: 4px dotted rgba(23, 20, 15, 0.32);
+}
+.duo-leader-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The tear line: a 3 px dotted ink rule. */
+.duo-tear {
+  border: 0;
+  border-top: 3px dotted #17140f;
+}
+
+/* Things that float above the page carry the one soft shadow. */
+.duo-float {
+  box-shadow: 0 16px 34px rgba(23, 20, 15, 0.22);
+}
+
+/* A thin meter (timer, accuracy): an ice-deep track with a flat fill. */
+.duo-meter {
+  height: 8px;
+  background: #d9eaef;
+  overflow: hidden;
+}
+.duo-meter > span {
+  display: block;
+  height: 100%;
+}
+
+.duo-game-actions .duo-button {
+  min-height: 48px;
+}
+.duo-game-actions .duo-button:active {
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .duo-quiet,
+  .duo-lobby-action,
+  .duo-lobby-row {
+    transition: none;
+  }
+  .duo-lobby-action:not(:disabled):hover {
+    transform: none;
+  }
 }

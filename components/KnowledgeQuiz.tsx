@@ -244,189 +244,145 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
     return () => window.clearInterval(tick);
   }, [roundIndex, selectedOption, live.done, live.resolvingMatch]);
 
+  const elapsedFraction = 1 - timeLeft / QUESTION_TIME_SECONDS;
+  const timeWarning = timeLeft <= 5 && selectedOption === null && !live.done;
+
   return (
     <>
       <ConnectionOverlay gameId={gameId} />
-      <div
-        className="max-w-2xl mx-auto border-2 border-carbon bg-paper riso-shadow-md p-4 sm:p-6 text-carbon relative overflow-hidden"
-        data-testid="knowledge-quiz"
-      >
-        {/* Riso confetti accents */}
-        <div
-          aria-hidden="true"
-          className="absolute top-3 right-3 h-2 w-12 bg-riso-mustard rotate-[-4deg] hidden sm:block pointer-events-none"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute top-6 right-16 h-2 w-6 bg-riso-pink rotate-[6deg] hidden sm:block pointer-events-none"
-        />
-        <div className="relative z-10">
-          <div className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft mb-2">
-            Sistem TR-X // Bilgi Tarayıcı
+      <div className="max-w-2xl mx-auto text-carbon" data-testid="knowledge-quiz">
+        <header className="duo-game-head mb-6">
+          <div className="min-w-0">
+            <span className="duo-game-chip bg-riso-mustard">{maxRounds} soru</span>
+            <h2 className="duo-game-title">{QUIZ_GAME_TYPE}</h2>
+            <p className="duo-game-sub truncate">Rakip: {targetName}</p>
           </div>
-          <div className="flex items-start justify-between gap-3 mb-4">
-            <h2 className="font-riso-display text-2xl sm:text-3xl uppercase tracking-[0.08em] leading-none text-carbon">
-              {QUIZ_GAME_TYPE}
-            </h2>
-            <button
-              onClick={onLeave}
-              className="riso-focus riso-press shrink-0 px-3 py-2 border-2 border-carbon bg-riso-pink text-carbon riso-shadow-sm transition-all font-riso-display text-xs uppercase tracking-[0.16em]"
-            >
-              Oyundan Çık
-            </button>
-          </div>
+          <button type="button" onClick={onLeave} className="duo-quiet riso-focus shrink-0">
+            <span className="duo-sentence">Oyundan Çık</span>
+          </button>
+        </header>
 
-          {/* Per-question countdown bar — pure visual, no layout shift. Bar
-              widens left→right as time runs out (filled portion = elapsed),
-              flips to riso-redox + pulse in the last 5 seconds. */}
-          {(() => {
-            const elapsedFraction = 1 - timeLeft / QUESTION_TIME_SECONDS;
-            const warning = timeLeft <= 5 && selectedOption === null && !live.done;
-            return (
-              <div
-                className="mb-4 border-2 border-carbon bg-paper-deep px-3 py-2 flex items-center gap-3"
-                data-testid="quiz-countdown"
-              >
-                <span className="font-riso-mono text-[10px] uppercase tracking-[0.16em] text-carbon-muted font-bold shrink-0">
-                  Süre
-                </span>
-                <div className="flex-1 h-2 bg-paper-dim border-2 border-carbon overflow-hidden">
-                  <div
-                    className={`h-full transition-[width] duration-1000 ease-linear ${
-                      warning ? 'bg-riso-redox animate-pulse' : 'bg-riso-blue'
-                    }`}
-                    style={{ width: `${Math.max(0, Math.min(100, elapsedFraction * 100))}%` }}
-                  />
-                </div>
-                <span
-                  className={`font-riso-mono text-sm font-bold tracking-wider shrink-0 ${
-                    warning ? 'text-riso-redox' : 'text-carbon'
-                  }`}
-                >
-                  {timeLeft}s
-                </span>
-              </div>
-            );
-          })()}
-
-          <div className="grid grid-cols-3 gap-2.5 mb-5 text-center">
-            <div className="border-2 border-carbon bg-paper-deep p-3">
-              <div className="text-xs text-carbon-muted mb-1">Tur</div>
-              <div className="font-bold text-carbon">
-                {Math.min(roundIndex + 1, maxRounds)} / {maxRounds}
-              </div>
-              <div className="mt-2 h-1.5 bg-paper-dim border border-carbon overflow-hidden">
-                <div
-                  className="h-full bg-riso-blue transition-all duration-500 ease-out"
-                  style={{ width: `${((roundIndex + 1) / maxRounds) * 100}%` }}
-                />
-              </div>
-            </div>
-            <div
-              className={`border-2 border-carbon bg-paper-deep p-3 transition-all duration-300 ${scoreAnimation === 'player' ? 'animate-score-pop' : ''}`}
-            >
-              <div className="text-xs text-carbon-muted">Sen</div>
-              <div className="font-bold text-carbon">{live.playerScore}</div>
-            </div>
-            <div
-              className={`border-2 border-carbon bg-paper-deep p-3 transition-all duration-300 ${scoreAnimation === 'opponent' ? 'animate-score-pop' : ''}`}
-            >
-              <div className="text-xs text-carbon-muted">Rakip</div>
-              <div className="font-bold text-carbon">{live.opponentScore}</div>
-            </div>
-          </div>
-
-          <p className="text-sm text-carbon-muted mb-4 pl-3 border-l-2 border-carbon min-h-[2rem] flex items-center">
-            {message}
-          </p>
-
-          <div
-            className={`border-2 border-carbon bg-paper-deep p-4 transition-all duration-300 relative overflow-hidden ${feedbackAnimation === 'correct' ? 'animate-flash-green animate-glow-pulse' : feedbackAnimation === 'incorrect' ? 'animate-flash-red animate-shake' : ''}`}
-          >
-            {/* PixiJS overlay — sits above floatingScore (z-30 vs z-20) so confetti
-                renders ON TOP of the "+1" / "✕" text. CSS feedback (border/shadow
-                on the option button + flash on this card) stays intact below. */}
-            <QuizStageCanvas
-              ref={quizStageRef}
-              className="pointer-events-none absolute inset-0 z-30 h-full w-full"
+        {/* Per-question countdown — the filled part is the elapsed time; it turns
+            to the danger state in the last 5 seconds. No layout shift. */}
+        <div className="mb-4 flex items-center gap-3" data-testid="quiz-countdown">
+          <span className="shrink-0 text-[15px] font-medium text-carbon-muted">Süre</span>
+          <div className="duo-meter flex-1">
+            <span
+              className={`transition-[width] duration-1000 ease-linear ${
+                timeWarning ? 'bg-riso-redox' : 'bg-riso-blue'
+              }`}
+              style={{ width: `${Math.max(0, Math.min(100, elapsedFraction * 100))}%` }}
             />
-            {floatingScore && (
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
-                <span
-                  className={`text-6xl font-bold animate-float-up ${floatingScore === '+1' ? 'text-riso-spring drop-shadow-[0_0_20px_rgba(52,211,153,0.6)]' : 'text-riso-pink-deep drop-shadow-[0_0_20px_rgba(244,63,94,0.6)]'}`}
-                >
-                  {floatingScore}
-                </span>
-              </div>
-            )}
-            <p
-              data-testid="knowledge-question"
-              className="text-base md:text-lg font-riso-display font-bold text-carbon leading-relaxed mb-4 uppercase tracking-[0.04em]"
-            >
-              {currentQuestion.question}
-            </p>
-            <div className="grid grid-cols-1 gap-2.5">
-              {currentQuestion.options.map((option, idx) => {
-                const isPicked = selectedOption === idx;
-                const isCorrect = idx === currentQuestion.answerIndex;
-                const stateClass =
-                  selectedOption === null
-                    ? 'border-carbon bg-paper hover:bg-paper-dim hover:-translate-y-[1px] hover:shadow-[3px_3px_0_0_rgba(20,20,19,1)]'
-                    : isPicked && isCorrect
-                      ? 'border-carbon bg-riso-spring/40 ring-2 ring-riso-spring scale-[1.02]'
-                      : isPicked
-                        ? 'border-carbon bg-riso-redox/30 ring-2 ring-riso-redox scale-[1.02]'
-                        : isCorrect
-                          ? 'border-carbon bg-riso-spring/25'
-                          : 'border-carbon-muted bg-paper-dim opacity-55';
-                const leftBorderClass =
-                  selectedOption === null
-                    ? ''
-                    : isPicked && isCorrect
-                      ? 'border-l-[6px] border-l-riso-spring'
-                      : isPicked
-                        ? 'border-l-[6px] border-l-riso-redox'
-                        : isCorrect
-                          ? 'border-l-[6px] border-l-riso-spring/60'
-                          : '';
-                return (
-                  <button
-                    key={`${roundIndex}-${idx}`}
-                    data-testid={`knowledge-option-${idx}`}
-                    onClick={() => handleAnswer(idx)}
-                    disabled={selectedOption !== null || live.done || live.resolvingMatch}
-                    className={`text-left border-2 px-3.5 py-3 transition-all duration-200 font-riso-body text-carbon disabled:cursor-not-allowed ${stateClass} ${leftBorderClass}`}
-                  >
-                    <span className="flex items-center gap-3">
-                      <span
-                        className={`w-7 h-7 border-2 border-carbon flex items-center justify-center font-riso-display text-xs font-bold shrink-0 ${
-                          selectedOption === null
-                            ? 'bg-riso-blue text-carbon'
-                            : isPicked && isCorrect
-                              ? 'bg-riso-spring text-carbon'
-                              : isPicked
-                                ? 'bg-riso-redox text-carbon'
-                                : isCorrect
-                                  ? 'bg-riso-spring/60 text-carbon'
-                                  : 'bg-paper text-carbon-muted'
-                        }`}
-                      >
-                        {String.fromCharCode(65 + idx)}
-                      </span>
-                      <span className="font-medium">{option}</span>
-                    </span>
-                  </button>
-                );
-              })}
+          </div>
+          <span
+            className={`w-12 shrink-0 text-right font-riso-mono text-base font-bold ${
+              timeWarning ? 'text-riso-redox' : 'text-carbon'
+            }`}
+          >
+            {timeLeft} sn
+          </span>
+        </div>
+
+        <div className="mb-5 grid grid-cols-3 gap-2">
+          <div className="duo-stat">
+            <span className="duo-stat-label">Tur</span>
+            <span className="duo-stat-value">
+              {Math.min(roundIndex + 1, maxRounds)} / {maxRounds}
+            </span>
+            <div className="duo-meter mt-2">
+              <span
+                className="bg-riso-blue transition-all duration-500 ease-out"
+                style={{ width: `${((roundIndex + 1) / maxRounds) * 100}%` }}
+              />
             </div>
           </div>
+          <div
+            className={`duo-stat duo-stat--limon ${scoreAnimation === 'player' ? 'animate-score-pop' : ''}`}
+          >
+            <span className="duo-stat-label">Sen</span>
+            <span className="duo-stat-value duo-stat-value--score">{live.playerScore}</span>
+          </div>
+          <div className={`duo-stat ${scoreAnimation === 'opponent' ? 'animate-score-pop' : ''}`}>
+            <span className="duo-stat-label">Rakip</span>
+            <span className="duo-stat-value duo-stat-value--score">{live.opponentScore}</span>
+          </div>
+        </div>
 
-          {live.done && (
-            <div className="mt-4">
-              <RetroButton onClick={onLeave}>Lobiye Dön</RetroButton>
+        <p className="duo-game-status mb-4 min-h-[2.75rem]" aria-live="polite">
+          {message}
+        </p>
+
+        <div
+          className={`relative overflow-hidden bg-paper-deep p-4 sm:p-5 ${feedbackAnimation === 'correct' ? 'animate-flash-green' : feedbackAnimation === 'incorrect' ? 'animate-flash-red animate-shake' : ''}`}
+        >
+          {/* PixiJS overlay — sits above floatingScore (z-30 vs z-20) so confetti
+              renders ON TOP of the "+1" / "✕" text. */}
+          <QuizStageCanvas
+            ref={quizStageRef}
+            className="pointer-events-none absolute inset-0 z-30 h-full w-full"
+          />
+          {floatingScore && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+              <span
+                className={`font-riso-display text-6xl animate-float-up ${floatingScore === '+1' ? 'text-[#177A41]' : 'text-riso-redox'}`}
+              >
+                {floatingScore}
+              </span>
             </div>
           )}
+          <p
+            data-testid="knowledge-question"
+            className="mb-4 font-riso-body text-lg font-semibold leading-snug text-carbon md:text-xl"
+          >
+            {currentQuestion.question}
+          </p>
+          <div className="grid grid-cols-1 gap-2">
+            {currentQuestion.options.map((option, idx) => {
+              const isPicked = selectedOption === idx;
+              const isCorrect = idx === currentQuestion.answerIndex;
+              // Answer states are states, never decoration: success and danger
+              // fills carry paper text; the rest of the options step back.
+              const stateClass =
+                selectedOption === null
+                  ? 'bg-paper text-carbon hover:-translate-y-0.5 active:scale-[0.98]'
+                  : isCorrect
+                    ? 'bg-[#177A41] text-paper'
+                    : isPicked
+                      ? 'bg-riso-redox text-paper'
+                      : 'bg-paper text-carbon-muted opacity-55';
+              const letterClass =
+                selectedOption === null
+                  ? 'bg-riso-mustard text-carbon'
+                  : isCorrect || isPicked
+                    ? 'bg-paper text-carbon'
+                    : 'bg-paper-dim text-carbon-muted';
+              return (
+                <button
+                  key={`${roundIndex}-${idx}`}
+                  data-testid={`knowledge-option-${idx}`}
+                  onClick={() => handleAnswer(idx)}
+                  disabled={selectedOption !== null || live.done || live.resolvingMatch}
+                  className={`riso-focus min-h-[52px] text-left px-3 py-2.5 transition-[transform,background-color] duration-200 font-riso-body disabled:cursor-not-allowed ${stateClass}`}
+                >
+                  <span className="flex items-center gap-3">
+                    <span
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center text-sm font-bold ${letterClass}`}
+                    >
+                      {String.fromCharCode(65 + idx)}
+                    </span>
+                    <span className="font-medium">{option}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
+
+        {live.done && (
+          <div className="duo-game-actions mt-5">
+            <RetroButton onClick={onLeave}>Lobiye dön</RetroButton>
+          </div>
+        )}
       </div>
     </>
   );

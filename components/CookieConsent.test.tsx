@@ -12,7 +12,7 @@ describe('CookieConsent', () => {
 
     render(<CookieConsent />);
 
-    expect(screen.queryByText('Çerez Kullanımı')).not.toBeInTheDocument();
+    expect(screen.queryByText('Çerezler')).not.toBeInTheDocument();
   });
 
   it('does not show banner when consent already accepted (new value)', () => {
@@ -20,7 +20,7 @@ describe('CookieConsent', () => {
 
     render(<CookieConsent />);
 
-    expect(screen.queryByText('Çerez Kullanımı')).not.toBeInTheDocument();
+    expect(screen.queryByText('Çerezler')).not.toBeInTheDocument();
   });
 
   it('shows banner on first visit without auto-accepting', async () => {
@@ -29,7 +29,7 @@ describe('CookieConsent', () => {
     render(<CookieConsent />);
 
     await waitFor(() => {
-      expect(screen.getByText('Çerez Kullanımı')).toBeInTheDocument();
+      expect(screen.getByText('Çerezler')).toBeInTheDocument();
     });
 
     // Should NOT auto-accept - user must click a button
@@ -41,11 +41,11 @@ describe('CookieConsent', () => {
 
     render(<CookieConsent />);
 
-    const acceptButton = await screen.findByRole('button', { name: 'Kabul Et' });
+    const acceptButton = await screen.findByRole('button', { name: 'Kabul et' });
     fireEvent.click(acceptButton);
 
     await waitFor(() => {
-      expect(screen.queryByText('Çerez Kullanımı')).not.toBeInTheDocument();
+      expect(screen.queryByText('Çerezler')).not.toBeInTheDocument();
     });
 
     expect(window.localStorage.setItem).toHaveBeenCalledWith('cookie_consent', 'accepted');
@@ -65,7 +65,7 @@ describe('CookieConsent', () => {
     // happens at auth time (AuthModal blocks login/register when consent isn't
     // accepted and re-opens this banner by clearing the rejected value).
     await waitFor(() => {
-      expect(screen.queryByText('Çerez Kullanımı')).not.toBeInTheDocument();
+      expect(screen.queryByText('Çerezler')).not.toBeInTheDocument();
     });
   });
 
@@ -74,7 +74,7 @@ describe('CookieConsent', () => {
 
     render(<CookieConsent />);
 
-    expect(screen.queryByText('Çerez Kullanımı')).not.toBeInTheDocument();
+    expect(screen.queryByText('Çerezler')).not.toBeInTheDocument();
   });
 
   it('sets the landing variant in the landing style with the same choices', async () => {

@@ -69,13 +69,14 @@
   padding: 20px 0;
 }
 .club-nav .duo-brand > span {
-  font-family: 'Onest', system-ui, sans-serif;
-  letter-spacing: -0.065em;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  letter-spacing: -0.02em;
   font-weight: 800;
-  font-size: 29px;
+  font-size: 28px;
 }
+/* Like the landing's wordmark: one ink word, no coloured half. */
 .club-nav .duo-brand > span > span:first-child {
-  color: #0b6aa8;
+  color: inherit;
 }
 .club-nav .duo-nav-business[aria-current='page'] {
   background: #d9eaef;
@@ -467,7 +468,7 @@
     padding: 13px 0;
   }
   .club-nav .duo-brand > span {
-    font-size: 26px;
+    font-size: 28px;
   }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -363,22 +363,13 @@ textarea.duo-input {
   letter-spacing: -0.01em;
 }
 .duo-cookie-card {
+  border: 0;
   border-radius: 0;
-  border-width: 1px;
-  box-shadow: 0 10px 40px #17140f18;
-}
-.duo-cookie-card h2 {
-  text-transform: none;
-  letter-spacing: -0.02em;
-  font-size: 15px;
+  box-shadow: 0 16px 34px rgba(23, 20, 15, 0.22);
 }
 .duo-cookie-card button {
   min-height: 44px;
   border-radius: 0;
-}
-.duo-cookie-card button[aria-label] {
-  min-height: 36px;
-  min-width: 36px;
 }
 .duo-footer {
   border-top: 3px dotted #17140f;

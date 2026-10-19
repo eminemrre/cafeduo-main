@@ -105,6 +105,10 @@ paths:
                 $ref: '#/components/schemas/Error'
         500:
           description: Sunucu hatası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/auth/verify:
     post:
@@ -185,8 +189,22 @@ paths:
                     description: Günlük bonus alındı mı?
         401:
           description: Geçersiz e-posta veya şifre
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
         400:
-          description: reCAPTCHA doğrulaması başarısız
+          description: Eksik alan veya geçersiz şifre formatı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          description: Sunucu hatası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/auth/me:
     get:

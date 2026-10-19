@@ -89,7 +89,8 @@ export default [
       'react/prop-types': 'off', // TypeScript handles this
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
-      'jsx-a11y/alt-text': 'warn',
+      // Accessibility regressions fail the build instead of piling up as warnings.
+      ...jsxA11y.flatConfigs.recommended.rules,
       '@typescript-eslint/no-unused-vars': [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },

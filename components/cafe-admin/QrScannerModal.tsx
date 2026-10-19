@@ -59,7 +59,12 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
       aria-label="Kupon QR kodunu okut"
       className="riso-kantin fixed inset-0 z-[150] flex items-center justify-center p-4"
     >
-      <div className="absolute inset-0 bg-carbon/75 backdrop-blur-sm" onClick={onClose} />
+      {/* Mouse-only shortcut: keyboard users close the dialog with Escape. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-carbon/75 backdrop-blur-sm"
+        onClick={onClose}
+      />
 
       <div
         className="relative w-full max-w-md border-2 border-carbon bg-paper riso-shadow-md overflow-hidden"

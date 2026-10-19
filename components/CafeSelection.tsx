@@ -211,6 +211,8 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                   value={tableVerificationCode}
                   onChange={(e) => setTableVerificationCode(e.target.value)}
                   autoComplete="one-time-code"
+                  // The field appears only after the user picks the code path, so focus follows that choice.
+                  // eslint-disable-next-line jsx-a11y/no-autofocus
                   autoFocus
                   disabled={loading}
                   helperText="Konum izni vermek istemezsen bu kodla devam edebilirsin."

@@ -11,10 +11,7 @@
 import React, { useMemo, useState } from 'react';
 import { Trophy, Plus, X, Calendar, Trash2 } from 'lucide-react';
 import type { Reward, Tournament } from '../../types';
-import type {
-  TournamentFormData,
-  TournamentTierForm,
-} from './types';
+import type { TournamentFormData, TournamentTierForm } from './types';
 
 // Game types shipped today. Kept in sync with shared/gameRegistry.js by
 // virtue of strings; backend rejects anything else, so if a new game lands
@@ -75,10 +72,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const activeRewards = useMemo(
-    () => rewards.filter((r) => r.is_active !== false),
-    [rewards]
-  );
+  const activeRewards = useMemo(() => rewards.filter((r) => r.is_active !== false), [rewards]);
 
   const updateTier = (idx: number, patch: Partial<TournamentTierForm>) => {
     const next = tournamentForm.tiers.map((t, i) => (i === idx ? { ...t, ...patch } : t));
@@ -89,10 +83,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
     if (tournamentForm.tiers.length >= 10) return;
     setTournamentForm({
       ...tournamentForm,
-      tiers: [
-        ...tournamentForm.tiers,
-        { rank: tournamentForm.tiers.length + 1, rewardId: null },
-      ],
+      tiers: [...tournamentForm.tiers, { rank: tournamentForm.tiers.length + 1, rewardId: null }],
     });
   };
 
@@ -133,10 +124,14 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block mb-1.5 font-riso-mono text-[0.7rem] uppercase tracking-[0.12em] text-carbon-soft">
+            <label
+              htmlFor="tournament-name"
+              className="block mb-1.5 font-riso-mono text-[0.7rem] uppercase tracking-[0.12em] text-carbon-soft"
+            >
               Ad
             </label>
             <input
+              id="tournament-name"
               type="text"
               value={tournamentForm.name}
               onChange={(e) => setTournamentForm({ ...tournamentForm, name: e.target.value })}
@@ -149,10 +144,14 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
           </div>
 
           <div>
-            <label className="block mb-1.5 font-riso-mono text-[0.7rem] uppercase tracking-[0.12em] text-carbon-soft">
+            <label
+              htmlFor="tournament-game-type"
+              className="block mb-1.5 font-riso-mono text-[0.7rem] uppercase tracking-[0.12em] text-carbon-soft"
+            >
               Oyun türü
             </label>
             <select
+              id="tournament-game-type"
               value={tournamentForm.gameType}
               onChange={(e) => setTournamentForm({ ...tournamentForm, gameType: e.target.value })}
               data-testid="tournament-gametype-select"
@@ -168,25 +167,31 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block mb-1.5 font-riso-mono text-[0.7rem] uppercase tracking-[0.12em] text-carbon-soft">
+              <label
+                htmlFor="tournament-start"
+                className="block mb-1.5 font-riso-mono text-[0.7rem] uppercase tracking-[0.12em] text-carbon-soft"
+              >
                 Başlangıç
               </label>
               <input
+                id="tournament-start"
                 type="datetime-local"
                 value={tournamentForm.startAt}
-                onChange={(e) =>
-                  setTournamentForm({ ...tournamentForm, startAt: e.target.value })
-                }
+                onChange={(e) => setTournamentForm({ ...tournamentForm, startAt: e.target.value })}
                 required
                 data-testid="tournament-start-input"
                 className="riso-focus w-full border-2 border-carbon bg-paper px-3 py-2 font-riso-body text-sm text-carbon"
               />
             </div>
             <div>
-              <label className="block mb-1.5 font-riso-mono text-[0.7rem] uppercase tracking-[0.12em] text-carbon-soft">
+              <label
+                htmlFor="tournament-end"
+                className="block mb-1.5 font-riso-mono text-[0.7rem] uppercase tracking-[0.12em] text-carbon-soft"
+              >
                 Bitiş
               </label>
               <input
+                id="tournament-end"
                 type="datetime-local"
                 value={tournamentForm.endAt}
                 onChange={(e) => setTournamentForm({ ...tournamentForm, endAt: e.target.value })}
@@ -199,9 +204,12 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="font-riso-mono text-[0.7rem] uppercase tracking-[0.12em] text-carbon-soft">
+              <span
+                id="tournament-tiers-heading"
+                className="font-riso-mono text-[0.7rem] uppercase tracking-[0.12em] text-carbon-soft"
+              >
                 Ödül Sıralaması
-              </label>
+              </span>
               <button
                 type="button"
                 onClick={addTier}
@@ -268,7 +276,10 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
           </div>
 
           {formError && (
-            <p className="font-riso-body text-sm text-riso-redox" data-testid="tournament-form-error">
+            <p
+              className="font-riso-body text-sm text-riso-redox"
+              data-testid="tournament-form-error"
+            >
               {formError}
             </p>
           )}
@@ -324,9 +335,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
                           </span>
                         )}
                       </div>
-                      <h4 className="font-riso-display text-base text-carbon truncate">
-                        {t.name}
-                      </h4>
+                      <h4 className="font-riso-display text-base text-carbon truncate">{t.name}</h4>
                       <p className="font-riso-mono text-[0.7rem] text-carbon-muted">
                         {formatLocal(t.start_at)} → {formatLocal(t.end_at)}
                       </p>

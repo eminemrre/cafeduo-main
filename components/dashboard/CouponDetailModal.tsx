@@ -65,7 +65,12 @@ export const CouponDetailModal: React.FC<CouponDetailModalProps> = ({
       aria-label={`${coupon.title} kuponu detayı`}
       className="riso-kantin fixed inset-0 z-[140] flex items-center justify-center p-4"
     >
-      <div className="absolute inset-0 bg-carbon/70 backdrop-blur-sm" onClick={onClose} />
+      {/* Mouse-only shortcut: keyboard users close the dialog with Escape. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-carbon/70 backdrop-blur-sm"
+        onClick={onClose}
+      />
 
       <div
         className="relative w-full max-w-md border-2 border-carbon bg-paper riso-shadow-md overflow-hidden"

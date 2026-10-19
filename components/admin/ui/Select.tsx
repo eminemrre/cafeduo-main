@@ -158,6 +158,8 @@ export const Select: React.FC<SelectProps> = ({
                   const isSelected = opt.value === value;
                   const isActive = i === activeIndex;
                   return (
+                    // Options take clicks only; the combobox button handles the keyboard.
+                    // eslint-disable-next-line jsx-a11y/click-events-have-key-events
                     <li
                       key={opt.value}
                       role="option"

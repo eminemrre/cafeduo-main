@@ -147,7 +147,7 @@ export const ToyStage: React.FC = () => {
       onPointerMove={onPointerMove}
       onPointerLeave={() => scene.current?.setPointer(0, 0)}
     >
-      <picture className="cdl-stage-still" aria-hidden={live}>
+      <picture className="cdl-stage-still">
         <source
           media="(max-width: 699px)"
           srcSet={toyImage(moved ? 'hero-wide-moved' : 'hero-tall')}
@@ -156,6 +156,7 @@ export const ToyStage: React.FC = () => {
           src={toyImage(moved ? 'hero-wide-moved' : 'hero-wide')}
           width={1440}
           height={1520}
+          aria-hidden={live}
           alt={
             moved
               ? 'Oyuncak satranç atı MASA07 tabelasının önüne gelmiş, yeşil jetonda +20 yazıyor'

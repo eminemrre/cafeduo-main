@@ -1,6 +1,7 @@
 // eslint-disable-next-line no-redeclare
 const crypto = require('crypto');
 const db = require('../db');
+const logger = require('../utils/logger');
 
 /**
  * Per-redemption unique coupon code. Same format as commerceHandlers
@@ -70,7 +71,7 @@ const storeController = {
     try {
       res.json({ success: true, items: STORE_ITEMS });
     } catch (error) {
-      console.error('getItems error:', error);
+      logger.error('getItems error:', error);
       res.status(500).json({ success: false, message: 'Sunucu hatası' });
     }
   },
@@ -91,7 +92,7 @@ const storeController = {
 
       res.json({ success: true, inventory: result.rows });
     } catch (error) {
-      console.error('getInventory error:', error);
+      logger.error('getInventory error:', error);
       res.status(500).json({ success: false, message: 'Envanter alınırken hata oluştu' });
     }
   },
@@ -185,7 +186,7 @@ const storeController = {
       });
     } catch (error) {
       await client.query('ROLLBACK');
-      console.error('buyItem error:', error);
+      logger.error('buyItem error:', error);
       res.status(500).json({ success: false, message: 'Satın alma işlemi sırasında hata oluştu' });
     } finally {
       client.release();

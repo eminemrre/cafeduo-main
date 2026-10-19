@@ -28,8 +28,10 @@ describe('auth middleware', () => {
     const query = jest.fn();
     const isDbConnected = jest.fn();
     const memoryState = { users: [] };
+    const logger = { error: jest.fn(), warn: jest.fn(), info: jest.fn() };
 
     jest.doMock('jsonwebtoken', () => ({ verify }));
+    jest.doMock('../utils/logger', () => logger);
     jest.doMock('../db', () => ({
       pool: { query },
       isDbConnected,
@@ -37,7 +39,7 @@ describe('auth middleware', () => {
     jest.doMock('../store/memoryState', () => memoryState);
 
     const auth = require('./auth');
-    return { auth, verify, query, isDbConnected, memoryState };
+    return { auth, verify, query, isDbConnected, memoryState, logger };
   };
 
   afterEach(() => {
@@ -46,6 +48,7 @@ describe('auth middleware', () => {
     jest.dontMock('jsonwebtoken');
     jest.dontMock('../db');
     jest.dontMock('../store/memoryState');
+    jest.dontMock('../utils/logger');
   });
 
   afterAll(() => {
@@ -181,12 +184,14 @@ describe('auth middleware', () => {
 
     await auth.authenticateToken(req, res, next);
 
-    expect(req.user).toEqual(expect.objectContaining({
-      id: 5,
-      username: 'memory-user',
-      isAdmin: true,
-      gamesPlayed: 4,
-    }));
+    expect(req.user).toEqual(
+      expect.objectContaining({
+        id: 5,
+        username: 'memory-user',
+        isAdmin: true,
+        gamesPlayed: 4,
+      })
+    );
     expect(next).toHaveBeenCalledTimes(1);
   });
 
@@ -206,6 +211,26 @@ describe('auth middleware', () => {
 
     expect(res.statusCode).toBe(403);
     expect(res.body.code).toBe('TOKEN_INVALID');
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('logs unexpected failures through the logger and answers with a generic 500', async () => {
+    const { auth, verify, logger } = loadAuthModule();
+    const failure = new Error('unexpected');
+    verify.mockImplementation(() => {
+      throw failure;
+    });
+
+    const req = { headers: { authorization: 'Bearer token' }, cookies: {} };
+    const res = createRes();
+    const next = jest.fn();
+
+    await auth.authenticateToken(req, res, next);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body.code).toBe('AUTH_ERROR');
+    expect(JSON.stringify(res.body)).not.toContain('unexpected');
+    expect(logger.error).toHaveBeenCalledWith('Auth middleware error:', failure);
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -230,11 +255,7 @@ describe('auth middleware', () => {
     const middleware = auth.requireOwnership('id');
 
     const next = jest.fn();
-    middleware(
-      { user: { id: 7, role: 'user' }, params: { id: '7' }, body: {} },
-      createRes(),
-      next
-    );
+    middleware({ user: { id: 7, role: 'user' }, params: { id: '7' }, body: {} }, createRes(), next);
     expect(next).toHaveBeenCalledTimes(1);
 
     const deniedRes = createRes();

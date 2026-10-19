@@ -19,7 +19,7 @@ import {
   toyImage,
 } from './landingContent';
 
-export interface ClubLandingProps {
+export interface LandingPageProps {
   isLoggedIn: boolean;
   /** Opens the sign-up modal; the landing's sentence passes the typed e-mail along. */
   onJoin: (email?: string) => void;
@@ -29,7 +29,7 @@ export interface ClubLandingProps {
 
 const isInternal = (href: string) => href.startsWith('/');
 
-export interface LandingHeaderProps extends ClubLandingProps {
+export interface LandingHeaderProps extends LandingPageProps {
   /** The page the header sits on: the player landing (/) or the café-owner landing (/kafeler). */
   page?: 'players' | 'owners';
   /** The owner page's primary action goes to WhatsApp instead of the sign-up modal. */
@@ -225,7 +225,7 @@ const Sheets: React.FC = () => (
 );
 
 /** The live toy table, with what it stands for. */
-const Showcase: React.FC<ClubLandingProps> = ({ isLoggedIn, onJoin }) => {
+const Showcase: React.FC<LandingPageProps> = ({ isLoggedIn, onJoin }) => {
   const [active, setActive] = useState<(typeof SHOWCASE_TABS)[number]['id']>('oyun');
   const panel = SHOWCASE_TABS.find((tab) => tab.id === active) ?? SHOWCASE_TABS[0];
   return (
@@ -311,7 +311,7 @@ const Menu: React.FC = () => (
 );
 
 /** The close: a sentence with a blank, and the blank is the form. */
-const Close: React.FC<ClubLandingProps> = ({ onJoin }) => {
+const Close: React.FC<LandingPageProps> = ({ onJoin }) => {
   const [email, setEmail] = useState('');
   return (
     <section id="katil" className="cdl-field cdl-cta" aria-label="Kaydol">
@@ -395,7 +395,7 @@ export const LandingFooter: React.FC = () => (
   </footer>
 );
 
-export const ClubLanding: React.FC<ClubLandingProps> = (props) => (
+export const LandingPage: React.FC<LandingPageProps> = (props) => (
   <div className="cdl">
     <Hero />
     <Slip />

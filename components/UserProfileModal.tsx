@@ -97,7 +97,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
   return (
     <DialogLayer open={isOpen} onClose={onClose} label={`${user.username} profili`}>
-      <div className="riso-kantin fixed inset-0 z-[115] flex items-center justify-center px-4 py-6">
+      <div className="duo-scope fixed inset-0 z-[115] flex items-center justify-center px-4 py-6">
         {/* The visual scrim stays inside the native modal layer. */}
         <div className="absolute inset-0 bg-carbon/80" onClick={onClose} aria-hidden="true" />
 
@@ -105,17 +105,17 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           {/* Header: the member's name, id and department */}
           <div className="shrink-0 bg-paper px-5 pt-5 pb-4">
             <div className="flex items-start gap-4">
-              <div className="relative h-16 w-16 shrink-0 overflow-hidden bg-riso-blue text-carbon">
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden bg-candy-gok text-carbon">
                 <AvatarImage
                   src={avatarUrl}
                   initials={(user.username || '?').substring(0, 2).toUpperCase()}
-                  initialsClassName="font-riso-display text-[28px] leading-none"
+                  initialsClassName="font-candy-display text-[28px] leading-none"
                   loading="eager"
                 />
               </div>
 
               <div className="min-w-0 flex-1">
-                <h2 className="font-riso-display text-[28px] leading-none text-carbon truncate">
+                <h2 className="font-candy-display text-[28px] leading-none text-carbon truncate">
                   {user.username}
                 </h2>
                 <span className="mt-1.5 block text-[13px] text-carbon-muted [font-variant-numeric:tabular-nums]">
@@ -129,7 +129,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       setAvatarPickerOpen(true);
                     }}
                     data-testid="open-avatar-picker"
-                    className="duo-quiet riso-focus -ml-1 mt-1 min-h-11 gap-2 px-1"
+                    className="duo-quiet duo-focus -ml-1 mt-1 min-h-11 gap-2 px-1"
                   >
                     <ImageIcon size={16} strokeWidth={2.2} aria-hidden="true" />
                     Avatar seç
@@ -141,7 +141,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 type="button"
                 onClick={onClose}
                 aria-label="Profili kapat"
-                className="riso-focus inline-flex h-11 w-11 items-center justify-center shrink-0 bg-paper-deep text-carbon hover:bg-carbon hover:text-paper transition-colors"
+                className="duo-focus inline-flex h-11 w-11 items-center justify-center shrink-0 bg-paper-deep text-carbon hover:bg-carbon hover:text-paper transition-colors"
               >
                 <X size={18} strokeWidth={2.4} />
               </button>
@@ -157,7 +157,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       disabled={loading}
                       value={department}
                       onChange={(e) => setDepartment(e.target.value)}
-                      className="duo-input riso-focus min-h-11 min-w-0 flex-1 px-3 font-riso-body text-base text-carbon"
+                      className="duo-input duo-focus min-h-11 min-w-0 flex-1 px-3 font-candy-body text-base text-carbon"
                     >
                       <option value="">Bölüm Seçiniz</option>
                       {PAU_DEPARTMENTS.map((dept) => (
@@ -171,7 +171,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       onClick={handleSave}
                       disabled={loading}
                       aria-label="Bölümü kaydet"
-                      className="riso-focus shrink-0 inline-flex h-11 w-11 items-center justify-center bg-carbon text-paper hover:bg-carbon-soft disabled:opacity-50 transition-colors"
+                      className="duo-focus shrink-0 inline-flex h-11 w-11 items-center justify-center bg-carbon text-paper hover:bg-carbon-soft disabled:opacity-50 transition-colors"
                     >
                       <Save size={16} strokeWidth={2.4} />
                     </button>
@@ -183,7 +183,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     disabled={!isEditable}
                     aria-label={isEditable ? 'Bölümü düzenle' : undefined}
                     className={`inline-flex min-h-11 max-w-full min-w-0 items-center gap-2 bg-paper-deep px-3 text-left text-sm text-carbon ${
-                      isEditable ? 'riso-focus cursor-pointer hover:bg-paper-dim transition-colors' : ''
+                      isEditable ? 'duo-focus cursor-pointer hover:bg-paper-dim transition-colors' : ''
                     }`}
                     onClick={() => {
                       if (!isEditable) return;
@@ -203,13 +203,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           </div>
 
           {profileError && (
-            <p role="alert" className="shrink-0 bg-riso-redox/10 px-5 py-3 text-sm text-carbon">
+            <p role="alert" className="shrink-0 bg-candy-danger/10 px-5 py-3 text-sm text-carbon">
               {profileError}
             </p>
           )}
           <div className="min-h-0 overflow-y-auto overscroll-contain border-t-[3px] border-dotted border-carbon/35">
             {isPreview ? (
-              <p className="p-5 font-riso-body text-sm leading-6 text-carbon-soft">
+              <p className="p-5 font-candy-body text-sm leading-6 text-carbon-soft">
                 Bu oyuncunun ayrıntılı profili paylaşılmıyor.
               </p>
             ) : (
@@ -238,7 +238,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     aria-valuenow={Math.round(nextLevelProgress)}
                   >
                     <span
-                      className="bg-riso-spring transition-[width] duration-500"
+                      className="bg-candy-fistik transition-[width] duration-500"
                       style={{ width: `${nextLevelProgress}%` }}
                     />
                   </div>

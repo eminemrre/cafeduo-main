@@ -11,7 +11,7 @@ export const Table: React.FC<React.TableHTMLAttributes<HTMLTableElement>> = ({
   ...rest
 }) => (
   <div className="overflow-x-auto bg-paper">
-    <table {...rest} className={`w-full text-left font-riso-body ${className}`}>
+    <table {...rest} className={`w-full text-left font-candy-body ${className}`}>
       {children}
     </table>
   </div>
@@ -31,7 +31,7 @@ export const TH: React.FC<React.ThHTMLAttributes<HTMLTableCellElement>> = ({
   <th
     {...rest}
     className={
-      'px-4 py-3 text-[0.8125rem] font-semibold font-riso-body ' +
+      'px-4 py-3 text-[0.8125rem] font-semibold font-candy-body ' +
       `text-carbon-soft ${className}`
     }
   >

@@ -18,7 +18,7 @@ for (const viewport of [
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.addInitScript(() => localStorage.setItem('cookie_consent', 'true'));
     await page.goto('/');
-    const root = page.locator('.club-landing');
+    const root = page.locator('.cdl-page');
     const header = page.getByRole('banner');
     await expect(root).toHaveAttribute('data-motion', 'on');
 
@@ -74,7 +74,7 @@ test('@smoke cafe landing follows the system motion setting and hands the café 
   await page.addInitScript(() => localStorage.setItem('cookie_consent', 'true'));
   await page.context().route('https://wa.me/**', (route) => route.abort());
   await page.goto('/kafeler');
-  const root = page.locator('.club-landing');
+  const root = page.locator('.cdl-page');
   await expect(root).toHaveAttribute('data-motion', 'on');
   // No motion toggle anywhere: the system preference decides.
   await expect(page.getByRole('button', { name: /Hareket/ })).toHaveCount(0);

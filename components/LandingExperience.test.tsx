@@ -55,9 +55,9 @@ test('hidden tabs suspend motion until they are visible again', () => {
   const { container } = render(content);
   hidden.mockReturnValue(true);
   act(() => document.dispatchEvent(new Event('visibilitychange')));
-  expect(container.querySelector('.club-landing')).toHaveAttribute('data-motion', 'off');
+  expect(container.querySelector('.cdl-page')).toHaveAttribute('data-motion', 'off');
   hidden.mockReturnValue(false);
   act(() => document.dispatchEvent(new Event('visibilitychange')));
-  expect(container.querySelector('.club-landing')).toHaveAttribute('data-motion', 'on');
+  expect(container.querySelector('.cdl-page')).toHaveAttribute('data-motion', 'on');
   expect(screen.getByRole('button', { name: 'Join' })).toBeVisible();
 });

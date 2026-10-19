@@ -26,11 +26,11 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const TONE_CLASS: Record<ButtonTone, string> = {
-  pink: 'bg-riso-pink text-carbon',
-  blue: 'bg-riso-blue text-carbon',
-  mustard: 'bg-riso-mustard text-carbon',
+  pink: 'bg-candy-lokum text-carbon',
+  blue: 'bg-candy-gok text-carbon',
+  mustard: 'bg-candy-limon text-carbon',
   paper: 'bg-paper-deep text-carbon hover:bg-paper-dim',
-  danger: 'bg-riso-redox text-paper',
+  danger: 'bg-candy-danger text-paper',
 };
 
 const SIZE_CLASS: Record<ButtonSize, string> = {
@@ -62,9 +62,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       className={[
         // Base
         'duo-button relative inline-flex items-center justify-center',
-        'font-riso-body font-semibold',
+        'font-candy-body font-semibold',
         'transition-[transform,background-color] duration-150 ease-out',
-        'riso-focus select-none',
+        'duo-focus select-none',
         disabled ? '' : 'hover:-translate-y-0.5 active:scale-[0.98]',
         // Tone + size
         TONE_CLASS[tone],

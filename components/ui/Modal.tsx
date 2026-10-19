@@ -87,7 +87,7 @@ export const Modal: React.FC<ModalProps> = ({
                 {title && (
                   <h2
                     id="modal-title"
-                    className="font-riso-display text-[1.75rem] leading-none text-carbon"
+                    className="font-candy-display text-[1.75rem] leading-none text-carbon"
                   >
                     {title}
                   </h2>
@@ -97,7 +97,7 @@ export const Modal: React.FC<ModalProps> = ({
                     type="button"
                     onClick={onClose}
                     aria-label="Kapat"
-                    className="riso-focus inline-flex h-11 w-11 shrink-0 items-center justify-center bg-paper-deep text-carbon hover:bg-carbon hover:text-paper transition-colors"
+                    className="duo-focus inline-flex h-11 w-11 shrink-0 items-center justify-center bg-paper-deep text-carbon hover:bg-carbon hover:text-paper transition-colors"
                   >
                     <X size={18} />
                   </button>

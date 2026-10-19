@@ -39,11 +39,11 @@ interface TournamentManagerProps {
 }
 
 const STATUS_LABEL: Record<Tournament['status'], { label: string; klass: string }> = {
-  scheduled: { label: 'Planlandı', klass: 'bg-riso-mustard text-carbon' },
-  active: { label: 'Canlı', klass: 'bg-riso-spring text-carbon' },
-  finalizing: { label: 'Sonuçlanıyor', klass: 'bg-riso-blue text-paper' },
+  scheduled: { label: 'Planlandı', klass: 'bg-candy-limon text-carbon' },
+  active: { label: 'Canlı', klass: 'bg-candy-fistik text-carbon' },
+  finalizing: { label: 'Sonuçlanıyor', klass: 'bg-candy-gok text-paper' },
   finished: { label: 'Tamamlandı', klass: 'bg-paper-deep text-carbon-muted' },
-  cancelled: { label: 'İptal', klass: 'bg-riso-redox/30 text-carbon' },
+  cancelled: { label: 'İptal', klass: 'bg-candy-danger/30 text-carbon' },
 };
 
 const formatLocal = (iso: string): string => {
@@ -124,14 +124,14 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
       <section className="bg-paper p-5">
         <div className="flex items-center gap-3 mb-4 border-b-[3px] border-dotted border-carbon/35 pb-3">
           <Trophy size={22} className="text-carbon" aria-hidden="true" />
-          <h3 className="font-riso-display text-[1.75rem] leading-none text-carbon">
+          <h3 className="font-candy-display text-[1.75rem] leading-none text-carbon">
             Yeni turnuva
           </h3>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block mb-2 font-riso-body text-[0.9375rem] font-medium text-carbon">
+            <label className="block mb-2 font-candy-body text-[0.9375rem] font-medium text-carbon">
               Ad
             </label>
             <input
@@ -142,19 +142,19 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
               required
               placeholder="Örn. Çarşamba Akşam Turnuvası"
               data-testid="tournament-name-input"
-              className="duo-input riso-focus w-full px-3 font-riso-body text-base text-carbon focus:bg-paper"
+              className="duo-input duo-focus w-full px-3 font-candy-body text-base text-carbon focus:bg-paper"
             />
           </div>
 
           <div>
-            <label className="block mb-2 font-riso-body text-[0.9375rem] font-medium text-carbon">
+            <label className="block mb-2 font-candy-body text-[0.9375rem] font-medium text-carbon">
               Oyun türü
             </label>
             <select
               value={tournamentForm.gameType}
               onChange={(e) => setTournamentForm({ ...tournamentForm, gameType: e.target.value })}
               data-testid="tournament-gametype-select"
-              className="duo-input riso-focus w-full px-3 font-riso-body text-base text-carbon focus:bg-paper"
+              className="duo-input duo-focus w-full px-3 font-candy-body text-base text-carbon focus:bg-paper"
             >
               {GAME_TYPE_OPTIONS.map((opt) => (
                 <option key={opt.value || 'all'} value={opt.value}>
@@ -166,7 +166,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block mb-2 font-riso-body text-[0.9375rem] font-medium text-carbon">
+              <label className="block mb-2 font-candy-body text-[0.9375rem] font-medium text-carbon">
                 Başlangıç
               </label>
               <input
@@ -177,11 +177,11 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
                 }
                 required
                 data-testid="tournament-start-input"
-                className="duo-input riso-focus w-full px-3 font-riso-body text-base text-carbon focus:bg-paper"
+                className="duo-input duo-focus w-full px-3 font-candy-body text-base text-carbon focus:bg-paper"
               />
             </div>
             <div>
-              <label className="block mb-2 font-riso-body text-[0.9375rem] font-medium text-carbon">
+              <label className="block mb-2 font-candy-body text-[0.9375rem] font-medium text-carbon">
                 Bitiş
               </label>
               <input
@@ -190,14 +190,14 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
                 onChange={(e) => setTournamentForm({ ...tournamentForm, endAt: e.target.value })}
                 required
                 data-testid="tournament-end-input"
-                className="duo-input riso-focus w-full px-3 font-riso-body text-base text-carbon focus:bg-paper"
+                className="duo-input duo-focus w-full px-3 font-candy-body text-base text-carbon focus:bg-paper"
               />
             </div>
           </div>
 
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="font-riso-body text-[0.9375rem] font-medium text-carbon">
+              <label className="font-candy-body text-[0.9375rem] font-medium text-carbon">
                 Ödül Sıralaması
               </label>
               <button
@@ -205,7 +205,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
                 onClick={addTier}
                 disabled={tournamentForm.tiers.length >= 10}
                 data-testid="tournament-add-tier"
-                className="riso-focus inline-flex items-center gap-1 bg-paper-deep px-2 py-1 font-riso-body text-xs text-carbon hover:bg-paper-dim transition-colors disabled:opacity-50"
+                className="duo-focus inline-flex items-center gap-1 bg-paper-deep px-2 py-1 font-candy-body text-xs text-carbon hover:bg-paper-dim transition-colors disabled:opacity-50"
               >
                 <Plus size={12} /> Kademe ekle
               </button>
@@ -217,7 +217,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
                   key={idx}
                   className="flex flex-wrap items-center gap-2 bg-paper-deep px-3 py-2"
                 >
-                  <span className="font-riso-body text-base font-bold text-riso-pink-deep min-w-[2rem]">
+                  <span className="font-candy-body text-base font-bold text-candy-lokum-deep min-w-[2rem]">
                     #{idx + 1}
                   </span>
                   <select
@@ -229,7 +229,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
                     }
                     required
                     data-testid={`tournament-tier-${idx}-reward`}
-                    className="duo-input duo-input--sm riso-focus flex-1 min-w-[140px] px-2 font-riso-body text-base text-carbon"
+                    className="duo-input duo-input--sm duo-focus flex-1 min-w-[140px] px-2 font-candy-body text-base text-carbon"
                   >
                     <option value="">Ödül seç...</option>
                     {activeRewards.map((r) => (
@@ -244,7 +244,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
                       onClick={() => removeTier(idx)}
                       aria-label="Kademeyi sil"
                       data-testid={`tournament-tier-${idx}-remove`}
-                      className="riso-focus inline-flex h-7 w-7 items-center justify-center bg-paper text-carbon hover:bg-riso-redox/30 transition-colors"
+                      className="duo-focus inline-flex h-7 w-7 items-center justify-center bg-paper text-carbon hover:bg-candy-danger/30 transition-colors"
                     >
                       <X size={12} strokeWidth={2.5} />
                     </button>
@@ -254,19 +254,19 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
             </div>
 
             {rewardsLoading && (
-              <p className="mt-2 font-riso-body text-xs text-carbon-muted">
+              <p className="mt-2 font-candy-body text-xs text-carbon-muted">
                 Ödüller yükleniyor...
               </p>
             )}
             {!rewardsLoading && activeRewards.length === 0 && (
-              <p className="mt-2 font-riso-body text-xs text-riso-redox">
+              <p className="mt-2 font-candy-body text-xs text-candy-danger">
                 Bu kafede aktif ödül yok. Önce 'Ödül Yönetimi' sekmesinden ödül ekle.
               </p>
             )}
           </div>
 
           {formError && (
-            <p className="font-riso-body text-sm text-riso-redox" data-testid="tournament-form-error">
+            <p className="font-candy-body text-sm text-candy-danger" data-testid="tournament-form-error">
               {formError}
             </p>
           )}
@@ -275,7 +275,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
             type="submit"
             disabled={submitting || activeRewards.length === 0}
             data-testid="tournament-submit"
-            className="riso-focus inline-flex items-center gap-2 bg-riso-pink px-5 py-2.5 font-riso-body text-sm font-bold text-carbon hover:bg-riso-pink-deep transition-colors disabled:opacity-50"
+            className="duo-focus inline-flex items-center gap-2 bg-candy-lokum px-5 py-2.5 font-candy-body text-sm font-bold text-carbon hover:bg-candy-lokum-deep transition-colors disabled:opacity-50"
           >
             <Trophy size={16} strokeWidth={2.5} />
             {submitting ? 'Oluşturuluyor...' : 'Turnuvayı Oluştur'}
@@ -287,17 +287,17 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
       <section className="bg-paper p-5">
         <div className="flex items-center gap-3 mb-4 border-b-[3px] border-dotted border-carbon/35 pb-3">
           <Calendar size={20} className="text-carbon" />
-          <h3 className="font-riso-display text-[1.75rem] leading-none text-carbon">
+          <h3 className="font-candy-display text-[1.75rem] leading-none text-carbon">
             Mevcut turnuvalar
           </h3>
         </div>
 
         {tournamentsLoading ? (
-          <p className="font-riso-body text-carbon-muted animate-pulse">Yükleniyor...</p>
+          <p className="font-candy-body text-carbon-muted animate-pulse">Yükleniyor...</p>
         ) : tournamentsError ? (
-          <p className="font-riso-body text-riso-redox">{tournamentsError}</p>
+          <p className="font-candy-body text-candy-danger">{tournamentsError}</p>
         ) : tournaments.length === 0 ? (
-          <p className="font-riso-body text-carbon-muted">Henüz turnuva yok.</p>
+          <p className="font-candy-body text-carbon-muted">Henüz turnuva yok.</p>
         ) : (
           <ul className="space-y-3" data-testid="tournament-list">
             {tournaments.map((t) => {
@@ -312,23 +312,23 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap mb-1">
                         <span
-                          className={`inline-flex items-center font-riso-body text-xs px-2 py-0.5 ${status.klass}`}
+                          className={`inline-flex items-center font-candy-body text-xs px-2 py-0.5 ${status.klass}`}
                         >
                           {status.label}
                         </span>
                         {t.game_type && (
-                          <span className="font-riso-body text-xs text-carbon-muted">
+                          <span className="font-candy-body text-xs text-carbon-muted">
                             {t.game_type}
                           </span>
                         )}
                       </div>
-                      <h4 className="font-riso-body text-base text-carbon truncate">
+                      <h4 className="font-candy-body text-base text-carbon truncate">
                         {t.name}
                       </h4>
-                      <p className="font-riso-body text-xs text-carbon-muted">
+                      <p className="font-candy-body text-xs text-carbon-muted">
                         {formatLocal(t.start_at)} → {formatLocal(t.end_at)}
                       </p>
-                      <p className="mt-1 font-riso-body text-xs text-carbon-muted">
+                      <p className="mt-1 font-candy-body text-xs text-carbon-muted">
                         {t.prize_tiers.length} ödül kademesi
                       </p>
                     </div>
@@ -338,7 +338,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
                         onClick={() => void onCancel(t.id)}
                         aria-label="İptal et"
                         data-testid={`tournament-cancel-${t.id}`}
-                        className="riso-focus inline-flex h-8 w-8 items-center justify-center bg-paper text-carbon hover:bg-riso-redox/30 transition-colors"
+                        className="duo-focus inline-flex h-8 w-8 items-center justify-center bg-paper text-carbon hover:bg-candy-danger/30 transition-colors"
                       >
                         <Trash2 size={14} strokeWidth={2.5} />
                       </button>

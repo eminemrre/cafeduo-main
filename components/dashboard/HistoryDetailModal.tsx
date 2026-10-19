@@ -47,15 +47,15 @@ export const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
 
   return (
     <DialogLayer open={isOpen} onClose={onClose} label="Hamle kaydı">
-      <div className="riso-kantin fixed inset-0 z-[115] flex items-center justify-center px-4 py-6">
+      <div className="duo-scope fixed inset-0 z-[115] flex items-center justify-center px-4 py-6">
         <div className="absolute inset-0 bg-carbon/80" onClick={onClose} aria-hidden="true" />
         <div className="duo-float relative z-10 flex max-h-[calc(100dvh-3rem)] w-full max-w-lg flex-col overflow-hidden bg-paper">
           <div className="flex shrink-0 items-start justify-between gap-4 px-5 pt-5 pb-4">
             <div className="min-w-0">
-              <span className="inline-flex bg-riso-blue px-3 py-1 text-[15px] font-medium text-carbon">
+              <span className="inline-flex bg-candy-gok px-3 py-1 text-[15px] font-medium text-carbon">
                 {history.gameType}
               </span>
-              <h4 className="mt-3 font-riso-display text-[28px] leading-none text-carbon">
+              <h4 className="mt-3 font-candy-display text-[28px] leading-none text-carbon">
                 Hamle kaydı
               </h4>
               <p className="mt-1.5 truncate text-[13px] text-carbon-soft">
@@ -66,7 +66,7 @@ export const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
             <button
               type="button"
               aria-label="Kapat"
-              className="riso-focus inline-flex h-11 w-11 shrink-0 items-center justify-center bg-paper-deep text-carbon transition-colors hover:bg-carbon hover:text-paper"
+              className="duo-focus inline-flex h-11 w-11 shrink-0 items-center justify-center bg-paper-deep text-carbon transition-colors hover:bg-carbon hover:text-paper"
               onClick={onClose}
             >
               <X size={18} strokeWidth={2.4} />
@@ -75,11 +75,11 @@ export const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
 
           <div className="min-h-0 overflow-y-auto overscroll-contain border-t-[3px] border-dotted border-carbon/35 px-5 py-4">
             {loading ? (
-              <p role="status" className="font-riso-body text-sm text-carbon-soft">
+              <p role="status" className="font-candy-body text-sm text-carbon-soft">
                 Hamleler yükleniyor…
               </p>
             ) : error ? (
-              <p role="alert" className="bg-riso-redox/10 px-3 py-2 font-riso-body text-sm text-carbon">
+              <p role="alert" className="bg-candy-danger/10 px-3 py-2 font-candy-body text-sm text-carbon">
                 {error}
               </p>
             ) : history.moves.length === 0 ? (

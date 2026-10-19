@@ -49,13 +49,13 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = () => {
   return (
     <div className="fixed inset-0 z-[130] flex items-center justify-center bg-carbon/70">
       <div role="alert" className="duo-float mx-4 max-w-sm bg-paper p-6 text-carbon">
-        <h3 className="mb-2 font-riso-display text-[28px] leading-none">Bağlantı kesildi</h3>
-        <p className="mb-5 font-riso-body text-[15px] text-carbon-muted">
+        <h3 className="mb-2 font-candy-display text-[28px] leading-none">Bağlantı kesildi</h3>
+        <p className="mb-5 font-candy-body text-[15px] text-carbon-muted">
           Sunucuyla bağlantı yeniden kuruluyor. Lütfen bekleyin...
         </p>
         <div className="duo-meter">
           <span
-            className="bg-riso-blue"
+            className="bg-candy-gok"
             style={{ width: '60%', animation: 'loading-bar 1.5s ease-in-out infinite' }}
           />
         </div>

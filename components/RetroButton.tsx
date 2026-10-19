@@ -41,13 +41,13 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
   };
 
   const baseStyles =
-    'duo-button font-riso-body font-semibold tracking-normal select-none touch-manipulation ' +
-    'relative transition-[transform,background-color,text-decoration-color] duration-150 ease-out riso-focus';
+    'duo-button font-candy-body font-semibold tracking-normal select-none touch-manipulation ' +
+    'relative transition-[transform,background-color,text-decoration-color] duration-150 ease-out duo-focus';
 
   const variants: Record<NonNullable<RetroButtonProps['variant']>, string> = {
-    primary: 'bg-riso-pink text-carbon hover:-translate-y-0.5',
+    primary: 'bg-candy-lokum text-carbon hover:-translate-y-0.5',
     secondary: 'bg-paper-deep text-carbon hover:-translate-y-0.5 hover:bg-paper-dim',
-    danger: 'bg-riso-redox text-paper hover:-translate-y-0.5',
+    danger: 'bg-candy-danger text-paper hover:-translate-y-0.5',
     ghost:
       'bg-transparent text-carbon underline decoration-transparent decoration-[3px] underline-offset-[6px] hover:decoration-carbon',
   };

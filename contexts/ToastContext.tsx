@@ -108,7 +108,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 data-testid="toast-close"
                 aria-label="Bildirimi kapat"
                 onClick={() => dismissToast(t.id)}
-                className="riso-focus inline-flex h-11 w-11 shrink-0 items-center justify-center text-carbon-soft transition-colors hover:bg-paper-deep hover:text-carbon"
+                className="duo-focus inline-flex h-11 w-11 shrink-0 items-center justify-center text-carbon-soft transition-colors hover:bg-paper-deep hover:text-carbon"
               >
                 <X className="w-4 h-4" />
               </button>

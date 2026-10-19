@@ -21,9 +21,9 @@ interface CardProps {
 const TONE_CLASS: Record<CardTone, string> = {
   paper: 'bg-paper text-carbon',
   'paper-deep': 'bg-paper-deep text-carbon',
-  pink: 'bg-riso-pink text-carbon',
-  blue: 'bg-riso-blue text-carbon',
-  mustard: 'bg-riso-mustard text-carbon',
+  pink: 'bg-candy-lokum text-carbon',
+  blue: 'bg-candy-gok text-carbon',
+  mustard: 'bg-candy-limon text-carbon',
 };
 
 export const Card: React.FC<CardProps> = ({

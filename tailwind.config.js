@@ -25,28 +25,28 @@ module.exports = {
         },
         /* The candy set from DESIGN.md: lokum, gök, limon, fıstık. Fills only —
          * candy used as text is deepened in identity.css, never lightened. */
-        riso: {
-          pink: '#FF5C8A',
-          'pink-deep': '#E03A6B',
-          blue: '#1FB3FF',
-          'blue-deep': '#0E7CC0',
-          mustard: '#FFD23F',
-          'mustard-deep': '#E0AE18',
-          spring: '#B6D31B',
-          redox: '#D62F2F',
+        candy: {
+          lokum: '#FF5C8A',
+          'lokum-deep': '#E03A6B',
+          gok: '#1FB3FF',
+          'gok-deep': '#0E7CC0',
+          limon: '#FFD23F',
+          'limon-deep': '#E0AE18',
+          fistik: '#B6D31B',
+          danger: '#D62F2F',
         },
       },
       /* Design v2: Baloo 2 draws every display line, Onest every other line.
-       * riso-mono survives as a name but renders Onest with tabular figures, so
-       * codes, scores and timers keep their alignment without a second family. */
+       * candy-mono renders Onest with tabular figures, so codes, scores and
+       * timers keep their alignment without a second family. */
       fontFamily: {
         sans: ['"Onest"', 'system-ui', 'sans-serif'],
         display: ['"Baloo 2"', 'system-ui', 'sans-serif'],
         body: ['"Onest"', 'system-ui', 'sans-serif'],
         mono: ['"Onest"', 'system-ui', 'sans-serif'],
-        'riso-display': ['"Baloo 2"', 'system-ui', 'sans-serif'],
-        'riso-body': ['"Onest"', 'system-ui', 'sans-serif'],
-        'riso-mono': ['"Onest"', 'system-ui', 'sans-serif'],
+        'candy-display': ['"Baloo 2"', 'system-ui', 'sans-serif'],
+        'candy-body': ['"Onest"', 'system-ui', 'sans-serif'],
+        'candy-mono': ['"Onest"', 'system-ui', 'sans-serif'],
       },
     },
   },

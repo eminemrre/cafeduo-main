@@ -79,6 +79,6 @@ describe('Skeleton components', () => {
   it('renders three-dot loader animation nodes', () => {
     const { container } = render(<DotLoader className="loader-test" />);
     expect(container.querySelector('.loader-test')).toBeInTheDocument();
-    expect(container.querySelectorAll('.bg-carbon.animate-bounce')).toHaveLength(3);
+    expect(container.querySelectorAll('.bg-carbon.animate-pulse')).toHaveLength(3);
   });
 });

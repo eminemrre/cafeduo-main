@@ -20,10 +20,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="font-riso-body text-[0.9375rem] font-medium text-carbon"
+            className="font-candy-body text-[0.9375rem] font-medium text-carbon"
           >
             {label}
-            {required && <span className="text-riso-redox ml-0.5">*</span>}
+            {required && <span className="text-candy-danger ml-0.5">*</span>}
           </label>
         )}
         <input
@@ -33,16 +33,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy}
           className={
-            'duo-input w-full px-3.5 font-riso-body ' +
+            'duo-input w-full px-3.5 font-candy-body ' +
             'text-base text-carbon placeholder:text-carbon-muted ' +
-            'riso-focus focus:bg-paper ' +
-            (error ? 'border-b-riso-redox! ' : '') +
+            'duo-focus focus:bg-paper ' +
+            (error ? 'border-b-candy-danger! ' : '') +
             className
           }
           {...rest}
         />
         {error ? (
-          <p id={`${inputId}-error`} className="text-sm font-medium text-riso-redox">
+          <p id={`${inputId}-error`} className="text-sm font-medium text-candy-danger">
             {error}
           </p>
         ) : helper ? (

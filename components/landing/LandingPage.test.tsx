@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
-import { ClubLanding, LandingFooter, LandingHeader } from './ClubLanding';
+import { LandingPage, LandingFooter, LandingHeader } from './LandingPage';
 import { FOOTER_COLUMNS, GAMES, MENU, SHOWCASE_TABS, SLIP } from './landingContent';
 
 jest.mock('./ToyStage', () => ({
@@ -14,7 +14,7 @@ const renderLanding = (isLoggedIn = false) => {
     <MemoryRouter>
       <LandingHeader isLoggedIn={isLoggedIn} {...props} />
       <main>
-        <ClubLanding isLoggedIn={isLoggedIn} {...props} />
+        <LandingPage isLoggedIn={isLoggedIn} {...props} />
       </main>
       <LandingFooter />
     </MemoryRouter>
@@ -33,7 +33,7 @@ const slipText = (value: string) =>
       .replace(/\u00A0/g, '\\s')}$`
   );
 
-describe('ClubLanding', () => {
+describe('LandingPage', () => {
   it('keeps one sign-up action in the header, one beside the live table and the sentence at the close', () => {
     const { onJoin, onLogin } = renderLanding();
     const header = screen.getByRole('banner');

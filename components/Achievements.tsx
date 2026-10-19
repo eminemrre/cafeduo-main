@@ -1,5 +1,5 @@
 /**
- * Achievements — Riso Kantin redesign (PR #25).
+ * Achievements — the v2 achievements list.
  *
  * Dashboard "Başarımlar" tab content. Fetches user achievements via the
  * api.achievements.list contract (unchanged). Unlocked items get a
@@ -60,7 +60,7 @@ export const Achievements: React.FC<AchievementsProps> = ({ userId }) => {
         <p
           aria-busy="true"
           aria-live="polite"
-          className="p-4 text-center font-riso-body text-carbon-muted"
+          className="p-4 text-center font-candy-body text-carbon-muted"
         >
           Yükleniyor...
         </p>
@@ -74,7 +74,7 @@ export const Achievements: React.FC<AchievementsProps> = ({ userId }) => {
         <p
           role="alert"
           aria-live="polite"
-          className="bg-riso-redox/10 p-4 text-center font-riso-body text-carbon"
+          className="bg-candy-danger/10 p-4 text-center font-candy-body text-carbon"
         >
           {error}
         </p>
@@ -84,12 +84,12 @@ export const Achievements: React.FC<AchievementsProps> = ({ userId }) => {
 
   return (
     <Card tone="paper" data-testid="achievements-card">
-      <h2 className="mb-5 font-riso-display text-[32px] leading-none text-carbon sm:text-[40px]">
+      <h2 className="mb-5 font-candy-display text-[32px] leading-none text-carbon sm:text-[40px]">
         Başarımlar
       </h2>
 
       {achievements.length === 0 ? (
-        <p className="bg-paper-deep p-6 text-center font-riso-body text-carbon-soft">
+        <p className="bg-paper-deep p-6 text-center font-candy-body text-carbon-soft">
           Henüz başarım yok. İlk oyununu kur ve kazanmaya başla!
         </p>
       ) : (
@@ -101,7 +101,7 @@ export const Achievements: React.FC<AchievementsProps> = ({ userId }) => {
             >
               <div
                 className={`flex h-12 w-12 shrink-0 items-center justify-center ${
-                  ach.unlocked ? 'bg-riso-spring text-carbon' : 'bg-paper-dim text-carbon-muted'
+                  ach.unlocked ? 'bg-candy-fistik text-carbon' : 'bg-paper-dim text-carbon-muted'
                 }`}
               >
                 {ach.unlocked ? getIcon(ach.icon) : <Lock size={22} strokeWidth={2.4} />}
@@ -110,19 +110,19 @@ export const Achievements: React.FC<AchievementsProps> = ({ userId }) => {
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <h3
-                    className="font-riso-body text-[15px] font-semibold text-carbon truncate"
+                    className="font-candy-body text-[15px] font-semibold text-carbon truncate"
                   >
                     {ach.title}
                   </h3>
                   <span
                     className={`inline-flex shrink-0 items-center gap-1 px-2 py-0.5 text-[13px] font-semibold [font-variant-numeric:tabular-nums] ${
-                      ach.unlocked ? 'bg-riso-spring text-carbon' : 'bg-paper text-carbon-soft'
+                      ach.unlocked ? 'bg-candy-fistik text-carbon' : 'bg-paper text-carbon-soft'
                     }`}
                   >
                     +{ach.points_reward} P
                   </span>
                 </div>
-                <p className="mt-1 font-riso-body text-[13px] leading-5 text-carbon-soft">
+                <p className="mt-1 font-candy-body text-[13px] leading-5 text-carbon-soft">
                   {ach.description}
                 </p>
 

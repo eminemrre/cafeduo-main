@@ -27,6 +27,7 @@ colors:
   limon-text: "#8A6608"
   fistik-text: "#5F7A0C"
   danger-text: "#B8241A"
+  danger-wash: "#FCE8E8"
 typography:
   display-xl:
     fontFamily: Baloo 2
@@ -270,6 +271,11 @@ components:
     backgroundColor: "{colors.danger}"
     textColor: "{colors.paper}"
     rounded: "{rounded.none}"
+  status-danger-wash:
+    backgroundColor: "{colors.danger-wash}"
+    textColor: "{colors.danger-text}"
+    typography: "{typography.body}"
+    rounded: "{rounded.none}"
   text-link:
     textColor: "{colors.gok-text}"
     typography: "{typography.label}"
@@ -446,7 +452,7 @@ notice) get one soft shadow (`0 16px 34px rgba(23,20,15,0.22)`).
 - Playing is the reward: a move, a correct answer or a hit makes the toy react (bounce, spin, coin
   pop). Scroll may turn and move toys on Vitrin, never hide text behind them.
 - There is no motion toggle on any page. The public pages follow the system preference and
-  pause themselves while the tab is hidden; `data-motion` on `.club-landing` records the state.
+  pause themselves while the tab is hidden; `data-motion` on `.cdl-page` records the state.
 - Transform and opacity only. `prefers-reduced-motion`: toys stand still, states change instantly,
   no `cdl-` animation runs.
 

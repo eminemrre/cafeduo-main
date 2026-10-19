@@ -9,7 +9,7 @@
 @source "./lib/**/*.{js,ts,jsx,tsx}";
 
 /* Global base: design v2 (DESIGN.md). Component rules live in styles/identity.css
- * (app), styles/landing.css (landing) and styles/club.css + playground.css (/kafeler). */
+ * (app) and styles/landing.css (the public pages). */
 
 :root {
   /* Motion tokens, kept in sync with lib/motion.ts (motion.test.ts checks it). */
@@ -269,11 +269,10 @@ body {
 }
 
 /* =====================================================================
- * Design v2 tokens (DESIGN.md). The class names (`riso-*`) are historical;
- * every value below is the v2 palette and type.
+ * Design v2 tokens (DESIGN.md): the candy palette and the two type faces.
  * ===================================================================== */
 
-.riso-kantin {
+.duo-scope {
   /* Light form controls, spinners and autofill. */
   color-scheme: light;
 
@@ -288,12 +287,12 @@ body {
   --ink-muted: #4a4540;
 
   /* Spot colours — the candy set: lokum, gök, limon, fıstık. */
-  --riso-pink: #ff5c8a;
-  --riso-pink-deep: #e03a6b;
-  --riso-blue: #1fb3ff;
-  --riso-blue-deep: #0e7cc0;
-  --riso-mustard: #ffd23f;
-  --riso-mustard-deep: #e0ae18;
+  --candy-lokum: #ff5c8a;
+  --candy-lokum-deep: #e03a6b;
+  --candy-gok: #1fb3ff;
+  --candy-gok-deep: #0e7cc0;
+  --candy-limon: #ffd23f;
+  --candy-limon-deep: #e0ae18;
 
   /* Semantic */
   --win-spring: #b6d31b;
@@ -307,14 +306,14 @@ body {
 }
 
 /* The app shell (App.tsx). */
-.riso-kantin-app {
+.duo-scope-app {
   min-height: 100vh;
   background-color: var(--paper);
 }
 
 
 /* Display font shorthand — every headline is Baloo 2 800 (DESIGN.md). */
-.font-riso-display {
+.font-candy-display {
   font-family: 'Baloo 2', system-ui, sans-serif;
   font-weight: 800;
   letter-spacing: -0.01em;
@@ -322,14 +321,14 @@ body {
 
 /* The "mono" shorthand now renders Onest with tabular figures: codes, scores and
  * timers keep their alignment without a second family. */
-.font-riso-mono {
+.font-candy-mono {
   font-family: 'Onest', system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
 }
 
 /* One focus ring: a 3 px ink outline, the same as the landing's. */
-.riso-focus:focus-visible {
+.duo-focus:focus-visible {
   outline: 3px solid var(--ink);
   outline-offset: 2px;
 }
@@ -354,7 +353,7 @@ body {
   outline-offset: 2px;
 }
 
-/* Global focus fallback for elements outside .riso-focus. */
+/* Global focus fallback for elements outside .duo-focus. */
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
   outline: 3px solid #17140f;
   outline-offset: 2px;

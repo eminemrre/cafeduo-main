@@ -1,5 +1,5 @@
 /**
- * TournamentBanner — riso strip at the top of Dashboard.
+ * TournamentBanner — the active tournament strip at the top of the dashboard.
  *
  * Shows the active tournament's name, a live countdown until end_at, and
  * a "Sıralama" CTA that opens the leaderboard modal. Designed to be the
@@ -41,11 +41,11 @@ export const TournamentBanner: React.FC<TournamentBannerProps> = ({
   }, [tournament.end_at]);
 
   return (
-    <div className="mb-6 bg-riso-mustard text-carbon" data-testid="tournament-banner">
+    <div className="mb-6 bg-candy-limon text-carbon" data-testid="tournament-banner">
       <div className="flex items-center gap-4 px-4 py-4 sm:px-6">
         <Trophy size={24} strokeWidth={2.2} className="hidden shrink-0 sm:block" aria-hidden="true" />
         <div className="min-w-0 flex-1">
-          <h3 className="truncate font-riso-body text-[1.0625rem] font-semibold leading-tight">
+          <h3 className="truncate font-candy-body text-[1.125rem] font-semibold leading-tight">
             {tournament.name}
           </h3>
           <p className="mt-1 text-[0.8125rem] [font-variant-numeric:tabular-nums]">
@@ -59,7 +59,7 @@ export const TournamentBanner: React.FC<TournamentBannerProps> = ({
           type="button"
           onClick={onOpenLeaderboard}
           data-testid="tournament-open-leaderboard"
-          className="riso-focus inline-flex min-h-11 shrink-0 items-center gap-2 bg-carbon px-4 text-[0.9375rem] font-semibold text-paper transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
+          className="duo-focus inline-flex min-h-11 shrink-0 items-center gap-2 bg-carbon px-4 text-[0.9375rem] font-semibold text-paper transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
         >
           Sıralama
           <ArrowRight size={16} strokeWidth={2.4} aria-hidden="true" />

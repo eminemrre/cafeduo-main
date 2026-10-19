@@ -2,7 +2,7 @@ import React, { useState, useEffect, Suspense, useRef } from 'react';
 import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router';
 import { Navbar } from './components/Navbar';
 import { LandingExperience } from './components/LandingExperience';
-import { ClubLanding, LandingFooter, LandingHeader } from './components/landing/ClubLanding';
+import { LandingPage, LandingFooter, LandingHeader } from './components/landing/LandingPage';
 import { AuthModal } from './components/AuthModal';
 
 import { User, UserProfileUpdates } from './types';
@@ -200,7 +200,7 @@ const AppContent: React.FC = () => {
     }
   };
 
-  const enterClub = (email?: string) => {
+  const joinCafe = (email?: string) => {
     if (!user) return openRegister(email);
     navigate(user.isAdmin ? '/admin' : user.role === 'cafe_admin' ? '/cafe-admin' : '/dashboard');
   };
@@ -242,7 +242,7 @@ const AppContent: React.FC = () => {
   };
 
   return (
-    <div className="duo-app riso-kantin riso-kantin-app min-h-screen font-riso-body selection:bg-riso-pink selection:text-carbon">
+    <div className="duo-app duo-scope duo-scope-app min-h-screen font-candy-body selection:bg-candy-lokum selection:text-carbon">
       <a href="#main-content" className="skip-link">
         İçeriğe atla
       </a>
@@ -250,7 +250,7 @@ const AppContent: React.FC = () => {
       {isPublicPage ? (
         <LandingHeader
           isLoggedIn={!!user}
-          onJoin={enterClub}
+          onJoin={joinCafe}
           onLogin={openLogin}
           onLogout={handleLogout}
           page={isLanding ? 'players' : 'owners'}
@@ -268,9 +268,9 @@ const AppContent: React.FC = () => {
               element={
                 <PageFrame>
                   <LandingExperience>
-                    <ClubLanding
+                    <LandingPage
                       isLoggedIn={!!user}
-                      onJoin={enterClub}
+                      onJoin={joinCafe}
                       onLogin={openLogin}
                       onLogout={handleLogout}
                     />

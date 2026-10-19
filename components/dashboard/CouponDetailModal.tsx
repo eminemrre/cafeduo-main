@@ -7,8 +7,8 @@
  * code as a fallback (cafe admin can type it into CouponScanner if
  * scanning fails) and a "Kodu Kopyala" button for clipboard fallback.
  *
- * Riso Kantin: ink-bordered paper modal, full-screen ink wash backdrop,
- * riso confetti accents in the corner, riso-pink press close button.
+ * The v2 language: a paper modal on the ink scrim,
+ * the fıstık edge on the ticket, a candy-lokum copy button.
  */
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -63,7 +63,7 @@ export const CouponDetailModal: React.FC<CouponDetailModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label={`${coupon.title} kuponu detayı`}
-      className="riso-kantin fixed inset-0 z-[140] flex items-center justify-center p-4"
+      className="duo-scope fixed inset-0 z-[140] flex items-center justify-center p-4"
     >
       <div className="absolute inset-0 bg-carbon/80" onClick={onClose} aria-hidden="true" />
 
@@ -71,11 +71,11 @@ export const CouponDetailModal: React.FC<CouponDetailModalProps> = ({
         className="duo-float relative w-full max-w-md bg-paper overflow-hidden"
         data-testid="coupon-detail-modal"
       >
-        <span aria-hidden="true" className="block h-2 bg-riso-spring" />
+        <span aria-hidden="true" className="block h-2 bg-candy-fistik" />
         {/* Header */}
         <div className="px-5 pt-5 pb-4 flex justify-between items-start gap-3">
           <div className="min-w-0">
-            <h2 className="font-riso-display text-[28px] leading-none text-carbon truncate">
+            <h2 className="font-candy-display text-[28px] leading-none text-carbon truncate">
               {coupon.title}
             </h2>
             <p className="mt-1.5 text-[13px] text-carbon-soft">Kasada göster, çalışan okutsun.</p>
@@ -84,7 +84,7 @@ export const CouponDetailModal: React.FC<CouponDetailModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Kapat"
-            className="riso-focus shrink-0 w-11 h-11 bg-paper-deep text-carbon hover:bg-carbon hover:text-paper flex items-center justify-center transition-colors"
+            className="duo-focus shrink-0 w-11 h-11 bg-paper-deep text-carbon hover:bg-carbon hover:text-paper flex items-center justify-center transition-colors"
           >
             <X size={18} />
           </button>
@@ -92,7 +92,7 @@ export const CouponDetailModal: React.FC<CouponDetailModalProps> = ({
 
         {/* Body */}
         <div className="border-t-[3px] border-dotted border-carbon/35 p-6 flex flex-col items-center gap-5">
-          <p className="font-riso-body text-sm text-carbon-soft text-center max-w-xs">
+          <p className="font-candy-body text-sm text-carbon-soft text-center max-w-xs">
             Kafe çalışanı bu QR kodu okutarak kuponu doğrular. Okunamazsa altındaki kodu manuel
             girebilir.
           </p>
@@ -114,15 +114,15 @@ export const CouponDetailModal: React.FC<CouponDetailModalProps> = ({
           <div className="w-full">
             <p className="mb-1.5 text-[13px] font-medium text-carbon-soft">Manuel kod</p>
             <div className="flex items-stretch gap-0">
-              <code className="flex-1 px-3 py-3 font-riso-mono text-base font-semibold text-carbon bg-paper-deep break-all">
+              <code className="flex-1 px-3 py-3 font-candy-mono text-base font-semibold text-carbon bg-paper-deep break-all">
                 {coupon.code}
               </code>
               <button
                 type="button"
                 onClick={handleCopy}
                 aria-label="Kuponu kopyala"
-                className={`riso-focus shrink-0 min-h-12 px-4 transition-colors flex items-center gap-1.5 font-riso-body text-sm font-semibold ${
-                  copied ? 'bg-riso-spring text-carbon' : 'bg-riso-pink text-carbon'
+                className={`duo-focus shrink-0 min-h-12 px-4 transition-colors flex items-center gap-1.5 font-candy-body text-sm font-semibold ${
+                  copied ? 'bg-candy-fistik text-carbon' : 'bg-candy-lokum text-carbon'
                 }`}
               >
                 {copied ? (
@@ -139,7 +139,7 @@ export const CouponDetailModal: React.FC<CouponDetailModalProps> = ({
           </div>
 
           {coupon.isUsed && (
-            <div role="status" className="w-full bg-riso-redox/10 p-3 text-sm text-carbon font-riso-body">
+            <div role="status" className="w-full bg-candy-danger/10 p-3 text-sm text-carbon font-candy-body">
               Bu kupon zaten kullanılmış. Kafede tekrar gösterirsen kabul edilmez.
             </div>
           )}

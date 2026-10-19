@@ -138,10 +138,10 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
     <div className="min-h-screen bg-paper text-carbon pt-32 px-4 pb-[calc(8rem+env(safe-area-inset-bottom))] relative overflow-hidden">
       <div className="max-w-6xl mx-auto">
         <header className="mb-8 min-w-0">
-          <h1 className="font-riso-display text-[2rem] sm:text-[2.5rem] leading-[0.98] text-carbon break-words">
+          <h1 className="font-candy-display text-[2rem] sm:text-[2.5rem] leading-[0.98] text-carbon break-words">
             Kafe Yönetim Paneli
           </h1>
-          <p className="mt-2 text-[0.9375rem] text-carbon-soft font-riso-body">
+          <p className="mt-2 text-[0.9375rem] text-carbon-soft font-candy-body">
             Kuponları okut, ödülleri ve turnuvaları düzenle, kafenin konumunu ayarla.
           </p>
         </header>
@@ -165,7 +165,7 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
                 aria-controls={`cafe-admin-panel-${tab.id}`}
                 id={`cafe-admin-tab-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
-                className={`riso-focus min-h-12 px-0.5 font-semibold text-[0.9375rem] whitespace-nowrap transition-[color,box-shadow] flex items-center gap-2 font-riso-body ${
+                className={`duo-focus min-h-12 px-0.5 font-semibold text-[0.9375rem] whitespace-nowrap transition-[color,box-shadow] flex items-center gap-2 font-candy-body ${
                   isActive
                     ? 'text-carbon shadow-[inset_0_-3px_0_#17140f]'
                     : 'text-carbon-muted hover:text-carbon hover:shadow-[inset_0_-3px_0_#17140f40]'

@@ -1,5 +1,5 @@
 /**
- * ChessPieceIcons — Riso Kantin chess piece SVGs (PR #28).
+ * ChessPieceIcons — the chess piece SVGs (paper and ink).
  *
  * Six inline SVG components (Pawn / Rook / Knight / Bishop / Queen / King)
  * designed in the printed-zine aesthetic: chunky 2px ink stroke with
@@ -13,7 +13,7 @@
  *   - tree-shakes per-piece import (only what RetroChess actually uses)
  *   - clean diff for design tweaks
  *
- * Paths drawn freehand in the Riso aesthetic: simplified silhouettes,
+ * Paths drawn freehand: simplified silhouettes,
  * thick ink outline, no fine detail. Deliberately not a copy of Wikipedia's
  * Cburnett set — those are technically excellent but too thin/elegant for
  * the chunky printed-zine vibe.

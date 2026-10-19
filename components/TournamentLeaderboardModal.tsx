@@ -96,7 +96,7 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
   if (typeof document === 'undefined') return null;
   return createPortal(
     <div
-      className="riso-kantin fixed inset-0 z-[120] flex items-center justify-center px-3 py-4 sm:px-4 sm:py-6"
+      className="duo-scope fixed inset-0 z-[120] flex items-center justify-center px-3 py-4 sm:px-4 sm:py-6"
       role="dialog"
       aria-modal="true"
       aria-label="Turnuva sıralaması"
@@ -106,7 +106,7 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
       <div className="duo-float relative z-10 w-full max-w-lg bg-paper max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)] flex flex-col">
         <div className="flex items-start justify-between gap-4 border-b-[3px] border-dotted border-carbon/35 px-5 pt-5 pb-4 shrink-0">
           <div className="min-w-0">
-            <h3 className="font-riso-display text-[1.75rem] leading-none text-carbon truncate">
+            <h3 className="font-candy-display text-[1.75rem] leading-none text-carbon truncate">
               {tournament.name}
             </h3>
             <p className="mt-1.5 text-[0.8125rem] text-carbon-soft">Turnuva sıralaması</p>
@@ -115,7 +115,7 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
             type="button"
             onClick={onClose}
             aria-label="Kapat"
-            className="riso-focus inline-flex h-11 w-11 shrink-0 items-center justify-center bg-paper-deep text-carbon hover:bg-carbon hover:text-paper transition-colors"
+            className="duo-focus inline-flex h-11 w-11 shrink-0 items-center justify-center bg-paper-deep text-carbon hover:bg-carbon hover:text-paper transition-colors"
           >
             <X size={16} strokeWidth={2.5} />
           </button>
@@ -123,11 +123,11 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
 
         <div className="p-4 sm:p-5 overflow-y-auto">
           {loading && !data ? (
-            <p role="status" className="font-riso-body text-carbon-soft">Yükleniyor...</p>
+            <p role="status" className="font-candy-body text-carbon-soft">Yükleniyor...</p>
           ) : error ? (
-            <p role="alert" className="bg-riso-redox/10 px-3 py-2 font-riso-body text-sm text-carbon">{error}</p>
+            <p role="alert" className="bg-candy-danger/10 px-3 py-2 font-candy-body text-sm text-carbon">{error}</p>
           ) : !data || data.leaderboard.length === 0 ? (
-            <p className="bg-paper-deep p-4 font-riso-body text-sm text-carbon-soft">
+            <p className="bg-paper-deep p-4 font-candy-body text-sm text-carbon-soft">
               Henüz oynayan olmadı. Bir oyun bitince burada görüneceksin.
             </p>
           ) : (
@@ -143,7 +143,7 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
                   >
                     <div
                       className={`flex h-9 w-9 shrink-0 items-center justify-center text-sm font-semibold text-carbon [font-variant-numeric:tabular-nums] ${
-                        rank === 1 ? 'bg-riso-mustard' : 'bg-paper'
+                        rank === 1 ? 'bg-candy-limon' : 'bg-paper'
                       }`}
                     >
                       {rank === 1 ? (
@@ -154,17 +154,17 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
                         rank
                       )}
                     </div>
-                    <div className="relative h-9 w-9 shrink-0 overflow-hidden bg-riso-blue text-carbon">
+                    <div className="relative h-9 w-9 shrink-0 overflow-hidden bg-candy-gok text-carbon">
                       <AvatarImage
                         src={row.avatar_url}
                         initials={String(row.username || '?')
                           .substring(0, 2)
                           .toUpperCase()}
-                        initialsClassName="font-riso-body text-[13px] font-semibold"
+                        initialsClassName="font-candy-body text-[13px] font-semibold"
                       />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-riso-body font-semibold text-carbon truncate">
+                      <p className="font-candy-body font-semibold text-carbon truncate">
                         {row.username}
                       </p>
                       {prize && (

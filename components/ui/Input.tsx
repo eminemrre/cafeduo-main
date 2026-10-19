@@ -30,7 +30,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
       {label && (
         <label
           htmlFor={fieldId}
-          className="mb-2 block font-riso-body text-[0.9375rem] font-medium text-carbon"
+          className="mb-2 block font-candy-body text-[0.9375rem] font-medium text-carbon"
         >
           {label}
         </label>
@@ -53,12 +53,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
             hasError ? `${fieldId}-err` : helperText ? `${fieldId}-help` : undefined
           }
           className={[
-            'duo-input block w-full font-riso-body text-base text-carbon',
+            'duo-input block w-full font-candy-body text-base text-carbon',
             'px-3.5',
             icon ? 'pl-10' : '',
-            'riso-focus focus:bg-paper placeholder:text-carbon-muted',
+            'duo-focus focus:bg-paper placeholder:text-carbon-muted',
             disabled ? 'cursor-not-allowed opacity-50' : '',
-            hasError ? 'border-b-riso-redox!' : '',
+            hasError ? 'border-b-candy-danger!' : '',
             className,
           ]
             .filter(Boolean)
@@ -67,7 +67,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
         />
       </div>
       {hasError && (
-        <p id={`${fieldId}-err`} className="mt-1.5 text-sm font-medium text-riso-redox">
+        <p id={`${fieldId}-err`} className="mt-1.5 text-sm font-medium text-candy-danger">
           {errorText}
         </p>
       )}

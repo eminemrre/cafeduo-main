@@ -477,7 +477,7 @@ html::-webkit-scrollbar-thumb {
   background-image: none;
 }
 
-.duo-app .riso-focus:focus-visible {
+.duo-app .duo-focus:focus-visible {
   outline: 2px solid #1fb3ff;
   outline-offset: 3px;
   box-shadow: none;
@@ -488,28 +488,28 @@ html::-webkit-scrollbar-thumb {
  * used as text it is deepened to a legible depth (WCAG AA on paper),
  * never used at fill strength. See DESIGN.md, "Colour".
  * ===================================================================== */
-.text-riso-pink {
+.text-candy-lokum {
   color: #c4265f;
 }
-.text-riso-blue {
+.text-candy-gok {
   color: #0b6aa8;
 }
-.text-riso-mustard {
+.text-candy-limon {
   color: #8a6608;
 }
-.text-riso-spring {
+.text-candy-fistik {
   color: #5f7a0c;
 }
-.text-riso-redox {
+.text-candy-danger {
   color: #b8241a;
 }
-.text-riso-pink-deep {
+.text-candy-lokum-deep {
   color: #c4265f;
 }
-.text-riso-blue-deep {
+.text-candy-gok-deep {
   color: #0b6aa8;
 }
-.text-riso-mustard-deep {
+.text-candy-limon-deep {
   color: #8a6608;
 }
 
@@ -517,22 +517,22 @@ html::-webkit-scrollbar-thumb {
  * Design v2 — candy is a fill: whatever sits on a candy field reads in ink,
  * text and icons alike (DESIGN.md, Colour).
  * ===================================================================== */
-.bg-riso-pink,
-.bg-riso-blue,
-.bg-riso-mustard,
-.bg-riso-spring {
+.bg-candy-lokum,
+.bg-candy-gok,
+.bg-candy-limon,
+.bg-candy-fistik {
   color: #17140f;
 }
-.hover\:bg-riso-pink:hover,
-.hover\:bg-riso-blue:hover,
-.hover\:bg-riso-mustard:hover,
-.hover\:bg-riso-spring:hover {
+.hover\:bg-candy-lokum:hover,
+.hover\:bg-candy-gok:hover,
+.hover\:bg-candy-limon:hover,
+.hover\:bg-candy-fistik:hover {
   color: #17140f;
 }
-[class*='bg-riso-pink'] svg,
-[class*='bg-riso-blue'] svg,
-[class*='bg-riso-mustard'] svg,
-[class*='bg-riso-spring'] svg {
+[class*='bg-candy-lokum'] svg,
+[class*='bg-candy-gok'] svg,
+[class*='bg-candy-limon'] svg,
+[class*='bg-candy-fistik'] svg {
   color: #17140f;
 }
 

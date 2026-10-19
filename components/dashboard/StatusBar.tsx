@@ -20,7 +20,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
     <div>
       <button
         type="button"
-        className="duo-status-profile riso-focus"
+        className="duo-status-profile duo-focus"
         onClick={onOpenProfile}
         aria-label="Profilini aç"
       >

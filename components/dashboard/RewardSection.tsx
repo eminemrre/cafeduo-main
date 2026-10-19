@@ -78,7 +78,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
   const [selectedCoupon, setSelectedCoupon] = useState<RedeemedReward | null>(null);
 
   const tabClass = (active: boolean) =>
-    `riso-focus min-h-11 font-riso-body text-[15px] font-semibold transition-colors ${
+    `duo-focus min-h-11 font-candy-body text-[15px] font-semibold transition-colors ${
       active ? 'text-carbon shadow-[inset_0_-3px_0_#17140f]' : 'text-carbon-muted hover:text-carbon'
     }`;
 
@@ -107,7 +107,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
           </button>
         </div>
 
-        <p className="inline-flex min-h-11 items-center gap-2 bg-riso-spring px-3 text-carbon">
+        <p className="inline-flex min-h-11 items-center gap-2 bg-candy-fistik px-3 text-carbon">
           <span className="text-[13px] font-medium">Bakiye:</span>
           <span className="text-[15px] font-semibold [font-variant-numeric:tabular-nums]">
             {currentUser?.points ?? 0} puan
@@ -129,7 +129,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                 return (
                   <li key={reward.id} className="bg-paper-deep p-4">
                     <div className="duo-leader-row !py-0">
-                      <h4 className="flex min-w-0 items-center gap-2 font-riso-body text-[15px] font-semibold text-carbon">
+                      <h4 className="flex min-w-0 items-center gap-2 font-candy-body text-[15px] font-semibold text-carbon">
                         {getRewardIcon(reward.icon)}
                         <span className="break-words">{reward.title}</span>
                       </h4>
@@ -139,7 +139,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                       </span>
                     </div>
                     {reward.description && (
-                      <p className="mt-1 font-riso-body text-[13px] leading-5 text-carbon-soft break-words">
+                      <p className="mt-1 font-candy-body text-[13px] leading-5 text-carbon-soft break-words">
                         {reward.description}
                       </p>
                     )}
@@ -200,18 +200,18 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                   >
                     {/* Ticket — paper with a fıstık edge: header → meta → tear line → QR → code → action */}
                     <div className="relative flex flex-col bg-paper-deep">
-                      <span aria-hidden="true" className="block h-2 bg-riso-spring" />
+                      <span aria-hidden="true" className="block h-2 bg-candy-fistik" />
                       {/* Stamp overlay (used wins over expired) */}
                       {isUsed && (
                         <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-                          <div className="bg-carbon px-4 py-2 font-riso-body text-base font-semibold text-paper">
+                          <div className="bg-carbon px-4 py-2 font-candy-body text-base font-semibold text-paper">
                             Kullanıldı
                           </div>
                         </div>
                       )}
                       {isExpired && !isUsed && (
                         <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-                          <div className="bg-carbon px-4 py-2 font-riso-body text-base font-semibold text-paper">
+                          <div className="bg-carbon px-4 py-2 font-candy-body text-base font-semibold text-paper">
                             Süresi doldu
                           </div>
                         </div>
@@ -219,11 +219,11 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
 
                       {/* Header — title + type chip + expiry date */}
                       <div className="px-4 pt-4 pb-3">
-                        <h4 className="mb-2 break-words font-riso-body text-[15px] font-semibold leading-tight text-carbon">
+                        <h4 className="mb-2 break-words font-candy-body text-[15px] font-semibold leading-tight text-carbon">
                           {item.title}
                         </h4>
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="inline-flex items-center bg-riso-spring px-2 py-0.5 text-[13px] font-medium text-carbon">
+                          <span className="inline-flex items-center bg-candy-fistik px-2 py-0.5 text-[13px] font-medium text-carbon">
                             {typeLabel}
                           </span>
                           <span className="text-[13px] text-carbon-soft [font-variant-numeric:tabular-nums]">
@@ -247,7 +247,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                             aria-label={`Kupon kodu: ${item.code}`}
                           />
                         </div>
-                        <code className="block w-full break-all px-1 text-center font-riso-mono text-[13px] font-semibold text-carbon">
+                        <code className="block w-full break-all px-1 text-center font-candy-mono text-[13px] font-semibold text-carbon">
                           {item.code}
                         </code>
                       </div>
@@ -258,7 +258,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                         onClick={() => setSelectedCoupon(item)}
                         disabled={dead}
                         data-testid={`coupon-show-${item.redeemId}`}
-                        className="riso-focus group mt-auto flex min-h-12 items-center justify-center gap-2 bg-riso-pink px-3 font-riso-body text-[15px] font-semibold text-carbon transition-transform active:scale-[0.98] disabled:cursor-not-allowed"
+                        className="duo-focus group mt-auto flex min-h-12 items-center justify-center gap-2 bg-candy-lokum px-3 font-candy-body text-[15px] font-semibold text-carbon transition-transform active:scale-[0.98] disabled:cursor-not-allowed"
                       >
                         Kasada göster
                         <ArrowRight

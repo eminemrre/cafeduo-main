@@ -90,9 +90,9 @@ interface ValidationError {
 }
 
 const TONE_FILL: Record<GameDef['tone'], string> = {
-  gok: 'bg-riso-blue',
-  limon: 'bg-riso-mustard',
-  lokum: 'bg-riso-pink',
+  gok: 'bg-candy-gok',
+  limon: 'bg-candy-limon',
+  lokum: 'bg-candy-lokum',
 };
 
 export const CreateGameModal: React.FC<CreateGameModalProps> = ({
@@ -230,7 +230,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
 
   return (
     <DialogLayer open={isOpen} onClose={onClose} label="Yeni oyun kur">
-      <div className="riso-kantin fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6">
+      <div className="duo-scope fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6">
         {/* Backdrop — covers whole viewport, click closes */}
         <div className="absolute inset-0 bg-carbon/60" onClick={onClose} aria-hidden="true" />
 
@@ -240,14 +240,14 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
         >
           {/* Sticky header */}
           <div className="shrink-0 flex items-center justify-between gap-4 px-4 pt-4 pb-3 sm:px-6 sm:pt-5">
-            <h3 className="font-riso-display text-[28px] leading-none sm:text-[40px]">
+            <h3 className="font-candy-display text-[28px] leading-none sm:text-[40px]">
               <span className="duo-sentence">YENİ OYUN KUR</span>
             </h3>
             <button
               type="button"
               onClick={onClose}
               aria-label="Oyun kurma penceresini kapat"
-              className="riso-focus inline-flex h-11 w-11 items-center justify-center bg-paper-deep text-carbon transition-colors hover:bg-paper-dim"
+              className="duo-focus inline-flex h-11 w-11 items-center justify-center bg-paper-deep text-carbon transition-colors hover:bg-paper-dim"
             >
               <X size={20} strokeWidth={2.5} />
             </button>
@@ -258,9 +258,9 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
             {/* Points info — show the user's true wallet balance, not the
               per-match stake cap. Form validation uses the capped value
               (`maxPoints`) but the display shows what they actually have. */}
-            <div className="flex items-center justify-between bg-riso-spring px-4 py-2.5">
-              <span className="font-riso-body text-[15px] font-medium">Mevcut Puanınız:</span>
-              <span className="font-riso-mono text-2xl font-bold leading-none">
+            <div className="flex items-center justify-between bg-candy-fistik px-4 py-2.5">
+              <span className="font-candy-body text-[15px] font-medium">Mevcut Puanınız:</span>
+              <span className="font-candy-mono text-2xl font-bold leading-none">
                 {maxPointsProp}
               </span>
             </div>
@@ -285,7 +285,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                         aria-pressed={active}
                         onClick={() => handleGameTypeChange(game.name)}
                         data-testid={`game-type-${game.id}`}
-                        className={`riso-focus relative w-full p-2.5 sm:p-3 text-left text-carbon transition-colors ${
+                        className={`duo-focus relative w-full p-2.5 sm:p-3 text-left text-carbon transition-colors ${
                           active ? TONE_FILL[game.tone] : 'bg-paper-deep hover:bg-paper-dim'
                         }`}
                       >
@@ -301,7 +301,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                             {active && <Check size={18} strokeWidth={2.6} aria-hidden="true" />}
                           </div>
 
-                          <div className="mb-1 font-riso-body text-sm font-bold leading-tight sm:text-base">
+                          <div className="mb-1 font-candy-body text-sm font-bold leading-tight sm:text-base">
                             {game.name}
                           </div>
 
@@ -324,7 +324,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                   })}
                 </div>
                 {errors.gameType && (
-                  <p className="mt-2 font-riso-body text-sm text-riso-redox flex items-center gap-1.5">
+                  <p className="mt-2 font-candy-body text-sm text-candy-danger flex items-center gap-1.5">
                     <AlertTriangle size={14} strokeWidth={2.5} /> {errors.gameType}
                   </p>
                 )}
@@ -334,7 +334,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
               <div>
                 <label className="mb-2 flex justify-between gap-3 text-[15px] font-semibold">
                   <span>Puan yatırımı</span>
-                  <span className="font-riso-mono">{`${points} / ${maxPoints}`}</span>
+                  <span className="font-candy-mono">{`${points} / ${maxPoints}`}</span>
                 </label>
 
                 <input
@@ -344,7 +344,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                   max={maxPoints}
                   value={points}
                   onChange={(e) => handlePointsChange(e.target.value)}
-                  className="mb-3 h-2 w-full cursor-pointer accent-riso-pink"
+                  className="mb-3 h-2 w-full cursor-pointer accent-candy-lokum"
                 />
 
                 <div className="flex items-center gap-3">
@@ -358,8 +358,8 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                     max={maxPoints}
                     data-testid="game-points-input"
                     style={{ colorScheme: 'light' }}
-                    className={`riso-focus min-h-[52px] flex-1 border-0 border-b-[3px] bg-paper-deep px-3.5 font-riso-mono text-xl font-bold text-carbon text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
-                      errors.points && touched.points ? 'border-riso-redox' : 'border-carbon'
+                    className={`duo-focus min-h-[52px] flex-1 border-0 border-b-[3px] bg-paper-deep px-3.5 font-candy-mono text-xl font-bold text-carbon text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${
+                      errors.points && touched.points ? 'border-candy-danger' : 'border-carbon'
                     }`}
                   />
                   <span className="text-[15px] font-medium text-carbon-muted">puan</span>
@@ -375,8 +375,8 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                         type="button"
                         aria-pressed={active}
                         onClick={() => handlePointsChange(preset.value.toString())}
-                        className={`riso-focus min-h-11 px-2 font-riso-body text-[15px] font-semibold text-carbon transition-colors ${
-                          active ? 'bg-riso-pink' : 'bg-paper-deep hover:bg-paper-dim'
+                        className={`duo-focus min-h-11 px-2 font-candy-body text-[15px] font-semibold text-carbon transition-colors ${
+                          active ? 'bg-candy-lokum' : 'bg-paper-deep hover:bg-paper-dim'
                         }`}
                       >
                         {preset.label}
@@ -386,7 +386,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                 </div>
 
                 {errors.points && touched.points && (
-                  <p className="mt-2 font-riso-body text-sm text-riso-redox flex items-center gap-1.5">
+                  <p className="mt-2 font-candy-body text-sm text-candy-danger flex items-center gap-1.5">
                     <AlertTriangle size={14} strokeWidth={2.5} /> {errors.points}
                   </p>
                 )}
@@ -405,8 +405,8 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                           type="button"
                           aria-pressed={active}
                           onClick={() => setChessTempoId(tempo.id)}
-                          className={`riso-focus min-h-11 px-3 font-riso-body text-[15px] font-semibold text-carbon transition-colors ${
-                            active ? 'bg-riso-blue' : 'bg-paper-deep hover:bg-paper-dim'
+                          className={`duo-focus min-h-11 px-3 font-candy-body text-[15px] font-semibold text-carbon transition-colors ${
+                            active ? 'bg-candy-gok' : 'bg-paper-deep hover:bg-paper-dim'
                           }`}
                         >
                           {tempo.label}
@@ -418,7 +418,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
               )}
 
               {/* Summary — the order slip: dotted leaders, closing on an ink bar. */}
-              <div className="font-riso-body text-[15px]">
+              <div className="font-candy-body text-[15px]">
                 <div className="duo-leader-row">
                   <span className="text-carbon-muted">Oyun:</span>
                   <span className="duo-leader-dots" aria-hidden="true" />
@@ -438,16 +438,16 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                 )}
                 <div
                   className={`mt-3 flex min-h-11 items-center justify-between gap-3 px-3.5 text-paper ${
-                    remaining >= 0 ? 'bg-carbon' : 'bg-riso-redox'
+                    remaining >= 0 ? 'bg-carbon' : 'bg-candy-danger'
                   }`}
                 >
                   <span>Kalan:</span>
-                  <span className="font-riso-mono font-bold">{remaining} Puan</span>
+                  <span className="font-candy-mono font-bold">{remaining} Puan</span>
                 </div>
               </div>
               {activeTournament && (
                 <label
-                  className="riso-focus flex cursor-pointer items-center justify-between gap-3 bg-paper-deep p-3 transition-colors hover:bg-paper-dim"
+                  className="duo-focus flex cursor-pointer items-center justify-between gap-3 bg-paper-deep p-3 transition-colors hover:bg-paper-dim"
                   data-testid="create-game-tournament-toggle"
                 >
                   <div className="min-w-0">
@@ -463,7 +463,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                     type="checkbox"
                     checked={joinTournament}
                     onChange={(e) => setJoinTournament(e.target.checked)}
-                    className="h-5 w-5 shrink-0 accent-riso-pink"
+                    className="h-5 w-5 shrink-0 accent-candy-lokum"
                     aria-label="Turnuvaya katıl"
                   />
                 </label>
@@ -474,11 +474,11 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
           {/* Sticky footer — a tear line above the two actions */}
           <div className="duo-tear shrink-0 grid grid-cols-1 gap-2 px-4 py-3 sm:grid-cols-[0.38fr_1fr] sm:px-6">
             {submitError && (
-              <p role="alert" className="col-span-full text-sm text-riso-redox">
+              <p role="alert" className="col-span-full text-sm text-candy-danger">
                 {submitError}
               </p>
             )}
-            <button type="button" onClick={onClose} className="duo-quiet riso-focus min-h-12">
+            <button type="button" onClick={onClose} className="duo-quiet duo-focus min-h-12">
               <span className="duo-sentence">KAPAT</span>
             </button>
             <button
@@ -486,7 +486,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
               disabled={isSubmitting}
               onClick={handleSubmit}
               data-testid="create-game-submit"
-              className="duo-button riso-focus min-h-12 w-full bg-riso-pink px-5 font-riso-body text-base font-semibold text-carbon transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+              className="duo-button duo-focus min-h-12 w-full bg-candy-lokum px-5 font-candy-body text-base font-semibold text-carbon transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? (
                 <span className="inline-flex items-center gap-2">

@@ -1,6 +1,6 @@
 import { AvatarImage } from './ui/AvatarImage';
 /**
- * Leaderboard — Riso Kantin redesign (PR #25).
+ * Leaderboard — the v2 leaderboard table.
  *
  * Dashboard "Sıralama" tab content. Fetches /api/leaderboard with general
  * vs. department filter. Handler logic + fetch contract unchanged.
@@ -57,7 +57,7 @@ export const Leaderboard: React.FC = () => {
   const getRankBadge = (index: number): React.ReactNode => {
     if (index === 0)
       return (
-        <span className="inline-flex h-9 w-9 items-center justify-center bg-riso-mustard">
+        <span className="inline-flex h-9 w-9 items-center justify-center bg-candy-limon">
           <Trophy size={18} strokeWidth={2.4} className="text-carbon" />
         </span>
       );
@@ -69,7 +69,7 @@ export const Leaderboard: React.FC = () => {
       );
     if (index === 2)
       return (
-        <span className="inline-flex h-9 w-9 items-center justify-center bg-riso-pink">
+        <span className="inline-flex h-9 w-9 items-center justify-center bg-candy-lokum">
           <Medal size={18} strokeWidth={2.4} className="text-carbon" />
         </span>
       );
@@ -83,7 +83,7 @@ export const Leaderboard: React.FC = () => {
   return (
     <Card tone="paper" data-testid="leaderboard-card">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <h2 className="font-riso-display text-[32px] leading-none text-carbon sm:text-[40px]">
+        <h2 className="font-candy-display text-[32px] leading-none text-carbon sm:text-[40px]">
           Liderlik Tablosu
         </h2>
 
@@ -100,7 +100,7 @@ export const Leaderboard: React.FC = () => {
                 type="button"
                 aria-pressed={filterType === value}
                 onClick={() => setFilterType(value)}
-                className={`riso-focus min-h-11 font-riso-body text-[15px] font-semibold transition-colors ${
+                className={`duo-focus min-h-11 font-candy-body text-[15px] font-semibold transition-colors ${
                   filterType === value
                     ? 'text-carbon shadow-[inset_0_-3px_0_#17140f]'
                     : 'text-carbon-muted hover:text-carbon'
@@ -125,7 +125,7 @@ export const Leaderboard: React.FC = () => {
       </div>
 
       <div className="mt-6 overflow-x-auto">
-        <table className="w-full text-left font-riso-body">
+        <table className="w-full text-left font-candy-body">
           <thead className="bg-paper-deep">
             <tr>
               <th className="px-3 py-2.5 text-center w-16 text-[13px] font-semibold text-carbon-soft">
@@ -150,20 +150,20 @@ export const Leaderboard: React.FC = () => {
               <tr>
                 <td
                   colSpan={5}
-                  className="p-8 text-center font-riso-body text-carbon-muted"
+                  className="p-8 text-center font-candy-body text-carbon-muted"
                 >
                   Yükleniyor...
                 </td>
               </tr>
             ) : error ? (
               <tr>
-                <td colSpan={5} className="p-8 text-center font-riso-body text-riso-redox">
+                <td colSpan={5} className="p-8 text-center font-candy-body text-candy-danger">
                   {error}
                 </td>
               </tr>
             ) : users.length === 0 ? (
               <tr>
-                <td colSpan={5} className="p-8 text-center font-riso-body text-carbon-muted">
+                <td colSpan={5} className="p-8 text-center font-candy-body text-carbon-muted">
                   Henüz veri yok.
                 </td>
               </tr>
@@ -178,16 +178,16 @@ export const Leaderboard: React.FC = () => {
                   </td>
                   <td className="px-3 py-2.5">
                     <div className="flex items-center gap-3">
-                      <div className="relative flex h-9 w-9 shrink-0 items-center justify-center bg-riso-blue text-[13px] font-semibold text-carbon overflow-hidden">
+                      <div className="relative flex h-9 w-9 shrink-0 items-center justify-center bg-candy-gok text-[13px] font-semibold text-carbon overflow-hidden">
                         <AvatarImage
                           src={user.avatar_url}
                           initials={user.username.substring(0, 2).toUpperCase()}
                         />
                       </div>
-                      <span className="min-w-0 truncate font-riso-body font-semibold text-carbon">{user.username}</span>
+                      <span className="min-w-0 truncate font-candy-body font-semibold text-carbon">{user.username}</span>
                     </div>
                   </td>
-                  <td className="hidden px-3 py-2.5 font-riso-body text-sm text-carbon-muted md:table-cell">
+                  <td className="hidden px-3 py-2.5 font-candy-body text-sm text-carbon-muted md:table-cell">
                     {user.department || '—'}
                   </td>
                   <td className="px-3 py-2.5 text-right font-semibold text-carbon [font-variant-numeric:tabular-nums]">

@@ -13,11 +13,11 @@ type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
 
 const variantClass: Record<Variant, string> = {
-  primary: 'bg-riso-pink text-carbon hover:-translate-y-0.5',
+  primary: 'bg-candy-lokum text-carbon hover:-translate-y-0.5',
   secondary: 'bg-paper-deep text-carbon hover:bg-paper-dim',
   ghost:
     'bg-transparent text-carbon underline decoration-transparent decoration-[3px] underline-offset-[6px] hover:decoration-carbon',
-  danger: 'bg-paper-deep text-riso-redox hover:bg-riso-redox hover:text-paper',
+  danger: 'bg-paper-deep text-candy-danger hover:bg-candy-danger hover:text-paper',
 };
 
 const sizeClass: Record<Size, string> = {
@@ -45,9 +45,9 @@ export const Button: React.FC<ButtonProps> = ({
   <button
     {...rest}
     className={
-      'duo-button inline-flex items-center justify-center font-riso-body font-semibold ' +
+      'duo-button inline-flex items-center justify-center font-candy-body font-semibold ' +
       'transition-[transform,background-color,color,text-decoration-color] duration-150 ' +
-      'riso-focus active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0 ' +
+      'duo-focus active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0 ' +
       `${variantClass[variant]} ${sizeClass[size]} ${className}`
     }
   >

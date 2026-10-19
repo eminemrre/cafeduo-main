@@ -99,25 +99,25 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({ variant = 'default
     <div
       role="region"
       aria-label="Çerez bildirimi"
-      className="riso-kantin pointer-events-none fixed bottom-4 left-4 right-4 z-[130] sm:left-auto sm:right-6 sm:bottom-6 sm:w-[24rem]"
+      className="duo-scope pointer-events-none fixed bottom-4 left-4 right-4 z-[130] sm:left-auto sm:right-6 sm:bottom-6 sm:w-[24rem]"
     >
       <div className="duo-cookie-card pointer-events-auto relative bg-paper p-4">
-        <h2 className="mb-1 font-riso-display text-[1.75rem] leading-none text-carbon">Çerezler</h2>
-        <p className="mb-4 break-words text-[0.9375rem] leading-6 text-carbon font-riso-body">
+        <h2 className="mb-1 font-candy-display text-[1.75rem] leading-none text-carbon">Çerezler</h2>
+        <p className="mb-4 break-words text-[0.9375rem] leading-6 text-carbon font-candy-body">
           Giriş için çerez onayı gerekir. Yalnızca gezeceksen reddedebilirsin.
         </p>
         <div className="flex justify-end gap-2">
           <button
             type="button"
             onClick={handleReject}
-            className="riso-focus min-h-11 bg-paper-deep px-4 text-[0.9375rem] font-semibold text-carbon font-riso-body transition-colors hover:bg-paper-dim"
+            className="duo-focus min-h-11 bg-paper-deep px-4 text-[0.9375rem] font-semibold text-carbon font-candy-body transition-colors hover:bg-paper-dim"
           >
             Reddet
           </button>
           <button
             type="button"
             onClick={handleAccept}
-            className="riso-focus min-h-11 bg-riso-pink px-4 text-[0.9375rem] font-semibold text-carbon font-riso-body transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
+            className="duo-focus min-h-11 bg-candy-lokum px-4 text-[0.9375rem] font-semibold text-carbon font-candy-body transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
           >
             Kabul et
           </button>

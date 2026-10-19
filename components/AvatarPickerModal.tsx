@@ -1,9 +1,9 @@
 /**
  * AvatarPickerModal — 4×4 locally served grid of the toy-robot avatars.
  *
- * Surface matches the Riso Kantin redesign: paper ground, ink border, double
+ * Surface matches the v2 language: paper ground, no frame,
  * offset shadow. Each tile is a 2px-bordered square; the currently selected
- * seed gets a riso-pink double-offset ring so the user can spot their pick at
+ * seed gets a candy-lokum double-offset ring so the user can spot their pick at
  * a glance.
  *
  * Wire-up: UserProfileModal opens this on demand. We don't need a context —
@@ -39,18 +39,18 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
 
   return (
     <DialogLayer open={isOpen} onClose={onClose} label="Avatar seçimi">
-      <div className="riso-kantin fixed inset-0 z-[125] flex items-center justify-center px-3 py-4 sm:px-4 sm:py-6">
+      <div className="duo-scope fixed inset-0 z-[125] flex items-center justify-center px-3 py-4 sm:px-4 sm:py-6">
         <div className="absolute inset-0 bg-carbon/80" onClick={onClose} aria-hidden="true" />
 
         <div className="duo-float relative z-10 w-full max-w-md max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)] flex flex-col bg-paper">
           <div className="shrink-0 flex items-center justify-between border-b-[3px] border-dotted border-carbon/35 px-5 py-4">
-            <h3 className="font-riso-display text-[1.75rem] leading-none text-carbon">Avatar seç</h3>
+            <h3 className="font-candy-display text-[1.75rem] leading-none text-carbon">Avatar seç</h3>
             <button
               ref={closeButton}
               type="button"
               onClick={onClose}
               aria-label="Kapat"
-              className="riso-focus inline-flex h-11 w-11 items-center justify-center bg-paper-deep text-carbon hover:bg-carbon hover:text-paper transition-colors"
+              className="duo-focus inline-flex h-11 w-11 items-center justify-center bg-paper-deep text-carbon hover:bg-carbon hover:text-paper transition-colors"
             >
               <X size={16} strokeWidth={2.5} />
             </button>
@@ -59,7 +59,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
           {error && (
             <p
               role="alert"
-              className="shrink-0 bg-riso-redox/10 px-5 py-3 text-sm text-carbon"
+              className="shrink-0 bg-candy-danger/10 px-5 py-3 text-sm text-carbon"
             >
               {error}
             </p>
@@ -88,14 +88,14 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
                     aria-label={`Avatar: ${seed}`}
                     aria-pressed={isCurrent}
                     data-testid={`avatar-option-${seed}`}
-                    className={`riso-focus relative h-16 w-full transition-transform hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-wait ${
-                      isCurrent ? 'bg-riso-pink' : 'bg-paper-deep'
+                    className={`duo-focus relative h-16 w-full transition-transform hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-wait ${
+                      isCurrent ? 'bg-candy-lokum' : 'bg-paper-deep'
                     }`}
                   >
                     <AvatarImage
                       src={getAvatarUrl(seed)}
                       initials={seed.substring(0, 2).toUpperCase()}
-                      initialsClassName="font-riso-body font-semibold text-carbon"
+                      initialsClassName="font-candy-body font-semibold text-carbon"
                       imageClassName="p-1"
                       loading="eager"
                     />

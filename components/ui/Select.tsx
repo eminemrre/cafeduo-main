@@ -47,7 +47,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
       {label && (
         <label
           htmlFor={fieldId}
-          className="mb-2 block font-riso-body text-[0.9375rem] font-medium text-carbon"
+          className="mb-2 block font-candy-body text-[0.9375rem] font-medium text-carbon"
         >
           {label}
         </label>
@@ -63,11 +63,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
             hasError ? `${fieldId}-err` : helperText ? `${fieldId}-help` : undefined
           }
           className={[
-            'duo-input block w-full appearance-none font-riso-body text-base text-carbon',
+            'duo-input block w-full appearance-none font-candy-body text-base text-carbon',
             'pl-3.5 pr-10',
-            'riso-focus',
+            'duo-focus',
             disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer',
-            hasError ? 'border-b-riso-redox!' : '',
+            hasError ? 'border-b-candy-danger!' : '',
             className,
           ]
             .filter(Boolean)
@@ -92,7 +92,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(function Select
         />
       </div>
       {hasError && (
-        <p id={`${fieldId}-err`} className="mt-1.5 text-sm font-medium text-riso-redox">
+        <p id={`${fieldId}-err`} className="mt-1.5 text-sm font-medium text-candy-danger">
           {errorText}
         </p>
       )}

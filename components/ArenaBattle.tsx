@@ -300,11 +300,11 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
       <ConnectionOverlay gameId={gameId} />
       <header className="duo-game-head mb-6">
         <div className="min-w-0">
-          <span className="duo-game-chip bg-riso-pink">{MAX_ROUNDS} tur</span>
+          <span className="duo-game-chip bg-candy-lokum">{MAX_ROUNDS} tur</span>
           <h2 className="duo-game-title">{AIM_GAME_TYPE}</h2>
           <p className="duo-game-sub truncate">{participants}</p>
         </div>
-        <button type="button" onClick={onLeave} className="duo-quiet riso-focus shrink-0">
+        <button type="button" onClick={onLeave} className="duo-quiet duo-focus shrink-0">
           <span className="duo-sentence">Oyundan Çık</span>
         </button>
       </header>
@@ -338,7 +338,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
         >
           <Crosshair size={42} />
         </div>
-        <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex items-center justify-between font-riso-mono text-xs text-carbon-muted">
+        <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex items-center justify-between font-candy-mono text-xs text-carbon-muted">
           <span>0</span>
           <span className="bg-paper px-2 py-0.5 font-semibold text-carbon">Merkez 50</span>
           <span>100</span>
@@ -348,12 +348,12 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
       <div className="mb-5">
         <div className="mb-2 flex items-baseline justify-between gap-3">
           <span className="text-[15px] font-semibold text-carbon">Nişan kilidi</span>
-          <span className="font-riso-mono text-sm font-semibold text-carbon">
+          <span className="font-candy-mono text-sm font-semibold text-carbon">
             {Math.round(gauge)}% · isabet {Math.round(accuracy)}%
           </span>
         </div>
         <div className="duo-meter">
-          <span className="bg-riso-pink transition-[width]" style={{ width: `${accuracy}%` }} />
+          <span className="bg-candy-lokum transition-[width]" style={{ width: `${accuracy}%` }} />
         </div>
         <p className="duo-game-status mt-3" aria-live="polite">
           {message}

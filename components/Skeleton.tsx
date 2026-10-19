@@ -131,7 +131,7 @@ export const DotLoader: React.FC<{ className?: string }> = ({ className = '' }) 
     {[0, 1, 2].map((i) => (
       <div
         key={i}
-        className="w-2 h-2 bg-carbon animate-bounce"
+        className="h-2 w-2 bg-carbon animate-pulse"
         style={{ animationDelay: `${i * 150}ms` }}
       />
     ))}

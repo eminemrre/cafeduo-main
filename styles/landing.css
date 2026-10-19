@@ -24,12 +24,8 @@ body:has(.cdl) {
   background: var(--cdl-paper);
 }
 
-/* The landing is its own world: no Fraunces reading bar, and the shared page
-   background is the paper the stationery is printed on. */
-.club-landing:has(.cdl) .club-reading-progress {
-  display: none;
-}
-
+/* The landing is its own world: the shared page background is the paper the
+   stationery is printed on. */
 .duo-app:has(.cdl) #main-content {
   background: var(--cdl-paper);
 }
@@ -1565,19 +1561,19 @@ body:has(.cdl) {
 
 @media (prefers-reduced-motion: no-preference) {
   /* The tent card lands, then the toys peek out; the first screen is the authored moment. */
-  .club-landing[data-motion='on'] .cdl-tent-card {
+  .cdl-page[data-motion='on'] .cdl-tent-card {
     animation: cdl-rise 700ms var(--ease-out) both;
   }
 
-  .club-landing[data-motion='on'] .cdl [data-landing-revealed='true'] {
+  .cdl-page[data-motion='on'] .cdl [data-landing-revealed='true'] {
     animation: cdl-rise 700ms var(--ease-out) both;
   }
 
-  .club-landing[data-motion='on'] .cdl .cdl-diamond[data-landing-revealed='true'] {
+  .cdl-page[data-motion='on'] .cdl .cdl-diamond[data-landing-revealed='true'] {
     animation: cdl-drop 760ms var(--ease-toy) both;
   }
 
-  .club-landing[data-motion='on'] .cdl [data-landing-revealed='true']:focus-within {
+  .cdl-page[data-motion='on'] .cdl [data-landing-revealed='true']:focus-within {
     animation: none;
   }
 }

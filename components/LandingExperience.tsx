@@ -67,7 +67,7 @@ export const LandingExperience: React.FC<{ children: React.ReactNode }> = ({ chi
 
   return (
     <LandingMotionContext.Provider value={{ enabled, running, reduced }}>
-      <div ref={root} className="club-landing" data-motion={running ? 'on' : 'off'}>
+      <div ref={root} className="cdl-page" data-motion={running ? 'on' : 'off'}>
         {children}
       </div>
     </LandingMotionContext.Provider>

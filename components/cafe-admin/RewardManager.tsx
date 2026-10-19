@@ -41,13 +41,13 @@ export const RewardManager: React.FC<RewardManagerProps> = ({
   };
 
   const inputClass =
-    'duo-input riso-focus w-full px-3 text-base text-carbon placeholder:text-carbon-muted font-riso-body focus:bg-paper';
+    'duo-input duo-focus w-full px-3 text-base text-carbon placeholder:text-carbon-muted font-candy-body focus:bg-paper';
 
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="bg-paper p-6 h-fit">
-          <h2 className="font-riso-display text-[1.75rem] leading-none text-carbon mb-6 flex items-center gap-2">
+          <h2 className="font-candy-display text-[1.75rem] leading-none text-carbon mb-6 flex items-center gap-2">
             <Plus aria-hidden="true" />
             Yeni ödül ekle
           </h2>
@@ -55,7 +55,7 @@ export const RewardManager: React.FC<RewardManagerProps> = ({
             <div>
               <label
                 htmlFor="reward-title-input"
-                className="block text-[0.9375rem] font-medium text-carbon mb-2 font-riso-body"
+                className="block text-[0.9375rem] font-medium text-carbon mb-2 font-candy-body"
               >
                 Ödül Başlığı
               </label>
@@ -76,7 +76,7 @@ export const RewardManager: React.FC<RewardManagerProps> = ({
             <div>
               <label
                 htmlFor="reward-cost-input"
-                className="block text-[0.9375rem] font-medium text-carbon mb-2 font-riso-body"
+                className="block text-[0.9375rem] font-medium text-carbon mb-2 font-candy-body"
               >
                 Puan bedeli
               </label>
@@ -97,7 +97,7 @@ export const RewardManager: React.FC<RewardManagerProps> = ({
             <div>
               <label
                 htmlFor="reward-description-input"
-                className="block text-[0.9375rem] font-medium text-carbon mb-2 font-riso-body"
+                className="block text-[0.9375rem] font-medium text-carbon mb-2 font-candy-body"
               >
                 Açıklama
               </label>
@@ -117,7 +117,7 @@ export const RewardManager: React.FC<RewardManagerProps> = ({
             <div>
               <label
                 htmlFor="reward-icon-input"
-                className="block text-[0.9375rem] font-medium text-carbon mb-2 font-riso-body"
+                className="block text-[0.9375rem] font-medium text-carbon mb-2 font-candy-body"
               >
                 İkon Tipi
               </label>
@@ -140,7 +140,7 @@ export const RewardManager: React.FC<RewardManagerProps> = ({
             </div>
             <button
               type="submit"
-              className="riso-focus w-full bg-riso-pink text-carbon font-riso-body font-bold py-3 transition-all"
+              className="duo-focus w-full bg-candy-lokum text-carbon font-candy-body font-bold py-3 transition-all"
             >
               Ödülü Oluştur
             </button>
@@ -148,18 +148,18 @@ export const RewardManager: React.FC<RewardManagerProps> = ({
         </div>
 
         <div className="lg:col-span-2 space-y-4" aria-busy={rewardsLoading} aria-live="polite">
-          <h2 className="font-riso-display text-[1.75rem] leading-none text-carbon mb-4">
+          <h2 className="font-candy-display text-[1.75rem] leading-none text-carbon mb-4">
             Aktif ödüller
           </h2>
           {rewardsError && (
-            <div className="p-4 text-carbon bg-riso-redox/25 font-riso-body">
+            <div className="p-4 text-carbon bg-candy-danger/25 font-candy-body">
               {rewardsError}
             </div>
           )}
           {!rewardsError && rewards.length === 0 && !rewardsLoading ? (
             <div className="text-center py-12 text-carbon-muted bg-paper-deep">
               <Gift size={48} className="mx-auto mb-4 opacity-30" />
-              <p className="font-riso-body">Henüz ödül eklenmemiş.</p>
+              <p className="font-candy-body">Henüz ödül eklenmemiş.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -169,20 +169,20 @@ export const RewardManager: React.FC<RewardManagerProps> = ({
                   className="bg-paper p-4 flex justify-between items-start gap-3 group hover:-translate-y-[1px] transition-transform"
                 >
                   <div className="flex gap-4 min-w-0">
-                    <div className="w-12 h-12 bg-riso-spring flex items-center justify-center text-carbon shrink-0">
+                    <div className="w-12 h-12 bg-candy-fistik flex items-center justify-center text-carbon shrink-0">
                       {reward.icon === 'coffee' && <Coffee size={24} />}
                       {reward.icon === 'dessert' && <Gift size={24} />}
                       {reward.icon === 'discount' && <span className="text-xl font-bold">%</span>}
                       {reward.icon === 'game' && <Gamepad2 size={22} aria-hidden="true" />}
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-bold text-carbon font-riso-body truncate">
+                      <h3 className="font-bold text-carbon font-candy-body truncate">
                         {reward.title}
                       </h3>
-                      <p className="text-sm text-carbon-soft font-riso-body">
+                      <p className="text-sm text-carbon-soft font-candy-body">
                         {reward.description}
                       </p>
-                      <div className="mt-2 inline-block bg-paper-deep text-carbon text-[0.8125rem] px-2 py-0.5 font-riso-body font-semibold [font-variant-numeric:tabular-nums]">
+                      <div className="mt-2 inline-block bg-paper-deep text-carbon text-[0.8125rem] px-2 py-0.5 font-candy-body font-semibold [font-variant-numeric:tabular-nums]">
                         {reward.cost} puan
                       </div>
                     </div>
@@ -190,7 +190,7 @@ export const RewardManager: React.FC<RewardManagerProps> = ({
                   <button
                     type="button"
                     onClick={() => void handleDelete(reward.id)}
-                    className="riso-focus text-carbon-muted hover:text-paper p-2 hover:bg-riso-redox transition-colors shrink-0"
+                    className="duo-focus text-carbon-muted hover:text-paper p-2 hover:bg-candy-danger transition-colors shrink-0"
                     aria-label={`${reward.title} ödülünü sil`}
                     title="Ödülü sil"
                   >

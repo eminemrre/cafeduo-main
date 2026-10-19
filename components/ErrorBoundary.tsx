@@ -37,10 +37,10 @@ export class ErrorBoundary extends Component<Props, State> {
         : 'Önbelleği Temizle ve Ana Sayfaya Dön';
 
       return (
-        <div className="riso-kantin min-h-screen bg-paper text-carbon flex flex-col items-center justify-center px-5 py-10">
+        <div className="duo-scope min-h-screen bg-paper text-carbon flex flex-col items-center justify-center px-5 py-10">
           <div className="w-full max-w-xl bg-paper-deep p-6 sm:p-8">
-            <AlertTriangle size={28} strokeWidth={2.2} className="text-riso-redox" aria-hidden="true" />
-            <h1 className="mt-4 font-riso-display text-[2rem] leading-[0.98] text-carbon">
+            <AlertTriangle size={28} strokeWidth={2.2} className="text-candy-danger" aria-hidden="true" />
+            <h1 className="mt-4 font-candy-display text-[2rem] leading-[0.98] text-carbon">
               Uygulama Hatası
             </h1>
             <p className="mt-3 text-[0.9375rem] leading-6 text-carbon-soft">
@@ -49,12 +49,12 @@ export class ErrorBoundary extends Component<Props, State> {
             </p>
 
             <details className="mt-5 bg-paper p-4">
-              <summary className="riso-focus cursor-pointer text-[0.9375rem] font-semibold text-carbon">
+              <summary className="duo-focus cursor-pointer text-[0.9375rem] font-semibold text-carbon">
                 Hata ayrıntıları
               </summary>
               <div className="mt-3 max-h-64 overflow-auto custom-scrollbar text-[0.8125rem] text-carbon-soft">
                 <p className="font-semibold text-carbon">{this.state.error?.toString()}</p>
-                <pre className="mt-2 whitespace-pre-wrap font-riso-mono">
+                <pre className="mt-2 whitespace-pre-wrap font-candy-mono">
                   {this.state.errorInfo?.componentStack}
                 </pre>
               </div>
@@ -70,7 +70,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 localStorage.clear();
                 safeGoHome();
               }}
-              className="riso-focus mt-6 min-h-12 w-full bg-carbon px-6 text-[0.9375rem] font-semibold text-paper transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
+              className="duo-focus mt-6 min-h-12 w-full bg-carbon px-6 text-[0.9375rem] font-semibold text-paper transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
             >
               {actionLabel}
             </button>

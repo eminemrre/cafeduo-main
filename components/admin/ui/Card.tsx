@@ -1,5 +1,5 @@
 /**
- * Admin Card — Riso Kantin re-skin (PR #24). API preserved.
+ * Admin Card — paper on the ground, or an ice well (`muted`). No border, no shadow.
  */
 import React from 'react';
 
@@ -16,10 +16,8 @@ export const Card: React.FC<CardProps> = ({
   <div
     {...rest}
     className={
-      'duo-card relative border-2 border-carbon p-5 ' +
-      (variant === 'default'
-        ? 'bg-paper text-carbon riso-shadow-sm '
-        : 'bg-paper-deep text-carbon ') +
+      'duo-card relative p-5 ' +
+      (variant === 'default' ? 'bg-paper text-carbon ' : 'bg-paper-deep text-carbon ') +
       className
     }
   >

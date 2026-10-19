@@ -20,7 +20,7 @@ export const AssignCafeAdminModal: React.FC<AssignCafeAdminModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      eyebrow="Yetki Devri"
+      eyebrow="Seçtiğin kafenin panelini bu kullanıcı yönetir."
       title="Kafe Yöneticisi Ata"
       size="md"
       footer={
@@ -37,7 +37,7 @@ export const AssignCafeAdminModal: React.FC<AssignCafeAdminModalProps> = ({
       <p className="text-[0.9375rem] text-carbon-soft mb-5 leading-relaxed">
         <span className="font-semibold text-carbon">{selectedUser.username}</span> kullanıcısı,
         seçeceğin kafenin operasyon yetkisini alacak. Bu işlem rolünü{' '}
-        <span className="cc-mono text-[0.875rem] text-riso-pink-deep">cafe_admin</span> olarak
+        <span className="font-semibold text-carbon">kafe yöneticisi</span> olarak
         günceller.
       </p>
       <Select

@@ -1,9 +1,7 @@
 /**
- * AdminDashboard — Café Concierge edition
- *
- * Presentational rewrite of the previous cyber-retro admin panel. Handler
- * signatures, state shape, and API calls are unchanged so existing tests stay
- * green. Only the visual layer + native <select> replacements differ.
+ * AdminDashboard — the platform admin's panel in the v2 Masa register
+ * (DESIGN.md): underline tabs, dense tables, ice wells, game chips in each
+ * game's colour. Handler signatures, state shape and API calls are unchanged.
  */
 import React, { useEffect, useState } from 'react';
 import {
@@ -16,13 +14,13 @@ import {
   Trash2,
   Save,
   Coins,
-  ShieldCheck,
 } from 'lucide-react';
 import { Cafe, DeleteCafeResult, User } from '../types';
 import { api } from '../lib/api';
 import { AddUserModal } from './admin/AddUserModal';
 import { AddCafeModal } from './admin/AddCafeModal';
 import { AssignCafeAdminModal } from './admin/AssignCafeAdminModal';
+import { gameChipFill } from '../lib/gameColors';
 import { MapLocationPicker } from './shared/MapLocationPicker';
 import { Button } from './admin/ui/Button';
 import { Input } from './admin/ui/Input';
@@ -526,33 +524,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
     return user.username.toLowerCase().includes(term) || user.email.toLowerCase().includes(term);
   });
 
-  const roleTone = (user: AdminUserRow): 'danger' | 'warning' | 'neutral' =>
-    user.isAdmin ? 'danger' : user.role === 'cafe_admin' ? 'warning' : 'neutral';
+  const roleTone = (user: AdminUserRow): 'primary' | 'warning' | 'neutral' =>
+    user.isAdmin ? 'primary' : user.role === 'cafe_admin' ? 'warning' : 'neutral';
   const roleLabel = (user: AdminUserRow): string =>
-    user.isAdmin ? 'Admin' : user.role === 'cafe_admin' ? 'Cafe Admin' : 'User';
+    user.isAdmin ? 'Yönetici' : user.role === 'cafe_admin' ? 'Kafe yöneticisi' : 'Oyuncu';
 
   return (
-    <div className="riso-kantin min-h-screen pt-24 pb-[calc(8rem+env(safe-area-inset-bottom))] px-4">
+    <div className="riso-kantin min-h-screen pt-32 pb-[calc(8rem+env(safe-area-inset-bottom))] px-4">
       <div className="max-w-[1280px] mx-auto">
         {/* Header */}
         <header className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10">
           <div>
-            <p className="text-xs uppercase tracking-[0.14em] text-riso-pink-deep font-semibold mb-2 flex items-center gap-2">
-              <ShieldCheck size={14} />
-              <span>CafeDuo · Yönetim</span>
-            </p>
-            <h1 className="font-riso-display text-[2.25rem] sm:text-[2.5rem] font-semibold text-carbon tracking-[-0.02em] leading-none">
-              Concierge
+            <h1 className="font-riso-display text-[2rem] sm:text-[2.5rem] text-carbon leading-[0.98]">
+              Yönetim
             </h1>
-            <p className="text-[0.9375rem] text-carbon-muted mt-2">
-              <span className="font-medium text-carbon-soft">{currentUser.username}</span> —
-              kullanıcı, oyun ve kafe operasyonlarını yönet.
+            <p className="text-[0.9375rem] text-carbon-soft mt-2">
+              <span className="font-semibold text-carbon">{currentUser.username}</span> olarak
+              kullanıcıları, oyunları ve kafeleri yönetiyorsun.
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Badge tone="primary">{cafes.length} kafe</Badge>
-            <Badge tone="neutral">{users.length} kullanıcı</Badge>
-          </div>
+          <p className="flex items-center gap-2 text-[0.9375rem] text-carbon [font-variant-numeric:tabular-nums]">
+            <span className="bg-paper-deep px-3 py-1.5">
+              <strong className="font-semibold">{cafes.length}</strong> kafe
+            </span>
+            <span className="bg-paper-deep px-3 py-1.5">
+              <strong className="font-semibold">{users.length}</strong> kullanıcı
+            </span>
+          </p>
         </header>
 
         <TabBar tabs={TABS} value={activeTab} onChange={(next) => setActiveTab(next)} />
@@ -604,7 +602,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                         <TD className="text-carbon-muted">{user.department || '—'}</TD>
                         <TD className="text-center">
                           <div className="flex flex-col items-center gap-2">
-                            <span className="cc-mono text-[0.9375rem] text-riso-pink-deep font-semibold">
+                            <span className="text-[0.9375rem] font-semibold text-carbon [font-variant-numeric:tabular-nums]">
                               {user.points}
                             </span>
                             {!user.isAdmin && (
@@ -617,14 +615,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                     userPointDrafts[String(user.id)] ?? String(user.points ?? 0)
                                   }
                                   onChange={(e) => handlePointDraftChange(user.id, e.target.value)}
-                                  className="w-16 px-2 py-1 rounded-md bg-paper border border-carbon-muted text-center text-[0.8125rem] cc-mono focus:outline-none focus:ring-4 focus:ring-riso-pink/30 focus:border-riso-pink"
+                                  className="duo-input duo-input--sm w-20 px-2 text-center text-[0.875rem] [font-variant-numeric:tabular-nums] riso-focus focus:bg-paper"
                                 />
                                 <Button
                                   size="sm"
                                   variant="ghost"
-                                  leftIcon={<Coins size={12} />}
+                                  leftIcon={<Coins size={14} />}
                                   onClick={() => handleUpdateUserPoints(user)}
-                                  className="px-2 py-1"
+                                  className="px-2"
                                 >
                                   Kaydet
                                 </Button>
@@ -670,24 +668,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
             {activeTab === 'games' && (
               <section className="flex flex-col gap-3">
                 {games.length === 0 ? (
-                  <Card className="p-8 text-center text-carbon-muted">
+                  <Card variant="muted" className="p-8 text-center text-carbon-soft">
                     <Gamepad2 size={32} className="mx-auto mb-3 text-carbon-muted" />
                     <p>Henüz oyun kaydı yok.</p>
                   </Card>
                 ) : (
                   games.map((game) => (
-                    <Card key={game.id} className="px-5 py-4">
+                    <Card key={game.id} variant="muted" className="px-5 py-4">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div className="flex items-center gap-4 min-w-0">
-                          <div className="shrink-0 w-10 h-10 rounded-lg bg-paper-deep border border-carbon flex items-center justify-center text-[1.125rem]">
-                            {game.game_type === 'tictactoe'
-                              ? '◯'
-                              : game.game_type === 'Bilgi Yarışı'
-                                ? '?'
-                                : game.game_type === 'Retro Satranç'
-                                  ? '♞'
-                                  : '◉'}
-                          </div>
+                          <span
+                            className={`shrink-0 px-3 py-1 text-[0.9375rem] font-medium text-carbon ${gameChipFill(String(game.game_type || ''))}`}
+                          >
+                            {game.game_type}
+                          </span>
                           <div className="min-w-0">
                             <p className="font-medium text-carbon truncate">
                               {game.host_name} <span className="text-carbon-muted mx-1">×</span>{' '}
@@ -723,10 +717,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
             {activeTab === 'cafes' && (
               <section className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6">
                 {/* Cafe list */}
-                <Card className="p-6 h-fit">
-                  <p className="text-xs uppercase tracking-[0.1em] font-semibold text-carbon-muted mb-4">
+                <Card variant="muted" className="p-5 h-fit">
+                  <h2 className="mb-4 font-riso-display text-[1.75rem] leading-none text-carbon">
                     Kafeler
-                  </p>
+                  </h2>
                   {cafes.length === 0 ? (
                     <p className="text-[0.875rem] text-carbon-muted mb-4">Henüz kafe yok.</p>
                   ) : (
@@ -738,11 +732,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                             key={c.id}
                             type="button"
                             onClick={() => handleCafeSelect(String(c.id))}
+                            aria-current={active ? 'true' : undefined}
                             className={
-                              'text-left px-3 py-2.5 rounded-lg transition-colors ' +
+                              'riso-focus min-h-11 text-left px-3 transition-colors ' +
                               (active
-                                ? 'bg-riso-mustard/20 text-riso-pink-deep font-semibold'
-                                : 'hover:bg-paper-deep text-carbon')
+                                ? 'bg-carbon text-paper font-semibold'
+                                : 'hover:bg-paper-dim text-carbon')
                             }
                           >
                             {c.name}
@@ -751,10 +746,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                       })}
                     </div>
                   )}
-                  <div className="mt-5 pt-5 border-t border-carbon">
+                  <div className="mt-5">
                     <Button
                       leftIcon={<Plus size={16} />}
-                      variant="secondary"
+                      variant="primary"
                       onClick={() => setShowAddCafeModal(true)}
                       className="w-full"
                     >
@@ -765,15 +760,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
 
                 {/* Detail card */}
                 {selectedCafe ? (
-                  <Card className="p-8">
+                  <Card className="p-0 sm:p-2">
                     <header className="flex items-start justify-between gap-4 mb-6">
                       <div>
-                        <p className="text-xs uppercase tracking-[0.1em] text-riso-pink-deep font-semibold mb-1">
-                          Konum Detayları
-                        </p>
-                        <h2 className="font-riso-display text-[1.5rem] text-carbon font-semibold tracking-[-0.01em]">
+                        <h2 className="font-riso-display text-[2rem] leading-[0.98] text-carbon">
                           {selectedCafe.name}
                         </h2>
+                        <p className="mt-1.5 text-[0.8125rem] text-carbon-soft">
+                          Adres, konum ve kafenin oyun kuralları
+                        </p>
                       </div>
                       <div className="flex flex-col items-end gap-1.5">
                         <Button
@@ -787,7 +782,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                           Kafeyi Sil
                         </Button>
                         {cafes.length <= 1 && (
-                          <p className="text-[0.75rem] text-carbon-muted max-w-[180px] text-right">
+                          <p className="text-[0.8125rem] text-carbon-soft max-w-[180px] text-right">
                             Güvenlik kuralı: Son kafe silinemez.
                           </p>
                         )}
@@ -816,10 +811,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                         }
                       />
 
-                      <div className="border-2 border-carbon bg-paper p-1 riso-shadow-sm">
-                        <p className="bg-riso-blue text-carbon px-3 py-2 font-riso-display text-xs sm:text-sm uppercase tracking-[0.12em] font-bold mb-1">
-                          Haritadan Konum Seç
-                        </p>
+                      <div>
+                        <h3 className="mb-3 font-riso-body text-[0.9375rem] font-semibold text-carbon">
+                          Haritadan konum seç
+                        </h3>
                         <MapLocationPicker
                           primaryLatitude={editCafeData.latitude}
                           primaryLongitude={editCafeData.longitude}
@@ -868,9 +863,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                       </div>
 
                       <Card variant="muted" className="p-5">
-                        <p className="text-xs uppercase tracking-[0.1em] font-semibold text-riso-pink-deep mb-3">
-                          Birincil Konum
-                        </p>
+                        <h3 className="mb-3 font-riso-body text-[0.9375rem] font-semibold text-carbon">
+                          Birincil konum
+                        </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <Input
                             label="Enlem"
@@ -915,9 +910,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                       </Card>
 
                       <Card variant="muted" className="p-5">
-                        <p className="text-xs uppercase tracking-[0.1em] font-semibold text-carbon-muted mb-3">
-                          İkincil Konum · Opsiyonel
-                        </p>
+                        <h3 className="mb-3 font-riso-body text-[0.9375rem] font-semibold text-carbon">
+                          İkincil konum <span className="font-normal text-carbon-soft">(isteğe bağlı)</span>
+                        </h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <Input
                             label="Ek Enlem"
@@ -968,9 +963,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                           DAILY_WHEEL_SLICES). Daily game limit stays
                           configurable per cafe. */}
                       <Card variant="muted" className="p-5">
-                        <p className="text-xs uppercase tracking-[0.1em] font-semibold text-riso-blue mb-3">
-                          Bu Kafenin Kuralları
-                        </p>
+                        <h3 className="mb-3 font-riso-body text-[0.9375rem] font-semibold text-carbon">
+                          Bu kafenin kuralları
+                        </h3>
                         <Input
                           label="Günlük Oyun Limiti (kullanıcı başına)"
                           type="number"
@@ -995,7 +990,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                     </div>
                   </Card>
                 ) : (
-                  <Card className="p-12 flex flex-col items-center justify-center text-center text-carbon-muted">
+                  <Card variant="muted" className="p-12 flex flex-col items-center justify-center text-center text-carbon-soft">
                     <Coffee size={36} className="mb-3 text-carbon-muted" />
                     <p>Düzenlemek için soldan bir kafe seç ya da yeni bir kafe oluştur.</p>
                   </Card>

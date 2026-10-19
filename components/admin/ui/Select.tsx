@@ -103,7 +103,7 @@ export const Select: React.FC<SelectProps> = ({
       {label && (
         <label
           htmlFor={triggerId}
-          className="font-riso-body text-xs font-semibold uppercase tracking-[0.12em] text-carbon-soft"
+          className="font-riso-body text-[0.9375rem] font-medium text-carbon"
         >
           {label}
           {required && <span className="text-riso-redox ml-0.5">*</span>}
@@ -122,11 +122,11 @@ export const Select: React.FC<SelectProps> = ({
           onKeyDown={onKeyDown}
           data-testid={testId}
           className={
-            'w-full bg-paper border-2 border-carbon px-3.5 py-2.5 text-left ' +
+            'duo-input w-full px-3.5 text-left ' +
             'font-riso-body text-base ' +
             'flex items-center justify-between gap-2 ' +
             'riso-focus transition-colors duration-150 ' +
-            (disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-paper-deep')
+            (disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:bg-paper-dim')
           }
         >
           <span className={selected ? 'text-carbon' : 'text-carbon-muted'}>
@@ -149,7 +149,7 @@ export const Select: React.FC<SelectProps> = ({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.12, ease: 'easeOut' }}
-              className="absolute z-50 mt-2 w-full max-h-64 overflow-y-auto bg-paper border-2 border-carbon riso-shadow-sm py-1"
+              className="duo-float absolute z-50 mt-2 w-full max-h-64 overflow-y-auto bg-paper py-1"
             >
               {options.length === 0 ? (
                 <li className="px-3 py-2 text-sm text-carbon-muted">Seçenek yok</li>
@@ -166,8 +166,8 @@ export const Select: React.FC<SelectProps> = ({
                       onClick={() => commit(opt)}
                       className={
                         'mx-1 px-3 py-2 cursor-pointer flex items-center justify-between gap-2 ' +
-                        (isActive ? 'bg-riso-pink ' : '') +
-                        (isSelected ? 'font-bold text-carbon' : 'text-carbon')
+                        (isActive ? 'bg-paper-deep ' : '') +
+                        (isSelected ? 'font-semibold text-carbon' : 'text-carbon')
                       }
                     >
                       <div className="flex flex-col">

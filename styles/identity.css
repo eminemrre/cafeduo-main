@@ -547,7 +547,7 @@ html::-webkit-scrollbar-thumb {
 }
 .text-\[10px\],
 .text-\[11px\] {
-  font-size: 12px;
+  font-size: 13px;
 }
 
 /* Square every edge the utilities still round. The one exception is the
@@ -565,8 +565,11 @@ html::-webkit-scrollbar-thumb {
 }
 
 /* Nothing in the flow casts a shadow: separation is paper on ice and ink rules.
- * Floating things (fixed/absolute) keep their one soft shadow. */
-[class*='shadow-']:not([class~='fixed']):not([class~='absolute']):not([class~='sticky']) {
+ * Floating things (fixed/absolute) keep their one soft shadow, and inset
+ * shadows are not shadows here: they draw the 3 px tab underline and rules. */
+[class*='shadow-']:not([class~='fixed']):not([class~='absolute']):not([class~='sticky']):not(
+    [class*='shadow-[inset']
+  ) {
   box-shadow: none;
 }
 
@@ -686,6 +689,15 @@ html::-webkit-scrollbar-thumb {
 .duo-stat--lokum {
   background: #ff5c8a;
 }
+.duo-stat--fistik {
+  background: #b6d31b;
+}
+.duo-stat-label > svg {
+  display: inline-block;
+  margin-right: 6px;
+  vertical-align: -2px;
+}
+.duo-stat--fistik .duo-stat-label,
 .duo-stat--gok .duo-stat-label,
 .duo-stat--limon .duo-stat-label,
 .duo-stat--lokum .duo-stat-label {
@@ -761,4 +773,14 @@ html::-webkit-scrollbar-thumb {
   .duo-lobby-action:not(:disabled):hover {
     transform: none;
   }
+}
+
+/* Inside an ice well a field turns paper, so it never disappears into the well. */
+.bg-paper-deep .duo-input,
+.duo-stat .duo-input {
+  background: #ffffff;
+}
+/* The compact field for inline table edits keeps the 44 px touch target. */
+.duo-input.duo-input--sm {
+  min-height: 44px;
 }

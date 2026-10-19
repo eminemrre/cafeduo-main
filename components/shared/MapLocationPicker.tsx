@@ -321,41 +321,43 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
   const Leaflet = leafletBundle;
 
   return (
-    <div className={`border-2 border-carbon bg-paper-deep p-3 space-y-3 ${className}`}>
+    <div className={`bg-paper-deep p-4 space-y-4 ${className}`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-carbon-soft uppercase tracking-[0.12em] font-bold font-riso-body">
-          Haritadan Nokta Seç
+        <p className="text-[0.8125rem] text-carbon-soft font-riso-body">
+          Haritaya tıkladığın nokta seçili konuma yazılır.
         </p>
         {allowSecondary && (
-          <div className="inline-flex border-2 border-carbon bg-paper">
+          <div className="flex gap-5" role="group" aria-label="Haritadaki hedef">
             <button
               type="button"
               onClick={() => setMapTarget('primary')}
-              className={`px-3 py-1.5 text-xs uppercase tracking-[0.1em] font-riso-display transition-colors ${
+              aria-pressed={mapTarget === 'primary'}
+              className={`riso-focus min-h-11 text-[0.9375rem] font-semibold transition-[color,box-shadow] ${
                 mapTarget === 'primary'
-                  ? 'bg-riso-blue text-carbon font-bold'
-                  : 'text-carbon hover:bg-riso-blue/15'
+                  ? 'text-carbon shadow-[inset_0_-3px_0_#17140f]'
+                  : 'text-carbon-muted hover:text-carbon'
               }`}
             >
-              Ana Konum
+              Ana konum
             </button>
             <button
               type="button"
               onClick={() => setMapTarget('secondary')}
-              className={`px-3 py-1.5 text-xs uppercase tracking-[0.1em] font-riso-display transition-colors border-l-2 border-carbon ${
+              aria-pressed={mapTarget === 'secondary'}
+              className={`riso-focus min-h-11 text-[0.9375rem] font-semibold transition-[color,box-shadow] ${
                 mapTarget === 'secondary'
-                  ? 'bg-riso-pink text-carbon font-bold'
-                  : 'text-carbon hover:bg-riso-pink/15'
+                  ? 'text-carbon shadow-[inset_0_-3px_0_#17140f]'
+                  : 'text-carbon-muted hover:text-carbon'
               }`}
             >
-              İkinci Konum
+              İkinci konum
             </button>
           </div>
         )}
       </div>
 
       {(enableSearch || enableGeolocation) && (
-        <div className="space-y-3 border-2 border-carbon bg-paper p-3">
+        <div className="space-y-3">
           {enableSearch && (
             <form onSubmit={handleSearch} className="flex flex-col gap-2 sm:flex-row">
               <label htmlFor="location-search" className="sr-only">
@@ -369,12 +371,12 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Adres, kampüs veya kafe ara..."
-                className="min-w-0 flex-1 border-2 border-carbon bg-paper-deep px-3 py-2 text-sm text-carbon outline-none placeholder:text-carbon-muted focus:bg-paper focus:ring-2 focus:ring-riso-blue focus:ring-offset-2 focus:ring-offset-paper"
+                className="duo-input min-w-0 flex-1 px-3 text-base text-carbon placeholder:text-carbon-muted riso-focus"
               />
               <button
                 type="submit"
                 disabled={searchLoading || !searchQuery.trim()}
-                className="riso-focus riso-press inline-flex items-center justify-center gap-2 border-2 border-carbon bg-riso-blue px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-carbon disabled:cursor-not-allowed disabled:opacity-50"
+                className="riso-focus inline-flex min-h-[52px] items-center justify-center gap-2 bg-carbon px-4 text-[0.9375rem] font-semibold text-paper transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45"
               >
                 <Search size={15} />
                 {searchLoading ? 'Aranıyor...' : 'Adres ara'}
@@ -387,7 +389,7 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
               <button
                 type="button"
                 onClick={handleUseDeviceLocation}
-                className="riso-focus riso-press inline-flex items-center gap-2 border-2 border-carbon bg-paper-deep px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-carbon hover:bg-paper"
+                className="duo-quiet riso-focus gap-2"
               >
                 <LocateFixed size={15} />
                 Cihaz konumumu kullan
@@ -396,7 +398,7 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
             <button
               type="button"
               onClick={handleClear}
-              className="riso-focus riso-press inline-flex items-center gap-2 border-2 border-carbon bg-paper-deep px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] text-carbon hover:bg-riso-redox/10"
+              className="duo-quiet riso-focus gap-2"
               aria-label={`${activeTargetName === 'Ana konum' ? 'Ana konumu' : 'İkinci konumu'} temizle`}
             >
               <Trash2 size={15} />
@@ -408,7 +410,7 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
             <ul
               role="listbox"
               aria-label="Adres sonuçları"
-              className="max-h-48 overflow-y-auto border-2 border-carbon bg-paper"
+              className="max-h-48 overflow-y-auto bg-paper"
             >
               {searchResults.map((result) => (
                 <li key={result.placeId}>
@@ -417,7 +419,7 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
                     role="option"
                     aria-selected="false"
                     onClick={() => handleSearchResult(result)}
-                    className="w-full border-b border-carbon/20 px-3 py-2 text-left text-sm text-carbon last:border-b-0 hover:bg-riso-blue/15 focus:bg-riso-blue/15 focus:outline-none"
+                    className="w-full min-h-11 border-b border-paper-dim px-3 py-2 text-left text-sm text-carbon last:border-b-0 hover:bg-paper-dim focus:bg-paper-dim focus:outline-none"
                   >
                     {result.displayName}
                   </button>
@@ -426,14 +428,14 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
             </ul>
           )}
 
-          <p role="status" aria-live="polite" className="text-xs text-carbon-muted">
+          <p role="status" aria-live="polite" className="text-[0.8125rem] text-carbon-soft">
             {interactionMessage || 'Adres ara, cihaz konumunu kullan veya haritaya tıkla.'}
           </p>
         </div>
       )}
 
       {Leaflet ? (
-        <div className="h-[260px] sm:h-[300px] overflow-hidden border-2 border-carbon">
+        <div className="h-[260px] sm:h-[300px] overflow-hidden">
           <Leaflet.MapContainer
             key={`${mapCenter[0].toFixed(4)}-${mapCenter[1].toFixed(4)}`}
             center={mapCenter}
@@ -452,7 +454,7 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
                 <Leaflet.Circle
                   center={primaryCoords}
                   radius={Math.max(10, Number(primaryRadius) || 150)}
-                  pathOptions={{ color: '#1D4ED8', fillColor: '#1D4ED8', fillOpacity: 0.15 }}
+                  pathOptions={{ color: '#0b6aa8', fillColor: '#1fb3ff', fillOpacity: 0.2 }}
                 />
               </>
             )}
@@ -462,27 +464,27 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
                 <Leaflet.Circle
                   center={secondaryCoords}
                   radius={Math.max(10, Number(secondaryRadius) || 150)}
-                  pathOptions={{ color: '#ff5c8a', fillColor: '#ff5c8a', fillOpacity: 0.15 }}
+                  pathOptions={{ color: '#c4265f', fillColor: '#ff5c8a', fillOpacity: 0.2 }}
                 />
               </>
             )}
           </Leaflet.MapContainer>
         </div>
       ) : (
-        <div className="h-[130px] border-2 border-carbon-muted bg-paper-dim flex items-center justify-center text-sm text-carbon-soft px-4 text-center font-riso-body">
+        <div className="h-[130px] bg-paper-dim flex items-center justify-center text-sm text-carbon-soft px-4 text-center font-riso-body">
           {mapLoadError || 'Harita yükleniyor...'}
         </div>
       )}
 
-      <div className="border-2 border-carbon bg-paper p-3">
+      <div className="bg-paper p-3">
         <div className="flex items-center justify-between gap-3">
           <label
             htmlFor="location-radius-slider"
-            className="text-xs font-bold uppercase tracking-[0.1em] text-carbon-soft"
+            className="text-[0.9375rem] font-medium text-carbon"
           >
             {activeTargetName} yarıçapı
           </label>
-          <span className="font-riso-mono text-sm text-carbon">
+          <span className="text-[0.9375rem] font-semibold text-carbon [font-variant-numeric:tabular-nums]">
             {Number(activeRadius) || 150} m
           </span>
         </div>
@@ -495,15 +497,15 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
           value={Number(activeRadius) || 150}
           onChange={(event) => handleRadiusChange(event.target.value)}
           aria-label={`${activeTargetName} yarıçapı`}
-          className="mt-3 w-full accent-riso-blue"
+          className="mt-3 w-full accent-[#17140f]"
         />
-        <div className="mt-1 flex justify-between text-[10px] font-riso-mono text-carbon-muted">
+        <div className="mt-1 flex justify-between text-[0.8125rem] text-carbon-soft [font-variant-numeric:tabular-nums]">
           <span>10 m</span>
           <span>5000 m</span>
         </div>
       </div>
 
-      <p className="text-xs text-carbon-muted font-riso-body">
+      <p className="text-[0.8125rem] text-carbon-soft font-riso-body">
         Haritada tıkladığın nokta, seçili hedefe (
         {mapTarget === 'primary' ? 'ana konum' : 'ikinci konum'}) otomatik yazılır. Yarıçap halkası
         içinde kalan kullanıcılar check-in yapabilir.

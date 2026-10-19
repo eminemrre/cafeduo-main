@@ -33,7 +33,7 @@ export const AddUserModal: React.FC<AddUserModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      eyebrow="Personel Kaydı"
+      eyebrow="Hesap hemen açılır; şifreyi kullanıcıyla paylaş."
       title="Yeni Kullanıcı Ekle"
       size="md"
       footer={

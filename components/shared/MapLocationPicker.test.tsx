@@ -58,7 +58,7 @@ describe('MapLocationPicker', () => {
     const user = userEvent.setup();
 
     render(<MapLocationPicker {...props} enableSecondary />);
-    await user.click(screen.getByRole('button', { name: 'İkinci Konum' }));
+    await user.click(screen.getByRole('button', { name: 'İkinci konum' }));
     await user.click(screen.getByRole('button', { name: 'Cihaz konumumu kullan' }));
 
     expect(props.onSecondaryLatitudeChange).toHaveBeenCalledWith('37.742000');

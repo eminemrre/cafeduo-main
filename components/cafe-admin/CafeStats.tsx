@@ -6,33 +6,29 @@ interface CafeStatsProps {
   stats: CafeDashboardStats;
 }
 
+/** Three numbers in ice wells; the reward count sits on fıstık (rewards are fıstık). */
 export const CafeStats: React.FC<CafeStatsProps> = ({ stats }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-      <article className="border-2 border-carbon bg-paper-deep p-4">
-        <div className="text-[11px] tracking-[0.3em] uppercase text-riso-blue/80 mb-2">Ödüller</div>
-        <div className="flex items-center justify-between">
-          <div className="text-2xl font-semibold">{stats.rewardCount}</div>
-          <Gift size={18} className="text-riso-blue" />
-        </div>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-8">
+      <article className="duo-stat duo-stat--fistik">
+        <span className="duo-stat-label inline-flex items-center gap-1.5">
+          <Gift size={15} aria-hidden="true" /> Ödüller
+        </span>
+        <span className="duo-stat-value text-[24px] mt-1">{stats.rewardCount}</span>
       </article>
-      <article className="border-2 border-carbon bg-paper-deep p-4">
-        <div className="text-[11px] tracking-[0.3em] uppercase text-riso-spring/80 mb-2">
-          Konum Doğrulama
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="text-sm font-semibold">{stats.locationSummary}</div>
-          <MapPin size={18} className="text-riso-spring" />
-        </div>
+      <article className="duo-stat">
+        <span className="duo-stat-label inline-flex items-center gap-1.5">
+          <MapPin size={15} aria-hidden="true" /> Konum doğrulama
+        </span>
+        <span className="duo-stat-value mt-1 text-[15px] font-semibold">{stats.locationSummary}</span>
       </article>
-      <article className="border-2 border-carbon bg-paper-deep p-4">
-        <div className="text-[11px] tracking-[0.3em] uppercase text-riso-mustard/80 mb-2">
-          Son Kupon
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="text-sm font-mono break-all">{stats.lastCouponCode || 'Henüz yok'}</div>
-          <QrCode size={18} className="text-riso-mustard" />
-        </div>
+      <article className="duo-stat">
+        <span className="duo-stat-label inline-flex items-center gap-1.5">
+          <QrCode size={15} aria-hidden="true" /> Son kupon
+        </span>
+        <span className="duo-stat-value mt-1 text-[15px] font-semibold break-all">
+          {stats.lastCouponCode || 'Henüz yok'}
+        </span>
       </article>
     </div>
   );

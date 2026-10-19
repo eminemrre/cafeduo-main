@@ -59,21 +59,18 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
       aria-label="Kupon QR kodunu okut"
       className="riso-kantin fixed inset-0 z-[150] flex items-center justify-center p-4"
     >
-      <div className="absolute inset-0 bg-carbon/75 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-carbon/75" onClick={onClose} />
 
       <div
-        className="relative w-full max-w-md border-2 border-carbon bg-paper riso-shadow-md overflow-hidden"
+        className="relative w-full max-w-md bg-paper overflow-hidden"
         data-testid="qr-scanner-modal"
       >
         {/* Header */}
-        <div className="px-5 py-4 border-b-2 border-carbon flex items-start justify-between gap-3">
+        <div className="px-5 py-4 border-b-[3px] border-dotted border-carbon/35 flex items-start justify-between gap-3">
           <div className="min-w-0 flex items-center gap-2">
             <Camera size={18} className="text-riso-blue shrink-0" />
             <div>
-              <p className="font-riso-mono text-[10px] uppercase tracking-[0.18em] text-carbon-muted font-bold">
-                Kamera Tarayıcı
-              </p>
-              <h3 className="font-riso-display text-base sm:text-lg text-carbon uppercase tracking-[0.04em]">
+              <h3 className="font-riso-body text-base sm:text-lg text-carbon">
                 QR Kodu Okut
               </h3>
             </div>
@@ -82,7 +79,7 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
             type="button"
             onClick={onClose}
             aria-label="Kapat"
-            className="riso-focus shrink-0 w-9 h-9 border-2 border-carbon bg-paper text-carbon hover:bg-riso-redox hover:text-paper flex items-center justify-center transition-colors"
+            className="riso-focus shrink-0 w-9 h-9 bg-paper text-carbon hover:bg-riso-redox hover:text-paper flex items-center justify-center transition-colors"
           >
             <X size={18} />
           </button>
@@ -96,15 +93,15 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
           </p>
 
           {error ? (
-            <div className="border-2 border-carbon border-l-[6px] border-l-riso-redox bg-riso-redox/15 p-3 text-xs text-carbon font-riso-body flex items-start gap-2">
+            <div className="bg-riso-redox/15 p-3 text-xs text-carbon font-riso-body flex items-start gap-2">
               <AlertTriangle size={14} className="shrink-0 mt-0.5 text-riso-redox" />
               <span>{error}</span>
             </div>
           ) : (
-            <div className="relative aspect-square w-full overflow-hidden border-2 border-carbon bg-carbon">
+            <div className="relative aspect-square w-full overflow-hidden bg-carbon">
               <Suspense
                 fallback={
-                  <div className="absolute inset-0 flex items-center justify-center text-paper font-riso-mono text-xs uppercase tracking-wider">
+                  <div className="absolute inset-0 flex items-center justify-center text-paper font-riso-body text-xs">
                     Kamera hazırlanıyor...
                   </div>
                 }
@@ -151,7 +148,7 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
           <button
             type="button"
             onClick={onClose}
-            className="riso-focus border-2 border-carbon bg-paper-deep text-carbon py-2 font-riso-display text-xs font-bold uppercase tracking-[0.1em] hover:bg-paper-dim transition-colors"
+            className="riso-focus bg-paper-deep text-carbon py-2 font-riso-body text-xs font-bold hover:bg-paper-dim transition-colors"
           >
             Manuel Girişe Dön
           </button>

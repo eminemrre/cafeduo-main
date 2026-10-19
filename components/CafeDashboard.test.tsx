@@ -60,7 +60,7 @@ describe('CafeDashboard', () => {
     fireEvent.change(screen.getByPlaceholderText('CD-XXXX-XXXX-XXXX'), {
       target: { value: 'abc123' },
     });
-    fireEvent.click(screen.getByText('KUPONU ONAYLA'));
+    fireEvent.click(screen.getByText('Kuponu onayla'));
 
     await waitFor(() => {
       expect(api.coupons.use).toHaveBeenCalledWith('ABC123');
@@ -78,7 +78,7 @@ describe('CafeDashboard', () => {
     fireEvent.change(screen.getByPlaceholderText('CD-XXXX-XXXX-XXXX'), {
       target: { value: 'bad' },
     });
-    fireEvent.click(screen.getByText('KUPONU ONAYLA'));
+    fireEvent.click(screen.getByText('Kuponu onayla'));
 
     await waitFor(() => {
       expect(screen.getByText('Kupon geçersiz')).toBeInTheDocument();
@@ -148,7 +148,7 @@ describe('CafeDashboard', () => {
     fireEvent.change(screen.getByLabelText('Enlem (Latitude)'), {
       target: { value: '200' },
     });
-    fireEvent.click(screen.getByText('KONUMU KAYDET'));
+    fireEvent.click(screen.getByText('Konumu kaydet'));
 
     expect(api.cafes.updateLocation).not.toHaveBeenCalled();
     expect(screen.getByText('Enlem -90 ile 90 arasında olmalıdır.')).toBeInTheDocument();
@@ -172,7 +172,7 @@ describe('CafeDashboard', () => {
       target: { value: '220' },
     });
     fireEvent.change(screen.getByRole('slider'), { target: { value: '260' } });
-    fireEvent.click(screen.getByText('KONUMU KAYDET'));
+    fireEvent.click(screen.getByText('Konumu kaydet'));
 
     await waitFor(() => {
       expect(api.cafes.updateLocation).toHaveBeenCalledWith(7, {

@@ -119,12 +119,13 @@ export interface Cafe {
   pin?: string;
   daily_pin?: string;
   table_count?: number;
-  latitude?: number;
-  longitude?: number;
+  // null clears a stored location; the admin API skips only undefined fields.
+  latitude?: number | null;
+  longitude?: number | null;
   radius?: number;
-  secondary_latitude?: number;
-  secondary_longitude?: number;
-  secondary_radius?: number;
+  secondary_latitude?: number | null;
+  secondary_longitude?: number | null;
+  secondary_radius?: number | null;
   /** PR #36 — per-cafe daily game limit. Default 10. Set by cafe admin. */
   daily_game_limit?: number;
   /** Same field, camelCase — admin update endpoint accepts both. */

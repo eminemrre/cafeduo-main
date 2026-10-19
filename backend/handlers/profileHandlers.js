@@ -1,7 +1,9 @@
 const { executeDataMode, sendApiError, sendApiProblem } = require('../utils/routeHelpers');
 
+// `bottts` is the curated style we serve today; `pixel-art` stays valid so
+// accounts that already carry one keep working.
 const AVATAR_URL_PATTERN =
-  /^https:\/\/api\.dicebear\.com\/9\.x\/pixel-art\/svg\?seed=[A-Za-z0-9_-]{1,32}$/;
+  /^https:\/\/api\.dicebear\.com\/9\.x\/(?:bottts|pixel-art)\/svg\?seed=[A-Za-z0-9_-]{1,32}$/;
 const isValidAvatarUrl = (value) =>
   value === null || value === '' || (typeof value === 'string' && AVATAR_URL_PATTERN.test(value));
 const USER_RETURNING_COLUMNS =
@@ -180,11 +182,12 @@ const createProfileHandlers = ({
     const { id } = req.params;
     const { points, wins, gamesPlayed, avatar_url: rawAvatarUrl } = req.body || {};
 
-    // Avatar comes from a curated set of DiceBear v9 pixel-art seeds.
+    // Avatar comes from a curated set of DiceBear v9 seeds (the toy robots).
     // The frontend builds these URLs via lib/avatars.ts. We accept null/empty
-    // (reset to initials) or an https://api.dicebear.com/9.x/pixel-art/svg?seed=…
-    // URL whose seed is alphanumeric / dash / underscore. Any other shape is
-    // rejected so a hostile client can't store an arbitrary src= on every user.
+    // (reset to initials) or an https://api.dicebear.com/9.x/bottts/svg?seed=…
+    // URL whose seed is alphanumeric / dash / underscore (legacy pixel-art
+    // URLs are still accepted). Any other shape is rejected so a hostile
+    // client can't store an arbitrary src= on every user.
     const avatarUrlProvided = Object.prototype.hasOwnProperty.call(req.body || {}, 'avatar_url');
     let nextAvatarUrl = null;
     if (avatarUrlProvided) {
@@ -196,7 +199,7 @@ const createProfileHandlers = ({
         return sendApiProblem(res, {
           status: 400,
           code: 'INVALID_AVATAR_URL',
-          message: 'Avatar URL hatalı. Sadece curated DiceBear pixel-art avatarları kabul edilir.',
+          message: 'Avatar URL hatalı. Sadece curated DiceBear avatarları kabul edilir.',
         });
       }
     }
@@ -322,7 +325,7 @@ const createProfileHandlers = ({
         return sendApiProblem(res, {
           status: 400,
           code: 'INVALID_AVATAR_URL',
-          message: 'Avatar URL hatalı. Sadece curated DiceBear pixel-art avatarları kabul edilir.',
+          message: 'Avatar URL hatalı. Sadece curated DiceBear avatarları kabul edilir.',
         });
       }
       updates.avatar_url = body.avatar_url || null;

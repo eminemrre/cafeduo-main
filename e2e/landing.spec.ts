@@ -6,13 +6,11 @@ test.describe('Public Landing Pages', () => {
     await page.goto(baseURL || DEFAULT_E2E_APP_BASE_URL);
     const fonts = await page.evaluate(async () => {
       const fonts = [
-        { family: 'Familjen Grotesk', style: 'normal', weight: '400' },
-        { family: 'Unbounded Variable', style: 'normal', weight: '400' },
-        { family: 'JetBrains Mono Variable', style: 'normal', weight: '400' },
-        { family: 'Fraunces Variable', style: 'normal', weight: '400' },
-        { family: 'Fraunces Variable', style: 'italic', weight: '400' },
         { family: 'Baloo 2', style: 'normal', weight: '800' },
         { family: 'Onest', style: 'normal', weight: '400' },
+        { family: 'Onest', style: 'normal', weight: '500' },
+        { family: 'Onest', style: 'normal', weight: '600' },
+        { family: 'Onest', style: 'normal', weight: '700' },
       ];
       return Promise.all(fonts.map(async ({ family, style, weight }) => {
         const faces = await document.fonts.load(
@@ -27,12 +25,10 @@ test.describe('Public Landing Pages', () => {
       }));
     });
     expect(fonts).toEqual([
-      { family: 'Familjen Grotesk', style: 'normal', loaded: true },
-      { family: 'Unbounded Variable', style: 'normal', loaded: true },
-      { family: 'JetBrains Mono Variable', style: 'normal', loaded: true },
-      { family: 'Fraunces Variable', style: 'normal', loaded: true },
-      { family: 'Fraunces Variable', style: 'italic', loaded: true },
       { family: 'Baloo 2', style: 'normal', loaded: true },
+      { family: 'Onest', style: 'normal', loaded: true },
+      { family: 'Onest', style: 'normal', loaded: true },
+      { family: 'Onest', style: 'normal', loaded: true },
       { family: 'Onest', style: 'normal', loaded: true },
     ]);
   });

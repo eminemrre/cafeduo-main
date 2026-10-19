@@ -331,22 +331,17 @@ const Questions: React.FC = () => (
   </section>
 );
 
-/** The close: the blank is the café's name, and it goes straight into the WhatsApp message. */
+/** The close: the blank is the café's name, and it goes straight into the WhatsApp message.
+ *  The link is a real link, so it opens in a new tab and can be copied or opened
+ *  with the middle button like any other. */
 const Close: React.FC = () => {
   const [name, setName] = useState('');
+  const message = name.trim()
+    ? `Selam, ${name.trim()} için CafeDuo pilot programına başvurmak istiyorum.`
+    : DEFAULT_PILOT_MESSAGE;
   return (
     <section className="cdl-field cdl-cta" aria-label="Son çağrı">
-      <form
-        className="cdl-cta-form"
-        onSubmit={(event) => {
-          event.preventDefault();
-          const cafe = name.trim();
-          const message = cafe
-            ? `Selam, ${cafe} için CafeDuo pilot programına başvurmak istiyorum.`
-            : DEFAULT_PILOT_MESSAGE;
-          window.open(whatsappLink(message), '_blank', 'noopener,noreferrer');
-        }}
-      >
+      <div className="cdl-cta-form">
         <p className="cdl-cta-sentence">
           <label htmlFor="cdl-owner-cafe">Pilot için</label>
           <input
@@ -361,16 +356,21 @@ const Close: React.FC = () => {
           />
           <span className="cdl-cta-tail">
             <span>ile</span>
-            <button type="submit" className="cdl-cta-submit">
+            <a
+              className="cdl-cta-submit"
+              href={whatsappLink(message)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               başvurun
-            </button>
+            </a>
           </span>
         </p>
         <p className="cdl-cta-note" data-landing-reveal>
           Mesaj WhatsApp’ta hazır açılır, göndermeden önce düzenleyebilirsiniz. E-postayı tercih
           ederseniz: <a href={pilotMailto}>{CONTACT_EMAIL}</a>
         </p>
-      </form>
+      </div>
     </section>
   );
 };

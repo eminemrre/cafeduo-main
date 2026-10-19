@@ -141,7 +141,7 @@ describe('UserProfileModal', () => {
   it('waits for the shared avatar save and keeps the confirmed choice on failure', async () => {
     const user = {
       ...createUser(),
-      avatar_url: 'https://api.dicebear.com/9.x/pixel-art/svg?seed=kahve',
+      avatar_url: 'https://api.dicebear.com/9.x/bottts/svg?seed=kahve',
     };
     let reject!: (reason: Error) => void;
     const pending = new Promise<void>((_, fail) => {
@@ -158,24 +158,24 @@ describe('UserProfileModal', () => {
       />
     );
     fireEvent.click(screen.getByRole('button', { name: 'Avatar seç' }));
-    fireEvent.click(screen.getByTestId('avatar-option-duo'));
+    fireEvent.click(screen.getByTestId('avatar-option-masa'));
     expect(screen.getByText('Avatar kaydediliyor…')).toHaveAttribute('role', 'status');
-    expect(screen.getByTestId('avatar-option-duo')).toBeDisabled();
+    expect(screen.getByTestId('avatar-option-masa')).toBeDisabled();
     const profile = screen.getByRole('dialog', { name: 'emin profili' });
-    expect(profile.querySelector('img')).toHaveAttribute('src', '/avatars/pixel-art-v9/kahve.svg');
+    expect(profile.querySelector('img')).toHaveAttribute('src', '/avatars/bottts-v9/kahve.svg');
     reject(new Error('save failed'));
     await waitFor(() =>
       expect(screen.getByRole('alert')).toHaveTextContent('Avatar kaydedilemedi')
     );
     expect(screen.getByTestId('avatar-option-kahve')).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.click(screen.getByTestId('avatar-option-duo'));
+    fireEvent.click(screen.getByTestId('avatar-option-masa'));
     await waitFor(() =>
       expect(screen.queryByRole('dialog', { name: 'Avatar seçimi' })).not.toBeInTheDocument()
     );
-    expect(profile.querySelector('img')).toHaveAttribute('src', '/avatars/pixel-art-v9/duo.svg');
+    expect(profile.querySelector('img')).toHaveAttribute('src', '/avatars/bottts-v9/masa.svg');
     expect(onSaveAvatar).toHaveBeenCalledTimes(2);
     expect(onSaveAvatar).toHaveBeenLastCalledWith(
-      'https://api.dicebear.com/9.x/pixel-art/svg?seed=duo'
+      'https://api.dicebear.com/9.x/bottts/svg?seed=masa'
     );
     expect(api.users.updateProfile).not.toHaveBeenCalled();
   });
@@ -191,14 +191,14 @@ describe('UserProfileModal', () => {
       <UserProfileModal
         isOpen
         onClose={jest.fn()}
-        user={{ ...user, avatar_url: 'https://api.dicebear.com/9.x/pixel-art/svg?seed=masa' }}
+        user={{ ...user, avatar_url: 'https://api.dicebear.com/9.x/bottts/svg?seed=masa' }}
         isEditable
       />
     );
     expect(screen.getByRole('combobox')).toHaveValue('İşletme');
     expect(screen.getByRole('dialog').querySelector('img')).toHaveAttribute(
       'src',
-      '/avatars/pixel-art-v9/masa.svg'
+      '/avatars/bottts-v9/masa.svg'
     );
   });
 
@@ -206,16 +206,16 @@ describe('UserProfileModal', () => {
     const user = createUser();
     (api.users.updateProfile as jest.Mock).mockResolvedValueOnce({
       ...user,
-      avatar_url: 'https://api.dicebear.com/9.x/pixel-art/svg?seed=duo',
+      avatar_url: 'https://api.dicebear.com/9.x/bottts/svg?seed=masa',
     });
     render(<UserProfileModal isOpen onClose={jest.fn()} user={user} isEditable />);
     fireEvent.click(screen.getByRole('button', { name: 'Avatar seç' }));
-    fireEvent.click(screen.getByTestId('avatar-option-duo'));
+    fireEvent.click(screen.getByTestId('avatar-option-masa'));
     await waitFor(() =>
       expect(screen.queryByRole('dialog', { name: 'Avatar seçimi' })).not.toBeInTheDocument()
     );
     expect(api.users.updateProfile).toHaveBeenCalledWith(user.id, {
-      avatar_url: 'https://api.dicebear.com/9.x/pixel-art/svg?seed=duo',
+      avatar_url: 'https://api.dicebear.com/9.x/bottts/svg?seed=masa',
     });
   });
 

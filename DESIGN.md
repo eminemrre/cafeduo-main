@@ -445,9 +445,8 @@ notice) get one soft shadow (`0 16px 34px rgba(23,20,15,0.22)`).
   diamond drops, the sheets stick and stack.
 - Playing is the reward: a move, a correct answer or a hit makes the toy react (bounce, spin, coin
   pop). Scroll may turn and move toys on Vitrin, never hide text behind them.
-- There is no motion toggle on the landing. The landing follows the system preference; `/kafeler`
-  still carries the pause control, which writes `localStorage.cafeduo_landing_motion` and sets
-  `data-motion` on `.club-landing`.
+- There is no motion toggle on any page. The public pages follow the system preference and
+  pause themselves while the tab is hidden; `data-motion` on `.club-landing` records the state.
 - Transform and opacity only. `prefers-reduced-motion`: toys stand still, states change instantly,
   no `cdl-` animation runs.
 

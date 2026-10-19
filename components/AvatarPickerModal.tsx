@@ -1,5 +1,5 @@
 /**
- * AvatarPickerModal — 4×4 locally served pixel-art grid.
+ * AvatarPickerModal — 4×4 locally served grid of the toy-robot avatars.
  *
  * Surface matches the Riso Kantin redesign: paper ground, ink border, double
  * offset shadow. Each tile is a 2px-bordered square; the currently selected

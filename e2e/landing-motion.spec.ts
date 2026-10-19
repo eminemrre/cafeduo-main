@@ -87,12 +87,11 @@ test('@smoke cafe landing follows the system motion setting and hands the café 
   const close = page.getByRole('region', { name: 'Son çağrı' });
   await close.scrollIntoViewIfNeeded();
   await close.getByLabel('Pilot için').fill('Masa Kafe');
-  const [popup] = await Promise.all([
-    page.waitForEvent('popup'),
-    close.getByRole('button', { name: 'başvurun' }).click(),
-  ]);
-  expect(decodeURIComponent(popup.url())).toContain('Masa Kafe için CafeDuo pilot programına');
-  await popup.close();
+  const apply = close.getByRole('link', { name: 'başvurun' });
+  await expect(apply).toHaveAttribute('href', /wa\.me/);
+  expect(decodeURIComponent(await apply.getAttribute('href'))).toContain(
+    'Masa Kafe için CafeDuo pilot programına'
+  );
 });
 
 test('@smoke landing content and join action work without scroll enhancement, storage or WebGL', async ({ page }) => {

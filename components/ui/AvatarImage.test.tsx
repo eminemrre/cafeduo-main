@@ -6,7 +6,7 @@ import { getAvatarUrl } from '../../lib/avatars';
 it('keeps initials while loading and removes them after a curated image loads', () => {
   const { container } = render(<AvatarImage src={getAvatarUrl('kahve')} initials="EM" />);
   const img = container.querySelector('img')!;
-  expect(img).toHaveAttribute('src', '/avatars/pixel-art-v9/kahve.svg');
+  expect(img).toHaveAttribute('src', '/avatars/bottts-v9/kahve.svg');
   expect(screen.getByText('EM')).toBeInTheDocument();
   expect(img).toHaveStyle({ opacity: 0 });
   fireEvent.load(img);
@@ -24,9 +24,9 @@ it('shows initials after a legacy image fails and starts a fresh lifecycle when 
   fireEvent.error(img);
   expect(container.querySelector('img')).toBeNull();
   expect(screen.getByText('EM')).toBeInTheDocument();
-  rerender(<AvatarImage src={getAvatarUrl('duo')} initials="DU" />);
+  rerender(<AvatarImage src={getAvatarUrl('kahve')} initials="DU" />);
   const next = container.querySelector('img')!;
-  expect(next).toHaveAttribute('src', '/avatars/pixel-art-v9/duo.svg');
+  expect(next).toHaveAttribute('src', '/avatars/bottts-v9/kahve.svg');
   fireEvent.load(next);
   expect(screen.queryByText('DU')).not.toBeInTheDocument();
   rerender(<AvatarImage initials="ME" />);

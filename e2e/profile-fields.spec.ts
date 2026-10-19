@@ -26,10 +26,10 @@ for (const field of ['department', 'avatar_url'] as const) {
       await profile.getByRole('button', { name: 'Bölümü kaydet' }).click();
     } else {
       await profile.getByRole('button', { name: 'Avatar seç' }).click();
-      await page.getByTestId('avatar-option-duo').click();
+      await page.getByTestId('avatar-option-masa').click();
     }
     await expect.poll(() => payloads.length).toBe(1);
-    const expectedPatch = field === 'department' ? { department: 'İşletme' } : { avatar_url: 'https://api.dicebear.com/9.x/pixel-art/svg?seed=duo' };
+    const expectedPatch = field === 'department' ? { department: 'İşletme' } : { avatar_url: 'https://api.dicebear.com/9.x/bottts/svg?seed=masa' };
     expect(payloads[0]).toEqual(expectedPatch);
     const stats = { points: 1700, wins: 9, gamesPlayed: 15 };
     // Change only this disposable local test user's statistics after the form snapshot.

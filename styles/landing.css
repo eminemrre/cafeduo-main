@@ -1105,6 +1105,8 @@ body:has(.cdl) {
 }
 
 .cdl-cta-submit {
+  display: inline-flex;
+  align-items: center;
   min-height: max(48px, 1.5em);
   padding: 0 22px;
   border: 0;
@@ -1113,6 +1115,7 @@ body:has(.cdl) {
   font-family: var(--text);
   font-size: 0.78em;
   font-weight: 700;
+  text-decoration: none;
   cursor: pointer;
   transition:
     transform 180ms var(--ease-out),

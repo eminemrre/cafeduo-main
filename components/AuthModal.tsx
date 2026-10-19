@@ -411,6 +411,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <p className="font-riso-body text-sm text-carbon-soft mt-1">{subtitle}</p>
               </div>
               <button
+                type="button"
                 onClick={onClose}
                 aria-label="Kapat"
                 className="duo-auth-close riso-focus shrink-0 w-9 h-9 border-2 border-carbon bg-paper text-carbon hover:bg-riso-redox hover:text-paper flex items-center justify-center transition-colors"

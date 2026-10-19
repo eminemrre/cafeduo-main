@@ -98,6 +98,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
               <>
                 {NAV_ITEMS.map((item) => (
                   <button
+                    type="button"
                     key={item.id}
                     onClick={() => scrollToSection(item.id)}
                     className="duo-nav-link riso-focus"
@@ -106,6 +107,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                   </button>
                 ))}
                 <button
+                  type="button"
                   onClick={goToBusiness}
                   aria-current={isBusinessPage ? 'page' : undefined}
                   className={`duo-nav-link duo-nav-business riso-focus transition-all ${
@@ -132,6 +134,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                   </div>
                 )}
                 <button
+                  type="button"
                   onClick={onLogout}
                   data-testid="logout-button"
                   className="riso-focus riso-press flex items-center gap-2 border-2 border-carbon bg-riso-redox px-3 py-1.5 font-riso-body text-sm font-bold text-paper transition-all riso-shadow-sm"
@@ -144,6 +147,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
           </div>
 
           <button
+            type="button"
             ref={menuToggleRef}
             onClick={() => setIsOpen(!isOpen)}
             aria-expanded={isOpen}

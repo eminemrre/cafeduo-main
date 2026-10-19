@@ -107,6 +107,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
                     <div className="flex items-center gap-4">
                       <button
+                        type="button"
                         onClick={() => onViewProfile(hostName)}
                         className="rounded-xl riso-focus w-12 h-12 sm:w-14 sm:h-14 bg-riso-blue text-paper font-riso-display text-xl sm:text-2xl border-2 border-carbon flex items-center justify-center hover:bg-riso-blue-deep transition-colors"
                         title="Profili Görüntüle"
@@ -116,6 +117,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                       <div>
                         <div className="flex items-center gap-3 flex-wrap">
                           <button
+                            type="button"
                             onClick={() => onViewProfile(hostName)}
                             className="riso-focus font-riso-body font-semibold text-lg text-carbon hover:text-riso-pink-deep transition-colors"
                           >
@@ -134,6 +136,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
 
                     {!isOwnLobby ? (
                       <button
+                        type="button"
                         onClick={() => onJoinGame(Number(req.id))}
                         disabled={isInGame}
                         className="duo-button riso-focus w-full sm:w-auto px-6 py-3 bg-riso-pink text-carbon font-semibold text-sm border border-carbon transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -146,6 +149,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                           SENİN LOBİN
                         </span>
                         <button
+                          type="button"
                           onClick={() => onCancelGame(req.id)}
                           className="riso-focus px-4 py-2 font-riso-body font-bold uppercase tracking-wider text-carbon border-2 border-carbon bg-paper hover:bg-riso-redox hover:text-paper transition-colors"
                           data-testid={`cancel-game-${req.id}`}

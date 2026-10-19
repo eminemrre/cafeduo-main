@@ -43,10 +43,13 @@ export const Button: React.FC<ButtonProps> = ({
   rightIcon,
   className = '',
   children,
+  // Admin dialogs act through onClick; a default submit would post any form they end up inside.
+  type = 'button',
   ...rest
 }) => (
   <button
     {...rest}
+    type={type}
     className={
       'duo-button inline-flex items-center justify-center font-riso-body font-semibold border-2 ' +
       'transition-[box-shadow,transform,background-color] duration-150 ' +

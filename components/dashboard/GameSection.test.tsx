@@ -408,14 +408,14 @@ describe('GameSection', () => {
       expect(mockApiGamesGet).toHaveBeenCalledWith(51);
     });
 
-    expect(screen.getByText(/SİSTEM KAYDI #CHESS/i)).toBeInTheDocument();
-    expect(screen.getByText(/001\./i)).toBeInTheDocument();
-    expect(screen.getByText(/002\./i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Hamle kaydı' })).toBeInTheDocument();
+    expect(screen.getByText('1.')).toBeInTheDocument();
+    expect(screen.getByText('2.')).toBeInTheDocument();
     expect(screen.getByText(/Tempo: 5\+3/i)).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /KAPAT/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Kapat' }));
     await waitFor(() => {
-      expect(screen.queryByText(/SİSTEM KAYDI #CHESS/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: 'Hamle kaydı' })).not.toBeInTheDocument();
     });
   });
 
@@ -448,7 +448,7 @@ describe('GameSection', () => {
       expect(screen.getByText(/api failed/i)).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole('button', { name: /KAPAT/i }));
+    fireEvent.click(screen.getByRole('button', { name: 'Kapat' }));
 
     mockApiGamesGet.mockResolvedValueOnce({
       gameState: {
@@ -481,7 +481,7 @@ describe('GameSection', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Hamleleri incele/i }));
     await waitFor(() => {
-      expect(screen.getByText(/ANOMALİ: LOKASYON VERİSİ YOK/i)).toBeInTheDocument();
+      expect(screen.getByText('Bu oyunun hamle kaydı yok.')).toBeInTheDocument();
     });
   });
 });

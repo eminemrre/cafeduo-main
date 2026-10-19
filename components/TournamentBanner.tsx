@@ -51,7 +51,7 @@ export const TournamentBanner: React.FC<TournamentBannerProps> = ({
           <Trophy size={22} strokeWidth={2.4} />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-riso-mono text-[0.65rem] uppercase tracking-[0.18em] text-carbon-soft">
+          <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
             Aktif Turnuva · {tournament.game_type || 'Tüm oyunlar'}
           </p>
           <h3 className="font-riso-display text-sm sm:text-lg text-carbon truncate">
@@ -69,7 +69,7 @@ export const TournamentBanner: React.FC<TournamentBannerProps> = ({
           type="button"
           onClick={onOpenLeaderboard}
           data-testid="tournament-open-leaderboard"
-          className="riso-focus shrink-0 inline-flex items-center gap-1.5 border-2 border-carbon bg-paper px-3 py-2 min-h-[44px] font-riso-display text-xs sm:text-sm font-bold uppercase tracking-wider text-carbon hover:bg-riso-pink hover:text-paper transition-colors"
+          className="riso-focus shrink-0 inline-flex items-center gap-1.5 border-2 border-carbon bg-paper px-3 py-2 min-h-[44px] font-riso-display text-xs sm:text-sm font-bold uppercase tracking-wider text-carbon hover:bg-riso-pink hover:text-carbon transition-colors"
         >
           <span className="hidden sm:inline">Sıralama</span>
           <span className="sm:hidden">Sıra</span>

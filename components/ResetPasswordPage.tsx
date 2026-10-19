@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, LockKeyhole } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, ArrowRight } from 'lucide-react';
 import { api } from '../lib/api';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
@@ -75,10 +75,6 @@ const PasswordResetForm: React.FC<{ token: string }> = ({ token }) => {
   return (
     <section className="duo-recovery" aria-labelledby="recovery-title">
       <div className="duo-recovery-card">
-        <div className="duo-recovery-icon" aria-hidden="true">
-          {successMessage ? <CheckCircle2 size={28} /> : <LockKeyhole size={28} />}
-        </div>
-        <p className="duo-recovery-eyebrow">Hesabına yeniden bağlan</p>
         <h1 id="recovery-title" ref={headingRef} tabIndex={-1}>
           {successMessage
             ? 'Şifren hazır.'

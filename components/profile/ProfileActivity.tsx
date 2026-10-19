@@ -15,7 +15,7 @@ function Retry({ onRetry, label }: { onRetry: () => void; label: string }) {
     <button
       type="button"
       onClick={onRetry}
-      className="riso-focus mt-2 min-h-11 border-2 border-carbon bg-paper px-3 font-riso-body text-sm font-semibold text-carbon hover:bg-paper-deep transition-colors"
+      className="riso-focus mt-3 min-h-11 bg-carbon px-4 font-riso-body text-sm font-semibold text-paper hover:bg-carbon-soft transition-colors"
     >
       {label}
     </button>
@@ -36,10 +36,10 @@ export function ProfileActivity({
         ref={inventoryRegion}
         tabIndex={-1}
         aria-label="Envanterin"
-        className="riso-focus p-5 border-b-2 border-carbon bg-paper-deep"
+        className="riso-focus px-5 pt-6"
       >
-        <h3 className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.16em] mb-3 flex items-center gap-1.5 text-carbon-soft">
-          <Package size={11} aria-hidden="true" strokeWidth={2.5} /> Envanterin
+        <h3 className="mb-3 flex items-center gap-2 font-riso-body text-[15px] font-semibold text-carbon">
+          <Package size={16} aria-hidden="true" strokeWidth={2.2} /> Envanterin
         </h3>
         <div className="min-h-12">
           {inventory.status === 'loading' ? (
@@ -50,7 +50,7 @@ export function ProfileActivity({
             <>
               <p
                 role="alert"
-                className="border-l-2 border-riso-redox pl-2 font-riso-body text-sm text-carbon"
+                className="bg-riso-redox/10 px-3 py-2 font-riso-body text-sm text-carbon"
               >
                 Envanter yüklenemedi.
               </p>
@@ -71,7 +71,7 @@ export function ProfileActivity({
               {inventory.data.map((item) => (
                 <li
                   key={item.id}
-                  className="max-w-full break-words border-2 border-carbon bg-paper px-2 py-1 font-riso-mono text-[0.65rem] font-bold uppercase tracking-wider text-carbon"
+                  className="max-w-full break-words bg-riso-spring px-3 py-1.5 font-riso-body text-sm font-medium text-carbon"
                 >
                   {item.item_title}
                 </li>
@@ -84,10 +84,10 @@ export function ProfileActivity({
         ref={historyRegion}
         tabIndex={-1}
         aria-label="Son oyunların"
-        className="riso-focus p-5 bg-paper"
+        className="riso-focus px-5 pt-6"
       >
-        <h3 className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.16em] mb-3 flex items-center gap-1.5 text-carbon-soft">
-          <Clock size={11} aria-hidden="true" strokeWidth={2.5} /> Son oyunların
+        <h3 className="mb-3 flex items-center gap-2 font-riso-body text-[15px] font-semibold text-carbon">
+          <Clock size={16} aria-hidden="true" strokeWidth={2.2} /> Son oyunların
         </h3>
         <div className="min-h-12">
           {history.status === 'loading' ? (
@@ -98,7 +98,7 @@ export function ProfileActivity({
             <>
               <p
                 role="alert"
-                className="border-l-2 border-riso-redox pl-2 font-riso-body text-sm text-carbon"
+                className="bg-riso-redox/10 px-3 py-2 font-riso-body text-sm text-carbon"
               >
                 Oyun geçmişi yüklenemedi.
               </p>
@@ -127,24 +127,28 @@ export function ProfileActivity({
                 return (
                   <li
                     key={item.id}
-                    className={`border-2 border-carbon p-3 ${!item.winner ? 'bg-paper-deep' : item.didWin ? 'bg-riso-spring/15' : 'bg-riso-pink/10'}`}
+                    className="bg-paper-deep p-3"
                   >
                     <p className="break-words font-riso-body text-sm font-semibold text-carbon">
                       {item.gameType}
                     </p>
-                    <p className="mt-1 font-riso-mono text-xs font-bold text-carbon">{outcome}</p>
-                    <p className="mt-2 break-words font-riso-body text-xs text-carbon-soft">
+                    <p
+                      className={`mt-1 text-sm font-semibold ${!item.winner ? 'text-carbon-muted' : item.didWin ? 'text-[#177A41]' : 'text-riso-redox'}`}
+                    >
+                      {outcome}
+                    </p>
+                    <p className="mt-2 break-words font-riso-body text-[13px] text-carbon-soft">
                       Rakip: {item.opponentName}
                     </p>
                     {validDate ? (
                       <time
                         dateTime={date.toISOString()}
-                        className="mt-1 block font-riso-mono text-[0.65rem] text-carbon-muted"
+                        className="mt-1 block text-[13px] text-carbon-muted [font-variant-numeric:tabular-nums]"
                       >
                         {dateFormat.format(date)}
                       </time>
                     ) : (
-                      <span className="mt-1 block font-riso-body text-xs text-carbon-muted">
+                      <span className="mt-1 block font-riso-body text-[13px] text-carbon-muted">
                         Tarih bilgisi yok
                       </span>
                     )}

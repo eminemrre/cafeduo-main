@@ -1,5 +1,5 @@
 /**
- * Admin Input — Riso Kantin re-skin (PR #24). API preserved.
+ * Admin Input — ice fill, 3 px ink underline, label above (DESIGN.md input). API preserved.
  */
 import React, { forwardRef, useId } from 'react';
 
@@ -20,7 +20,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="font-riso-body text-xs font-semibold uppercase tracking-[0.12em] text-carbon-soft"
+            className="font-riso-body text-[0.9375rem] font-medium text-carbon"
           >
             {label}
             {required && <span className="text-riso-redox ml-0.5">*</span>}
@@ -33,10 +33,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy}
           className={
-            'duo-input w-full bg-paper border-2 px-3.5 py-2.5 font-riso-body ' +
+            'duo-input w-full px-3.5 font-riso-body ' +
             'text-base text-carbon placeholder:text-carbon-muted ' +
-            'riso-focus ' +
-            (error ? 'border-riso-redox ' : 'border-carbon ') +
+            'riso-focus focus:bg-paper ' +
+            (error ? 'border-b-riso-redox! ' : '') +
             className
           }
           {...rest}

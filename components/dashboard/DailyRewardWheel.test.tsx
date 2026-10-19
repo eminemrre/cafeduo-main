@@ -79,7 +79,7 @@ describe('DailyRewardWheel', () => {
 
     render(<DailyRewardWheel cafeId={1} />);
     await waitFor(() => expect(screen.getByTestId('wheel-spin-button')).toBeInTheDocument());
-    expect(screen.getByTestId('wheel-spin-button')).toHaveTextContent('ÇEVİR');
+    expect(screen.getByTestId('wheel-spin-button')).toHaveTextContent('Çevir');
   });
 
   // ─── SVG render: gerçek pasta dilimleri ──────────────────────────────────
@@ -149,7 +149,7 @@ describe('DailyRewardWheel', () => {
         await jest.advanceTimersByTimeAsync(200);
       });
 
-      expect(screen.getByText('+50 PUAN')).toBeInTheDocument();
+      expect(screen.getByText('+50 puan')).toBeInTheDocument();
       expect(onPointsWon).toHaveBeenCalledWith(50);
     } finally {
       jest.useRealTimers();

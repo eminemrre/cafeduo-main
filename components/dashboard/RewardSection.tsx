@@ -1,11 +1,11 @@
 /**
- * RewardSection — Riso Kantin redesign (PR #26).
+ * RewardSection — the café's menu and the player's coupons (DESIGN.md v2).
  *
- * Shop + Inventory tabs for the dashboard. All data-testid attributes are
- * preserved (`shop-tab`, `inventory-tab`, `shop-buy-button`, plus
- * `skeleton-grid`, `empty-state`, `empty-state-action` from the mocked
- * subcomponents). Tab "active" indicator class is `bg-riso-pink` (updated
- * from the legacy `bg-[#0e355f]` — test file follows the same rename).
+ * The shop reads like the landing's menu: one row per reward with a 4 px
+ * dotted leader to the price. Coupons are paper tickets with a fıstık edge
+ * and a QR. All data-testid attributes are preserved (`shop-tab`,
+ * `inventory-tab`, `shop-buy-button`, plus `skeleton-grid`, `empty-state`,
+ * `empty-state-action` from the mocked subcomponents).
  */
 
 import React, { useState } from 'react';
@@ -39,18 +39,18 @@ interface RewardSectionProps {
 }
 
 const getRewardIcon = (icon: string): React.ReactNode => {
-  const cls = 'w-5 h-5';
+  const cls = 'w-[18px] h-[18px] shrink-0 text-carbon-muted';
   switch (icon) {
     case 'coffee':
-      return <Coffee className={cls} strokeWidth={2.4} />;
+      return <Coffee className={cls} strokeWidth={2.2} aria-hidden="true" />;
     case 'discount':
-      return <Percent className={cls} strokeWidth={2.4} />;
+      return <Percent className={cls} strokeWidth={2.2} aria-hidden="true" />;
     case 'dessert':
-      return <Cookie className={cls} strokeWidth={2.4} />;
+      return <Cookie className={cls} strokeWidth={2.2} aria-hidden="true" />;
     case 'game':
-      return <Gamepad2 className={cls} strokeWidth={2.4} />;
+      return <Gamepad2 className={cls} strokeWidth={2.2} aria-hidden="true" />;
     default:
-      return <Coffee className={cls} strokeWidth={2.4} />;
+      return <Coffee className={cls} strokeWidth={2.2} aria-hidden="true" />;
   }
 };
 
@@ -77,20 +77,22 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
   // CouponDetailModal — null when no modal is open.
   const [selectedCoupon, setSelectedCoupon] = useState<RedeemedReward | null>(null);
 
+  const tabClass = (active: boolean) =>
+    `riso-focus min-h-11 font-riso-body text-[15px] font-semibold transition-colors ${
+      active ? 'text-carbon shadow-[inset_0_-3px_0_#17140f]' : 'text-carbon-muted hover:text-carbon'
+    }`;
+
   return (
-    <div className="duo-card border border-carbon/20 bg-paper p-4 sm:p-6">
+    <div>
       {/* Tab + balance header */}
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="duo-reward-tabs flex self-start">
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <div className="duo-reward-tabs flex gap-6" role="group" aria-label="Ödüller">
           <button
             type="button"
             onClick={() => onTabChange('shop')}
             data-testid="shop-tab"
-            className={`riso-focus px-4 py-2 font-riso-body text-sm font-bold tracking-wide transition-colors ${
-              activeTab === 'shop'
-                ? 'bg-riso-pink text-carbon'
-                : 'bg-paper text-carbon hover:bg-paper-deep'
-            }`}
+            aria-pressed={activeTab === 'shop'}
+            className={tabClass(activeTab === 'shop')}
           >
             Mağaza
           </button>
@@ -98,24 +100,19 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
             type="button"
             onClick={() => onTabChange('inventory')}
             data-testid="inventory-tab"
-            className={`riso-focus border-l-2 border-carbon px-4 py-2 font-riso-body text-sm font-bold tracking-wide transition-colors ${
-              activeTab === 'inventory'
-                ? 'bg-riso-pink text-carbon'
-                : 'bg-paper text-carbon hover:bg-paper-deep'
-            }`}
+            aria-pressed={activeTab === 'inventory'}
+            className={tabClass(activeTab === 'inventory')}
           >
             Envanter ({inventory?.length ?? 0})
           </button>
         </div>
 
-        <div className="inline-flex items-baseline gap-2 border-2 border-carbon bg-riso-mustard px-3 py-1.5 self-start sm:self-auto">
-          <span className="font-riso-mono text-[0.7rem] font-bold uppercase tracking-wider text-carbon">
-            Bakiye:
-          </span>
-          <span className="font-riso-display text-lg text-carbon">
+        <p className="inline-flex min-h-11 items-center gap-2 bg-riso-spring px-3 text-carbon">
+          <span className="text-[13px] font-medium">Bakiye:</span>
+          <span className="text-[15px] font-semibold [font-variant-numeric:tabular-nums]">
             {currentUser?.points ?? 0} puan
           </span>
-        </div>
+        </p>
       </div>
 
       {/* SHOP TAB */}
@@ -124,73 +121,47 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
           {rewardsLoading ? (
             <SkeletonGrid count={3} columns={1} />
           ) : (rewards?.length ?? 0) > 0 ? (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-              {rewards.map((reward, idx) => {
+            <ul className="space-y-2">
+              {rewards.map((reward) => {
                 const affordable = canAfford(reward.cost);
-                const rotate = idx % 2 === 0 ? -0.8 : 0.8;
+                const missing = reward.cost - (currentUser?.points ?? 0);
 
                 return (
-                  <motion.div
-                    key={reward.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.25, delay: idx * 0.04 }}
-                    style={{ transform: `rotate(${rotate}deg)` }}
-                  >
-                    <div
-                      className={`duo-card relative flex min-h-[200px] flex-col justify-between border border-carbon/20 p-4 sm:p-5 transition-colors ${
-                        affordable ? 'bg-paper riso-shadow-sm' : 'bg-paper-deep opacity-65'
-                      }`}
-                    >
-                      <div>
-                        <div className="mb-3 flex items-start justify-between">
-                          <div
-                            className={`flex h-10 w-10 items-center justify-center border-2 border-carbon ${
-                              affordable
-                                ? 'bg-riso-blue text-paper'
-                                : 'bg-paper-dim text-carbon-muted'
-                            }`}
-                          >
-                            {getRewardIcon(reward.icon)}
-                          </div>
-                          <div className="text-right">
-                            <p className="font-riso-mono text-[0.65rem] uppercase tracking-wider text-carbon-muted">
-                              Fiyat
-                            </p>
-                            <span className="font-riso-display text-xl text-carbon">
-                              {reward.cost}
-                            </span>
-                          </div>
-                        </div>
-
-                        <h4 className="font-riso-display text-lg text-carbon break-words">
-                          {reward.title}
-                        </h4>
-                        <p className="mt-1 font-riso-body text-xs leading-5 text-carbon-soft break-words">
-                          {reward.description}
-                        </p>
-                      </div>
-
-                      <div className="mt-4">
-                        <Button
-                          tone={affordable ? 'pink' : 'paper'}
-                          size="md"
-                          block
-                          disabled={!affordable}
-                          onClick={() => void onBuyReward(reward)}
-                          data-testid="shop-buy-button"
-                          leadingIcon={
-                            affordable ? <ShoppingBag size={16} strokeWidth={2.5} /> : undefined
-                          }
-                        >
-                          {affordable ? 'Satın Al' : 'Yetersiz Puan'}
-                        </Button>
-                      </div>
+                  <li key={reward.id} className="bg-paper-deep p-4">
+                    <div className="duo-leader-row !py-0">
+                      <h4 className="flex min-w-0 items-center gap-2 font-riso-body text-[15px] font-semibold text-carbon">
+                        {getRewardIcon(reward.icon)}
+                        <span className="break-words">{reward.title}</span>
+                      </h4>
+                      <span className="duo-leader-dots" aria-hidden="true" />
+                      <span className="duo-leader-value text-[15px] text-carbon">
+                        <span>{reward.cost}</span> <span className="text-[13px] font-medium">puan</span>
+                      </span>
                     </div>
-                  </motion.div>
+                    {reward.description && (
+                      <p className="mt-1 font-riso-body text-[13px] leading-5 text-carbon-soft break-words">
+                        {reward.description}
+                      </p>
+                    )}
+                    <div className="mt-3">
+                      <Button
+                        tone={affordable ? 'pink' : 'paper'}
+                        size="sm"
+                        block
+                        disabled={!affordable}
+                        onClick={() => void onBuyReward(reward)}
+                        data-testid="shop-buy-button"
+                        leadingIcon={
+                          affordable ? <ShoppingBag size={16} strokeWidth={2.4} /> : undefined
+                        }
+                      >
+                        {affordable ? 'Satın al' : `Yetersiz puan · ${missing} eksik`}
+                      </Button>
+                    </div>
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           ) : (
             <EmptyState
               icon={Gift}
@@ -208,7 +179,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
           {inventoryLoading ? (
             <SkeletonGrid count={4} columns={2} />
           ) : (inventory?.length ?? 0) > 0 ? (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
               {inventory.map((item) => {
                 const expirationDate = new Date(
                   new Date(item.redeemedAt).getTime() + 5 * 24 * 60 * 60 * 1000
@@ -224,69 +195,59 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.25 }}
-                    className={`relative ${dead ? 'opacity-60 grayscale-[40%]' : ''}`}
+                    className={`relative ${dead ? 'opacity-60' : ''}`}
                     data-testid={`inventory-coupon-${item.redeemId}`}
                   >
-                    {/* Ticket — vertical hierarchy: header → meta → perforation → QR → code → action */}
-                    <div className="relative bg-riso-mustard/20 border-2 border-carbon riso-shadow-sm flex flex-col">
+                    {/* Ticket — paper with a fıstık edge: header → meta → tear line → QR → code → action */}
+                    <div className="relative flex flex-col bg-paper-deep">
+                      <span aria-hidden="true" className="block h-2 bg-riso-spring" />
                       {/* Stamp overlay (used wins over expired) */}
                       {isUsed && (
                         <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-                          <div className="rotate-[-12deg] border-4 border-riso-redox bg-paper px-4 py-2 font-riso-display text-lg font-bold tracking-wider text-riso-redox">
-                            KULLANILDI
+                          <div className="bg-carbon px-4 py-2 font-riso-body text-base font-semibold text-paper">
+                            Kullanıldı
                           </div>
                         </div>
                       )}
                       {isExpired && !isUsed && (
                         <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-                          <div className="rotate-[-12deg] border-4 border-carbon bg-paper-deep px-4 py-2 font-riso-display text-lg font-bold tracking-wider text-carbon">
-                            SÜRESİ DOLDU
+                          <div className="bg-carbon px-4 py-2 font-riso-body text-base font-semibold text-paper">
+                            Süresi doldu
                           </div>
                         </div>
                       )}
 
                       {/* Header — title + type chip + expiry date */}
                       <div className="px-4 pt-4 pb-3">
-                        <h4 className="font-riso-display text-base sm:text-lg text-carbon uppercase tracking-[0.04em] leading-tight mb-2 break-words">
+                        <h4 className="mb-2 break-words font-riso-body text-[15px] font-semibold leading-tight text-carbon">
                           {item.title}
                         </h4>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="inline-flex items-center gap-1 border-2 border-carbon bg-riso-pink/30 px-2 py-0.5 font-riso-mono text-[0.65rem] font-bold uppercase tracking-wider text-carbon">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center bg-riso-spring px-2 py-0.5 text-[13px] font-medium text-carbon">
                             {typeLabel}
                           </span>
-                          <span className="font-riso-mono text-[0.65rem] uppercase tracking-wider text-carbon-soft">
+                          <span className="text-[13px] text-carbon-soft [font-variant-numeric:tabular-nums]">
                             SKT: {expirationDate.toLocaleDateString('tr-TR')}
                           </span>
                         </div>
                       </div>
 
-                      {/* Perforation — ink dashed divider with paper notches on each end */}
-                      <div className="relative">
-                        <span
-                          aria-hidden="true"
-                          className="absolute -left-2 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-paper border-2 border-carbon"
-                        />
-                        <span
-                          aria-hidden="true"
-                          className="absolute -right-2 top-1/2 h-3 w-3 -translate-y-1/2 rounded-full bg-paper border-2 border-carbon"
-                        />
-                        <div className="border-t-2 border-dashed border-carbon mx-2" />
-                      </div>
+                      <hr className="duo-tear mx-4" />
 
                       {/* QR + code stacked vertically — readable on small screens */}
-                      <div className="px-4 pt-3 pb-3 flex flex-col items-center gap-2.5">
-                        <div className="p-2 border-2 border-carbon bg-paper">
+                      <div className="flex flex-col items-center gap-2.5 px-4 pt-3 pb-3">
+                        <div className="bg-paper p-2">
                           <QRCodeSVG
                             value={item.code}
                             size={88}
-                            bgColor="#FBF7EE"
-                            fgColor="#141413"
+                            bgColor="#FFFFFF"
+                            fgColor="#17140F"
                             level="M"
                             includeMargin={false}
                             aria-label={`Kupon kodu: ${item.code}`}
                           />
                         </div>
-                        <code className="block w-full text-center font-riso-mono text-[0.7rem] sm:text-xs font-bold tracking-wider text-carbon break-all px-1">
+                        <code className="block w-full break-all px-1 text-center font-riso-mono text-[13px] font-semibold text-carbon">
                           {item.code}
                         </code>
                       </div>
@@ -297,11 +258,12 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                         onClick={() => setSelectedCoupon(item)}
                         disabled={dead}
                         data-testid={`coupon-show-${item.redeemId}`}
-                        className="riso-focus riso-press group mt-auto flex items-center justify-center gap-2 border-t-2 border-carbon bg-riso-pink text-carbon px-3 py-2.5 font-riso-display text-xs font-bold uppercase tracking-[0.14em] transition-all hover:bg-riso-pink-deep hover:text-paper disabled:cursor-not-allowed disabled:hover:bg-riso-pink disabled:hover:text-carbon"
+                        className="riso-focus group mt-auto flex min-h-12 items-center justify-center gap-2 bg-riso-pink px-3 font-riso-body text-[15px] font-semibold text-carbon transition-transform active:scale-[0.98] disabled:cursor-not-allowed"
                       >
-                        Kasada Göster
+                        Kasada göster
                         <ArrowRight
-                          size={14}
+                          size={16}
+                          aria-hidden="true"
                           className="transition-transform group-hover:translate-x-0.5"
                         />
                       </button>

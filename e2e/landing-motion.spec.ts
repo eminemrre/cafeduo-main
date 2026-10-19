@@ -1,8 +1,19 @@
 import { test, expect } from '@playwright/test';
-import { provisionUser, checkInUser, fetchCurrentUser, bootstrapAuthenticatedPage, DEFAULT_E2E_APP_BASE_URL } from './helpers/session';
+import {
+  provisionUser,
+  checkInUser,
+  fetchCurrentUser,
+  bootstrapAuthenticatedPage,
+  DEFAULT_E2E_APP_BASE_URL,
+} from './helpers/session';
 
-for (const viewport of [{ width: 320, height: 568 }, { width: 568, height: 320 }, { width: 768, height: 1024 }, { width: 1440, height: 900 }]) {
-  test(`@smoke landing stays controllable, readable and playable at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+for (const viewport of [
+  { width: 320, height: 568 },
+  { width: 568, height: 320 },
+  { width: 768, height: 1024 },
+  { width: 1440, height: 900 },
+]) {
+  test(`@smoke landing stays readable and playable at ${viewport.width}x${viewport.height}`, async ({ page }) => {
     await page.setViewportSize(viewport);
     await page.emulateMedia({ reducedMotion: 'no-preference' });
     await page.addInitScript(() => localStorage.setItem('cookie_consent', 'true'));
@@ -20,44 +31,59 @@ for (const viewport of [{ width: 320, height: 568 }, { width: 568, height: 320 }
     await page.keyboard.press('Enter');
     await expect(page.getByRole('button', { name: 'Ata dokun, ilk hamleni yap' })).toHaveAttribute('aria-pressed', 'false');
 
-    // "Masaya katıl" and "Giriş yap" stay in reach in every section.
+    // "Kaydol" and "Giriş yap" stay in reach in every section, and the sections reveal as they enter.
     for (const section of ['#oyunlar', '#oduller', '#nasil', '#katil']) {
       await page.locator(section).scrollIntoViewIfNeeded();
-      await expect(page.locator(section).getByRole('heading', { level: 2 })).toBeAttached();
-      await expect(header.getByRole('button', { name: 'Masaya katıl' })).toBeInViewport();
+      await expect(header.getByRole('button', { name: 'Kaydol' })).toBeInViewport();
       await expect(header.getByRole('button', { name: 'Giriş yap' })).toBeInViewport();
     }
+    for (const title of ['Bir kahvelik oyun', 'Nasıl işler', 'Menü']) {
+      await expect(page.getByRole('heading', { level: 2, name: title })).toBeAttached();
+    }
+    // On short screens the menu section is taller than the viewport, so centring the section
+    // skips its masthead; bring the masthead itself into view, as a reader scrolling past would.
+    const masthead = page.locator('#oduller .cdl-menu-masthead');
+    await masthead.scrollIntoViewIfNeeded();
+    await expect(masthead).toHaveAttribute('data-landing-revealed', 'true');
     expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(viewport.width);
 
-    // Motion can be paused; nothing keeps running afterwards.
-    const pause = page.getByRole('button', { name: 'Hareketi durdur' });
-    await pause.scrollIntoViewIfNeeded();
-    await pause.focus();
-    await page.keyboard.press('Enter');
-    await expect(page.getByRole('button', { name: 'Hareketi aç' })).toBeFocused();
-    await expect(root).toHaveAttribute('data-motion', 'off');
-    expect(await root.evaluate(el => el.getAnimations({ subtree: true }).filter(a => a.playState === 'running').length)).toBe(0);
-    await page.getByRole('button', { name: 'Hareketi aç' }).click();
-    await expect(root).toHaveAttribute('data-motion', 'on');
+    // The closing sentence hands the e-mail to the sign-up modal.
+    await page.locator('#katil').scrollIntoViewIfNeeded();
+    await page.getByLabel('İlk 100 puanın için').fill('masa07@example.com');
+    await page.locator('#katil').getByRole('button', { name: 'Kaydol' }).click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog.locator('[data-testid="auth-email-input"]')).toHaveValue('masa07@example.com');
+    await page.getByRole('button', { name: 'Kapat', exact: true }).click();
 
+    // With reduced motion the landing stops animating altogether; the content stays.
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    await expect(page.getByRole('button', { name: 'Hareket azaltıldı' })).toBeDisabled();
     await expect(root).toHaveAttribute('data-motion', 'off');
-
-    await page.locator('#katil').getByRole('button', { name: 'Masaya katıl' }).click();
-    await expect(page.getByRole('dialog')).toBeVisible();
+    const running = await root.evaluate((el) =>
+      el
+        .getAnimations({ subtree: true })
+        .filter((animation) => (animation as CSSAnimation).animationName?.startsWith('cdl-')).length
+    );
+    expect(running).toBe(0);
+    await expect(page.getByRole('heading', { level: 1, name: 'Rakibin yan masada.' })).toBeVisible();
   });
 }
 
-test('@smoke manual motion choice persists across reload and system preference takes priority', async ({ page }) => {
+test('@smoke cafe landing keeps the motion control working and remembers the choice', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.addInitScript(() => localStorage.setItem('cookie_consent', 'true'));
-  await page.goto('/');
+  await page.goto('/kafeler');
+  const root = page.locator('.club-landing');
+  await expect(root).toHaveAttribute('data-motion', 'on');
+
   await page.getByRole('button', { name: 'Hareketi durdur' }).click();
+  await expect(root).toHaveAttribute('data-motion', 'off');
   await page.reload();
   await expect(page.getByRole('button', { name: 'Hareketi aç' })).toHaveAttribute('aria-pressed', 'false');
+
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(page.getByRole('button', { name: 'Hareket azaltıldı' })).toBeDisabled();
+  await expect(root).toHaveAttribute('data-motion', 'off');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await expect(page.getByRole('button', { name: 'Hareketi aç' })).toBeEnabled();
 });
@@ -79,7 +105,7 @@ test('@smoke landing content and join action work without scroll enhancement, st
     await expect(page.getByRole('heading', { level: 3, name: game })).toBeAttached();
   }
   await page.locator('#katil').scrollIntoViewIfNeeded();
-  await page.locator('#katil').getByRole('button', { name: 'Masaya katıl' }).click();
+  await page.locator('#katil').getByRole('button', { name: 'Kaydol' }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
 });
 

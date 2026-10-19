@@ -59,20 +59,17 @@ export const CouponScanner: React.FC<CouponScannerProps> = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <div className="border-2 border-carbon bg-paper riso-shadow-md p-8">
-        <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft mb-3">
-          Kupon Doğrulama
-        </p>
-        <h2 className="font-riso-display text-xl sm:text-2xl font-bold text-carbon mb-6 flex items-center gap-2 uppercase tracking-wide">
-          <QrCode className="text-riso-blue" />
-          Kupon Kullan
+      <div className="bg-paper-deep p-6 sm:p-8">
+        <h2 className="font-riso-display text-[1.75rem] leading-none text-carbon mb-6 flex items-center gap-2">
+          <QrCode aria-hidden="true" />
+          Kupon kullan
         </h2>
 
         <button
           type="button"
           onClick={() => setScannerOpen(true)}
           data-testid="open-qr-scanner-button"
-          className="riso-focus riso-press w-full mb-5 border-2 border-carbon bg-riso-blue text-paper py-3 px-4 font-riso-display text-sm sm:text-base font-bold uppercase tracking-[0.1em] riso-shadow-sm flex items-center justify-center gap-2 transition-all hover:-translate-y-[1px]"
+          className="riso-focus w-full mb-6 min-h-12 bg-carbon text-paper px-4 font-riso-body text-[0.9375rem] font-semibold flex items-center justify-center gap-2 transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
         >
           <Camera size={18} />
           Kamerayla QR Oku
@@ -82,10 +79,10 @@ export const CouponScanner: React.FC<CouponScannerProps> = ({
           <div>
             <label
               htmlFor="coupon-code-input"
-              className="block text-sm font-bold text-carbon mb-2 uppercase tracking-[0.08em] font-riso-body"
+              className="block text-[0.9375rem] font-medium text-carbon mb-2 font-riso-body"
             >
               Kupon Kodu{' '}
-              <span className="font-normal text-carbon-muted normal-case">(manuel giriş)</span>
+              <span className="font-normal text-carbon-muted">(manuel giriş)</span>
             </label>
             <input
               id="coupon-code-input"
@@ -93,27 +90,23 @@ export const CouponScanner: React.FC<CouponScannerProps> = ({
               value={couponCode}
               onChange={(event) => onCouponCodeChange(event.target.value.toUpperCase())}
               placeholder="CD-XXXX-XXXX-XXXX"
-              className="border-2 border-carbon bg-paper-deep w-full px-4 py-3 text-carbon placeholder:text-carbon-muted outline-none transition-all font-riso-mono text-lg tracking-wider focus:bg-paper focus:ring-2 focus:ring-riso-blue focus:ring-offset-2 focus:ring-offset-paper"
+              className="duo-input riso-focus w-full px-4 text-carbon placeholder:text-carbon-muted font-riso-mono text-lg tracking-[0.04em] focus:bg-paper"
             />
           </div>
 
           <RetroButton type="submit" variant="primary" className="w-full" disabled={submitting}>
-            {submitting ? 'DOĞRULANIYOR...' : 'KUPONU ONAYLA'}
+            {submitting ? 'Doğrulanıyor…' : 'Kuponu onayla'}
           </RetroButton>
         </form>
 
         {status !== 'idle' && (
           <div
-            className={`mt-6 p-4 border-2 border-carbon flex items-center gap-3 ${
-              status === 'success'
-                ? 'bg-riso-spring/25 text-carbon'
-                : 'bg-riso-redox/20 text-carbon'
-            }`}
+            className={`mt-6 p-4 flex items-center gap-3 ${ status === 'success' ? 'bg-riso-spring/25 text-carbon' : 'bg-riso-redox/20 text-carbon' }`}
             role="status"
             aria-live="polite"
           >
             {status === 'success' ? (
-              <CheckCircle size={20} className="text-riso-spring shrink-0" />
+              <CheckCircle size={20} className="text-[#177A41] shrink-0" />
             ) : (
               <XCircle size={20} className="text-riso-redox shrink-0" />
             )}
@@ -122,41 +115,38 @@ export const CouponScanner: React.FC<CouponScannerProps> = ({
         )}
       </div>
 
-      <div className="border-2 border-carbon bg-paper-deep riso-shadow-md p-8 relative overflow-hidden">
-        <div className="absolute top-3 right-3 h-2 w-12 bg-riso-pink rotate-[-4deg] pointer-events-none" />
-        <h2 className="font-riso-display text-xl sm:text-2xl font-bold text-carbon mb-6 uppercase tracking-wide">
-          Son İşlem Detayı
+      <div className="bg-paper-deep p-6 sm:p-8 relative overflow-hidden">
+        <h2 className="font-riso-display text-[1.75rem] leading-none text-carbon mb-6">
+          Son işlem
         </h2>
 
         {lastItem ? (
           <div className="space-y-4">
-            <div className="p-4 bg-paper border-2 border-carbon">
-              <div className="text-xs text-carbon-muted mb-1 font-riso-mono uppercase tracking-wider">
+            <div className="p-4 bg-paper">
+              <div className="text-[0.8125rem] text-carbon-soft mb-1 font-riso-body">
                 Ürün
               </div>
               <div className="text-lg font-bold text-carbon font-riso-body">{lastItemTitle}</div>
             </div>
-            <div className="p-4 bg-paper border-2 border-carbon">
-              <div className="text-xs text-carbon-muted mb-1 font-riso-mono uppercase tracking-wider">
+            <div className="p-4 bg-paper">
+              <div className="text-[0.8125rem] text-carbon-soft mb-1 font-riso-body">
                 Kupon Kodu
               </div>
-              <div className="text-lg font-riso-mono text-riso-mustard-deep tracking-wider font-bold">
+              <div className="text-lg font-riso-mono text-carbon font-semibold">
                 {lastItem.code}
               </div>
             </div>
-            <div className="p-4 bg-paper border-2 border-carbon">
-              <div className="text-xs text-carbon-muted mb-1 font-riso-mono uppercase tracking-wider">
+            <div className="p-4 bg-paper">
+              <div className="text-[0.8125rem] text-carbon-soft mb-1 font-riso-body">
                 İşlem Zamanı
               </div>
               <div className="text-carbon font-riso-body">{new Date().toLocaleString('tr-TR')}</div>
             </div>
           </div>
         ) : (
-          <div className="h-full flex flex-col items-center justify-center text-carbon-muted py-12">
-            <div className="w-16 h-16 bg-paper border-2 border-carbon flex items-center justify-center mb-4">
-              <Coffee size={24} className="text-carbon-muted" />
-            </div>
-            <p className="font-riso-body uppercase tracking-wide text-sm">Henüz işlem yapılmadı</p>
+          <div className="h-full flex flex-col items-center justify-center text-carbon-soft py-12">
+            <Coffee size={32} strokeWidth={2} className="mb-3 text-carbon-muted" aria-hidden="true" />
+            <p className="font-riso-body text-sm">Henüz işlem yapılmadı</p>
           </div>
         )}
       </div>

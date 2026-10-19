@@ -1,5 +1,5 @@
 /**
- * AdminDashboard Component Tests — Café Concierge edition
+ * AdminDashboard Component Tests
  *
  * Behavior-focused after the visual rewrite: queries target roles, labels,
  * data-testids, and stable strings (user/cafe names, status semantics) rather
@@ -121,7 +121,7 @@ describe('AdminDashboard', () => {
     renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: 'Concierge' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Yönetim' })).toBeInTheDocument();
       expect(screen.getByText(/admin_user/)).toBeInTheDocument();
     });
   });
@@ -167,8 +167,8 @@ describe('AdminDashboard', () => {
     fireEvent.click(screen.getByRole('button', { name: /Kafeler/ }));
 
     await waitFor(() => {
-      // Konum Detayları eyebrow + selected cafe heading both appear
-      expect(screen.getByText('Konum Detayları')).toBeInTheDocument();
+      // The selected cafe's location editor appears
+      expect(screen.getByRole('heading', { name: 'Haritadan konum seç' })).toBeInTheDocument();
     });
   });
 
@@ -176,8 +176,8 @@ describe('AdminDashboard', () => {
     renderWithProviders(<AdminDashboard currentUser={mockCurrentUser} />);
 
     await waitFor(() => {
-      expect(screen.getByText('User')).toBeInTheDocument();
-      expect(screen.getByText('Cafe Admin')).toBeInTheDocument();
+      expect(screen.getByText('Oyuncu')).toBeInTheDocument();
+      expect(screen.getByText('Kafe yöneticisi')).toBeInTheDocument();
     });
   });
 
@@ -335,7 +335,7 @@ describe('AdminDashboard', () => {
     fireEvent.click(screen.getByRole('button', { name: /Kafeler/ }));
 
     await waitFor(() => {
-      expect(screen.getByText(/Konum Detayları/)).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'Haritadan konum seç' })).toBeInTheDocument();
     });
 
     fireEvent.change(screen.getByRole('slider'), { target: { value: '720' } });

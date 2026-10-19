@@ -16,7 +16,7 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
   <Modal
     isOpen={isOpen}
     onClose={onClose}
-    eyebrow="Yeni Konum"
+    eyebrow="Adını, konumunu ve check-in yarıçapını gir."
     title="Kafe Ekle"
     size="lg"
     footer={
@@ -58,10 +58,10 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
         }
       />
 
-      <div className="border-2 border-carbon bg-paper p-1 riso-shadow-sm">
-        <p className="bg-riso-blue text-paper px-3 py-2 font-riso-display text-xs sm:text-sm uppercase tracking-[0.12em] font-bold mb-1">
-          Haritadan Konum Seç
-        </p>
+      <div>
+        <h3 className="mb-3 font-riso-body text-[0.9375rem] font-semibold text-carbon">
+          Haritadan konum seç
+        </h3>
         <MapLocationPicker
           primaryLatitude={formData.latitude}
           primaryLongitude={formData.longitude}
@@ -97,9 +97,9 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
       </div>
 
       <Card variant="muted" className="p-5">
-        <p className="text-[0.6875rem] uppercase tracking-[0.1em] font-semibold text-riso-pink-deep mb-3">
-          Birincil Konum
-        </p>
+        <h3 className="mb-3 font-riso-body text-[0.9375rem] font-semibold text-carbon">
+          Birincil konum
+        </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Enlem"
@@ -140,9 +140,9 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
       </Card>
 
       <Card variant="muted" className="p-5">
-        <p className="text-[0.6875rem] uppercase tracking-[0.1em] font-semibold text-carbon-muted mb-3">
-          İkincil Konum · Opsiyonel
-        </p>
+        <h3 className="mb-3 font-riso-body text-[0.9375rem] font-semibold text-carbon">
+          İkincil konum <span className="font-normal text-carbon-soft">(isteğe bağlı)</span>
+        </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
             label="Ek Enlem"

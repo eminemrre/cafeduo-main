@@ -1,10 +1,11 @@
 /**
- * HistoryDetailModal Component
- *
- * @description Chess game history detail modal - extracted from GameSection
+ * HistoryDetailModal — a finished chess game's move list, read like the
+ * order slip: `move ··· time` rows with dotted leaders (DESIGN.md v2).
  */
 
 import React from 'react';
+import { X } from 'lucide-react';
+import { DialogLayer } from '../ui/DialogLayer';
 
 interface HistoryDetailModalProps {
   isOpen: boolean;
@@ -39,66 +40,77 @@ export const HistoryDetailModal: React.FC<HistoryDetailModalProps> = ({
 }) => {
   if (!isOpen || !history) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-paper/95 ">
-      <div className="w-full max-w-2xl max-h-[85vh] overflow-hidden border-[3px] border-riso-blue bg-paper-deep shadow-[16px_16px_0_rgba(0,243,255,0.2)]">
-        <div className="px-6 py-4 border-b-[3px] border-riso-blue bg-riso-blue/10 flex items-center justify-between">
-          <div>
-            <h4 className="font-riso-display text-2xl text-riso-blue uppercase tracking-widest">
-              SİSTEM KAYDI #CHESS
-            </h4>
-            <p className="font-sans text-xs text-ink-200 mt-1 uppercase font-bold tracking-wider">
-              HEDEF: {history.opponentName} // {new Date(history.createdAt).toLocaleString('tr-TR')}
-            </p>
-          </div>
-          <button
-            type="button"
-            className="text-cyber-dark bg-riso-blue font-bold px-4 py-2 hover:bg-transparent hover:text-riso-blue border-[2px] border-riso-blue transition-colors uppercase tracking-widest text-sm"
-            onClick={onClose}
-          >
-            KAPAT
-          </button>
-        </div>
+  const playedAt = new Date(history.createdAt);
+  const playedLabel = Number.isFinite(playedAt.getTime())
+    ? playedAt.toLocaleString('tr-TR', { dateStyle: 'medium', timeStyle: 'short' })
+    : '';
 
-        <div className="p-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-          {loading ? (
-            <p className="font-riso-body text-carbon uppercase tracking-widest animate-pulse">
-              Veri deşifre ediliyor...
-            </p>
-          ) : error ? (
-            <p className="font-sans text-riso-pink-deep font-bold border-l-4 border-riso-pink pl-4 py-2 bg-riso-pink/10">
-              {error}
-            </p>
-          ) : history.moves.length === 0 ? (
-            <p className="font-sans text-ink-300 border border-dashed border-carbon p-4 text-center">
-              ANOMALİ: LOKASYON VERİSİ YOK.
-            </p>
-          ) : (
-            <ol className="space-y-1 font-mono text-sm max-w-md">
-              {history.moves.map((move, index) => (
-                <li
-                  key={`${move.ts || ''}-${index}`}
-                  className="border-b border-carbon/50 py-2 flex justify-between"
-                >
-                  <span className="text-riso-blue font-bold">
-                    {(index + 1).toString().padStart(3, '0')}.{' '}
-                    <span className="text-ink-50">{move.san}</span>{' '}
-                    <span className="text-ink-300 text-xs">
-                      [{move.from}&rarr;{move.to}]
+  return (
+    <DialogLayer open={isOpen} onClose={onClose} label="Hamle kaydı">
+      <div className="riso-kantin fixed inset-0 z-[115] flex items-center justify-center px-4 py-6">
+        <div className="absolute inset-0 bg-carbon/80" onClick={onClose} aria-hidden="true" />
+        <div className="duo-float relative z-10 flex max-h-[calc(100dvh-3rem)] w-full max-w-lg flex-col overflow-hidden bg-paper">
+          <div className="flex shrink-0 items-start justify-between gap-4 px-5 pt-5 pb-4">
+            <div className="min-w-0">
+              <span className="inline-flex bg-riso-blue px-3 py-1 text-[15px] font-medium text-carbon">
+                {history.gameType}
+              </span>
+              <h4 className="mt-3 font-riso-display text-[28px] leading-none text-carbon">
+                Hamle kaydı
+              </h4>
+              <p className="mt-1.5 truncate text-[13px] text-carbon-soft">
+                Rakip: <span className="font-semibold text-carbon">{history.opponentName}</span>
+                {playedLabel ? ` · ${playedLabel}` : ''}
+              </p>
+            </div>
+            <button
+              type="button"
+              aria-label="Kapat"
+              className="riso-focus inline-flex h-11 w-11 shrink-0 items-center justify-center bg-paper-deep text-carbon transition-colors hover:bg-carbon hover:text-paper"
+              onClick={onClose}
+            >
+              <X size={18} strokeWidth={2.4} />
+            </button>
+          </div>
+
+          <div className="min-h-0 overflow-y-auto overscroll-contain border-t-[3px] border-dotted border-carbon/35 px-5 py-4">
+            {loading ? (
+              <p role="status" className="font-riso-body text-sm text-carbon-soft">
+                Hamleler yükleniyor…
+              </p>
+            ) : error ? (
+              <p role="alert" className="bg-riso-redox/10 px-3 py-2 font-riso-body text-sm text-carbon">
+                {error}
+              </p>
+            ) : history.moves.length === 0 ? (
+              <p className="bg-paper-deep p-4 text-center text-sm text-carbon-soft">
+                Bu oyunun hamle kaydı yok.
+              </p>
+            ) : (
+              <ol className="text-[15px] text-carbon">
+                {history.moves.map((move, index) => (
+                  <li key={`${move.ts || ''}-${index}`} className="duo-leader-row">
+                    <span className="w-9 shrink-0 text-[13px] text-carbon-muted [font-variant-numeric:tabular-nums]">
+                      {index + 1}.
                     </span>
-                  </span>
-                  <span className="text-ink-400">
-                    {Number.isFinite(Number(move.spentMs))
-                      ? `${(Number(move.spentMs) / 1000).toFixed(1)}s`
-                      : '--'}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          )}
+                    <span className="font-semibold">{move.san}</span>
+                    <span className="text-[13px] text-carbon-muted">
+                      {move.from}–{move.to}
+                    </span>
+                    <span className="duo-leader-dots" aria-hidden="true" />
+                    <span className="duo-leader-value text-[13px] text-carbon-soft">
+                      {Number.isFinite(Number(move.spentMs))
+                        ? `${(Number(move.spentMs) / 1000).toFixed(1)} sn`
+                        : '–'}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </DialogLayer>
   );
 };
 

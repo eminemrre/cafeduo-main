@@ -1,15 +1,11 @@
 /**
- * UserProfileModal — Riso Kantin redesign (PR #26).
- *
- * Player ID card modal. Surface is paper + ink border + double-offset shadow
- * (Risograph misregistration), avatar is a solid riso-blue tile (no
- * rounded-full), level progress is a flat ink track with a riso-pink fill
- * (no gradient).
- *
+ * UserProfileModal — the player's member card in the v2 Masa register:
+ * paper floating on the scrim with the one soft shadow, numbers in ice
+ * wells, level progress as a flat fıstık meter (points are fıstık).
  */
 import React, { useEffect, useRef, useState } from 'react';
 import { DialogLayer } from './ui/DialogLayer';
-import { X, Trophy, Gamepad2, Star, Edit2, Save, Briefcase, ImageIcon } from 'lucide-react';
+import { X, Edit2, Save, Briefcase, ImageIcon } from 'lucide-react';
 import { User } from '../types';
 import { api } from '../lib/api';
 import { PAU_DEPARTMENTS } from '../constants';
@@ -105,30 +101,26 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
         {/* The visual scrim stays inside the native modal layer. */}
         <div className="absolute inset-0 bg-carbon/80" onClick={onClose} aria-hidden="true" />
 
-        <div className="relative z-10 w-full max-w-md bg-paper border-2 border-carbon riso-shadow-md overflow-hidden flex flex-col max-h-[calc(100dvh-3rem)]">
-          {/* Header — ID card */}
-          <div className="relative shrink-0 bg-paper border-b-2 border-carbon p-5">
-            {/* Halftone overlay */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-multiply"
-              style={{
-                backgroundImage:
-                  'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
-                backgroundSize: '5px 5px',
-              }}
-            />
-            <div className="relative flex items-start gap-4">
-              {/* Avatar tile — DiceBear pixel-art if picked, initials fallback otherwise */}
-              <div className="relative shrink-0">
-                <div className="relative h-16 w-16 overflow-hidden border-2 border-carbon bg-riso-blue text-paper">
-                  <AvatarImage
-                    src={avatarUrl}
-                    initials={(user.username || '?').substring(0, 2).toUpperCase()}
-                    initialsClassName="font-riso-display text-2xl font-bold tracking-tight"
-                    loading="eager"
-                  />
-                </div>
+        <div className="duo-float relative z-10 w-full max-w-md bg-paper overflow-hidden flex flex-col max-h-[calc(100dvh-3rem)]">
+          {/* Header: the member's name, id and department */}
+          <div className="shrink-0 bg-paper px-5 pt-5 pb-4">
+            <div className="flex items-start gap-4">
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden bg-riso-blue text-carbon">
+                <AvatarImage
+                  src={avatarUrl}
+                  initials={(user.username || '?').substring(0, 2).toUpperCase()}
+                  initialsClassName="font-riso-display text-[28px] leading-none"
+                  loading="eager"
+                />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <h2 className="font-riso-display text-[28px] leading-none text-carbon truncate">
+                  {user.username}
+                </h2>
+                <span className="mt-1.5 block text-[13px] text-carbon-muted [font-variant-numeric:tabular-nums]">
+                  {isPreview ? 'CafeDuo oyuncusu' : `ID: #${user.id.toString().padStart(6, '0')}`}
+                </span>
                 {isEditable && !isPreview && (
                   <button
                     type="button"
@@ -136,45 +128,36 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       setAvatarError(null);
                       setAvatarPickerOpen(true);
                     }}
-                    aria-label="Avatar seç"
                     data-testid="open-avatar-picker"
-                    className="riso-focus absolute -bottom-3.5 -right-3.5 inline-flex h-11 w-11 items-center justify-center text-carbon group"
+                    className="duo-quiet riso-focus -ml-1 mt-1 min-h-11 gap-2 px-1"
                   >
-                    <span className="inline-flex h-6 w-6 items-center justify-center border-2 border-carbon bg-paper group-hover:bg-riso-pink group-hover:text-paper transition-colors">
-                      <ImageIcon size={12} strokeWidth={2.5} />
-                    </span>
+                    <ImageIcon size={16} strokeWidth={2.2} aria-hidden="true" />
+                    Avatar seç
                   </button>
                 )}
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <h2 className="font-riso-display text-2xl text-carbon truncate">{user.username}</h2>
-                <span className="block mt-0.5 font-riso-mono text-[0.7rem] uppercase tracking-[0.16em] text-carbon-muted">
-                  {isPreview ? 'CafeDuo oyuncusu' : `ID: #${user.id.toString().padStart(6, '0')}`}
-                </span>
               </div>
 
               <button
                 type="button"
                 onClick={onClose}
                 aria-label="Profili kapat"
-                className="riso-focus inline-flex h-11 w-11 items-center justify-center shrink-0 border-2 border-carbon bg-paper text-carbon hover:bg-riso-redox hover:text-paper transition-colors"
+                className="riso-focus inline-flex h-11 w-11 items-center justify-center shrink-0 bg-paper-deep text-carbon hover:bg-carbon hover:text-paper transition-colors"
               >
-                <X size={16} strokeWidth={2.5} />
+                <X size={18} strokeWidth={2.4} />
               </button>
             </div>
-            {/* Department row */}
+
             {!isPreview && (
-              <div className="relative mt-3">
+              <div className="mt-3">
                 {isEditable && isEditing ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex w-full items-center gap-2">
                     <select
                       aria-label="Bölüm"
                       autoFocus
                       disabled={loading}
                       value={department}
                       onChange={(e) => setDepartment(e.target.value)}
-                      className="riso-focus min-h-11 min-w-0 flex-1 bg-paper border-2 border-carbon px-2 py-1 font-riso-body text-base text-carbon"
+                      className="duo-input riso-focus min-h-11 min-w-0 flex-1 px-3 font-riso-body text-base text-carbon"
                     >
                       <option value="">Bölüm Seçiniz</option>
                       {PAU_DEPARTMENTS.map((dept) => (
@@ -188,9 +171,9 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       onClick={handleSave}
                       disabled={loading}
                       aria-label="Bölümü kaydet"
-                      className="riso-focus shrink-0 inline-flex h-11 w-11 items-center justify-center border-2 border-carbon bg-paper text-riso-spring hover:bg-riso-spring hover:text-carbon transition-colors"
+                      className="riso-focus shrink-0 inline-flex h-11 w-11 items-center justify-center bg-carbon text-paper hover:bg-carbon-soft disabled:opacity-50 transition-colors"
                     >
-                      <Save size={14} strokeWidth={2.5} />
+                      <Save size={16} strokeWidth={2.4} />
                     </button>
                   </div>
                 ) : (
@@ -199,8 +182,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     ref={departmentTrigger}
                     disabled={!isEditable}
                     aria-label={isEditable ? 'Bölümü düzenle' : undefined}
-                    className={`inline-flex max-w-full min-w-0 items-center gap-1.5 border-2 border-carbon bg-paper-deep px-2 py-0.5 text-left ${
-                      isEditable ? 'group cursor-pointer hover:bg-riso-mustard/40' : ''
+                    className={`inline-flex min-h-11 max-w-full min-w-0 items-center gap-2 bg-paper-deep px-3 text-left text-sm text-carbon ${
+                      isEditable ? 'riso-focus cursor-pointer hover:bg-paper-dim transition-colors' : ''
                     }`}
                     onClick={() => {
                       if (!isEditable) return;
@@ -208,16 +191,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       setIsEditing(true);
                     }}
                   >
-                    <Briefcase size={11} strokeWidth={2.4} className="text-carbon-muted" />
-                    <span className="min-w-0 truncate font-riso-mono text-[0.7rem] uppercase tracking-wider text-carbon">
-                      {user.department || 'Bölüm Girilmedi'}
-                    </span>
+                    <Briefcase size={14} strokeWidth={2.2} className="shrink-0 text-carbon-muted" />
+                    <span className="min-w-0 truncate">{user.department || 'Bölüm Girilmedi'}</span>
                     {isEditable && !isPreview && (
-                      <Edit2
-                        size={10}
-                        strokeWidth={2.5}
-                        className="text-riso-pink-deep opacity-0 group-hover:opacity-100 transition-opacity"
-                      />
+                      <Edit2 size={13} strokeWidth={2.4} className="shrink-0 text-carbon-muted" />
                     )}
                   </button>
                 )}
@@ -226,79 +203,53 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           </div>
 
           {profileError && (
-            <p
-              role="alert"
-              className="shrink-0 border-l-4 border-riso-redox bg-paper-deep px-5 py-3 text-sm text-carbon"
-            >
+            <p role="alert" className="shrink-0 bg-riso-redox/10 px-5 py-3 text-sm text-carbon">
               {profileError}
             </p>
           )}
-          <div className="min-h-0 overflow-y-auto overscroll-contain">
+          <div className="min-h-0 overflow-y-auto overscroll-contain border-t-[3px] border-dotted border-carbon/35">
             {isPreview ? (
               <p className="p-5 font-riso-body text-sm leading-6 text-carbon-soft">
                 Bu oyuncunun ayrıntılı profili paylaşılmıyor.
               </p>
             ) : (
-              <>
-                {/* Stats grid */}
-                <div className="grid grid-cols-3 border-b-2 border-carbon">
+              <div className="px-5 pt-5">
+                <div className="grid grid-cols-3 gap-2">
+                  <StatCell label="Galibiyet" value={String(user.wins)} />
+                  <StatCell label="Oyun" value={String(user.gamesPlayed)} />
                   <StatCell
-                    icon={<Trophy size={18} strokeWidth={2.5} />}
-                    label="Galibiyet"
-                    value={String(user.wins)}
-                    tone="mustard"
-                  />
-                  <StatCell
-                    icon={<Gamepad2 size={18} strokeWidth={2.5} />}
-                    label="Oyun"
-                    value={String(user.gamesPlayed)}
-                    tone="blue"
-                    borderLeft
-                  />
-                  <StatCell
-                    icon={<Star size={18} strokeWidth={2.5} />}
                     label="Oran"
                     value={`${user.gamesPlayed > 0 ? Math.floor((user.wins / user.gamesPlayed) * 100) : 0}%`}
-                    tone="pink"
-                    borderLeft
                   />
                 </div>
 
-                {/* Level progress */}
-                <div className="p-5 border-b-2 border-carbon bg-paper">
-                  <div className="flex items-baseline justify-between font-riso-mono text-xs font-bold uppercase tracking-[0.16em] mb-2">
-                    <span className="text-carbon">LEVEL {level}</span>
-                    <span className="text-carbon-muted">LEVEL {level + 1}</span>
+                {/* Level progress: points are fıstık */}
+                <div className="mt-5">
+                  <div className="flex items-baseline justify-between text-sm font-semibold">
+                    <span className="text-carbon">Seviye {level}</span>
+                    <span className="text-carbon-muted">Seviye {level + 1}</span>
                   </div>
-                  <div className="relative h-4 border-2 border-carbon bg-paper-deep overflow-hidden">
-                    <div
-                      className="h-full bg-riso-pink transition-[width] duration-500"
+                  <div
+                    className="duo-meter mt-2"
+                    role="progressbar"
+                    aria-label="Sonraki seviyeye ilerleme"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.round(nextLevelProgress)}
+                  >
+                    <span
+                      className="bg-riso-spring transition-[width] duration-500"
                       style={{ width: `${nextLevelProgress}%` }}
                     />
-                    {/* Diagonal stripe sticker pattern over the fill */}
-                    <div
-                      aria-hidden="true"
-                      className="pointer-events-none absolute inset-0 opacity-25"
-                      style={{
-                        backgroundImage:
-                          'repeating-linear-gradient(135deg, transparent 0 4px, var(--ink) 4px 5px)',
-                        width: `${nextLevelProgress}%`,
-                      }}
-                    />
                   </div>
-                  <p className="mt-1.5 text-right font-riso-mono text-[0.65rem] uppercase tracking-wider text-carbon-muted">
-                    {user.points} CP
+                  <p className="mt-2 text-[13px] text-carbon-muted [font-variant-numeric:tabular-nums]">
+                    {user.points} puan · sonraki seviyeye {500 - (user.points % 500)} puan
                   </p>
                 </div>
-              </>
+              </div>
             )}
             {isEditable && !isPreview && <ProfileActivity {...profileData} />}
-          </div>
-          {/* Footer strip */}
-          <div className="shrink-0 border-t-2 border-carbon bg-riso-mustard px-4 py-2 text-center">
-            <span className="font-riso-mono text-[0.65rem] font-bold uppercase tracking-[0.2em] text-carbon">
-              {isPreview ? 'CafeDuo · Oyuncu' : 'CafeDuo Üye Kartı · Güncel'}
-            </span>
+            <div className="h-5" aria-hidden="true" />
           </div>
         </div>
         <AvatarPickerModal
@@ -333,29 +284,13 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 };
 
 interface StatCellProps {
-  icon: React.ReactNode;
   label: string;
   value: string;
-  tone: 'mustard' | 'blue' | 'pink';
-  borderLeft?: boolean;
 }
 
-const TONE_BG: Record<StatCellProps['tone'], string> = {
-  mustard: 'bg-riso-mustard text-carbon',
-  blue: 'bg-riso-blue text-paper',
-  pink: 'bg-riso-pink text-carbon',
-};
-
-const StatCell: React.FC<StatCellProps> = ({ icon, label, value, tone, borderLeft }) => (
-  <div className={`p-4 text-center bg-paper ${borderLeft ? 'border-l-2 border-carbon' : ''}`}>
-    <div
-      className={`inline-flex h-9 w-9 items-center justify-center border-2 border-carbon mb-1.5 ${TONE_BG[tone]}`}
-    >
-      {icon}
-    </div>
-    <span className="block font-riso-display text-2xl text-carbon">{value}</span>
-    <span className="block font-riso-mono text-[0.6rem] uppercase tracking-[0.16em] text-carbon-muted">
-      {label}
-    </span>
+const StatCell: React.FC<StatCellProps> = ({ label, value }) => (
+  <div className="duo-stat">
+    <span className="duo-stat-label text-[13px]">{label}</span>
+    <span className="duo-stat-value text-[28px] leading-none mt-1.5">{value}</span>
   </div>
 );

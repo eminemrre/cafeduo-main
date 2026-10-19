@@ -79,7 +79,7 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({ variant = 'default
   if (variant === 'landing')
     return createPortal(
       <div role="region" aria-label="Çerez bildirimi" className="cdl-cookie">
-        <h3>Çerezler</h3>
+        <h2>Çerezler</h2>
         <p>
           Giriş için çerez onayı gerekir.{' '}
           <span className="cdl-cookie-more">Yalnızca gezeceksen reddedebilirsin.</span>
@@ -124,9 +124,9 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({ variant = 'default
             <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-carbon-muted font-riso-mono">
               Küçük bir bilgi
             </p>
-            <h3 className="mb-1 text-sm font-bold uppercase tracking-[0.06em] text-carbon font-riso-display">
+            <h2 className="mb-1 font-riso-body text-[15px] font-semibold text-carbon">
               Çerez Kullanımı
-            </h3>
+            </h2>
             <p className="mb-3 break-words text-xs leading-5 text-carbon-soft font-riso-body">
               Giriş yapmak için çerezleri kabul etmen gerekir. Sadece anasayfayı gezeceksen
               reddedebilirsin.

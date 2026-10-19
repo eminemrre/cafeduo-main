@@ -29,18 +29,16 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   if (variant === 'compact') {
     return (
       <div
-        className="text-center py-8 px-4 border-2 border-carbon bg-paper-deep"
+        className="text-center py-8 px-4 bg-paper-deep"
         data-testid="empty-state-compact"
       >
-        <div className="inline-flex items-center justify-center w-12 h-12 border-2 border-carbon bg-riso-blue mb-3">
-          <Icon size={24} className="text-paper" />
-        </div>
-        <h4 className="text-carbon font-riso-display font-bold mb-1 uppercase tracking-[0.06em]">
+        <Icon size={28} strokeWidth={2} className="mx-auto mb-3 text-carbon-muted" aria-hidden="true" />
+        <h4 className="mb-1 font-riso-body text-[15px] font-semibold text-carbon">
           {title}
         </h4>
-        <p className="text-carbon-muted text-sm mb-3 font-riso-body">{description}</p>
+        <p className="mx-auto mb-4 max-w-xs font-riso-body text-sm leading-6 text-carbon-soft">{description}</p>
         {action && (
-          <RetroButton onClick={action.onClick} variant="primary" className="text-xs">
+          <RetroButton onClick={action.onClick} variant="primary" size="sm">
             {action.label}
           </RetroButton>
         )}
@@ -50,19 +48,14 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
   return (
     <div
-      className="text-center py-16 px-4 border-2 border-carbon bg-paper riso-shadow-md"
+      className="text-center py-16 px-4 bg-paper-deep"
       data-testid="empty-state"
     >
-      {/* Icon — solid riso-blue sticker tile */}
-      <div className="relative inline-block mb-6">
-        <div className="relative inline-flex items-center justify-center w-20 h-20 bg-riso-blue border-2 border-carbon riso-shadow-sm">
-          <Icon size={40} className="text-paper" strokeWidth={2.2} />
-        </div>
-      </div>
+      <Icon size={36} strokeWidth={2} className="mx-auto mb-5 text-carbon-muted" aria-hidden="true" />
 
       {/* Title */}
       <h3
-        className="text-xl sm:text-2xl font-bold text-carbon font-riso-display mb-2 uppercase tracking-[0.06em]"
+        className="mb-2 font-riso-display text-[28px] leading-none text-carbon"
         data-testid="empty-state-title"
       >
         {title}
@@ -70,7 +63,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 
       {/* Description */}
       <p
-        className="text-carbon-muted max-w-sm mx-auto mb-6 font-riso-body"
+        className="mx-auto mb-6 max-w-sm font-riso-body leading-6 text-carbon-soft"
         data-testid="empty-state-description"
       >
         {description}
@@ -88,7 +81,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         {secondaryAction && (
           <button
             onClick={secondaryAction.onClick}
-            className="text-carbon-muted hover:text-carbon-soft transition-colors text-sm underline underline-offset-4"
+            className="duo-quiet riso-focus"
           >
             {secondaryAction.label}
           </button>

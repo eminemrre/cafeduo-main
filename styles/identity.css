@@ -1,6 +1,6 @@
 /* CafeDuo identity: component styles, never broad legacy element overrides. */
 html {
-  background: #fbf7ee;
+  background: #eef6f8;
   scroll-padding-top: 7rem;
 }
 body {
@@ -14,27 +14,33 @@ body {
 }
 .duo-button {
   min-height: 44px;
-  border-radius: 11px;
-  border-width: 1.5px;
+  border-radius: 0;
+  border-width: 0;
   letter-spacing: 0;
-  box-shadow: 0 3px 0 #141413;
+  box-shadow: none;
 }
 .duo-button:hover {
   transform: translateY(-2px);
 }
 .duo-button:active {
   transform: translateY(1px);
-  box-shadow: 0 1px 0 #141413;
+  box-shadow: none;
 }
 .duo-card {
-  border-radius: 18px;
-  border-width: 1px;
-  border-color: #14141330;
+  border-radius: 0;
+  border-width: 0;
+}
+/* Square every form control (iOS rounds them by default). */
+input.duo-input,
+select.duo-input,
+textarea.duo-input {
+  border-radius: 0;
 }
 .duo-input {
-  border-radius: 10px;
-  border-width: 1px;
-  min-height: 48px;
+  border-width: 0;
+  border-bottom: 3px solid #17140f;
+  background: #eef6f8;
+  min-height: 52px;
 }
 .duo-nav {
   position: fixed;
@@ -45,57 +51,56 @@ body {
   width: min(1280px, calc(100% - 48px));
 }
 .duo-nav-bar {
-  border: 1px solid #14141325;
-  background: #fbf7eeef;
-  backdrop-filter: blur(14px);
+  border: 0;
+  background: #ffffff;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 20px;
   padding: 13px 20px;
-  border-radius: 16px;
-  box-shadow: 0 6px 20px #14141308;
+  border-radius: 0;
+  box-shadow: 0 6px 20px #17140f08;
 }
 .duo-brand {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: #141413;
-  font-family: 'Unbounded Variable', sans-serif;
-  font-size: 18px;
-  font-weight: 750;
-  letter-spacing: -0.055em;
+  color: #17140f;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 .duo-brand > span:first-child {
   width: 37px;
   height: 37px;
   display: grid;
   place-items: center;
-  border: 1.5px solid #141413;
-  border-radius: 10px;
-  background: #ff3e94;
-  box-shadow: 2px 2px 0 #141413;
+  border: 0;
+  border-radius: 0;
+  background: #ff5c8a;
+  box-shadow: none;
 }
 .duo-brand em {
   font-style: normal;
-  color: #d8246f;
+  color: #c4265f;
 }
 .duo-nav-link {
   padding: 11px 13px;
-  color: #555550;
-  font-size: 13px;
-  font-weight: 550;
-  border-radius: 8px;
+  color: #4a4540;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 0;
 }
 .duo-nav-link:hover {
-  background: #ede5d5;
-  color: #141413;
+  background: #eef6f8;
+  color: #17140f;
 }
 .duo-nav-business {
   display: flex;
   align-items: center;
   gap: 7px;
-  border-left: 1px solid #14141320;
+  border-left: 1px solid #17140f20;
   margin-left: 8px;
   border-radius: 0;
 }
@@ -105,62 +110,66 @@ body {
   left: 16px;
   right: 16px;
   z-index: 100;
-  border: 1px solid #14141330;
-  background: #fbf7ee;
+  border: 0;
+  background: #ffffff;
   padding: 24px;
-  border-radius: 18px;
-  box-shadow: 0 15px 40px #14141320;
+  border-radius: 0;
+  box-shadow: 0 15px 40px #17140f20;
 }
 .duo-menu-toggle {
   height: 44px;
   width: 44px;
   display: grid;
   place-items: center;
-  border-radius: 10px;
-  color: #141413;
-  background: #f2ead8;
+  border-radius: 0;
+  color: #17140f;
+  background: #eef6f8;
 }
 .duo-auth-panel {
-  border-radius: 22px;
-  border-width: 1px;
-  box-shadow: 0 24px 90px #14141325;
+  border-radius: 0;
+  border-width: 0;
+  box-shadow: 0 24px 90px #17140f25;
 }
 .duo-auth-header {
-  border-bottom-width: 1px;
+  border-bottom-width: 3px;
   padding: 28px 28px 22px;
 }
 .duo-auth-header h2 {
-  font-size: 25px;
-  letter-spacing: -0.04em;
+  font-size: 32px;
+  line-height: 0.98;
+  letter-spacing: -0.01em;
   text-transform: none;
 }
 .duo-auth-label {
   display: block;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 500;
   margin-bottom: 8px;
-  color: #2a2a28;
+  color: #17140f;
 }
 .duo-auth-tabs {
   display: flex;
-  padding: 4px;
-  border: 1px solid #14141318;
-  background: #f2ead8;
-  border-radius: 11px;
-  gap: 4px;
+  gap: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 0;
 }
 .duo-auth-tabs button {
   border: 0;
-  border-radius: 8px;
+  border-radius: 0;
+  padding: 0;
   text-transform: none;
   letter-spacing: 0;
-  font-family: 'Familjen Grotesk', sans-serif;
+  font-family: 'Onest', system-ui, sans-serif;
   font-size: 15px;
+  font-weight: 600;
+  background: transparent;
 }
 .duo-auth-close {
   border: 0;
-  border-radius: 10px;
-  background: #f2ead8;
+  border-radius: 0;
+  background: #eef6f8;
   width: 44px;
   height: 44px;
 }
@@ -170,29 +179,31 @@ body {
 }
 .duo-dashboard-tabs {
   display: flex;
-  gap: 6px;
-  border-bottom: 1px solid #14141320;
-  padding-bottom: 12px;
+  gap: 24px;
 }
 .duo-dashboard-tab {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 44px;
-  padding: 12px 20px;
-  border-radius: 10px;
-  color: #6a6a66;
+  min-height: 48px;
+  padding: 0 2px;
+  border-radius: 0;
+  color: #4a4540;
   font-size: 15px;
   font-weight: 600;
 }
 .duo-dashboard-tab[aria-pressed='true'] {
-  background: #141413;
-  color: #fbf7ee;
+  background: transparent;
+  color: #17140f;
+  box-shadow: inset 0 -3px 0 #17140f;
 }
 .duo-dashboard-tab:hover:not([aria-pressed='true']) {
-  background: #f2ead8;
-  color: #141413;
+  color: #17140f;
+  box-shadow: inset 0 -3px 0 #17140f40;
+}
+.duo-dashboard-tab[aria-pressed='true']:hover {
+  background: transparent;
 }
 .duo-status {
   display: grid;
@@ -211,54 +222,68 @@ body {
 .duo-status-avatar {
   height: 55px;
   width: 55px;
-  border-radius: 16px;
-  background: #1e3fb5;
-  color: #fbf7ee;
+  border-radius: 0;
+  background: #1fb3ff;
+  color: #17140f;
   display: grid;
   place-items: center;
-  font-family: 'Unbounded Variable', sans-serif;
+  font-family: 'Baloo 2', system-ui, sans-serif;
   overflow: hidden;
   position: relative;
   flex-shrink: 0;
 }
 .duo-status-profile h3 {
-  font-size: 24px;
-  font-weight: 650;
-  letter-spacing: -0.035em;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.01em;
 }
 .duo-status-profile p {
-  color: #6a6a66;
+  color: #4a4540;
   font-size: 13px;
   margin-top: 3px;
 }
 .duo-status-stats {
   display: flex;
-  gap: 26px;
+  gap: 8px;
 }
+/* Each number sits in an ice well; the points well is fıstık (points are fıstık). */
 .duo-status-stats > div {
-  min-width: 65px;
+  min-width: 96px;
+  padding: 10px 14px;
+  background: #eef6f8;
+}
+.duo-status-stats > [data-testid='user-points'] {
+  background: #b6d31b;
+}
+.duo-status-stats > [data-testid='user-points'] span {
+  color: #17140f;
 }
 .duo-status-stats span {
-  font-size: 11px;
+  font-size: 13px;
   display: flex;
   gap: 5px;
   align-items: center;
-  color: #6a6a66;
+  color: #4a4540;
   margin-bottom: 5px;
 }
 .duo-status-stats strong {
-  font-family: 'Unbounded Variable', sans-serif;
-  font-size: 21px;
-  letter-spacing: -0.03em;
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 .duo-table-status {
-  font-size: 11px;
-  font-weight: 550;
+  font-size: 13px;
+  font-weight: 600;
   display: inline-flex;
   align-items: center;
   gap: 5px;
   margin-top: 8px;
-  color: #1e3fb5;
+  color: #4a4540;
 }
 .duo-lobby-actions {
   display: grid;
@@ -266,17 +291,26 @@ body {
   gap: 14px;
 }
 .duo-lobby-action {
-  min-height: 86px;
-  padding: 18px;
+  min-height: 72px;
+  padding: 0 20px;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: 13px;
-  border-radius: 14px;
-  border: 1px solid #141413;
-  box-shadow: 0 3px 0 #141413;
-  font-weight: 650;
+  gap: 12px;
+  border-radius: 0;
+  border: 0;
+  box-shadow: none;
+  font-weight: 600;
   font-size: 16px;
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease;
+}
+.duo-lobby-action:not(:disabled):hover {
+  transform: translateY(-2px);
+}
+.duo-lobby-action:not(:disabled):active {
+  transform: scale(0.98);
 }
 .duo-lobby-action svg {
   width: 24px;
@@ -286,65 +320,71 @@ body {
   opacity: 0.45;
 }
 .duo-lobby-heading {
-  font-size: 22px;
-  font-weight: 650;
-  letter-spacing: -0.035em;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.01em;
 }
 .duo-lobby-row {
-  border-radius: 15px;
-  border-width: 1px;
+  border: 0;
+  border-radius: 0;
   box-shadow: none;
-  margin: 0 0 12px;
+  margin: 0 0 8px;
+  background: #eef6f8;
+  transition: background-color 160ms ease;
 }
 .duo-lobby-row:hover {
-  box-shadow: 0 6px 18px #14141308;
+  background: #d9eaef;
 }
 .duo-lobby-empty {
   opacity: 1;
-  border-color: #14141325;
-  border-radius: 18px;
-  background: #f2ead850;
-  padding: 38px 18px;
-  margin: 6px 0;
+  border: 0;
+  border-radius: 0;
+  background: #eef6f8;
+  padding: 40px 20px;
+  margin: 0;
 }
 .duo-lobby-empty h4 {
   font-size: 20px;
   font-weight: 600;
 }
 .duo-lobby-empty p {
-  max-width: 310px;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #6a6a66;
+  max-width: 320px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #4a4540;
   margin-top: 10px;
   text-align: center;
 }
 .duo-checkin-heading {
-  font-size: clamp(29px, 6vw, 40px);
-  line-height: 1.2;
-  letter-spacing: -0.045em;
+  font-size: clamp(32px, 6vw, 40px);
+  line-height: 0.98;
+  letter-spacing: -0.01em;
 }
 .duo-cookie-card {
-  border-radius: 16px;
+  border-radius: 0;
   border-width: 1px;
-  box-shadow: 0 10px 40px #14141318;
+  box-shadow: 0 10px 40px #17140f18;
 }
-.duo-cookie-card h3 {
+.duo-cookie-card h2 {
   text-transform: none;
   letter-spacing: -0.02em;
   font-size: 15px;
 }
 .duo-cookie-card button {
   min-height: 44px;
-  border-radius: 8px;
+  border-radius: 0;
 }
 .duo-cookie-card button[aria-label] {
   min-height: 36px;
   min-width: 36px;
 }
 .duo-footer {
-  border-top-width: 1px;
-  border-color: #14141320;
+  border-top: 3px dotted #17140f;
+  border-left: 0;
+  border-right: 0;
+  border-bottom: 0;
 }
 .duo-footer p {
   text-transform: none;
@@ -357,47 +397,37 @@ body {
   }
   .duo-nav-bar {
     padding: 10px 12px;
-    border-radius: 14px;
-  }
-  .duo-brand {
-    font-size: 17px;
+    border-radius: 0;
   }
   .duo-status {
     grid-template-columns: 1fr;
     gap: 22px;
     padding: 12px 0 4px;
   }
-  .duo-status-profile h3 {
-    font-size: 22px;
-  }
   .duo-status-stats {
     width: 100%;
-    gap: 0;
-    border-top: 1px solid #14141320;
-    padding-top: 18px;
   }
   .duo-status-stats > div {
     flex: 1;
-    padding-left: 18px;
-    border-left: 1px solid #14141315;
+    min-width: 0;
   }
-  .duo-status-stats > div:first-child {
-    padding-left: 0;
-    border-left: 0;
+  .duo-dashboard-tabs {
+    gap: 0;
+    justify-content: space-between;
   }
   .duo-dashboard-tab {
     flex: 1;
-    padding: 11px 8px;
-    gap: 5px;
-    font-size: 12px;
+    padding: 0 4px;
+    gap: 6px;
+    font-size: 15px;
   }
   .duo-dashboard-tab svg {
     width: 17px;
   }
   .duo-lobby-action {
-    min-height: 70px;
-    padding: 14px;
-    font-size: 13px;
+    min-height: 72px;
+    padding: 0 14px;
+    font-size: 15px;
     gap: 8px;
   }
   .duo-auth-header {
@@ -420,12 +450,12 @@ html::-webkit-scrollbar {
   width: 8px;
 }
 html::-webkit-scrollbar-track {
-  background: #fbf7ee;
+  background: #ffffff;
 }
 html::-webkit-scrollbar-thumb {
-  background: #14141330;
+  background: #17140f30;
   border: 0;
-  border-radius: 8px;
+  border-radius: 0;
 }
 @media (min-width: 768px) {
   .duo-menu-toggle {
@@ -434,15 +464,12 @@ html::-webkit-scrollbar-thumb {
 }
 
 .duo-reward-tabs {
-  padding: 4px;
-  border-radius: 10px;
-  background: #f2ead8;
-  gap: 3px;
+  gap: 24px;
 }
 .duo-reward-tabs button {
   min-height: 44px;
   border: 0;
-  border-radius: 7px;
+  border-radius: 0;
 }
 
 .duo-auth-shell {
@@ -458,7 +485,302 @@ html::-webkit-scrollbar-thumb {
 }
 
 .duo-app .riso-focus:focus-visible {
-  outline: 2px solid #1e3fb5;
+  outline: 2px solid #1fb3ff;
   outline-offset: 3px;
   box-shadow: none;
+}
+
+/* =====================================================================
+ * Design v2 — the candy set is a fill palette. Where the candy hue is
+ * used as text it is deepened to a legible depth (WCAG AA on paper),
+ * never used at fill strength. See DESIGN.md, "Colour".
+ * ===================================================================== */
+.text-riso-pink {
+  color: #c4265f;
+}
+.text-riso-blue {
+  color: #0b6aa8;
+}
+.text-riso-mustard {
+  color: #8a6608;
+}
+.text-riso-spring {
+  color: #5f7a0c;
+}
+.text-riso-redox {
+  color: #b8241a;
+}
+.text-riso-pink-deep {
+  color: #c4265f;
+}
+.text-riso-blue-deep {
+  color: #0b6aa8;
+}
+.text-riso-mustard-deep {
+  color: #8a6608;
+}
+
+/* =====================================================================
+ * Design v2 — the app-wide flattening pass. These rules apply the
+ * language in DESIGN.md to screens that still carry Tailwind utility
+ * classes from the previous look: candy is a fill, nothing is outlined,
+ * no tracked uppercase micro-labels, nothing readable below 12 px.
+ * ===================================================================== */
+.bg-riso-pink,
+.bg-riso-blue,
+.bg-riso-mustard,
+.bg-riso-spring {
+  color: #17140f;
+}
+.hover\:bg-riso-pink:hover,
+.hover\:bg-riso-blue:hover,
+.hover\:bg-riso-mustard:hover,
+.hover\:bg-riso-spring:hover {
+  color: #17140f;
+}
+[class~='border-2'][class~='border-carbon'] {
+  border-width: 0;
+}
+[class~='uppercase'][class*='tracking-'] {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.text-\[10px\],
+.text-\[11px\] {
+  font-size: 13px;
+}
+
+/* Square every edge the utilities still round. The one exception is the
+ * loading spinner, whose ring reads as a circle. */
+[class*='rounded-']:not([class*='animate-spin']) {
+  border-radius: 0;
+}
+
+/* Icons sitting on candy read in ink, like the text they sit with. */
+[class*='bg-riso-pink'] svg,
+[class*='bg-riso-blue'] svg,
+[class*='bg-riso-mustard'] svg,
+[class*='bg-riso-spring'] svg {
+  color: #17140f;
+}
+
+/* Nothing in the flow casts a shadow: separation is paper on ice and ink rules.
+ * Floating things (fixed/absolute) keep their one soft shadow, and inset
+ * shadows are not shadows here: they draw the 3 px tab underline and rules. */
+[class*='shadow-']:not([class~='fixed']):not([class~='absolute']):not([class~='sticky']):not(
+    [class*='shadow-[inset']
+  ) {
+  box-shadow: none;
+}
+
+/* Dashed outlines become the language's perforation. */
+[class*='border-dashed'] {
+  border-style: dotted;
+}
+
+/* =====================================================================
+ * Design v2 — the game screens (Masa register). The page is the table:
+ * no framed card, ice wells for the numbers, one candy fill per game,
+ * 4 px dotted leaders and 3 px dotted tear lines as the only lines.
+ * ===================================================================== */
+
+/* Sentence case for labels whose source string is kept in capitals. */
+.duo-sentence {
+  display: inline-block;
+  text-transform: lowercase;
+}
+.duo-sentence::first-letter {
+  text-transform: uppercase;
+}
+
+.duo-game-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.duo-game-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  color: #17140f;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.duo-game-title {
+  margin-top: 10px;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: clamp(36px, 6vw, 40px);
+  line-height: 0.98;
+  letter-spacing: -0.01em;
+  color: #17140f;
+}
+.duo-game-sub {
+  margin-top: 8px;
+  font-size: 15px;
+  color: #4a4540;
+}
+
+/* The second action: no box, an ink underline on hover. */
+.duo-quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 4px;
+  background: none;
+  border: 0;
+  color: #17140f;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: underline 3px transparent;
+  text-underline-offset: 6px;
+  transition: text-decoration-color 160ms ease;
+  cursor: pointer;
+}
+.duo-quiet:hover {
+  text-decoration-color: #17140f;
+}
+.duo-quiet:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* A number in an ice well: small label above, tabular value below. */
+.duo-stat {
+  min-width: 0;
+  padding: 12px 14px;
+  background: #eef6f8;
+  color: #17140f;
+}
+.duo-stat-label {
+  display: block;
+  font-size: 15px;
+  font-weight: 500;
+  color: #4a4540;
+}
+.duo-stat-value {
+  display: block;
+  margin-top: 2px;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The running side reads as the slip's inverted bar; the player's turn takes the game colour. */
+.duo-stat--ink {
+  background: #17140f;
+  color: #ffffff;
+}
+.duo-stat--ink .duo-stat-label {
+  color: #ffffff;
+}
+.duo-stat--gok {
+  background: #1fb3ff;
+}
+.duo-stat--limon {
+  background: #ffd23f;
+}
+.duo-stat--lokum {
+  background: #ff5c8a;
+}
+.duo-stat--fistik {
+  background: #b6d31b;
+}
+.duo-stat-label > svg {
+  display: inline-block;
+  margin-right: 6px;
+  vertical-align: -2px;
+}
+.duo-stat--fistik .duo-stat-label,
+.duo-stat--gok .duo-stat-label,
+.duo-stat--limon .duo-stat-label,
+.duo-stat--lokum .duo-stat-label {
+  color: #17140f;
+}
+.duo-stat-value--score {
+  font-size: clamp(36px, 8vw, 40px);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+/* The running status line under the scoreboard. */
+.duo-game-status {
+  font-size: 15px;
+  line-height: 1.45;
+  color: #17140f;
+}
+
+/* Slip rows: what ··· value, with the landing's 4 px dotted leader. */
+.duo-leader-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 0;
+}
+.duo-leader-dots {
+  flex: 1 1 24px;
+  min-width: 24px;
+  margin-bottom: 4px;
+  border-bottom: 4px dotted rgba(23, 20, 15, 0.32);
+}
+.duo-leader-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The tear line: a 3 px dotted ink rule. */
+.duo-tear {
+  border: 0;
+  border-top: 3px dotted #17140f;
+}
+
+/* Things that float above the page carry the one soft shadow. */
+.duo-float {
+  box-shadow: 0 16px 34px rgba(23, 20, 15, 0.22);
+}
+
+/* A thin meter (timer, accuracy): an ice-deep track with a flat fill. */
+.duo-meter {
+  height: 8px;
+  background: #d9eaef;
+  overflow: hidden;
+}
+.duo-meter > span {
+  display: block;
+  height: 100%;
+}
+
+.duo-game-actions .duo-button {
+  min-height: 48px;
+}
+.duo-game-actions .duo-button:active {
+  transform: scale(0.98);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .duo-quiet,
+  .duo-lobby-action,
+  .duo-lobby-row {
+    transition: none;
+  }
+  .duo-lobby-action:not(:disabled):hover {
+    transform: none;
+  }
+}
+
+/* Inside an ice well a field turns paper, so it never disappears into the well. */
+.bg-paper-deep .duo-input,
+.duo-stat .duo-input {
+  background: #ffffff;
+}
+/* The compact field for inline table edits keeps the 44 px touch target. */
+.duo-input.duo-input--sm {
+  min-height: 44px;
 }

@@ -24,6 +24,8 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialMode: 'login' | 'register';
+  /** Pre-fills the e-mail field, e.g. from the landing's sign-up sentence. */
+  initialEmail?: string;
   onLoginSuccess: (user: UserType) => void;
 }
 
@@ -61,6 +63,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
   initialMode,
+  initialEmail,
   onLoginSuccess,
 }) => {
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -160,7 +163,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   useEffect(() => {
     setMode(initialMode);
     resetForm();
-  }, [initialMode, isOpen]);
+    if (initialEmail) setEmail(initialEmail);
+  }, [initialMode, isOpen, initialEmail]);
 
   const resetForm = () => {
     setError('');
@@ -336,9 +340,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   /** Riso Kantin: ink-bordered paper input with focus ring. No neon glow. */
   const inputBaseClass =
-    'w-full min-h-12 duo-input bg-paper border border-carbon/25 text-carbon font-riso-body text-base leading-6 outline-none transition-all duration-150 placeholder:text-carbon-muted pl-11 pr-12 cursor-text focus:bg-paper focus:ring-2 focus:ring-offset-2 focus:ring-offset-paper';
-  const inputBorderClass = 'border-carbon focus:ring-riso-blue';
-  const inputErrorClass = 'border-riso-redox focus:ring-riso-redox';
+    'w-full min-h-12 duo-input text-carbon font-riso-body text-base leading-6 outline-none transition-all duration-150 placeholder:text-carbon-muted pl-11 pr-12 cursor-text focus:bg-paper';
+  const inputBorderClass = '';
+  const inputErrorClass = 'border-b-riso-redox!';
   const iconBaseClass =
     'absolute left-4 top-1/2 -translate-y-1/2 text-carbon-muted pointer-events-none transition-colors group-focus-within:text-carbon group-[.is-error]:text-riso-redox z-10';
 
@@ -365,7 +369,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       >
         {/* Backdrop — soft ink wash */}
         <motion.div
-          className="absolute inset-0 bg-carbon/60 backdrop-blur-sm"
+          className="absolute inset-0 bg-carbon/70"
           onClick={onClose}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -380,31 +384,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             role="dialog"
             aria-modal="true"
             aria-labelledby="auth-dialog-title"
-            className="duo-auth-panel relative w-full max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100vh-2rem)] bg-paper border-2 border-carbon riso-shadow-md overflow-hidden flex flex-col"
+            className="duo-auth-panel relative w-full max-h-[calc(100dvh-1.5rem)] sm:max-h-[calc(100vh-2rem)] bg-paper overflow-hidden flex flex-col"
             initial={{ y: 24, opacity: 0.5 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 24, opacity: 0.5 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           >
-            {/* Decorative riso confetti corner — printed-zine flair */}
-            <div
-              aria-hidden="true"
-              className="absolute top-3 right-16 h-2 w-12 bg-riso-mustard rotate-[-4deg] pointer-events-none hidden sm:block"
-            />
-            <div
-              aria-hidden="true"
-              className="absolute top-7 right-24 h-2 w-6 bg-riso-pink rotate-[6deg] pointer-events-none hidden sm:block"
-            />
 
             {/* Header */}
-            <div className="duo-auth-header px-5 md:px-7 pt-5 md:pt-6 pb-3 flex justify-between items-start border-b-2 border-carbon shrink-0 bg-paper">
+            <div className="duo-auth-header px-5 md:px-7 pt-5 md:pt-6 pb-3 flex justify-between items-start border-b-[3px] border-dotted border-carbon/35 shrink-0 bg-paper">
               <div className="min-w-0">
-                <p className="font-riso-mono text-[10px] tracking-[0.22em] uppercase text-carbon-muted font-bold mb-1">
-                  Oyuna hoş geldin
-                </p>
                 <h2
                   id="auth-dialog-title"
-                  className="font-riso-display text-carbon text-2xl md:text-3xl uppercase tracking-[0.06em]"
+                  className="font-riso-display text-carbon text-3xl md:text-4xl"
                 >
                   {title}
                 </h2>
@@ -413,7 +405,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 onClick={onClose}
                 aria-label="Kapat"
-                className="duo-auth-close riso-focus shrink-0 w-9 h-9 border-2 border-carbon bg-paper text-carbon hover:bg-riso-redox hover:text-paper flex items-center justify-center transition-colors"
+                className="duo-auth-close riso-focus shrink-0 w-9 h-9 bg-paper-deep text-carbon hover:bg-carbon hover:text-paper flex items-center justify-center transition-colors"
               >
                 <X size={18} />
               </button>
@@ -427,36 +419,38 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   <button
                     type="button"
                     onClick={() => switchMode('login')}
-                    className={`flex-1 h-11 font-riso-display text-sm sm:text-base uppercase tracking-[0.1em] transition-all ${
+                    aria-pressed={mode === 'login'}
+                    className={`h-11 font-riso-display text-lg transition-colors ${
                       mode === 'login'
-                        ? 'bg-riso-pink text-carbon font-bold'
-                        : 'bg-paper text-carbon-muted hover:bg-paper-deep'
+                        ? 'text-carbon shadow-[inset_0_-3px_0_#17140f]'
+                        : 'text-carbon-muted hover:text-carbon'
                     }`}
                   >
-                    Giriş Yap
+                    Giriş yap
                   </button>
                   <button
                     type="button"
                     onClick={() => switchMode('register')}
-                    className={`flex-1 h-11 font-riso-display text-sm sm:text-base uppercase tracking-[0.1em] transition-all border-l-2 border-carbon ${
+                    aria-pressed={mode === 'register'}
+                    className={`h-11 font-riso-display text-lg transition-colors ${
                       mode === 'register'
-                        ? 'bg-riso-pink text-carbon font-bold'
-                        : 'bg-paper text-carbon-muted hover:bg-paper-deep'
+                        ? 'text-carbon shadow-[inset_0_-3px_0_#17140f]'
+                        : 'text-carbon-muted hover:text-carbon'
                     }`}
                   >
-                    Kayıt Ol
+                    Kayıt ol
                   </button>
                 </div>
               )}
 
               {error && (
-                <div className="bg-riso-redox/15 border-2 border-carbon border-l-[6px] border-l-riso-redox text-carbon px-4 py-3 font-riso-body text-sm flex items-center gap-3">
+                <div className="bg-riso-redox/15 text-carbon px-4 py-3 font-riso-body text-sm flex items-center gap-3">
                   <AlertTriangle size={18} className="shrink-0 text-riso-redox" />
                   <span>{error}</span>
                 </div>
               )}
               {forgotMessage && (
-                <div className="bg-riso-blue/15 border-2 border-carbon border-l-[6px] border-l-riso-blue text-carbon px-4 py-3 font-riso-body text-sm">
+                <div className="bg-riso-blue/15 text-carbon px-4 py-3 font-riso-body text-sm">
                   {forgotMessage}
                 </div>
               )}
@@ -694,9 +688,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     </button>
                   </p>
                 )}
-                <p className="text-[11px] text-carbon-muted font-riso-mono uppercase tracking-wider">
-                  Kafeni seç, masanı doğrula, oyuna katıl.
-                </p>
               </div>
             </div>
           </motion.div>

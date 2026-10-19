@@ -2,12 +2,12 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Gamepad2, Swords } from 'lucide-react';
 import { GameRequest, User } from '../types';
+import { gameChipFill } from '../lib/gameColors';
 
-const gameIcon = (gameType: string) => {
-  if (gameType === 'Retro Satranç') return '♟️';
-  if (gameType === 'Bilgi Yarışı') return '🧠';
-  if (gameType === 'Nişancı Düellosu' || gameType === 'Nişancı Düellosu') return '🎯';
-  return '🎮';
+/** Table codes already read "MASA05"; bare numbers and labels get the word. */
+const tableLabel = (table: unknown) => {
+  const raw = String(table ?? '').trim();
+  return /^masa/i.test(raw) ? raw.toUpperCase() : `Masa ${raw}`;
 };
 
 interface GameLobbyProps {
@@ -43,43 +43,40 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
   const isInGame = Boolean(activeGameId);
   return (
     <div className="flex flex-col gap-8 h-full" data-testid="game-lobby-container">
-      {/* Primary game actions */}
+      {/* Primary game actions — two flat action cells */}
       <div className="duo-lobby-actions">
         <motion.button
           onClick={onCreateGameClick}
           disabled={isInGame}
-          className="duo-lobby-action riso-focus bg-riso-pink text-carbon transition-all disabled:cursor-not-allowed"
+          className="duo-lobby-action riso-focus bg-riso-pink text-carbon disabled:cursor-not-allowed"
         >
-          <Gamepad2 size={32} strokeWidth={2.4} />
-          <span className="text-inherit">{isInGame ? 'OYUNDASIN' : 'Oyun Kur'}</span>
+          <Gamepad2 size={28} strokeWidth={2.4} aria-hidden="true" />
+          {isInGame ? <span>Oyundasın</span> : <span className="duo-sentence">Oyun Kur</span>}
         </motion.button>
 
         <motion.button
           onClick={onQuickJoin}
           disabled={quickJoinDisabled || quickJoinBusy}
-          className="duo-lobby-action riso-focus bg-riso-blue text-paper transition-all disabled:cursor-not-allowed"
+          className="duo-lobby-action riso-focus bg-paper-deep text-carbon hover:bg-paper-dim disabled:cursor-not-allowed"
           data-testid="quick-join-button"
         >
-          <Swords size={32} strokeWidth={2.4} />
-          <span className="text-inherit">{quickJoinBusy ? 'Bağlanılıyor...' : 'Hızlı eşleş'}</span>
+          <Swords size={28} strokeWidth={2.4} aria-hidden="true" />
+          <span>{quickJoinBusy ? 'Bağlanılıyor...' : 'Hızlı eşleş'}</span>
         </motion.button>
       </div>
 
       {/* Active Requests List */}
-      <div className="flex-1 flex flex-col relative w-full pt-4">
-        <div className="flex items-center gap-3 mb-5 border-b border-carbon/20 pb-3">
-          <h3 className="duo-lobby-heading text-carbon">Açık oyunlar</h3>
-          <div className="w-2 h-2 rounded-full bg-riso-spring" />
-        </div>
+      <div className="flex-1 flex flex-col relative w-full">
+        <h3 className="duo-lobby-heading mb-4 text-carbon">Açık oyunlar</h3>
 
         <div className="relative w-full z-10 flex flex-col" data-testid="game-lobby-list">
           {requests.length === 0 ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="duo-lobby-empty flex flex-col items-center justify-center border border-dashed"
+              className="duo-lobby-empty flex flex-col items-center justify-center"
             >
-              <Gamepad2 size={32} className="mb-4 text-riso-blue" aria-hidden="true" />
+              <Gamepad2 size={32} className="mb-4 text-carbon" aria-hidden="true" />
               <h4>İlk oyunu sen başlat.</h4>
               <p>
                 Henüz açık bir oyun yok. Oyun kur, kafendeki oyunculara meydan oku ve birlikte oyna.
@@ -93,42 +90,37 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
               return (
                 <motion.div
                   key={req.id}
-                  initial={{ opacity: 0, scale: 0.95, y: 30 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="duo-lobby-row group relative bg-paper p-5 border border-carbon/20 transition-all"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.06 }}
+                  className="duo-lobby-row group relative p-4 sm:p-5"
                 >
-                  {/* decorative riso confetti corner */}
-                  <div
-                    aria-hidden="true"
-                    className="absolute top-2 right-2 h-2 w-8 bg-riso-mustard rotate-[-6deg] hidden sm:block"
-                  />
-
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 relative z-10">
-                    <div className="flex items-center gap-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
+                    <div className="flex min-w-0 items-center gap-4">
                       <button
                         onClick={() => onViewProfile(hostName)}
-                        className="rounded-xl riso-focus w-12 h-12 sm:w-14 sm:h-14 bg-riso-blue text-paper font-riso-display text-xl sm:text-2xl border-2 border-carbon flex items-center justify-center hover:bg-riso-blue-deep transition-colors"
+                        className="riso-focus w-12 h-12 shrink-0 bg-carbon text-paper font-riso-display text-2xl flex items-center justify-center transition-transform hover:-translate-y-0.5"
                         title="Profili Görüntüle"
                       >
                         {hostName.charAt(0).toUpperCase()}
                       </button>
-                      <div>
-                        <div className="flex items-center gap-3 flex-wrap">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-x-3 gap-y-1 flex-wrap">
                           <button
                             onClick={() => onViewProfile(hostName)}
-                            className="riso-focus font-riso-body font-semibold text-lg text-carbon hover:text-riso-pink-deep transition-colors"
+                            className="riso-focus font-riso-body font-semibold text-lg text-carbon underline decoration-transparent decoration-[3px] underline-offset-4 transition-colors hover:decoration-carbon"
                           >
                             {hostName}
                           </button>
-                          <span className="font-riso-mono text-[0.7rem] font-bold bg-riso-pink text-carbon border-2 border-carbon px-2 py-0.5 tracking-wider">
-                            Masa {req.table}
+                          <span className="font-riso-mono text-[15px] font-semibold bg-paper text-carbon px-2 py-0.5">
+                            {tableLabel(req.table)}
                           </span>
                         </div>
-                        <div className="font-riso-body text-sm font-bold uppercase tracking-wider text-carbon-soft mt-1 flex items-center gap-2">
-                          <span>{gameIcon(req.gameType)}</span>
-                          <span>{req.gameType}</span>
-                        </div>
+                        <span
+                          className={`mt-2 inline-flex px-2.5 py-1 text-[15px] font-medium text-carbon ${gameChipFill(req.gameType)}`}
+                        >
+                          {req.gameType}
+                        </span>
                       </div>
                     </div>
 
@@ -136,21 +128,21 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                       <button
                         onClick={() => onJoinGame(Number(req.id))}
                         disabled={isInGame}
-                        className="duo-button riso-focus w-full sm:w-auto px-6 py-3 bg-riso-pink text-carbon font-semibold text-sm border border-carbon transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="duo-button riso-focus w-full sm:w-auto min-h-12 px-6 bg-riso-pink text-carbon font-semibold text-[15px] transition-transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {isInGame ? 'ZATEN OYUNDASIN' : 'Oyuna katıl'}
+                        {isInGame ? 'Zaten oyundasın' : 'Oyuna katıl'}
                       </button>
                     ) : (
-                      <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <span className="font-riso-mono text-[0.7rem] uppercase font-bold tracking-wider border-2 border-carbon bg-riso-pink/15 text-riso-pink-deep px-3 py-1.5">
-                          SENİN LOBİN
+                      <div className="flex items-center gap-4 w-full sm:w-auto">
+                        <span className="bg-paper px-3 py-1.5 text-[15px] font-semibold text-carbon">
+                          <span className="duo-sentence">SENİN LOBİN</span>
                         </span>
                         <button
                           onClick={() => onCancelGame(req.id)}
-                          className="riso-focus px-4 py-2 font-riso-body font-bold uppercase tracking-wider text-carbon border-2 border-carbon bg-paper hover:bg-riso-redox hover:text-paper transition-colors"
+                          className="duo-quiet riso-focus"
                           data-testid={`cancel-game-${req.id}`}
                         >
-                          İPTAL ET
+                          <span className="duo-sentence">İPTAL ET</span>
                         </button>
                       </div>
                     )}

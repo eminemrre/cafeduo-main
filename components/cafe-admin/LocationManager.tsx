@@ -49,13 +49,10 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
 
   return (
     <div className="max-w-xl mx-auto">
-      <div className="border-2 border-carbon bg-paper riso-shadow-md p-8">
-        <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft mb-2">
-          Geo Matrix
-        </p>
-        <h2 className="font-riso-display text-xl sm:text-2xl font-bold text-carbon mb-6 flex items-center gap-2 uppercase tracking-wide">
-          <MapPin className="text-riso-spring" />
-          Konum Doğrulama Ayarları
+      <div className="bg-paper p-8">
+        <h2 className="font-riso-display text-[1.75rem] leading-none text-carbon mb-6 flex items-center gap-2">
+          <MapPin aria-hidden="true" />
+          Konum doğrulama ayarları
         </h2>
 
         <div className="mb-5">
@@ -87,7 +84,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
           <div>
             <label
               htmlFor="cafe-lat-input"
-              className="block text-sm font-medium text-carbon-muted mb-2 uppercase tracking-[0.08em]"
+              className="block text-[0.9375rem] font-medium text-carbon mb-2"
             >
               Enlem (Latitude)
             </label>
@@ -103,7 +100,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                 value={latitude}
                 onChange={(event) => onLatitudeChange(event.target.value)}
                 placeholder="37.741000"
-                className="border-2 border-carbon bg-paper-deep w-full pl-10 pr-4 py-3 text-carbon placeholder:text-carbon-muted outline-none font-riso-mono focus:bg-paper focus:ring-2 focus:ring-riso-blue focus:ring-offset-2 focus:ring-offset-paper"
+                className="duo-input riso-focus w-full pl-10 pr-4 text-base text-carbon placeholder:text-carbon-muted [font-variant-numeric:tabular-nums] focus:bg-paper"
               />
             </div>
           </div>
@@ -111,7 +108,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
           <div>
             <label
               htmlFor="cafe-lng-input"
-              className="block text-sm font-medium text-carbon-muted mb-2 uppercase tracking-[0.08em]"
+              className="block text-[0.9375rem] font-medium text-carbon mb-2"
             >
               Boylam (Longitude)
             </label>
@@ -127,7 +124,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                 value={longitude}
                 onChange={(event) => onLongitudeChange(event.target.value)}
                 placeholder="29.101000"
-                className="border-2 border-carbon bg-paper-deep w-full pl-10 pr-4 py-3 text-carbon placeholder:text-carbon-muted outline-none font-riso-mono focus:bg-paper focus:ring-2 focus:ring-riso-blue focus:ring-offset-2 focus:ring-offset-paper"
+                className="duo-input riso-focus w-full pl-10 pr-4 text-base text-carbon placeholder:text-carbon-muted [font-variant-numeric:tabular-nums] focus:bg-paper"
               />
             </div>
           </div>
@@ -135,7 +132,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
           <div>
             <label
               htmlFor="cafe-radius-input"
-              className="block text-sm font-medium text-carbon-muted mb-2 uppercase tracking-[0.08em]"
+              className="block text-[0.9375rem] font-medium text-carbon mb-2"
             >
               Doğrulama Yarıçapı (metre)
             </label>
@@ -152,17 +149,17 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                 value={radius}
                 onChange={(event) => onRadiusChange(event.target.value)}
                 placeholder="150"
-                className="border-2 border-carbon bg-paper-deep w-full pl-10 pr-4 py-3 text-carbon placeholder:text-carbon-muted outline-none font-riso-mono focus:bg-paper focus:ring-2 focus:ring-riso-blue focus:ring-offset-2 focus:ring-offset-paper"
+                className="duo-input riso-focus w-full pl-10 pr-4 text-base text-carbon placeholder:text-carbon-muted [font-variant-numeric:tabular-nums] focus:bg-paper"
               />
             </div>
           </div>
 
           <div className="pt-2 border-t border-riso-blue/20 space-y-4">
-            <p className="text-sm font-semibold text-carbon-soft">İkinci Konum (Opsiyonel)</p>
+            <p className="text-[0.9375rem] font-semibold text-carbon">İkinci konum <span className="font-normal text-carbon-soft">(isteğe bağlı)</span></p>
             <div>
               <label
                 htmlFor="cafe-secondary-lat-input"
-                className="block text-sm font-medium text-carbon-muted mb-2 uppercase tracking-[0.08em]"
+                className="block text-[0.9375rem] font-medium text-carbon mb-2"
               >
                 Ek Enlem (Latitude)
               </label>
@@ -178,7 +175,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                   value={secondaryLatitude}
                   onChange={(event) => onSecondaryLatitudeChange(event.target.value)}
                   placeholder="37.742000"
-                  className="border-2 border-carbon bg-paper-deep w-full pl-10 pr-4 py-3 text-carbon placeholder:text-carbon-muted outline-none font-riso-mono focus:bg-paper focus:ring-2 focus:ring-riso-blue focus:ring-offset-2 focus:ring-offset-paper"
+                  className="duo-input riso-focus w-full pl-10 pr-4 text-base text-carbon placeholder:text-carbon-muted [font-variant-numeric:tabular-nums] focus:bg-paper"
                 />
               </div>
             </div>
@@ -186,7 +183,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
             <div>
               <label
                 htmlFor="cafe-secondary-lng-input"
-                className="block text-sm font-medium text-carbon-muted mb-2 uppercase tracking-[0.08em]"
+                className="block text-[0.9375rem] font-medium text-carbon mb-2"
               >
                 Ek Boylam (Longitude)
               </label>
@@ -202,7 +199,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                   value={secondaryLongitude}
                   onChange={(event) => onSecondaryLongitudeChange(event.target.value)}
                   placeholder="29.102000"
-                  className="border-2 border-carbon bg-paper-deep w-full pl-10 pr-4 py-3 text-carbon placeholder:text-carbon-muted outline-none font-riso-mono focus:bg-paper focus:ring-2 focus:ring-riso-blue focus:ring-offset-2 focus:ring-offset-paper"
+                  className="duo-input riso-focus w-full pl-10 pr-4 text-base text-carbon placeholder:text-carbon-muted [font-variant-numeric:tabular-nums] focus:bg-paper"
                 />
               </div>
             </div>
@@ -210,7 +207,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
             <div>
               <label
                 htmlFor="cafe-secondary-radius-input"
-                className="block text-sm font-medium text-carbon-muted mb-2 uppercase tracking-[0.08em]"
+                className="block text-[0.9375rem] font-medium text-carbon mb-2"
               >
                 Ek Konum Yarıçapı (metre)
               </label>
@@ -227,7 +224,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
                   value={secondaryRadius}
                   onChange={(event) => onSecondaryRadiusChange(event.target.value)}
                   placeholder="150"
-                  className="border-2 border-carbon bg-paper-deep w-full pl-10 pr-4 py-3 text-carbon placeholder:text-carbon-muted outline-none font-riso-mono focus:bg-paper focus:ring-2 focus:ring-riso-blue focus:ring-offset-2 focus:ring-offset-paper"
+                  className="duo-input riso-focus w-full pl-10 pr-4 text-base text-carbon placeholder:text-carbon-muted [font-variant-numeric:tabular-nums] focus:bg-paper"
                 />
               </div>
             </div>
@@ -237,7 +234,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
             <button
               type="button"
               onClick={() => void onPickCurrentLocation()}
-              className="riso-focus riso-press py-3 border-2 border-carbon bg-paper-deep text-carbon hover:bg-paper font-riso-display font-bold flex items-center justify-center gap-2 uppercase tracking-[0.08em] text-sm"
+              className="riso-focus py-3 bg-paper-deep text-carbon hover:bg-paper font-riso-body font-bold flex items-center justify-center gap-2 text-sm"
             >
               <LocateFixed size={16} />
               Cihazdan Konumu Al
@@ -246,21 +243,17 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
             <button
               type="submit"
               disabled={loading}
-              className={`riso-focus riso-press py-3 border-2 border-carbon font-riso-display font-bold flex items-center justify-center gap-2 transition-all uppercase tracking-[0.08em] text-sm ${
-                loading
-                  ? 'bg-paper-dim text-carbon-muted cursor-not-allowed'
-                  : 'bg-riso-spring text-carbon riso-shadow-sm'
-              }`}
+              className={`riso-focus py-3 font-riso-body font-bold flex items-center justify-center gap-2 transition-all text-sm ${ loading ? 'bg-paper-dim text-carbon-muted cursor-not-allowed' : 'bg-riso-pink text-carbon' }`}
             >
               {loading ? (
                 <>
-                  <div className="w-5 h-5 border-2 border-carbon border-t-transparent animate-spin" />
+                  <div className="w-5 h-5 border-t-transparent animate-spin" />
                   Kaydediliyor...
                 </>
               ) : (
                 <>
                   <MapPin size={18} />
-                  KONUMU KAYDET
+                  Konumu kaydet
                 </>
               )}
             </button>
@@ -269,11 +262,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
 
         {status !== 'idle' && (
           <div
-            className={`mt-6 p-4 border-2 border-carbon flex items-center gap-3 ${
-              status === 'success'
-                ? 'bg-riso-spring/25 text-carbon'
-                : 'bg-riso-redox/20 text-carbon'
-            }`}
+            className={`mt-6 p-4 flex items-center gap-3 ${ status === 'success' ? 'bg-riso-spring/25 text-carbon' : 'bg-riso-redox/20 text-carbon' }`}
             role="status"
             aria-live="polite"
           >
@@ -286,8 +275,8 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
           </div>
         )}
 
-        <div className="mt-6 p-4 bg-riso-blue/15 border-2 border-carbon text-sm text-carbon font-riso-body">
-          <p className="font-bold mb-2 font-riso-display uppercase tracking-wide">Not:</p>
+        <div className="mt-6 p-4 bg-riso-blue/15 text-sm text-carbon font-riso-body">
+          <p className="font-bold mb-2 font-riso-body">Not:</p>
           <ul className="list-disc list-inside space-y-1 text-carbon-soft">
             <li>Check-in yalnızca bu konum yarıçapı içinde yapılabilir.</li>
             <li>Yarıçapı kampüs/kat sınırlarına göre güncelleyin.</li>

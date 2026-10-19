@@ -100,6 +100,8 @@ const AppContent: React.FC = () => {
   // Auth modal state
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  /** The landing's sign-up sentence passes the typed address into the modal. */
+  const [authEmail, setAuthEmail] = useState('');
 
   // Auth context
   const {
@@ -170,8 +172,9 @@ const AppContent: React.FC = () => {
     setIsAuthOpen(true);
   };
 
-  const openRegister = () => {
+  const openRegister = (email?: string) => {
     setAuthMode('register');
+    setAuthEmail(email ?? '');
     setIsAuthOpen(true);
   };
 
@@ -203,8 +206,8 @@ const AppContent: React.FC = () => {
     }
   };
 
-  const enterClub = () => {
-    if (!user) return openRegister();
+  const enterClub = (email?: string) => {
+    if (!user) return openRegister(email);
     navigate(user.isAdmin ? '/admin' : user.role === 'cafe_admin' ? '/cafe-admin' : '/dashboard');
   };
 
@@ -367,6 +370,7 @@ const AppContent: React.FC = () => {
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
         initialMode={authMode}
+        initialEmail={authEmail}
         onLoginSuccess={handleLoginSuccess}
       />
       <CookieConsent variant={isLanding ? 'landing' : 'default'} />

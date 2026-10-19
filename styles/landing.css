@@ -1,630 +1,1293 @@
-/*
- * Public landing (/): DESIGN.md "Masa Oyuncakları", Vitrin register. Scoped to .cdl.
- * Tokens mirror DESIGN.md; motion runs only while LandingExperience has motion on.
- */
+/* CafeDuo landing — direction "the page is the object" (taste-skill draw, seed 1485260991).
+   The page is the stationery of the café table: the table tent (hero), the order slip
+   (how it works), three colour sheets (games), the live table (showcase), the menu
+   (rewards), the sentence with a blank (sign up) and the back of the box (footer).
+   Edges are straight, notched, scalloped or perforated; no outlined boxes, no glass. */
+
+/* ------------------------------------------------------------------ page frame */
+
+/* The landing prints on white paper: the app's cream page background must not show
+   behind the fold or in the overscroll area. */
 html:has(.cdl),
-html:has(.cdl) body,
-.duo-app:has(.cdl) {
+body:has(.cdl) {
   background: #ffffff;
-  scrollbar-color: #17140f #eef6f8;
 }
+
+.duo-app:has(.cdl) {
+  --cdl-ink: #17140f;
+  --cdl-paper: #ffffff;
+  --cdl-ice: #eef6f8;
+  --cdl-lokum: #ff5c8a;
+  --cdl-limon: #ffd23f;
+  --cdl-gok: #1fb3ff;
+  --cdl-fistik: #b6d31b;
+  background: var(--cdl-paper);
+}
+
+/* The landing is its own world: no Fraunces reading bar, and the shared page
+   background is the paper the stationery is printed on. */
 .club-landing:has(.cdl) .club-reading-progress {
   display: none;
 }
-.duo-app:has(.cdl) .skip-link {
-  border: 0;
-  border-radius: 999px;
-  background: #17140f;
-  color: #ffffff;
-  font-family: 'Golos Text', system-ui, sans-serif;
-  box-shadow: none; /* taste-skill-ignore: removes the global skip-link shadow */
+
+.duo-app:has(.cdl) #main-content {
+  background: var(--cdl-paper);
 }
+
+.duo-app:has(.cdl) .skip-link {
+  background: var(--cdl-ink);
+  color: var(--cdl-paper);
+}
+
+/* ------------------------------------------------------------------ tokens */
 
 .cdl {
   --ink: #17140f;
-  --ink-soft: #4a4540;
   --paper: #ffffff;
   --ice: #eef6f8;
-  --ice-deep: #d9eaef;
   --lokum: #ff5c8a;
   --limon: #ffd23f;
   --gok: #1fb3ff;
   --fistik: #b6d31b;
-  --display: 'Bagel Fat One', 'Golos Text', system-ui, sans-serif;
-  --text: 'Golos Text', system-ui, sans-serif;
+
+  --display: 'Baloo 2', system-ui, sans-serif;
+  --text: 'Onest', system-ui, -apple-system, sans-serif;
+
+  /* Five type steps plus the container-sized masthead. */
+  --step-display: clamp(2.5rem, 5vw, 4.5rem);
+  --step-heading: clamp(2.25rem, 4.4vw, 4.25rem);
+  --step-title: clamp(1.75rem, 2.6vw, 2.5rem);
+  --step-statement: clamp(1.625rem, 2.5vw, 2.25rem);
+  --step-lead: 1.25rem;
+  --step-body: 1rem;
+  --step-small: 0.9375rem;
+
   --margin: 20px;
-  --radius-md: 20px;
-  --radius-lg: 32px;
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-toy: cubic-bezier(0.22, 1, 0.36, 1);
-  --shadow-float: 0 16px 40px rgba(23, 20, 15, 0.18);
-  position: relative;
-  color: var(--ink);
+  --ease-toy: cubic-bezier(0.22, 1.4, 0.36, 1);
+
   font-family: var(--text);
-  font-size: 1.0625rem;
-  line-height: 1.5;
-  caret-color: var(--lokum);
+  color: var(--ink);
+  font-size: var(--step-body);
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
-@media (min-width: 900px) {
+
+@media (min-width: 640px) {
+  .cdl {
+    --margin: 28px;
+  }
+}
+
+@media (min-width: 1100px) {
   .cdl {
     --margin: 40px;
   }
 }
+
 .cdl *,
 .cdl *::before,
 .cdl *::after {
   box-sizing: border-box;
 }
-.cdl ::selection {
-  background: var(--lokum);
-  color: var(--ink);
-}
-.cdl :where(h1, h2, h3, p, ul, ol, li, figure) {
+
+.cdl h1,
+.cdl h2,
+.cdl h3 {
   margin: 0;
-  padding: 0;
+  font-family: var(--display);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.01em;
 }
-.cdl :where(ul, ol) {
-  list-style: none;
+
+.cdl p {
+  margin: 0;
 }
-.cdl :where(h1, h2, h3, p, a, button, span, strong, li, figcaption) {
-  font-family: var(--text);
-}
-.cdl :where(a) {
-  color: inherit;
-}
-.cdl :where(button) {
-  font: inherit;
-  color: inherit;
-  background: none;
-  border: 0;
-  cursor: pointer;
-}
-.cdl :where(a, button):focus-visible {
-  outline: 3px solid var(--ink);
-  outline-offset: 3px;
-}
+
 .cdl img {
   display: block;
   max-width: 100%;
   height: auto;
 }
 
-/* Controls: every button and chip is a pill. */
-.cdl-pill {
+.cdl section[id],
+.cdl [id^='cdl-'] {
+  scroll-margin-top: 88px;
+}
+
+/* ------------------------------------------------------------------ controls */
+
+.cdl-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
+  min-height: 48px;
   padding: 0 20px;
-  border-radius: 999px;
+  border: 0;
   background: var(--ink);
   color: var(--paper);
-  font-weight: 700;
-  font-size: 1.0625rem;
-  white-space: nowrap;
-  transition:
-    transform 160ms var(--ease-out),
-    background-color 160ms var(--ease-out);
-}
-.cdl-pill:hover {
-  transform: translateY(-2px);
-}
-.cdl-pill:active {
-  transform: scale(0.97);
-}
-.cdl-pill-lg {
-  min-height: 56px;
-  padding: 0 30px;
-}
-.cdl-text-button {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 6px;
-  color: var(--ink);
+  font-family: var(--text);
+  font-size: var(--step-body);
   font-weight: 600;
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 6px;
-  text-decoration-color: transparent;
-  white-space: nowrap;
-  transition: text-decoration-color 160ms var(--ease-out);
-}
-.cdl-text-button:hover {
-  text-decoration-color: currentColor;
-}
-.cdl-quiet-button {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0;
-  color: var(--ink-soft);
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 4px;
-}
-.cdl-quiet-button:disabled {
-  cursor: default;
   text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 180ms var(--ease-out),
+    background-color 180ms var(--ease-out);
 }
 
-/* Header: wordmark, four links, both actions; sticky on every width. */
+.cdl-button:hover {
+  transform: translateY(-2px);
+}
+
+.cdl-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.cdl-button:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.cdl-button-small {
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: var(--step-small);
+}
+
+.cdl-quiet {
+  min-height: 44px;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: var(--text);
+  font-size: var(--step-small);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cdl-quiet:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.cdl-quiet:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* ------------------------------------------------------------------ header */
+
 .cdl-header {
   position: sticky;
   top: 0;
   z-index: 60;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 12px;
-  height: 64px;
+  gap: 14px;
+  min-height: 64px;
   padding: 0 var(--margin);
   background: var(--paper);
 }
+
+@media (min-width: 900px) {
+  .cdl-header {
+    min-height: 72px;
+  }
+}
+
 .cdl-wordmark {
-  margin-right: auto;
   font-family: var(--display);
   font-size: 1.75rem;
+  font-weight: 800;
   line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
   text-decoration: none;
 }
-.cdl-header .cdl-wordmark {
-  font-family: var(--display);
+
+.cdl-wordmark:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
 }
-.cdl-header-links {
+
+.cdl-nav {
   display: none;
 }
-.cdl-header-links a {
-  font-weight: 600;
-  font-size: 0.875rem;
-  text-decoration: none;
-  transition: color 160ms var(--ease-out);
+
+@media (min-width: 900px) {
+  .cdl-nav {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    font-size: var(--step-small);
+    font-weight: 500;
+  }
+
+  .cdl-nav a {
+    color: var(--ink);
+    text-decoration: none;
+    padding: 4px 0;
+  }
+
+  .cdl-nav a:hover {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+
+  .cdl-nav a:focus-visible {
+    outline: 3px solid var(--ink);
+    outline-offset: 3px;
+  }
 }
-.cdl-header-links a:hover {
-  color: var(--ink-soft);
-}
+
 .cdl-header-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: flex-end;
+  gap: 8px;
 }
+
 @media (min-width: 900px) {
-  .cdl-header {
-    height: 72px;
-  }
-  .cdl-header-links {
-    display: flex;
-    gap: 28px;
-    margin-right: 24px;
-  }
   .cdl-header-actions {
-    gap: 16px;
-  }
-}
-@media (max-width: 379px) {
-  .cdl-header {
-    gap: 4px;
-    padding: 0 12px;
-  }
-  .cdl-wordmark {
-    font-size: 1.375rem;
-  }
-  .cdl-header .cdl-text-button {
-    padding: 0 4px;
-    font-size: 0.875rem;
-  }
-  .cdl-header .cdl-pill {
-    padding: 0 14px;
-    font-size: 0.875rem;
+    gap: 14px;
   }
 }
 
-/* Fields: a section is its colour. */
-.cdl-field {
+/* ------------------------------------------------------------------ hero: the table tent */
+
+.cdl-hero {
   position: relative;
-  padding: 72px var(--margin);
+  height: calc(100vh - 64px);
+  height: calc(100svh - 64px);
+  min-height: 540px;
+  padding: 0 var(--margin);
+  background: var(--limon);
   overflow: hidden;
 }
-.cdl :where(h2) {
-  font-family: var(--display);
-  font-weight: 400;
-  font-size: clamp(2.5rem, 1.6rem + 3.6vw, 4.5rem);
-  line-height: 0.98;
-  letter-spacing: -0.01em;
-  text-wrap: balance;
-}
-.cdl .cdl-field h2 {
-  font-family: var(--display);
-}
-.cdl-lede {
-  max-width: 40ch;
-  margin-top: 16px;
-  font-size: 1.375rem;
-  line-height: 1.4;
-}
+
 @media (min-width: 900px) {
-  .cdl-field {
-    padding: 112px var(--margin);
+  .cdl-hero {
+    height: calc(100vh - 72px);
+    height: calc(100svh - 72px);
+    min-height: 620px;
   }
 }
 
-/* Hero: limon field, copy and the toy set. */
-.cdl-hero {
+@media (max-width: 899px) {
+  /* Phone: the tent card is the screen, so the block is centred instead of cropped. */
+  .cdl-hero {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: auto;
+    min-height: calc(100svh - 64px);
+    padding-bottom: 22px;
+  }
+
+  .cdl-tent {
+    padding-top: 0;
+  }
+
+  .cdl-tent-card {
+    min-height: min(600px, calc(100svh - 220px));
+  }
+}
+
+/* A still of the cup, cropped by the fold: the table this page is printed for. */
+.cdl-hero-cup {
+  display: none;
+  position: absolute;
+  left: -3%;
+  bottom: -168px;
+  width: min(30vw, 440px);
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (min-width: 900px) {
+  .cdl-hero-cup {
+    display: block;
+  }
+}
+
+.cdl-tent {
+  position: relative;
   display: grid;
-  gap: 8px;
-  padding-bottom: 0;
+  justify-items: center;
+  padding-top: 56px;
+}
+
+@media (min-width: 900px) {
+  .cdl-tent {
+    padding-top: 118px;
+  }
+}
+
+.cdl-tent-stack {
+  position: relative;
+  width: min(100%, 560px);
+}
+
+.cdl-tent-card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 34px 22px 38px;
+  background: var(--paper);
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .cdl-tent-card {
+    gap: 18px;
+    padding: 44px 40px 48px;
+  }
+}
+
+@media (min-width: 900px) {
+  .cdl-tent-card {
+    height: clamp(600px, calc(100svh - 160px), 820px);
+    gap: 20px;
+    padding: 74px 48px 56px;
+  }
+}
+
+.cdl-scallop {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
   background: var(--limon);
 }
-.cdl-hero h1 {
-  font-family: var(--display);
-  font-weight: 400;
-  font-size: clamp(2.625rem, 0.5rem + 10.5vw, 6rem);
-  line-height: 0.95;
-  letter-spacing: -0.01em;
+
+.cdl-scallop-tl {
+  top: -17px;
+  left: -17px;
 }
-.cdl-hero h1 span {
-  display: inline-block;
-  font-family: inherit;
+
+.cdl-scallop-tr {
+  top: -17px;
+  right: -17px;
 }
-.cdl-hero-copy > p {
+
+.cdl-tent-card h1 {
+  display: grid;
+  justify-items: center;
+  font-size: var(--step-display);
+  line-height: 0.92;
+}
+
+.cdl-tent-line-1 {
+  justify-self: start;
+  transform: translateX(-7%);
+}
+
+.cdl-tent-line-2 {
+  justify-self: end;
+  transform: translateX(7%);
+}
+
+.cdl-tent-offer {
   max-width: 32ch;
-  margin-top: 28px;
-  font-size: 1.375rem;
-  line-height: 1.4;
+  font-size: var(--step-body);
+  line-height: 1.5;
 }
-.cdl-actions {
+
+.cdl-diamond {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  background: var(--ink);
+  transform: rotate(45deg);
+}
+
+.cdl-tent-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px 18px;
-  margin-top: 28px;
+  justify-content: center;
+  gap: 10px;
+  font-size: var(--step-small);
+  font-weight: 500;
 }
-.cdl-hero-copy .cdl-quiet-button {
-  margin-top: 8px;
+
+.cdl-tent-foot {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  margin-top: auto;
 }
-.cdl-stage {
+
+.cdl-tent-qr {
+  padding: 8px;
+  background: var(--paper);
+}
+
+.cdl-tent-scan {
+  font-size: var(--step-small);
+  color: rgba(23, 20, 15, 0.72);
+}
+
+.cdl-hero-links {
   position: relative;
-  margin: 0 calc(var(--margin) * -1);
-  aspect-ratio: 780 / 660;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+  gap: 22px;
+  margin-top: 22px;
+  font-size: var(--step-small);
+  font-weight: 500;
 }
+
+.cdl-hero-links a {
+  color: var(--ink);
+  text-decoration: none;
+  border-bottom: 2px solid rgba(23, 20, 15, 0.35);
+  padding-bottom: 2px;
+}
+
+@media (min-width: 900px) {
+  .cdl-hero-links {
+    display: none;
+  }
+}
+
+/* ------------------------------------------------------------------ slip: how it works */
+
+.cdl-slip {
+  display: grid;
+  gap: 44px;
+  padding: 96px var(--margin) 112px;
+  background: var(--ice);
+}
+
+@media (min-width: 900px) {
+  .cdl-slip {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    gap: 48px;
+    align-items: start;
+    padding: 168px var(--margin);
+  }
+}
+
+.cdl-slip-copy h2 {
+  font-size: var(--step-heading);
+}
+
+.cdl-slip-copy p {
+  max-width: 34ch;
+  margin-top: 22px;
+  font-size: var(--step-lead);
+  line-height: 1.5;
+}
+
+.cdl-slip-sheet {
+  width: min(100%, 480px);
+  padding: 32px 26px 46px;
+  background: var(--paper);
+  /* A torn bottom edge as geometry: four even teeth, 10 px deep. */
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 10px),
+    87.5% 100%,
+    75% calc(100% - 10px),
+    62.5% 100%,
+    50% calc(100% - 10px),
+    37.5% 100%,
+    25% calc(100% - 10px),
+    12.5% 100%,
+    0 calc(100% - 10px)
+  );
+}
+
+@media (min-width: 900px) {
+  .cdl-slip-sheet {
+    padding: 36px 32px 52px;
+  }
+}
+
+.cdl-slip-group + .cdl-slip-group {
+  margin-top: 26px;
+}
+
+.cdl-slip-group h3 {
+  font-family: var(--text);
+  font-size: var(--step-small);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.cdl-slip-group ul {
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cdl-slip-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 0;
+  font-size: var(--step-body);
+}
+
+.cdl-slip-what {
+  max-width: 34ch;
+}
+
+.cdl-slip-dots {
+  flex: 1 1 24px;
+  min-width: 24px;
+  margin-bottom: 4px;
+  border-bottom: 4px dotted rgba(23, 20, 15, 0.32);
+}
+
+.cdl-slip-value {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cdl-slip-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 44px;
+  margin-top: 26px;
+  padding: 8px 14px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: var(--step-small);
+  font-weight: 500;
+}
+
+.cdl-slip-result span:last-child {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ sheets: the games */
+
+.cdl-sheets {
+  padding: 96px 0 0;
+  background: var(--paper);
+}
+
+@media (min-width: 900px) {
+  .cdl-sheets {
+    padding-top: 168px;
+  }
+}
+
+.cdl-sheets > h2 {
+  padding: 0 var(--margin);
+  margin-bottom: 40px;
+  font-size: var(--step-heading);
+}
+
+@media (min-width: 900px) {
+  .cdl-sheets > h2 {
+    margin-bottom: 64px;
+  }
+}
+
+.cdl-sheet-stack {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cdl-sheet {
+  position: sticky;
+  top: calc(88px + var(--sheet-index) * 72px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  height: 84vh;
+  height: 84svh;
+  min-height: 520px;
+  overflow: hidden;
+}
+
+@media (max-width: 899px) {
+  .cdl-sheet {
+    top: calc(56px + var(--sheet-index) * 52px);
+    height: auto;
+    min-height: 72vh;
+    min-height: 72svh;
+    max-height: 84vh;
+    max-height: 84svh;
+  }
+}
+
+.cdl-sheet-satranc {
+  background: var(--gok);
+}
+
+.cdl-sheet-bilgi {
+  background: var(--limon);
+}
+
+.cdl-sheet-nisanci {
+  background: var(--lokum);
+}
+
+.cdl-sheet-copy {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 18px;
+  padding: 24px var(--margin) 28px;
+}
+
+.cdl-sheet-copy h3 {
+  font-size: var(--step-title);
+}
+
+.cdl-sheet-copy p {
+  align-self: end;
+  max-width: 38ch;
+  font-size: var(--step-lead);
+  line-height: 1.5;
+}
+
+.cdl-sheet-toy {
+  align-self: end;
+  justify-self: center;
+  width: min(100% - 2 * var(--margin), 380px);
+}
+
+@media (min-width: 900px) {
+  .cdl-sheet {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+  }
+
+  .cdl-sheet-copy {
+    grid-column: 1;
+    grid-row: 1;
+    gap: 20px;
+    padding: 30px 24px 40px var(--margin);
+  }
+
+  .cdl-sheet-toy {
+    grid-column: 2;
+    grid-row: 1;
+    align-self: end;
+    justify-self: end;
+    width: min(100%, 680px);
+  }
+}
+
+/* ------------------------------------------------------------------ showcase: the live table */
+
+.cdl-showcase {
+  display: grid;
+  gap: 40px;
+  align-items: center;
+  padding: 88px var(--margin) 96px;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+@media (min-width: 900px) {
+  .cdl-showcase {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 56px;
+    min-height: 88vh;
+    min-height: 88svh;
+    padding: 128px var(--margin);
+  }
+}
+
+.cdl-showcase-plate {
+  position: relative;
+  justify-self: center;
+  width: min(100%, 560px);
+  aspect-ratio: 1;
+  background: var(--ice);
+}
+
+@media (min-width: 900px) {
+  .cdl-showcase-plate {
+    width: min(100%, 620px);
+    aspect-ratio: 4 / 3;
+  }
+}
+
+.cdl-showcase-copy {
+  display: grid;
+  gap: 26px;
+  align-content: space-between;
+}
+
+@media (min-width: 900px) {
+  .cdl-showcase-copy {
+    min-height: 470px;
+  }
+}
+
+.cdl-tabs {
+  display: flex;
+  gap: 22px;
+}
+
+.cdl-tab {
+  padding: 6px 0;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: rgba(255, 255, 255, 0.62);
+  font-family: var(--text);
+  font-size: var(--step-lead);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.cdl-tab:hover {
+  color: var(--paper);
+}
+
+.cdl-tab[aria-pressed='true'] {
+  color: var(--paper);
+  border-bottom-color: var(--limon);
+}
+
+.cdl-tab:focus-visible {
+  outline: 3px solid var(--limon);
+  outline-offset: 3px;
+}
+
+.cdl-showcase-body h2 {
+  font-size: var(--step-title);
+}
+
+.cdl-showcase-body p {
+  max-width: 40ch;
+  margin-top: 14px;
+  font-size: var(--step-lead);
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.cdl-showcase-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cdl-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 72px;
+  padding: 0 16px;
+  border: 0;
+  font-family: var(--text);
+  font-size: var(--step-body);
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 180ms var(--ease-out);
+}
+
+.cdl-cell:hover {
+  transform: translateY(-2px);
+}
+
+.cdl-cell:active {
+  transform: translateY(0) scale(0.99);
+}
+
+.cdl-cell:focus-visible {
+  outline: 3px solid var(--paper);
+  outline-offset: 3px;
+}
+
+.cdl-cell-primary {
+  background: var(--lokum);
+  color: var(--ink);
+}
+
+.cdl-cell-plain {
+  background: #2a251c;
+  color: var(--paper);
+}
+
+/* The live toy set inside the plate. */
+.cdl-stage {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
 .cdl-stage-still,
-.cdl-stage-canvas {
+.cdl-stage-still img {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-}
-.cdl-stage-still img {
-  width: 100%;
-  height: 100%;
   object-fit: contain;
 }
-.cdl-stage-canvas {
-  opacity: 0;
-  transition: opacity 400ms var(--ease-out);
-}
-.cdl-stage[data-live='true'] .cdl-stage-canvas {
-  opacity: 1;
-}
+
 .cdl-stage[data-live='true'] .cdl-stage-still {
-  opacity: 0;
-  transition: opacity 400ms var(--ease-out);
+  display: none;
 }
+
+.cdl-stage-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .cdl-stage-play {
   position: absolute;
-  left: var(--margin);
-  bottom: 20px;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
+  left: 16px;
+  top: 16px;
   min-height: 48px;
-  padding: 0 22px;
-  border-radius: 999px;
-  background: var(--paper);
-  color: var(--ink);
-  font-weight: 700;
-  transition: transform 160ms var(--ease-out);
+  padding: 0 18px;
+  border: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--text);
+  font-size: var(--step-small);
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 180ms var(--ease-out),
+    background-color 180ms var(--ease-out);
 }
+
 .cdl-stage-play:hover {
   transform: translateY(-2px);
 }
+
 .cdl-stage-play:active {
-  transform: scale(0.97);
+  transform: scale(0.98);
 }
-.cdl-stage-play[aria-disabled='true'] {
-  cursor: progress;
+
+.cdl-stage-play:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
 }
+
 .cdl-stage-caption {
   position: absolute;
-  left: var(--margin);
-  bottom: 80px;
-  z-index: 2;
-  max-width: min(34ch, calc(100% - 2 * var(--margin)));
-  padding: 10px 16px;
-  border-radius: 20px;
-  background: var(--paper);
+  left: 16px;
+  right: 16px;
+  top: 76px;
+  max-width: 62%;
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 500;
+  line-height: 1.4;
 }
-.cdl-stage-caption:empty {
-  display: none;
+
+.cdl-stage[data-live='false'][data-moved='true'] .cdl-stage-still img {
+  animation: cdl-rise 500ms var(--ease-toy) both;
 }
+
+/* ------------------------------------------------------------------ menu: the rewards */
+
+.cdl-menu {
+  padding: 88px var(--margin) 104px;
+  background: var(--fistik);
+}
+
 @media (min-width: 900px) {
-  .cdl-hero {
-    grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
-    align-items: center;
-    min-height: calc(100svh - 72px);
-    padding-top: 48px;
-    padding-bottom: 48px;
-  }
-  .cdl-stage {
-    margin: 0 calc(var(--margin) * -1) 0 0;
-    aspect-ratio: 1440 / 1520;
-    max-height: calc(100svh - 120px);
-    justify-self: stretch;
-  }
-  .cdl-stage-caption {
-    bottom: 84px;
+  .cdl-menu {
+    padding: 150px var(--margin) 176px;
   }
 }
 
-/* Games: ice field, three stickers dropped on the table. */
-.cdl-games {
-  background: var(--ice);
-}
-.cdl-stickers {
-  display: grid;
-  gap: 100px;
-  margin-top: 96px;
-}
-.cdl-sticker {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 92px 24px 26px;
-  border-radius: var(--radius-lg);
-  transform: rotate(var(--tilt));
-  transition: transform 260ms var(--ease-toy);
-}
-.cdl-sticker:hover {
-  transform: rotate(0deg) translateY(-6px);
-}
-.cdl-sticker-satranc {
-  background: var(--gok);
-}
-.cdl-sticker-bilgi {
-  background: var(--limon);
-}
-.cdl-sticker-nisanci {
-  background: var(--lokum);
-}
-.cdl-sticker-toy {
-  position: absolute;
-  top: -78px;
-  right: 8px;
-  width: 168px;
-  pointer-events: none;
-  transition: transform 300ms var(--ease-toy);
-}
-.cdl-sticker:hover .cdl-sticker-toy {
-  transform: translateY(-10px) rotate(-6deg);
-}
-.cdl .cdl-sticker h3 {
-  font-family: var(--display);
-  font-weight: 400;
-  font-size: 2.25rem;
-  line-height: 1.02;
-}
-.cdl-sticker-meta {
-  font-weight: 700;
-}
-@media (min-width: 900px) {
-  .cdl-stickers {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 28px;
-    margin-top: 120px;
-  }
-  .cdl-sticker {
-    min-height: 380px;
-    padding-top: 120px;
-  }
-  .cdl-sticker-toy {
-    top: -96px;
-    width: 210px;
-  }
-}
-
-/* Rewards: lokum field, the coin, the catalogue and a coupon. */
-.cdl-rewards {
-  display: grid;
-  gap: 24px;
-  background: var(--lokum);
-}
-.cdl-rewards-coin img {
-  width: min(280px, 70vw);
+.cdl-menu-column {
+  width: min(100%, 620px);
   margin: 0 auto;
+  container-type: inline-size;
 }
-.cdl-reward-list {
+
+/* The word is the section: its letters are sized to the column, edge to edge.
+   2.65em is the measured width of "MENÜ" in Baloo 2 800 at letter-spacing -0.035em. */
+.cdl-menu-masthead {
+  font-size: clamp(3.25rem, 37.5cqw, 15rem);
+  line-height: 0.76;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+}
+
+/* The coin's art fills only ~37% of its canvas, so it is sized by content. */
+.cdl-menu-coin {
+  display: block;
+  width: min(72%, 480px);
+  margin: 40px 0 0 auto;
+}
+
+.cdl-menu-note {
+  max-width: 52ch;
+  margin-top: 26px;
+  font-size: var(--step-body);
+  color: rgba(23, 20, 15, 0.82);
+}
+
+.cdl-menu-bars {
   display: grid;
-  gap: 8px;
-  max-width: 520px;
-  margin-top: 28px;
+  gap: 6px;
+  margin-top: 32px;
 }
-.cdl-reward-list li {
+
+.cdl-bar {
+  background: var(--paper);
+}
+
+.cdl-bar-summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 60px;
-  padding: 10px 12px 10px 20px;
-  border-radius: var(--radius-md);
-  background: var(--paper);
-  font-weight: 600;
+  min-height: 56px;
+  padding: 0 18px;
+  font-size: var(--step-body);
+  font-weight: 500;
+  cursor: pointer;
+  list-style: none;
 }
-.cdl-points {
+
+.cdl-bar-summary::-webkit-details-marker {
+  display: none;
+}
+
+.cdl-bar-summary:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: -3px;
+}
+
+.cdl-bar-mark {
+  position: relative;
   flex: none;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: var(--fistik);
-  font-size: 0.875rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
+  width: 14px;
+  height: 14px;
 }
-.cdl-note {
-  max-width: 52ch;
-  margin-top: 12px;
-  font-size: 0.875rem;
+
+.cdl-bar-mark::before,
+.cdl-bar-mark::after {
+  content: '';
+  position: absolute;
+  background: var(--ink);
 }
-.cdl-coupon {
+
+.cdl-bar-mark::before {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  margin-top: -1px;
+}
+
+.cdl-bar-mark::after {
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  transition: transform 200ms var(--ease-out);
+}
+
+.cdl-bar[open] .cdl-bar-mark::after {
+  transform: scaleY(0);
+}
+
+.cdl-bar-items {
+  margin: 0;
+  padding: 0 18px 10px;
+  list-style: none;
+}
+
+.cdl-bar-items li {
   display: flex;
-  align-items: center;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 16px;
-  align-self: start;
-  max-width: 420px;
-  padding: 16px;
-  border-radius: var(--radius-md);
+  padding: 11px 0;
+  font-size: var(--step-body);
+}
+
+.cdl-bar-items li + li {
+  border-top: 4px dotted rgba(23, 20, 15, 0.22);
+}
+
+.cdl-bar-cost {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ close: the sentence */
+
+.cdl-cta {
+  padding: 88px var(--margin) 104px;
   background: var(--paper);
-  border-left: 0;
-  outline: 6px solid var(--fistik);
-  outline-offset: -6px;
 }
-.cdl-coupon svg {
-  flex: none;
-}
-.cdl-coupon figcaption {
-  display: grid;
-  gap: 4px;
-}
-.cdl-coupon strong {
-  font-size: 1.0625rem;
-}
-.cdl-coupon span {
-  font-size: 0.875rem;
-  color: var(--ink-soft);
-}
+
 @media (min-width: 900px) {
-  .cdl-rewards {
-    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
-    align-items: center;
-    column-gap: 48px;
-  }
-  .cdl-rewards-coin {
-    grid-row: 1 / 3;
-  }
-  .cdl-rewards-coin img {
-    width: 100%;
-    max-width: 520px;
-    margin: 0 auto;
+  .cdl-cta {
+    padding: 148px var(--margin) 168px;
   }
 }
 
-/* Steps: gök field, three toys in order. */
-.cdl-steps {
-  background: var(--gok);
-}
-.cdl-steps ol {
-  display: grid;
-  gap: 32px;
-  margin-top: 40px;
-}
-.cdl-steps li {
-  display: grid;
-  gap: 8px;
-  max-width: 34ch;
-}
-.cdl-steps li img {
-  width: 132px;
-  margin: 0 0 4px -12px;
-}
-.cdl .cdl-steps h3 {
-  font-size: 1.375rem;
-  font-weight: 700;
-  line-height: 1.25;
-}
-@media (min-width: 900px) {
-  .cdl-steps ol {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 40px;
-    margin-top: 56px;
-  }
-  .cdl-steps li img {
-    width: 168px;
-  }
+.cdl-cta-form {
+  width: min(100%, 940px);
+  margin: 0 auto;
+  text-align: center;
 }
 
-/* Close: fıstık field, the cup and the action. */
-.cdl-close {
-  display: grid;
-  justify-items: start;
-  background: var(--fistik);
-}
-.cdl-close-toy {
-  width: 180px;
-  margin: -24px 0 4px -16px;
-}
-@media (min-width: 900px) {
-  .cdl-close {
-    justify-items: center;
-    text-align: center;
-  }
-  .cdl-close .cdl-lede {
-    margin-inline: auto;
-  }
-  .cdl-close-toy {
-    width: 240px;
-    margin: -40px auto 8px;
-  }
-}
-
-/* Footer: one line on white. */
-.cdl-footer {
-  display: grid;
-  gap: 8px;
-  padding: 28px var(--margin) 32px;
-  background: var(--paper);
-  font-size: 0.875rem;
-}
-.cdl-footer-brand {
-  font-family: var(--display);
-  font-size: 1.75rem;
-  line-height: 1;
-}
-.cdl .cdl-footer-brand {
-  font-family: var(--display);
-}
-.cdl-footer-links {
+.cdl-cta-sentence {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 20px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px 14px;
+  font-size: var(--step-statement);
+  font-weight: 600;
+  line-height: 1.25;
 }
-.cdl-footer a {
+
+.cdl-cta-sentence label {
+  cursor: pointer;
+}
+
+/* "ile Kaydol" travels as one word so the button never sits alone on its line. */
+.cdl-cta-tail {
   display: inline-flex;
   align-items: center;
-  min-height: 44px;
-  font-weight: 600;
-  text-decoration: none;
+  gap: 14px;
 }
-.cdl-footer a:hover {
-  text-decoration: underline;
-  text-underline-offset: 4px;
+
+.cdl-cta-input {
+  width: min(100%, 11em);
+  max-width: 100%;
+  height: max(48px, 1.5em);
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 3px solid var(--ink);
+  background: var(--ice);
+  color: var(--ink);
+  font-family: var(--text);
+  font-size: 0.78em;
+  font-weight: 500;
 }
-.cdl-footer-year {
-  color: var(--ink-soft);
+
+.cdl-cta-input::placeholder {
+  /* AA on ice: #4A4540 reads 8:1, the old 55% ink only 4.0:1. */
+  color: #4a4540;
+  opacity: 1;
 }
+
+.cdl-cta-input:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+}
+
+.cdl-cta-submit {
+  min-height: max(48px, 1.5em);
+  padding: 0 22px;
+  border: 0;
+  background: var(--lokum);
+  color: var(--ink);
+  font-family: var(--text);
+  font-size: 0.78em;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    transform 180ms var(--ease-out),
+    background-color 180ms var(--ease-out);
+}
+
+.cdl-cta-submit:hover {
+  transform: translateY(-2px);
+}
+
+.cdl-cta-submit:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.cdl-cta-submit:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.cdl-cta-note {
+  max-width: 46ch;
+  margin: 22px auto 0;
+  font-size: var(--step-small);
+  color: rgba(23, 20, 15, 0.75);
+}
+
+/* ------------------------------------------------------------------ footer: the back of the box */
+
+.cdl-footer {
+  display: grid;
+  gap: 44px;
+  padding: 52px var(--margin) 26px;
+  background: var(--ink);
+  color: var(--paper);
+}
+
 @media (min-width: 900px) {
   .cdl-footer {
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    gap: 32px;
-  }
-  .cdl-footer-links {
-    justify-content: center;
+    gap: 60px;
+    padding: 72px var(--margin) 32px;
   }
 }
 
-/* Motion: the toys land; stickers drop onto the table; the coin flips in. */
+.cdl-footer-mark {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: clamp(84px, 19vw, 196px);
+}
+
+.cdl-footer-block {
+  flex: 1 1 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 6px;
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: clamp(1.75rem, 9.6vw, 7.5rem);
+  font-weight: 800;
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+}
+
+.cdl-footer-block:nth-child(1) {
+  height: 100%;
+  background: var(--gok);
+}
+
+.cdl-footer-block:nth-child(2) {
+  height: 82%;
+  background: var(--limon);
+}
+
+.cdl-footer-block:nth-child(3) {
+  height: 94%;
+  background: var(--lokum);
+}
+
+.cdl-footer-block:nth-child(4) {
+  height: 70%;
+  background: var(--fistik);
+}
+
+.cdl-footer-block:nth-child(5) {
+  height: 100%;
+  background: var(--limon);
+}
+
+.cdl-footer-block:nth-child(6) {
+  height: 78%;
+  background: var(--gok);
+}
+
+.cdl-footer-block:nth-child(7) {
+  height: 88%;
+  background: var(--lokum);
+}
+
+.cdl-footer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 30px 24px;
+}
+
+@media (min-width: 900px) {
+  .cdl-footer-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 32px;
+  }
+}
+
+.cdl-footer-col h2 {
+  font-family: var(--text);
+  font-size: var(--step-small);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.cdl-footer-col ul {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cdl-footer-col a {
+  color: var(--paper);
+  font-size: var(--step-body);
+  text-decoration: none;
+}
+
+.cdl-footer-col a:hover {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.cdl-footer-col a:focus-visible,
+.cdl-footer-close a:focus-visible {
+  outline: 3px solid var(--limon);
+  outline-offset: 3px;
+}
+
+.cdl-footer-contact {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+/* On narrow screens the contact lines take the whole row so the address never overflows. */
+@media (max-width: 899px) {
+  .cdl-footer-contact {
+    grid-column: 1 / -1;
+  }
+}
+
+.cdl-footer-contact p {
+  font-size: var(--step-body);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.cdl-footer-close {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 22px;
+  border-top: 4px dotted rgba(255, 255, 255, 0.24);
+  font-size: var(--step-small);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* ------------------------------------------------------------------ motion */
+
 @keyframes cdl-rise {
   from {
     opacity: 0;
@@ -635,69 +1298,51 @@ html:has(.cdl) body,
     transform: none;
   }
 }
+
 @keyframes cdl-drop {
   from {
     opacity: 0;
-    transform: translateY(-90px) rotate(calc(var(--tilt) * 4));
+    transform: translateY(-90px) rotate(calc(var(--tilt, 0) * 4deg));
   }
   to {
     opacity: 1;
-    transform: rotate(var(--tilt));
+    transform: rotate(calc(var(--tilt, 0) * 1deg));
   }
 }
-@keyframes cdl-flip {
-  from {
-    opacity: 0;
-    transform: translateY(40px) rotateY(180deg) scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
+
 @keyframes cdl-bob {
   0%,
   100% {
     transform: translateY(0) rotate(0deg);
   }
   50% {
-    transform: translateY(-8px) rotate(-3deg);
+    transform: translateY(-9px) rotate(-3deg);
   }
 }
+
 @media (prefers-reduced-motion: no-preference) {
-  .club-landing[data-motion='on'] .cdl-hero h1 span {
-    animation: cdl-rise 760ms var(--ease-out) both;
+  /* The tent card lands, then the toys peek out; the first screen is the authored moment. */
+  .club-landing[data-motion='on'] .cdl-tent-card {
+    animation: cdl-rise 700ms var(--ease-out) both;
   }
-  .club-landing[data-motion='on'] .cdl-hero h1 span + span {
-    animation-delay: 90ms;
-  }
-  .club-landing[data-motion='on'] .cdl-hero-copy > p {
-    animation: cdl-rise 760ms var(--ease-out) 180ms both;
-  }
-  .club-landing[data-motion='on'] .cdl-hero-copy > .cdl-actions {
-    animation: cdl-rise 760ms var(--ease-out) 260ms both;
-  }
+
   .club-landing[data-motion='on'] .cdl [data-landing-revealed='true'] {
     animation: cdl-rise 700ms var(--ease-out) both;
   }
-  .club-landing[data-motion='on'] .cdl .cdl-sticker[data-landing-revealed='true'] {
-    animation: cdl-drop 820ms var(--ease-toy) calc(var(--order) * 110ms) both;
+
+  .club-landing[data-motion='on'] .cdl .cdl-diamond[data-landing-revealed='true'] {
+    animation: cdl-drop 760ms var(--ease-toy) both;
   }
-  .club-landing[data-motion='on'] .cdl .cdl-rewards-coin[data-landing-revealed='true'] {
-    animation: cdl-flip 900ms var(--ease-out) both;
+
+  .club-landing[data-motion='on'] .cdl [data-landing-revealed='true']:focus-within {
+    animation: none;
   }
-  .club-landing[data-motion='on'] .cdl-close-toy {
-    animation: cdl-bob 4s ease-in-out infinite;
-  }
-  .club-landing[data-motion='on'] .cdl-stage[data-live='false'][data-moved='true'] img {
-    animation: cdl-rise 500ms var(--ease-toy) both;
-  }
-}
-.club-landing[data-motion='on'] .cdl [data-landing-revealed='true']:focus-within {
-  animation: none;
 }
 
-/* Cookie notice on the landing: it floats above the page, so it may carry a shadow. */
+/* ------------------------------------------------------------------ cookie notice (landing) */
+
+/* It is portaled to <body>, so it carries literal colours; it floats above the page
+   and that is the one place on the landing where a shadow is allowed. */
 .cdl-cookie {
   position: fixed;
   right: 16px;
@@ -706,53 +1351,57 @@ html:has(.cdl) body,
   z-index: 130;
   display: grid;
   gap: 8px;
-  max-width: 380px;
-  margin-left: auto;
-  padding: 18px;
-  border-radius: 20px;
+  padding: 16px;
   background: #ffffff;
   color: #17140f;
-  font-family: 'Golos Text', system-ui, sans-serif;
-  font-size: 1.0625rem;
-  line-height: 1.5;
-  box-shadow: 0 16px 40px rgba(23, 20, 15, 0.18); /* taste-skill-ignore: floating notice */
+  font-family: 'Onest', system-ui, sans-serif;
+  font-size: 15px;
+  box-shadow: 0 12px 34px rgba(23, 20, 15, 0.22);
 }
-.cdl-cookie h3 {
+
+.cdl-cookie h2 {
   margin: 0;
-  font-family: 'Bagel Fat One', 'Golos Text', sans-serif;
-  font-weight: 400;
-  font-size: 1.375rem;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 1.25rem;
 }
+
 .cdl-cookie p {
   margin: 0;
 }
+
 .cdl-cookie-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   margin-top: 4px;
 }
+
 .cdl-cookie button {
   min-height: 44px;
   padding: 0 18px;
   border: 0;
-  border-radius: 999px;
-  font: inherit;
-  font-weight: 700;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
 }
+
 .cdl-cookie-reject {
   background: #eef6f8;
   color: #17140f;
 }
+
 .cdl-cookie-accept {
   background: #ff5c8a;
   color: #17140f;
 }
+
 .cdl-cookie button:focus-visible {
   outline: 3px solid #17140f;
   outline-offset: 2px;
 }
+
 @media (max-width: 899px) {
   .cdl-cookie {
     grid-template-columns: minmax(0, 1fr) auto;
@@ -762,24 +1411,24 @@ html:has(.cdl) body,
     right: 0;
     bottom: auto;
     left: 0;
-    max-width: none;
-    padding: 8px 12px;
-    border-radius: 0 0 20px 20px;
-    font-size: 0.875rem;
-    line-height: 1.35;
+    box-shadow: 0 10px 24px rgba(23, 20, 15, 0.18);
   }
-  .cdl-cookie h3,
+
+  .cdl-cookie h2,
   .cdl-cookie-more {
     display: none;
   }
+
   .cdl-cookie-actions {
     margin-top: 0;
     gap: 6px;
   }
+
   .cdl-cookie button {
     padding: 0 14px;
   }
 }
+
 @media (min-width: 900px) {
   .cdl-cookie {
     right: 40px;

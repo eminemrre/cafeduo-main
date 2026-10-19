@@ -1,5 +1,6 @@
 /**
- * Riso Kantin temalı maç sonucu kartı.
+ * Maç sonucu kartı (v2 dili, DESIGN.md): kazanınca fıstık alan, diğer
+ * sonuçlarda buz zemin; köşeler kare, gölge ve çerçeve yok.
  *
  * Dashboard'daki ham sonuç banner'ının yerini alır: kazan/kaybet/berabere
  * ton sistemi, animasyonlu puan sayacı (0→+N) ve oyun istatistik chip'leri.
@@ -10,7 +11,6 @@
  */
 import React, { useEffect, useState } from 'react';
 import { motion, animate, useReducedMotion } from 'framer-motion';
-import { RetroButton } from '../RetroButton';
 import { popIn, reducedFade } from '../ui/motionVariants';
 
 /** Oyun bileşenlerinin maç bitiminde elinde olan, tamamı client-side istatistikler. */
@@ -45,10 +45,11 @@ const deriveOutcome = (winner: string, currentUsername: string): Outcome => {
   return w === currentUsername.trim().toLowerCase() ? 'win' : 'lose';
 };
 
+/** Points and rewards are fıstık; every other outcome sits on the ice well. */
 const SURFACE: Record<Outcome, string> = {
-  win: 'bg-riso-spring/20',
-  lose: 'bg-riso-redox/10',
-  draw: 'bg-riso-mustard/25',
+  win: 'bg-riso-spring',
+  lose: 'bg-paper-deep',
+  draw: 'bg-paper-deep',
   pending: 'bg-paper-deep',
 };
 
@@ -78,15 +79,15 @@ const AnimatedPoints: React.FC<{ value: number }> = ({ value }) => {
   }, [value, reduceMotion]);
 
   return (
-    <span className="font-riso-mono text-2xl font-bold text-carbon tabular-nums">
+    <span className="font-riso-mono text-[40px] font-bold leading-none tracking-[-0.02em] text-carbon tabular-nums">
       {display > 0 ? `+${display}` : display}
     </span>
   );
 };
 
 const StatChip: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <span className="inline-flex items-center gap-1.5 border-2 border-carbon bg-paper px-2 py-0.5 font-riso-mono text-xs text-carbon">
-    <span className="uppercase tracking-wider text-carbon-muted">{label}</span>
+  <span className="inline-flex items-center gap-1.5 bg-paper px-2.5 py-1 font-riso-mono text-sm text-carbon">
+    <span className="text-carbon-muted">{label}</span>
     <span className="font-bold">{value}</span>
   </span>
 );
@@ -132,16 +133,20 @@ export const MatchResultCard: React.FC<MatchResultCardProps> = ({
       initial="hidden"
       animate="show"
       variants={reduceMotion ? reducedFade : popIn}
-      className={`mb-6 border-2 border-carbon p-4 riso-shadow-md riso-halftone -rotate-[0.4deg] ${SURFACE[outcome]}`}
+      className={`mb-6 p-5 text-carbon sm:p-6 ${SURFACE[outcome]}`}
       data-testid="match-result-card"
+      aria-live="polite"
     >
-      <p className="text-sm font-riso-mono uppercase tracking-wider text-carbon">Maç Sonucu</p>
-      <p className="riso-squiggle mt-1 inline-block font-riso-display text-2xl font-bold text-carbon">
-        {title}
+      <p className="text-[15px] font-medium">
+        <span className="duo-sentence">Maç Sonucu</span>
+      </p>
+      <p className="mt-1 font-riso-display text-[40px] leading-[0.98] tracking-[-0.01em]">
+        {/* The sentinel titles keep their capitals in the source; a winner's name keeps its own case. */}
+        <span className={outcome === 'lose' ? undefined : 'duo-sentence'}>{title}</span>
       </p>
 
-      <div className="mt-2 flex flex-wrap items-center gap-3">
-        <span className="text-sm text-carbon-muted">Puan etkisi:</span>
+      <div className="mt-4 flex flex-wrap items-baseline gap-3">
+        <span className="text-[15px] text-carbon">Puan etkisi:</span>
         <AnimatedPoints value={earnedPoints} />
       </div>
 
@@ -153,10 +158,18 @@ export const MatchResultCard: React.FC<MatchResultCardProps> = ({
         </div>
       )}
 
-      <div className="mt-4">
-        <RetroButton onClick={onDismiss} variant="primary" disabled={dismissing}>
+      <div className="mt-5">
+        {/* On the fıstık field the action is the ink rectangle; on ice it is lokum. */}
+        <button
+          type="button"
+          onClick={onDismiss}
+          disabled={dismissing}
+          className={`duo-button riso-focus min-h-12 px-5 font-riso-body text-base font-semibold transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${
+            outcome === 'win' ? 'bg-carbon text-paper' : 'bg-riso-pink text-carbon'
+          }`}
+        >
           {dismissing ? 'Lobiye dönülüyor...' : 'Sonucu gördüm, lobiye dön'}
-        </RetroButton>
+        </button>
       </div>
     </motion.div>
   );

@@ -54,7 +54,7 @@ export const ToyStage: React.FC = () => {
           import('../../lib/createToyScene'),
           // The tent and coin labels are drawn with the display face.
           document.fonts
-            ? document.fonts.load('100px "Bagel Fat One"').catch((): FontFace[] => [])
+            ? document.fonts.load('100px "Baloo 2"').catch((): FontFace[] => [])
             : Promise.resolve([]),
         ]);
         if (cancelled || !canvas.current || !host.current) return;

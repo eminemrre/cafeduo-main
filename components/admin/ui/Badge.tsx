@@ -1,19 +1,17 @@
 /**
- * Admin Badge — Riso Kantin re-skin (PR #24). API preserved.
- *
- * No rounded-full anymore (Riso = printed, hard edges). Each tone uses one
- * of the spot colours over a paper background with a 2px ink border.
+ * Admin Badge — a square chip in the v2 language: candy fills carry ink text,
+ * ink and danger carry paper text. Sentence case, no tracking.
  */
 import React from 'react';
 
 type Tone = 'neutral' | 'primary' | 'success' | 'warning' | 'danger';
 
 const toneClass: Record<Tone, string> = {
-  neutral: 'bg-paper text-carbon border-carbon',
-  primary: 'bg-riso-pink text-carbon border-carbon',
-  success: 'bg-riso-spring text-carbon border-carbon',
-  warning: 'bg-riso-mustard text-carbon border-carbon',
-  danger: 'bg-riso-redox text-paper border-carbon',
+  neutral: 'bg-paper-deep text-carbon',
+  primary: 'bg-carbon text-paper',
+  success: 'bg-riso-spring text-carbon',
+  warning: 'bg-riso-mustard text-carbon',
+  danger: 'bg-riso-redox text-paper',
 };
 
 interface BadgeProps {
@@ -25,8 +23,8 @@ interface BadgeProps {
 export const Badge: React.FC<BadgeProps> = ({ tone = 'neutral', children, className = '' }) => (
   <span
     className={
-      'inline-flex items-center px-2 py-0.5 border-2 font-riso-body ' +
-      `text-[0.6875rem] font-bold uppercase tracking-[0.08em] ${toneClass[tone]} ${className}`
+      'inline-flex items-center px-2 py-0.5 font-riso-body ' +
+      `text-[0.8125rem] font-semibold ${toneClass[tone]} ${className}`
     }
   >
     {children}

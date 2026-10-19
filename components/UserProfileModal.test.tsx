@@ -63,8 +63,8 @@ describe('UserProfileModal', () => {
     expect(screen.getByText('9')).toBeInTheDocument();
     expect(screen.getByText('12')).toBeInTheDocument();
     expect(screen.getByText('75%')).toBeInTheDocument();
-    expect(screen.getByText('LEVEL 3')).toBeInTheDocument();
-    expect(screen.getByText('LEVEL 4')).toBeInTheDocument();
+    expect(screen.getByText('Seviye 3')).toBeInTheDocument();
+    expect(screen.getByText('Seviye 4')).toBeInTheDocument();
   });
 
   it('edits department and saves successfully', async () => {
@@ -123,7 +123,7 @@ describe('UserProfileModal', () => {
     render(<UserProfileModal isOpen onClose={jest.fn()} user={user} isPreview />);
     expect(screen.getByText('Bu oyuncunun ayrıntılı profili paylaşılmıyor.')).toBeInTheDocument();
     expect(screen.queryByText('ID: #000000')).not.toBeInTheDocument();
-    expect(screen.queryByText('LEVEL 1')).not.toBeInTheDocument();
+    expect(screen.queryByText('Seviye 1')).not.toBeInTheDocument();
     expect(screen.queryByText('Galibiyet')).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Envanterin' })).not.toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Son oyunların' })).not.toBeInTheDocument();

@@ -469,7 +469,7 @@ describe('Dashboard Integration', () => {
       expect(screen.getByText(/Nişancı Düellosu/)).toBeInTheDocument();
 
       // Should show lobby return button (with arrow character ←)
-      expect(screen.getByText('← Lobiye Dön')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Lobiye dön' })).toBeInTheDocument();
     });
 
     it('renders Nişancı Düellosu component when active game type matches', () => {
@@ -559,7 +559,7 @@ describe('Dashboard Integration', () => {
 
       renderDashboard();
 
-      fireEvent.click(screen.getByText('← Lobiye Dön'));
+      fireEvent.click(screen.getByRole('button', { name: 'Lobiye dön' }));
 
       // ConfirmDialog açılır — onay ver (forfeit diyaloğunun onay etiketi 'Çık')
       await waitFor(() => {

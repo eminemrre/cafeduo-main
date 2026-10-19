@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import { Trophy, Coffee, Gift, MapPin, QrCode } from 'lucide-react';
+import { Trophy, Gift, MapPin, QrCode } from 'lucide-react';
 import type { User } from '../../types';
 import { useCafeAdmin } from '../../hooks/useCafeAdmin';
 import { useToast } from '../../contexts/ToastContext';
@@ -111,58 +111,45 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
     id: CafeAdminTab;
     label: string;
     icon: React.ComponentType<{ size?: number; className?: string }>;
-    activeClassName: string;
   }> = [
     {
       id: 'verification',
       label: 'Kupon İşlemleri',
       icon: QrCode,
-      activeClassName: 'bg-riso-blue text-paper border-carbon riso-shadow-sm',
     },
     {
       id: 'rewards',
       label: 'Ödül Yönetimi',
       icon: Gift,
-      activeClassName: 'bg-riso-pink text-carbon border-carbon riso-shadow-sm',
     },
     {
       id: 'tournaments',
       label: 'Turnuvalar',
       icon: Trophy,
-      activeClassName: 'bg-riso-mustard text-carbon border-carbon riso-shadow-sm',
     },
     {
       id: 'settings',
       label: 'Konum Ayarları',
       icon: MapPin,
-      activeClassName: 'bg-riso-spring text-carbon border-carbon riso-shadow-sm',
     },
   ];
 
   return (
-    <div className="min-h-screen bg-paper text-carbon pt-24 px-4 pb-[calc(8rem+env(safe-area-inset-bottom))] relative overflow-hidden ">
+    <div className="min-h-screen bg-paper text-carbon pt-32 px-4 pb-[calc(8rem+env(safe-area-inset-bottom))] relative overflow-hidden">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-4 mb-8 border-2 border-carbon bg-paper riso-shadow-md p-5">
-          <div className="w-16 h-16 bg-riso-mustard border-2 border-carbon flex items-center justify-center riso-shadow-sm shrink-0">
-            <Coffee size={32} className="text-carbon" />
-          </div>
-          <div className="min-w-0">
-            <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
-              Cafe Control Net
-            </p>
-            <h1 className="text-3xl md:text-4xl leading-[1.02] font-riso-display text-carbon tracking-[0.08em] mb-1 break-words uppercase">
-              Kafe Yönetim Paneli
-            </h1>
-            <p className="text-carbon-muted uppercase tracking-[0.12em] text-xs md:text-sm font-riso-body">
-              Kupon doğrulama, ödül ve konum doğrulama yönetimi
-            </p>
-          </div>
-        </div>
+        <header className="mb-8 min-w-0">
+          <h1 className="font-riso-display text-[2rem] sm:text-[2.5rem] leading-[0.98] text-carbon break-words">
+            Kafe Yönetim Paneli
+          </h1>
+          <p className="mt-2 text-[0.9375rem] text-carbon-soft font-riso-body">
+            Kuponları okut, ödülleri ve turnuvaları düzenle, kafenin konumunu ayarla.
+          </p>
+        </header>
 
         <CafeStats stats={stats} />
 
         <div
-          className="flex gap-4 mb-8 flex-wrap"
+          className="flex gap-6 mb-8 overflow-x-auto"
           role="tablist"
           aria-label="Kafe yönetim sekmeleri"
         >
@@ -178,13 +165,13 @@ export const CafeDashboard: React.FC<CafeDashboardProps> = ({ currentUser }) => 
                 aria-controls={`cafe-admin-panel-${tab.id}`}
                 id={`cafe-admin-tab-${tab.id}`}
                 onClick={() => setActiveTab(tab.id)}
-                className={`riso-focus px-6 py-3 border-2 font-bold transition-all flex items-center gap-2 uppercase tracking-[0.1em] font-riso-display ${
+                className={`riso-focus min-h-12 px-0.5 font-semibold text-[0.9375rem] whitespace-nowrap transition-[color,box-shadow] flex items-center gap-2 font-riso-body ${
                   isActive
-                    ? tab.activeClassName
-                    : 'bg-paper text-carbon border-carbon hover:bg-paper-deep hover:-translate-y-[1px]'
+                    ? 'text-carbon shadow-[inset_0_-3px_0_#17140f]'
+                    : 'text-carbon-muted hover:text-carbon hover:shadow-[inset_0_-3px_0_#17140f40]'
                 }`}
               >
-                <Icon size={20} />
+                <Icon size={18} />
                 {tab.label}
               </button>
             );

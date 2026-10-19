@@ -1,10 +1,9 @@
 /**
- * Button — Riso Kantin primitive.
+ * Button — the panel's button primitive in the v2 language (DESIGN.md).
  *
- * Risograph "stamped on paper" feel: hard ink border + double offset shadow
- * that collapses on press (the element physically translates 2px). Five tones
- * cover every interaction state: primary action, secondary, neutral, success,
- * danger.
+ * Flat filled rectangles, 0 radius, no border and no shadow. Hover lifts the
+ * button 2 px, a press scales it to 0.98. Candy fills carry ink text; ink and
+ * danger carry paper text.
  *
  * Forwards ref so parent components can attach focus management.
  */
@@ -27,17 +26,17 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const TONE_CLASS: Record<ButtonTone, string> = {
-  pink: 'bg-riso-pink text-carbon hover:bg-riso-pink-deep hover:text-paper',
-  blue: 'bg-riso-blue text-paper hover:bg-riso-blue-deep',
-  mustard: 'bg-riso-mustard text-carbon hover:bg-riso-mustard-deep',
-  paper: 'bg-paper text-carbon hover:bg-paper-deep',
-  danger: 'bg-riso-redox text-paper hover:opacity-90',
+  pink: 'bg-riso-pink text-carbon',
+  blue: 'bg-riso-blue text-carbon',
+  mustard: 'bg-riso-mustard text-carbon',
+  paper: 'bg-paper-deep text-carbon hover:bg-paper-dim',
+  danger: 'bg-riso-redox text-paper',
 };
 
 const SIZE_CLASS: Record<ButtonSize, string> = {
-  sm: 'px-3 py-1.5 text-sm gap-1.5',
-  md: 'px-4 py-2.5 text-base gap-2',
-  lg: 'px-6 py-3.5 text-lg gap-2.5',
+  sm: 'min-h-11 px-4 text-sm gap-1.5',
+  md: 'min-h-12 px-5 text-base gap-2',
+  lg: 'min-h-14 px-6 text-lg gap-2.5',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
@@ -63,19 +62,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       className={[
         // Base
         'duo-button relative inline-flex items-center justify-center',
-        'font-riso-body font-semibold tracking-wide',
-        'border-2 border-carbon',
-        'transition-[box-shadow,transform,background-color] duration-150 ease-out',
-        'riso-press riso-focus',
-        'select-none',
-        // Pressed-state shadow collapse handled by riso-press class
-        'riso-shadow-sm',
+        'font-riso-body font-semibold',
+        'transition-[transform,background-color] duration-150 ease-out',
+        'riso-focus select-none',
+        disabled ? '' : 'hover:-translate-y-0.5 active:scale-[0.98]',
         // Tone + size
         TONE_CLASS[tone],
         SIZE_CLASS[size],
         // Layout modifiers
         block ? 'w-full' : '',
-        disabled ? 'cursor-not-allowed opacity-50 pointer-events-none' : 'cursor-pointer',
+        disabled ? 'cursor-not-allowed opacity-45 pointer-events-none' : 'cursor-pointer',
         className,
       ]
         .filter(Boolean)

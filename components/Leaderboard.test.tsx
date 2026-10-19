@@ -65,8 +65,8 @@ describe('Leaderboard', () => {
 
     render(<Leaderboard />);
 
-    expect(screen.getByText('GENEL')).toBeInTheDocument();
-    expect(screen.getByText('BÖLÜM')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Genel' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Bölüm' })).toBeInTheDocument();
   });
 
   it('displays loading state', async () => {
@@ -99,7 +99,7 @@ describe('Leaderboard', () => {
       // Türkçe: 5.000, İngilizce: 5,000
       const pointsCell = screen.getByText(/5[.,]000/);
       expect(pointsCell).toBeInTheDocument();
-      expect(pointsCell).toHaveClass('text-riso-mustard-deep');
+      expect(pointsCell).toHaveClass('text-carbon');
     });
   });
 
@@ -132,7 +132,7 @@ describe('Leaderboard', () => {
 
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
 
-    fireEvent.click(screen.getByText('BÖLÜM'));
+    fireEvent.click(screen.getByRole('button', { name: 'Bölüm' }));
 
     await waitFor(() => {
       expect(fetch).toHaveBeenLastCalledWith(expect.stringContaining('type=department'));
@@ -154,7 +154,7 @@ describe('Leaderboard', () => {
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(1));
 
     // Switch to department filter
-    fireEvent.click(screen.getByText('BÖLÜM'));
+    fireEvent.click(screen.getByRole('button', { name: 'Bölüm' }));
 
     await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
 
@@ -177,7 +177,7 @@ describe('Leaderboard', () => {
     // Table headers
     expect(screen.getByText('Sıra')).toBeInTheDocument();
     expect(screen.getByText('Kullanıcı')).toBeInTheDocument();
-    // Filter button 'BÖLÜM' + table header 'Bölüm' both exist, getAllByText
+    // Filter button 'Bölüm' + table header 'Bölüm' both exist, getAllByText
     expect(screen.getAllByText(/^B[ÖO]L[ÜU]M$/i).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Puan')).toBeInTheDocument();
     expect(screen.getByText('Galibiyet')).toBeInTheDocument();

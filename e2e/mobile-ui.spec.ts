@@ -35,12 +35,12 @@ test.describe('Mobile UI Stability', () => {
 
     await page.getByRole('button', { name: 'Kapat', exact: true }).click();
 
-    // The three steps stay readable on a phone.
-    const stepsHeading = page.getByRole('heading', { level: 2, name: 'Masaya nasıl oturulur' });
+    // The steps stay readable on a phone, printed as the order slip.
+    const stepsHeading = page.getByRole('heading', { level: 2, name: 'Nasıl işler' });
     await stepsHeading.scrollIntoViewIfNeeded();
     await expect(stepsHeading).toBeVisible();
-    for (const step of ['Kafede check-in yap', 'Açık bir masayla eşleş', 'Kazan, kasada okut']) {
-      const heading = page.getByRole('heading', { level: 3, name: step });
+    for (const group of ['Kafede', 'Masada', 'Kazanınca']) {
+      const heading = page.getByRole('heading', { level: 3, name: group });
       await heading.scrollIntoViewIfNeeded();
       await expect(heading).toBeVisible();
     }

@@ -1,7 +1,7 @@
 /* CafeDuo: dimensional objects, editorial type and a cobalt rhythm. */
 .club-home {
   padding-top: 118px;
-  background: #fff9ef;
+  background: #eef6f8;
 }
 .club-spread-3d {
   width: min(1320px, calc(100% - 80px));
@@ -11,7 +11,7 @@
   padding: 45px 0 48px;
 }
 .club-spread-3d .club-intro h1 {
-  font-family: 'DM Sans Variable', sans-serif;
+  font-family: 'Onest', system-ui, sans-serif;
   font-weight: 720;
   font-size: clamp(60px, 6.7vw, 100px);
   letter-spacing: -0.075em;
@@ -20,10 +20,10 @@
 }
 .club-spread-3d .club-intro h1 em {
   white-space: normal;
-  font-family: 'Fraunces Variable', Georgia, serif;
+  font-family: 'Baloo 2', system-ui, sans-serif;
   font-weight: 500;
   letter-spacing: -0.065em;
-  color: #315bd5;
+  color: #0b6aa8;
 }
 .club-spread-3d .club-intro {
   min-width: 0;
@@ -39,16 +39,15 @@
 .club-spread-3d .club-join-button,
 .club-last-call .club-join-button {
   border: 0;
-  border-radius: 40px;
+  border-radius: 0;
   padding: 17px 24px;
-  background: #315bd5;
-  color: #fff9ef;
+  background: #1fb3ff;
+  color: #17140f;
   min-height: 56px;
-  box-shadow: 0 6px 18px #315bd526;
 }
 .club-spread-3d .club-join-button:hover,
 .club-last-call .club-join-button:hover {
-  background: #2246b7;
+  background: #0e7cc0;
 }
 .club-spread-3d .club-join {
   gap: 24px;
@@ -58,10 +57,10 @@
   padding-top: 20px;
 }
 .club-spread-3d .club-table-note > span {
-  color: #315bd5;
+  color: #0b6aa8;
 }
 .club-nav {
-  background: #fff9efe8;
+  background: #ffffffe8;
   backdrop-filter: blur(12px);
   border-bottom: 1px solid #263b5b16;
 }
@@ -70,30 +69,29 @@
   padding: 20px 0;
 }
 .club-nav .duo-brand > span {
-  font-family: 'DM Sans Variable', sans-serif;
+  font-family: 'Onest', system-ui, sans-serif;
   letter-spacing: -0.065em;
   font-weight: 800;
   font-size: 29px;
 }
 .club-nav .duo-brand > span > span:first-child {
-  color: #315bd5;
+  color: #0b6aa8;
 }
 .club-nav .duo-nav-business[aria-current='page'] {
-  background: #dce6fa;
-  color: #315bd5;
-  box-shadow: none;
-  border-radius: 24px;
+  background: #d9eaef;
+  color: #0b6aa8;
+  border-radius: 0;
 }
 .club-motion-control {
   width: 44px;
   padding: 0;
   flex: 0 0 44px;
   justify-content: center;
-  border-radius: 50%;
+  border-radius: 0;
   min-height: 44px;
   background: transparent;
-  border-color: #315bd52e;
-  color: #315bd5;
+  border-color: #0b6aa824;
+  color: #0b6aa8;
 }
 .cafe-scene-wrap {
   min-width: 0;
@@ -109,8 +107,8 @@
   position: absolute;
   inset: 10% 8% 4%;
   z-index: -1;
-  border-radius: 50%;
-  background: radial-gradient(ellipse at 45% 35%, #faf0dd 0%, #f5e0c3 53%, #ffefd800 72%);
+  border-radius: 0;
+  background: radial-gradient(ellipse at 45% 35%, #faf0dd 0%, #f5e0c3 53%, #00000000 72%);
 }
 .cafe-scene-canvas {
   position: absolute;
@@ -141,21 +139,17 @@
   left: 16%;
   top: 32%;
   border-radius: 15% 15% 38% 38%;
-  background: linear-gradient(110deg, #fff9ec 5%, #eddec3 80%);
-  box-shadow:
-    inset -14px -8px 20px #bd9c7428,
-    0 32px 30px #8d775424;
-  transform: rotate(-12deg);
+  background: linear-gradient(110deg, #eef6f8 5%, #eddec3 80%);
+  transform: none;
 }
 .cafe-ceramic-cup::before {
   content: '';
   position: absolute;
   inset: -5% 0 auto;
   height: 24%;
-  border: 11px solid #fff1d7;
-  border-radius: 50%;
+  border: 11px solid #ffd23f;
+  border-radius: 0;
   background: radial-gradient(ellipse at 45% 30%, #aa734c, #4d2319 65%);
-  box-shadow: inset 0 5px 9px #22100850;
 }
 .cafe-ceramic-cup::after {
   content: '';
@@ -180,7 +174,7 @@
     4px 4px #ad527b,
     6px 6px #ac557d,
     12px 20px 18px #a349742a;
-  transform: rotate(9deg);
+  transform: none;
 }
 .cafe-blue-token {
   position: absolute;
@@ -188,19 +182,15 @@
   right: 12%;
   width: 90px;
   height: 90px;
-  border-radius: 50%;
+  border-radius: 0;
   display: grid;
   place-items: center;
-  background: #315bd5;
-  color: #fff1de;
-  font-family: 'DM Sans Variable', sans-serif;
+  background: #1fb3ff;
+  color: #17140f;
+  font-family: 'Onest', system-ui, sans-serif;
   font-weight: 800;
   font-size: 27px;
-  box-shadow:
-    4px 6px #2146b4,
-    inset 0 0 0 8px #315bd5,
-    inset 0 0 0 9px #faf0db70;
-  transform: rotate(20deg);
+  transform: none;
 }
 .cafe-scene-chapters {
   display: flex;
@@ -213,8 +203,8 @@
     sans-serif;
   min-height: 44px;
   width: 44px;
-  border: 1px solid #315bd52e;
-  border-radius: 50%;
+  border: 1px solid #1fb3ff24;
+  border-radius: 0;
   justify-content: center;
   display: flex;
   gap: 7px;
@@ -225,27 +215,27 @@
   font-size: 24px;
 }
 .cafe-scene-chapters button[aria-pressed='true'] {
-  color: #315bd5;
-  border-color: #315bd5;
-  background: #315bd50c;
+  color: #0b6aa8;
+  border-color: #0b6aa8;
+  background: #1fb3ff0c;
 }
 .club-home .club-index {
   width: 100%;
   max-width: none;
-  background: #315bd5;
-  color: #fff9ef;
+  background: #1fb3ff;
+  color: #17140f;
   padding: 25px max(40px, calc((100vw - 1320px) / 2));
   border: 0;
   font-size: 13px;
 }
 .club-home .club-index > span:first-child {
-  color: #fff9ef;
-  font-family: 'DM Sans Variable', sans-serif;
+  color: #17140f;
+  font-family: 'Onest', system-ui, sans-serif;
   font-style: normal;
   font-size: 15px;
 }
 .club-home .club-index a {
-  color: #fff9ef;
+  color: #17140f;
 }
 .club-demo-section {
   width: min(1180px, calc(100% - 80px));
@@ -257,7 +247,7 @@
   padding: 115px 0 130px;
 }
 .club-demo-copy h2 {
-  font-family: 'DM Sans Variable', sans-serif;
+  font-family: 'Onest', system-ui, sans-serif;
   font-size: clamp(42px, 4.5vw, 65px);
   font-weight: 650;
   line-height: 1.07;
@@ -265,21 +255,21 @@
   margin: 23px 0;
 }
 .club-demo-copy h2 em {
-  font-family: 'Fraunces Variable', Georgia, serif;
+  font-family: 'Baloo 2', system-ui, sans-serif;
   font-weight: 450;
-  color: #315bd5;
+  color: #0b6aa8;
 }
 .club-demo-copy > p:not(.club-kicker) {
   max-width: 320px;
   font-size: 16px;
   line-height: 1.8;
-  color: #62645d;
+  color: #4a4540;
 }
 .club-demo-copy > span {
   display: block;
   margin-top: 20px;
-  font-size: 11px;
-  color: #62645d;
+  font-size: 12px;
+  color: #4a4540;
 }
 .club-demo-section .club-board-scene {
   width: 100%;
@@ -289,80 +279,76 @@
   display: none;
 }
 .club-demo-section .club-scene-ticket {
-  background: #f2c4d6;
+  background: #ffd0dd;
   border: 0;
-  border-radius: 18px;
-  box-shadow: 0 12px 30px #af668921;
+  border-radius: 0;
 }
 .club-demo-section .club-board-preview {
   max-width: 480px;
   margin: auto;
 }
 .club-demo-section .club-board {
-  border-radius: 8px;
+  border-radius: 0;
   overflow: hidden;
-  box-shadow: 0 18px 45px #2b48752b;
   border: 0;
 }
 .club-demo-section .club-square-dark {
   background: #9aafd9;
 }
 .club-flow {
-  background: #f3eddf;
+  background: #eef6f8;
 }
 .club-flow h2,
 .club-games h2,
 .club-about h2 {
-  font-family: 'DM Sans Variable', sans-serif;
+  font-family: 'Onest', system-ui, sans-serif;
   font-weight: 650;
   letter-spacing: -0.055em;
 }
 .club-flow h2 em,
 .club-games h2 em,
 .club-about h2 em {
-  font-family: 'Fraunces Variable', Georgia, serif;
-  color: #315bd5;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  color: #0b6aa8;
   font-weight: 450;
 }
 .club-flow .club-journey-table {
-  background: #315bd5;
+  background: #1fb3ff;
 }
 .club-flow .club-steps li {
   padding: 32px 0;
 }
 .club-flow .club-step-number {
-  color: #315bd5;
+  color: #0b6aa8;
 }
 .club-games {
-  background: #dce6fa;
+  background: #d9eaef;
 }
 .club-games .club-game-row {
-  border-color: #315bd526;
+  border-color: #0b6aa81f;
   padding-block: 35px;
 }
 .club-games .club-game-row:hover {
   background: #ffffff5c;
 }
 .club-games .club-game-mark {
-  background: #315bd5;
-  color: #fff9ef;
+  background: #1fb3ff;
+  color: #17140f;
   border: 0;
-  border-radius: 50%;
-  box-shadow: inset 0 -5px 0 #1638954a;
+  border-radius: 0;
 }
 .club-about {
-  background: #fff9ef;
+  background: #eef6f8;
 }
 .club-about .club-members-note {
   background: #edc0d3;
   border: 0;
-  border-radius: 22px;
-  box-shadow: 0 20px 50px #b9648926;
-  transform: rotate(-3deg);
+  border-radius: 0;
+  transform: none;
 }
 .club-last-call {
-  background: #dce6fa;
-  border-radius: 28px;
+  background: #d9eaef;
+  border-radius: 0;
   padding: 48px !important;
   margin-bottom: 60px;
 }
@@ -383,7 +369,7 @@
     gap: 10px;
   }
   .cafe-scene-chapters button {
-    font-size: 10px;
+    font-size: 12px;
   }
   .club-demo-section {
     gap: 55px;
@@ -433,7 +419,7 @@
   }
   .club-hero-meta .club-kicker {
     max-width: 170px;
-    font-size: 10px;
+    font-size: 12px;
   }
   .cafe-scene {
     height: clamp(310px, 90vw, 460px);
@@ -442,7 +428,7 @@
     gap: 16px;
   }
   .cafe-scene-chapters button {
-    font-size: 11px;
+    font-size: 12px;
   }
   .cafe-pink-knight {
     font-size: 150px;
@@ -457,7 +443,7 @@
     gap: 18px;
   }
   .club-home .club-index > span:nth-child(2) {
-    font-size: 10px;
+    font-size: 12px;
   }
   .club-demo-section {
     width: calc(100% - 40px);
@@ -473,7 +459,7 @@
   }
   .club-last-call {
     width: calc(100% - 40px);
-    border-radius: 20px;
+    border-radius: 0;
     padding: 30px 22px !important;
   }
   .club-nav .duo-nav-bar {
@@ -492,9 +478,9 @@
 }
 
 .owner-landing {
-  background: #fff9ef;
+  background: #eef6f8;
   color: #252b26;
-  font-family: 'DM Sans Variable', sans-serif;
+  font-family: 'Onest', system-ui, sans-serif;
 }
 .owner-container {
   width: min(1320px, calc(100% - 80px));
@@ -513,22 +499,24 @@
   min-width: 0;
 }
 .owner-intro h1 {
-  font-size: clamp(58px, 6.4vw, 94px);
-  font-weight: 720;
-  line-height: 1.02;
-  letter-spacing: -0.075em;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-size: clamp(52px, 5.8vw, 86px);
+  font-weight: 800;
+  line-height: 1.03;
+  letter-spacing: -0.03em;
   margin: 30px 0;
 }
 .owner-intro h1 em {
-  font-family: 'Fraunces Variable', Georgia, serif;
-  font-weight: 500;
-  color: #315bd5;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-style: normal;
+  font-weight: 800;
+  color: #c4265f;
 }
 .owner-intro-copy {
   max-width: 420px;
   line-height: 1.7;
   font-size: 17px;
-  color: #62645d;
+  color: #4a4540;
 }
 .owner-hero-actions {
   display: flex;
@@ -549,16 +537,16 @@
 }
 .owner-primary {
   padding: 16px 24px;
-  background: #315bd5;
-  color: #fff9ef;
-  border-radius: 40px;
+  background: #1fb3ff;
+  color: #17140f;
+  border-radius: 0;
   transition: background 0.2s;
 }
 .owner-primary:hover {
-  background: #2246b7;
+  background: #0e7cc0;
 }
 .owner-secondary {
-  color: #315bd5;
+  color: #0b6aa8;
   text-decoration: underline;
   text-underline-offset: 5px;
 }
@@ -569,8 +557,8 @@
   gap: 32px;
   padding: 36px 40px;
   margin-top: 45px;
-  background: #f2c4d6;
-  border-radius: 24px;
+  background: #ffd0dd;
+  border-radius: 0;
 }
 .owner-pilot h2 {
   font-size: clamp(26px, 3vw, 40px);
@@ -587,44 +575,41 @@
   flex-shrink: 0;
 }
 .owner-landing > section:not(.owner-hero) {
-  border-color: #315bd526;
+  border-color: #0b6aa81f;
 }
 .owner-landing > section:not(.owner-hero):not(:last-child) {
-  background: #fff9ef;
+  background: #eef6f8;
 }
 .owner-landing > section[aria-label='Anahtar sayılar'] {
-  background: #dce6fa !important;
+  background: #d9eaef !important;
 }
 .owner-landing > section[aria-label='Faydalar'] {
-  background: #f3eddf !important;
+  background: #eef6f8 !important;
 }
 .owner-landing > section:last-child {
-  background: #315bd5;
+  background: #17140f;
 }
 .owner-landing h2:not(.owner-pilot h2),
 .owner-landing h3 {
-  font-family: 'DM Sans Variable', sans-serif;
-  font-weight: 650;
-  letter-spacing: -0.045em;
-}
-.owner-landing .font-riso-display {
-  font-family: 'DM Sans Variable', sans-serif;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 .owner-landing [aria-label='Fiyatlandırma'] .riso-shadow-md {
-  border: 1px solid #315bd530;
-  border-radius: 24px;
-  box-shadow: 0 20px 50px #315bd510;
-  background: #fffdf7;
+  border: 0;
+  border-radius: 0;
+  background: #ffffff;
 }
 .owner-landing [aria-label='Fiyatlandırma'] a.bg-carbon {
-  background: #315bd5;
-  border-radius: 28px;
+  background: #1fb3ff;
+  border-radius: 0;
+  color: #17140f;
 }
 .owner-landing summary {
   min-height: 44px;
 }
 .owner-landing [aria-label='Son çağrı'] a {
-  border-radius: 28px;
+  border-radius: 0;
   min-height: 52px;
 }
 @media (max-width: 1000px) {

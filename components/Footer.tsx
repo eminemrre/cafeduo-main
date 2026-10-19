@@ -25,16 +25,6 @@ export const Footer: React.FC = () => {
       className="duo-footer riso-kantin relative mt-8 border-t-2 border-carbon bg-paper-deep"
       role="contentinfo"
     >
-      {/* Halftone strip across the footer */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-multiply"
-        style={{
-          backgroundImage: 'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
-          backgroundSize: '5px 5px',
-        }}
-      />
-
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
         <RevealGroup className="grid md:grid-cols-3 gap-8 items-start">
           <RevealItem>
@@ -47,13 +37,13 @@ export const Footer: React.FC = () => {
             <p className="mt-3 font-riso-body text-sm leading-6 text-carbon-soft">
               Kahve molana oyun, yeni karşılaşmalar ve güzel ödüller ekle.
             </p>
-            <p className="mt-4 font-riso-mono text-[0.7rem] tracking-wider uppercase text-carbon-muted">
+            <p className="mt-4 font-riso-mono text-xs tracking-wider uppercase text-carbon-muted">
               © {year} tüm hakları saklıdır
             </p>
           </RevealItem>
 
           <RevealItem>
-            <p className="font-riso-mono text-[0.7rem] font-bold tracking-wider uppercase text-carbon-soft">
+            <p className="font-riso-mono text-xs font-bold tracking-wider uppercase text-carbon-soft">
               Yasal
             </p>
             <Link
@@ -67,7 +57,7 @@ export const Footer: React.FC = () => {
           </RevealItem>
 
           <RevealItem>
-            <p className="font-riso-mono text-[0.7rem] font-bold tracking-wider uppercase text-carbon-soft mb-3">
+            <p className="font-riso-mono text-xs font-bold tracking-wider uppercase text-carbon-soft mb-3">
               İletişim
             </p>
             <div className="flex items-center gap-2.5">
@@ -85,7 +75,7 @@ export const Footer: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Twitter"
-                className="riso-focus inline-flex h-11 w-11 items-center justify-center border-2 border-carbon bg-paper text-carbon hover:bg-riso-blue hover:text-paper transition-colors"
+                className="riso-focus inline-flex h-11 w-11 items-center justify-center border-2 border-carbon bg-paper text-carbon hover:bg-riso-blue hover:text-carbon transition-colors"
               >
                 <XIcon />
               </a>

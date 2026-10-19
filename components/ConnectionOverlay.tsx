@@ -47,18 +47,15 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = () => {
   if (isConnected || !showReconnecting) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-carbon/70 ">
-      <div className="border-2 border-carbon bg-paper riso-shadow-md p-6 text-center max-w-sm mx-4">
-        <div className="text-4xl mb-3 animate-pulse">📡</div>
-        <h3 className="font-riso-display text-lg text-carbon mb-2 uppercase tracking-wider">
-          Bağlantı Kesildi
-        </h3>
-        <p className="text-sm text-carbon-muted mb-4 font-riso-body">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-carbon/60">
+      <div role="alert" className="duo-float mx-4 max-w-sm bg-paper p-6 text-carbon">
+        <h3 className="mb-2 font-riso-display text-[28px] leading-none">Bağlantı kesildi</h3>
+        <p className="mb-5 font-riso-body text-[15px] text-carbon-muted">
           Sunucuyla bağlantı yeniden kuruluyor. Lütfen bekleyin...
         </p>
-        <div className="w-full h-2 bg-paper-dim border-2 border-carbon overflow-hidden">
-          <div
-            className="h-full bg-riso-blue animate-[loading-bar_1.5s_ease-in-out_infinite]"
+        <div className="duo-meter">
+          <span
+            className="bg-riso-blue"
             style={{ width: '60%', animation: 'loading-bar 1.5s ease-in-out infinite' }}
           />
         </div>

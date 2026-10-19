@@ -1,13 +1,11 @@
 /**
- * Admin Button — Riso Kantin re-skin (PR #24).
+ * Admin Button — the v2 language (DESIGN.md), API unchanged.
  *
- * Public API (variant/size/leftIcon/rightIcon) is unchanged so AdminDashboard
- * compiles without edits. Internally the styles come from the Riso Kantin
- * tokens defined in index.css + tailwind.config.js.
- *   - primary   → riso-pink (main CTA)
- *   - secondary → paper + ink border
- *   - ghost     → transparent, ink hover
- *   - danger    → riso-redox
+ * Flat rectangles, no border or shadow; hover lifts 2 px, press scales 0.98.
+ *   - primary   → lokum fill, ink text (the one primary action of an area)
+ *   - secondary → ice fill, ink text
+ *   - ghost     → no box, ink underline on hover
+ *   - danger    → danger-text on ice; danger fill on hover
  */
 import React from 'react';
 
@@ -15,18 +13,17 @@ type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
 
 const variantClass: Record<Variant, string> = {
-  primary:
-    'bg-riso-pink text-carbon border-carbon hover:bg-riso-pink-deep hover:text-paper riso-shadow-sm',
-  secondary: 'bg-paper text-carbon border-carbon hover:bg-paper-deep riso-shadow-sm',
-  ghost: 'bg-transparent text-carbon border-transparent hover:bg-paper-deep',
-  danger:
-    'bg-paper text-riso-redox border-riso-redox hover:bg-riso-redox hover:text-paper riso-shadow-sm',
+  primary: 'bg-riso-pink text-carbon hover:-translate-y-0.5',
+  secondary: 'bg-paper-deep text-carbon hover:bg-paper-dim',
+  ghost:
+    'bg-transparent text-carbon underline decoration-transparent decoration-[3px] underline-offset-[6px] hover:decoration-carbon',
+  danger: 'bg-paper-deep text-riso-redox hover:bg-riso-redox hover:text-paper',
 };
 
 const sizeClass: Record<Size, string> = {
-  sm: 'px-3 py-1.5 text-[0.8125rem] gap-1.5',
-  md: 'px-4 py-2.5 text-[0.9375rem] gap-2',
-  lg: 'px-6 py-3 text-[1rem] gap-2.5',
+  sm: 'min-h-11 px-3 text-[0.875rem] gap-1.5',
+  md: 'min-h-12 px-4 text-[0.9375rem] gap-2',
+  lg: 'min-h-14 px-6 text-[1rem] gap-2.5',
 };
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -48,9 +45,9 @@ export const Button: React.FC<ButtonProps> = ({
   <button
     {...rest}
     className={
-      'duo-button inline-flex items-center justify-center font-riso-body font-semibold border-2 ' +
-      'transition-[box-shadow,transform,background-color] duration-150 ' +
-      'riso-focus riso-press disabled:cursor-not-allowed disabled:opacity-50 ' +
+      'duo-button inline-flex items-center justify-center font-riso-body font-semibold ' +
+      'transition-[transform,background-color,color,text-decoration-color] duration-150 ' +
+      'riso-focus active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:translate-y-0 ' +
       `${variantClass[variant]} ${sizeClass[size]} ${className}`
     }
   >

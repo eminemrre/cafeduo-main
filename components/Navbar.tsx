@@ -84,10 +84,10 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
             }}
             aria-label="Ana sayfa"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-carbon bg-riso-pink text-carbon">
+            <div className="flex h-9 w-9 items-center justify-center bg-riso-pink text-carbon">
               <Coffee size={18} strokeWidth={2.5} />
             </div>
-            <span className="font-riso-display text-lg sm:text-xl font-bold text-carbon">
+            <span className="font-riso-display text-[28px] leading-none text-carbon">
               Cafe<span className="text-riso-pink-deep">Duo</span>
               <span className="sr-only">CafeDuo</span>
             </span>
@@ -110,8 +110,8 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                   aria-current={isBusinessPage ? 'page' : undefined}
                   className={`duo-nav-link duo-nav-business riso-focus transition-all ${
                     isBusinessPage
-                      ? 'bg-riso-mustard text-carbon riso-shadow-sm'
-                      : 'bg-paper text-carbon hover:bg-riso-mustard hover:translate-x-[-1px] hover:translate-y-[-1px]'
+                      ? 'text-carbon shadow-[inset_0_-3px_0_#17140f]'
+                      : 'bg-paper text-carbon hover:shadow-[inset_0_-3px_0_#17140f]'
                   }`}
                 >
                   <Store size={14} />
@@ -121,23 +121,20 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
             ) : (
               <div className="flex items-center gap-2">
                 {user && !isHomePage && (
-                  <div className="flex items-center gap-2 border-2 border-carbon bg-riso-mustard px-3 py-1.5">
-                    <Wallet size={14} className="text-carbon" />
-                    <span className="font-riso-mono text-sm font-bold text-carbon">
-                      {user.points}
-                      <span className="ml-1 text-[0.65rem] uppercase tracking-wider opacity-80">
-                        CP
-                      </span>
+                  <div className="flex min-h-11 items-center gap-2 bg-riso-spring px-3">
+                    <Wallet size={16} className="text-carbon" aria-hidden="true" />
+                    <span className="text-[15px] font-semibold text-carbon [font-variant-numeric:tabular-nums]">
+                      {user.points} puan
                     </span>
                   </div>
                 )}
                 <button
                   onClick={onLogout}
                   data-testid="logout-button"
-                  className="riso-focus riso-press flex items-center gap-2 border-2 border-carbon bg-riso-redox px-3 py-1.5 font-riso-body text-sm font-bold text-paper transition-all riso-shadow-sm"
+                  className="duo-quiet riso-focus gap-2 px-2"
                 >
-                  <LogOut size={16} />
-                  <span className="hidden lg:inline">Çıkış</span>
+                  <LogOut size={16} aria-hidden="true" />
+                  <span>Çıkış</span>
                 </button>
               </div>
             )}
@@ -215,7 +212,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                     variants={menuItem}
                     onClick={goToBusiness}
                     aria-current={isBusinessPage ? 'page' : undefined}
-                    className="riso-focus mt-2 flex items-center justify-between border-2 border-carbon bg-riso-mustard px-3 py-3 font-riso-body text-base font-bold uppercase tracking-[0.08em] text-carbon riso-shadow-sm"
+                    className="riso-focus mt-2 flex min-h-12 items-center justify-between bg-riso-pink px-4 font-riso-body text-base font-semibold text-carbon"
                   >
                     <span className="flex items-center gap-2">
                       <Store size={20} /> Kafe Sahipleri
@@ -233,7 +230,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                       <span className="flex items-center gap-2">
                         <Wallet size={20} /> Cüzdan
                       </span>
-                      <span className="font-riso-mono">{user.points} CP</span>
+                      <span className="[font-variant-numeric:tabular-nums]">{user.points} puan</span>
                     </motion.div>
                   )}
                   <motion.button
@@ -242,7 +239,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                       onLogout?.();
                       setIsOpen(false);
                     }}
-                    className="riso-focus riso-press mt-3 flex w-full items-center justify-center gap-3 border-2 border-carbon bg-riso-redox py-3 font-riso-body text-base font-bold text-paper riso-shadow-sm"
+                    className="riso-focus mt-3 flex min-h-12 w-full items-center justify-center gap-3 bg-carbon font-riso-body text-base font-semibold text-paper hover:bg-carbon-soft transition-colors"
                   >
                     <LogOut size={20} /> Çıkış Yap
                   </motion.button>

@@ -104,13 +104,12 @@ test.describe('Public Landing Pages', () => {
     await page.setViewportSize({ width: 320, height: 568 });
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto(`${baseURL || DEFAULT_E2E_APP_BASE_URL}/kafeler`);
-    const question = page.locator('summary').filter({ hasText: 'Müşteri verileri nasıl korunur?' });
-    await question.scrollIntoViewIfNeeded();
-    await question.focus();
-    await page.keyboard.press('Enter');
-    await expect(question.locator('..')).toHaveAttribute('open', '');
-    const privacy = question.locator('..').getByRole('link', { name: 'Gizlilik Politikası' });
+    // The answers are reading text: the question is the run-in, the link sits in its answer.
+    const faq = page.getByRole('region', { name: 'Sıkça sorulan sorular' });
+    await expect(faq.getByText('Müşteri verileri nasıl korunur?')).toBeVisible();
+    const privacy = faq.getByRole('link', { name: 'Gizlilik Politikası' });
     await expect(privacy).toHaveAttribute('href', '/gizlilik');
+    await privacy.scrollIntoViewIfNeeded();
     await privacy.focus();
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/gizlilik$/);

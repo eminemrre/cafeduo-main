@@ -1288,6 +1288,244 @@ body:has(.cdl) {
   color: rgba(255, 255, 255, 0.8);
 }
 
+/* ------------------------------------------------------------------ /kafeler: the owner's stationery */
+
+/* The pilot card stands on gök, the café's chess-board blue; its notches are cut from that field. */
+.cdl-owner-hero {
+  background: var(--gok);
+}
+
+.cdl-owner-hero .cdl-scallop {
+  background: var(--gok);
+}
+
+/* The cup sits on the other side of the card from the player landing's. */
+.cdl-owner-cup {
+  left: auto;
+  right: -3%;
+}
+
+.cdl-owner-facts {
+  width: min(100%, 380px);
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  text-align: left;
+}
+
+.cdl-owner-card-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px 22px;
+  margin-top: auto;
+}
+
+.cdl-owner-card-foot .cdl-quiet:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+
+.cdl-owner-card-foot .cdl-quiet {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+/* The pilot offer: one limon strip between the card and the slip. */
+.cdl-owner-pilot {
+  display: grid;
+  gap: 28px;
+  align-items: end;
+  padding: 72px var(--margin);
+  background: var(--limon);
+}
+
+@media (min-width: 900px) {
+  .cdl-owner-pilot {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 48px;
+    padding: 112px var(--margin);
+  }
+}
+
+.cdl-owner-pilot h2 {
+  font-size: var(--step-heading);
+}
+
+.cdl-owner-pilot p {
+  max-width: 44ch;
+  margin-top: 20px;
+  font-size: var(--step-lead);
+  line-height: 1.5;
+}
+
+.cdl-owner-pilot-action {
+  justify-self: start;
+  gap: 10px;
+}
+
+/* The benefits reuse the game sheets in all four candy colours. */
+.cdl-sheet-gok {
+  background: var(--gok);
+}
+
+.cdl-sheet-limon {
+  background: var(--limon);
+}
+
+.cdl-sheet-lokum {
+  background: var(--lokum);
+}
+
+.cdl-sheet-fistik {
+  background: var(--fistik);
+}
+
+/* Four sheets instead of three: each one is cut to fit the screen once it sticks, so the
+ * next sheet never slides over a title band that is still being read. */
+@media (min-width: 900px) {
+  .cdl-owner-sheets .cdl-sheet {
+    height: calc(100vh - 88px - 3 * 72px);
+    height: calc(100svh - 88px - 3 * 72px);
+    min-height: 440px;
+  }
+}
+
+@media (max-width: 899px) {
+  .cdl-owner-sheets .cdl-sheet {
+    min-height: 0;
+    max-height: calc(100svh - 56px - 3 * 52px);
+  }
+}
+
+/* The price list, set like the café's menu: name left, price right, nothing joining them. */
+.cdl-owner-prices {
+  display: grid;
+  gap: 36px;
+  padding: 96px var(--margin) 104px;
+  background: var(--paper);
+}
+
+@media (min-width: 900px) {
+  .cdl-owner-prices {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 8fr);
+    gap: 48px;
+    padding: 168px var(--margin);
+  }
+}
+
+.cdl-owner-prices > h2 {
+  font-size: var(--step-heading);
+}
+
+.cdl-owner-price-list {
+  display: grid;
+  gap: 48px;
+}
+
+@media (min-width: 900px) {
+  .cdl-owner-price-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 48px 64px;
+  }
+}
+
+.cdl-owner-price-group h3 {
+  font-family: var(--text);
+  font-size: var(--step-lead);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.cdl-owner-price-group ul {
+  display: grid;
+  gap: 18px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.cdl-owner-price-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  font-size: var(--step-lead);
+  font-weight: 500;
+}
+
+.cdl-owner-price {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cdl-owner-price-note {
+  max-width: 36ch;
+  margin-top: 4px;
+  font-size: var(--step-small);
+  color: rgba(23, 20, 15, 0.75);
+}
+
+.cdl-owner-price-chain {
+  align-self: end;
+  font-size: var(--step-body);
+}
+
+.cdl-owner-price-chain a,
+.cdl-owner-faq-text a,
+.cdl-cta-note a {
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+/* The answers as reading text, two columns, the question as a run-in. */
+.cdl-owner-faq {
+  display: grid;
+  gap: 32px;
+  padding: 96px var(--margin) 104px;
+  background: var(--ice);
+}
+
+@media (min-width: 900px) {
+  .cdl-owner-faq {
+    grid-template-columns: minmax(0, 3fr) minmax(0, 8fr);
+    gap: 48px;
+    padding: 168px var(--margin);
+  }
+}
+
+.cdl-owner-faq > h2 {
+  font-size: var(--step-heading);
+}
+
+.cdl-owner-faq-text {
+  max-width: 62ch;
+}
+
+.cdl-owner-faq-text p {
+  break-inside: avoid;
+  margin-bottom: 20px;
+  font-size: var(--step-body);
+  line-height: 1.55;
+}
+
+.cdl-owner-faq-text strong {
+  font-weight: 600;
+}
+
+@media (min-width: 900px) {
+  .cdl-owner-faq-text {
+    max-width: none;
+    columns: 2;
+    column-gap: 56px;
+  }
+}
+
 /* ------------------------------------------------------------------ motion */
 
 @keyframes cdl-rise {

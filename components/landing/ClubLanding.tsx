@@ -29,20 +29,50 @@ export interface ClubLandingProps {
 
 const isInternal = (href: string) => href.startsWith('/');
 
-export const LandingHeader: React.FC<ClubLandingProps> = ({
+export interface LandingHeaderProps extends ClubLandingProps {
+  /** The page the header sits on: the player landing (/) or the café-owner landing (/kafeler). */
+  page?: 'players' | 'owners';
+  /** The owner page's primary action goes to WhatsApp instead of the sign-up modal. */
+  ownerActionHref?: string;
+}
+
+const HEADER_LINKS = {
+  players: [
+    { label: 'Oyunlar', href: '#oyunlar' },
+    { label: 'Ödüller', href: '#oduller' },
+    { label: 'Kafeler için', href: '/kafeler' },
+  ],
+  owners: [
+    { label: 'Nasıl işler', href: '#nasil-calisir' },
+    { label: 'Fiyat', href: '#fiyat' },
+    { label: 'Oyuncular için', href: '/' },
+  ],
+} as const;
+
+export const LandingHeader: React.FC<LandingHeaderProps> = ({
   isLoggedIn,
   onJoin,
   onLogin,
   onLogout,
+  page = 'players',
+  ownerActionHref,
 }) => (
   <header className="cdl cdl-header">
     <a href="#ust" className="cdl-wordmark" aria-label="CafeDuo, sayfanın başı">
       CafeDuo
     </a>
     <nav className="cdl-nav" aria-label="Sayfa bölümleri">
-      <a href="#oyunlar">Oyunlar</a>
-      <a href="#oduller">Ödüller</a>
-      <Link to="/kafeler">Kafeler için</Link>
+      {HEADER_LINKS[page].map((link) =>
+        isInternal(link.href) ? (
+          <Link key={link.href} to={link.href}>
+            {link.label}
+          </Link>
+        ) : (
+          <a key={link.href} href={link.href}>
+            {link.label}
+          </a>
+        )
+      )}
     </nav>
     <div className="cdl-header-actions">
       {isLoggedIn ? (
@@ -59,9 +89,15 @@ export const LandingHeader: React.FC<ClubLandingProps> = ({
           Giriş yap
         </button>
       )}
-      <button type="button" className="cdl-button" onClick={() => onJoin()}>
-        {isLoggedIn ? 'Panele geç' : 'Kaydol'}
-      </button>
+      {page === 'owners' && ownerActionHref ? (
+        <a className="cdl-button" href={ownerActionHref} target="_blank" rel="noopener noreferrer">
+          Pilota başvur
+        </a>
+      ) : (
+        <button type="button" className="cdl-button" onClick={() => onJoin()}>
+          {isLoggedIn ? 'Panele geç' : 'Kaydol'}
+        </button>
+      )}
     </div>
   </header>
 );
@@ -330,9 +366,9 @@ export const LandingFooter: React.FC = () => (
           <ul>
             {column.links.map((link) => (
               <li key={link.label}>
-                {isInternal(link.href) ? (
+                {isInternal(link.href) && !link.href.includes('#') ? (
                   <Link to={link.href}>{link.label}</Link>
-                ) : link.href.startsWith('#') ? (
+                ) : link.href.startsWith('#') || link.href.startsWith('/#') ? (
                   <a href={link.href}>{link.label}</a>
                 ) : (
                   <a href={link.href} target="_blank" rel="noopener noreferrer">

@@ -69,23 +69,30 @@ for (const viewport of [
   });
 }
 
-test('@smoke cafe landing keeps the motion control working and remembers the choice', async ({ page }) => {
+test('@smoke cafe landing follows the system motion setting and hands the café name to WhatsApp', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   await page.addInitScript(() => localStorage.setItem('cookie_consent', 'true'));
+  await page.context().route('https://wa.me/**', (route) => route.abort());
   await page.goto('/kafeler');
   const root = page.locator('.club-landing');
   await expect(root).toHaveAttribute('data-motion', 'on');
-
-  await page.getByRole('button', { name: 'Hareketi durdur' }).click();
-  await expect(root).toHaveAttribute('data-motion', 'off');
-  await page.reload();
-  await expect(page.getByRole('button', { name: 'Hareketi aç' })).toHaveAttribute('aria-pressed', 'false');
-
+  // No motion toggle anywhere: the system preference decides.
+  await expect(page.getByRole('button', { name: /Hareket/ })).toHaveCount(0);
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await expect(page.getByRole('button', { name: 'Hareket azaltıldı' })).toBeDisabled();
   await expect(root).toHaveAttribute('data-motion', 'off');
   await page.emulateMedia({ reducedMotion: 'no-preference' });
-  await expect(page.getByRole('button', { name: 'Hareketi aç' })).toBeEnabled();
+  await expect(root).toHaveAttribute('data-motion', 'on');
+
+  // The closing sentence: the blank is the café's name, and it goes into the WhatsApp message.
+  const close = page.getByRole('region', { name: 'Son çağrı' });
+  await close.scrollIntoViewIfNeeded();
+  await close.getByLabel('Pilot için').fill('Masa Kafe');
+  const [popup] = await Promise.all([
+    page.waitForEvent('popup'),
+    close.getByRole('button', { name: 'başvurun' }).click(),
+  ]);
+  expect(decodeURIComponent(popup.url())).toContain('Masa Kafe için CafeDuo pilot programına');
+  await popup.close();
 });
 
 test('@smoke landing content and join action work without scroll enhancement, storage or WebGL', async ({ page }) => {

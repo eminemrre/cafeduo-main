@@ -1,5 +1,5 @@
 /**
- * Riso Kantin UI primitives — barrel export.
+ * CafeDuo UI primitives (design v2, DESIGN.md) — barrel export.
  * Import from '@/components/ui' or relative '../ui'.
  */
 
@@ -12,9 +12,6 @@ export type { ButtonTone, ButtonSize } from './Button';
 export { Input } from './Input';
 export { Select } from './Select';
 export { Modal } from './Modal';
-export { Tabs } from './Tabs';
-export type { TabItem } from './Tabs';
-export { Squiggle } from './Squiggle';
 
 export { Reveal, RevealGroup, RevealItem } from './Reveal';
 export {
@@ -29,5 +26,3 @@ export {
 } from './motionVariants';
 export { DecodeText } from './DecodeText';
 export { HoverUnderline } from './HoverUnderline';
-export { TiltCard } from './TiltCard';
-export { CursorInk } from './CursorInk';

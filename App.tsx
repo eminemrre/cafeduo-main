@@ -10,6 +10,7 @@ import { User, UserProfileUpdates } from './types';
 import { api } from './lib/api';
 import { socketService } from './lib/socket';
 import { lazyWithRetry } from './lib/lazyWithRetry';
+import { whatsappLink } from './lib/ownerContact';
 import { CafeSelection } from './components/CafeSelection';
 import { CookieConsent } from './components/CookieConsent';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
@@ -122,6 +123,8 @@ const AppContent: React.FC = () => {
   const location = useLocation();
   const previousPathRef = useRef(location.pathname);
   const isLanding = location.pathname === '/';
+  // The two public pages share the landing's header, footer and cookie notice.
+  const isPublicPage = isLanding || location.pathname === '/kafeler';
 
   // Socket IO Connection
   useEffect(() => {
@@ -253,12 +256,14 @@ const AppContent: React.FC = () => {
         İçeriğe atla
       </a>
       {/* The landing has its own header and footer line; other routes keep the shared ones. */}
-      {isLanding ? (
+      {isPublicPage ? (
         <LandingHeader
           isLoggedIn={!!user}
           onJoin={enterClub}
           onLogin={openLogin}
           onLogout={handleLogout}
+          page={isLanding ? 'players' : 'owners'}
+          ownerActionHref={whatsappLink()}
         />
       ) : (
         <Navbar isLoggedIn={!!user} user={user} onLogout={handleLogout} />
@@ -364,7 +369,7 @@ const AppContent: React.FC = () => {
         </Suspense>
       </main>
 
-      {isLanding ? <LandingFooter /> : <Footer />}
+      {isPublicPage ? <LandingFooter /> : <Footer />}
 
       <AuthModal
         isOpen={isAuthOpen}
@@ -373,7 +378,7 @@ const AppContent: React.FC = () => {
         initialEmail={authEmail}
         onLoginSuccess={handleLoginSuccess}
       />
-      <CookieConsent variant={isLanding ? 'landing' : 'default'} />
+      <CookieConsent variant={isPublicPage ? 'landing' : 'default'} />
     </div>
   );
 };

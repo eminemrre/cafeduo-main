@@ -1,36 +1,6 @@
 // Import package CSS through Vite so font URLs resolve relative to their package.
-// Keep existing font families, weights and Unicode subsets.
-import '@fontsource/teko/400.css';
-import '@fontsource/teko/500.css';
-import '@fontsource/teko/600.css';
-import '@fontsource/teko/700.css';
-import '@fontsource/oswald/500.css';
-import '@fontsource/oswald/600.css';
-import '@fontsource/oswald/700.css';
-import '@fontsource/noto-sans/400.css';
-import '@fontsource/noto-sans/500.css';
-import '@fontsource/noto-sans/600.css';
-import '@fontsource/noto-sans/700.css';
-import '@fontsource/chakra-petch/400.css';
-import '@fontsource/chakra-petch/500.css';
-import '@fontsource/chakra-petch/600.css';
-import '@fontsource/chakra-petch/700.css';
-import '@fontsource/press-start-2p/400.css';
-import '@fontsource/space-grotesk/400.css';
-import '@fontsource/space-grotesk/500.css';
-import '@fontsource/space-grotesk/700.css';
-import '@fontsource/ibm-plex-mono/400.css';
-import '@fontsource/ibm-plex-mono/500.css';
-import '@fontsource/ibm-plex-mono/700.css';
-import '@fontsource-variable/fraunces';
-import '@fontsource-variable/fraunces/wght-italic.css';
-import '@fontsource-variable/dm-sans';
-import '@fontsource-variable/unbounded';
-import '@fontsource/familjen-grotesk/400.css';
-import '@fontsource/familjen-grotesk/500.css';
-import '@fontsource/familjen-grotesk/600.css';
-import '@fontsource/familjen-grotesk/700.css';
-import '@fontsource-variable/jetbrains-mono';
+// Design v2 (DESIGN.md) uses two faces only: Baloo 2 800 for display lines and
+// Onest 400–700 for everything else. Both cover Turkish (ı İ ş Ş ğ Ğ ç Ç ö Ö ü Ü).
 import '@fontsource/baloo-2/800.css';
 import '@fontsource/onest/400.css';
 import '@fontsource/onest/500.css';

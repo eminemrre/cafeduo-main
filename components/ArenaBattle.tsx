@@ -337,7 +337,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
               {Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}
             </strong>
           </div>
-          <div className="inline-flex items-center justify-center gap-2 border-2 border-carbon bg-riso-blue text-paper px-3 py-2 font-riso-body">
+          <div className="inline-flex items-center justify-center gap-2 border-2 border-carbon bg-riso-blue text-carbon px-3 py-2 font-riso-body">
             <Trophy size={18} />
             <span className="font-bold uppercase text-xs">Sen</span>
             <strong className="font-riso-display">{live.playerScore}</strong>

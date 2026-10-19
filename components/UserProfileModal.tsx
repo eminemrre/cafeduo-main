@@ -121,7 +121,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             <div className="relative flex items-start gap-4">
               {/* Avatar tile — DiceBear pixel-art if picked, initials fallback otherwise */}
               <div className="relative shrink-0">
-                <div className="relative h-16 w-16 overflow-hidden border-2 border-carbon bg-riso-blue text-paper">
+                <div className="relative h-16 w-16 overflow-hidden border-2 border-carbon bg-riso-blue text-carbon">
                   <AvatarImage
                     src={avatarUrl}
                     initials={(user.username || '?').substring(0, 2).toUpperCase()}
@@ -140,7 +140,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                     data-testid="open-avatar-picker"
                     className="riso-focus absolute -bottom-3.5 -right-3.5 inline-flex h-11 w-11 items-center justify-center text-carbon group"
                   >
-                    <span className="inline-flex h-6 w-6 items-center justify-center border-2 border-carbon bg-paper group-hover:bg-riso-pink group-hover:text-paper transition-colors">
+                    <span className="inline-flex h-6 w-6 items-center justify-center border-2 border-carbon bg-paper group-hover:bg-riso-pink group-hover:text-carbon transition-colors">
                       <ImageIcon size={12} strokeWidth={2.5} />
                     </span>
                   </button>

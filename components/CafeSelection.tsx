@@ -20,7 +20,7 @@ import {
 import { motion, useReducedMotion } from 'framer-motion';
 import type { User } from '../types';
 import { useCafeSelection } from '../hooks/useCafeSelection';
-import { Card, Button, Input, Select, Squiggle } from './ui';
+import { Card, Button, Input, Select } from './ui';
 
 interface CafeSelectionProps {
   currentUser: User;
@@ -92,15 +92,6 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
       className="duo-checkin riso-kantin-app relative min-h-screen overflow-hidden px-4"
       data-testid="cafe-selection-shell"
     >
-      {/* Decorative riso confetti — subtle, behind everything */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute left-[10%] top-[18%] h-3 w-3 bg-riso-pink riso-tilt-right" />
-        <div className="absolute left-[80%] top-[12%] h-2 w-6 bg-riso-blue riso-tilt-left" />
-        <div className="absolute left-[20%] top-[80%] h-4 w-4 bg-riso-mustard rounded-full" />
-        <div className="absolute left-[88%] top-[68%] h-2 w-2 bg-riso-pink rounded-full" />
-        <div className="absolute left-[5%] top-[55%] h-3 w-3 bg-riso-blue rounded-full" />
-      </div>
-
       <div className="mx-auto w-full max-w-md">
         {/* Header */}
         <motion.div
@@ -109,9 +100,6 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
           transition={{ duration: shouldReduceMotion ? 0 : 0.4, ease: 'easeOut' }}
           className="mb-8 text-center"
         >
-          <p className="mb-3 inline-block font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
-            Oyuna bir adım kaldı
-          </p>
           <h1 className="duo-checkin-heading mb-2 inline-block font-riso-display text-carbon">
             Kafeye Giriş
           </h1>
@@ -189,7 +177,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                   type="button"
                   disabled={loading}
                   onClick={() => setShowVerificationField(true)}
-                  className="riso-focus inline-flex w-full items-center justify-between gap-2 border-2 border-dashed border-carbon-muted bg-paper-deep px-3 py-2.5 text-left text-sm font-medium text-carbon hover:border-carbon hover:bg-paper-dim transition-colors"
+                  className="riso-focus inline-flex w-full items-center justify-between gap-2 bg-paper-deep px-3 py-2.5 text-left text-sm font-medium text-carbon hover:bg-paper-dim transition-colors"
                   data-testid="checkin-show-verification"
                 >
                   <span className="flex items-center gap-2">
@@ -238,7 +226,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                 <span>{locationLabel.text}</span>
               </div>
 
-              <div className="border-2 border-dashed border-carbon-muted bg-paper-deep p-3 text-center">
+              <div className="bg-paper-deep p-3 text-center">
                 <p className="text-xs leading-relaxed text-carbon-muted">
                   Konum izni yalnızca kafe doğrulaması için kullanılır. Hiçbir yere kaydedilmez.
                 </p>
@@ -264,11 +252,6 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
             </form>
           </Card>
         </motion.div>
-
-        {/* Squiggle decoration under the card */}
-        <div className="mx-auto mt-6 w-32 opacity-60">
-          <Squiggle tone="blue" />
-        </div>
 
         {/* Re-render trigger to avoid unused warning */}
         <span className="sr-only" data-submitted={hasSubmitted ? 'true' : 'false'} />

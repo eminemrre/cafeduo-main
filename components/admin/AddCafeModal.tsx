@@ -59,7 +59,7 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
       />
 
       <div className="border-2 border-carbon bg-paper p-1 riso-shadow-sm">
-        <p className="bg-riso-blue text-paper px-3 py-2 font-riso-display text-xs sm:text-sm uppercase tracking-[0.12em] font-bold mb-1">
+        <p className="bg-riso-blue text-carbon px-3 py-2 font-riso-display text-xs sm:text-sm uppercase tracking-[0.12em] font-bold mb-1">
           Haritadan Konum Seç
         </p>
         <MapLocationPicker

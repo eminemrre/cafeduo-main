@@ -57,7 +57,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
         <motion.button
           onClick={onQuickJoin}
           disabled={quickJoinDisabled || quickJoinBusy}
-          className="duo-lobby-action riso-focus bg-riso-blue text-paper transition-all disabled:cursor-not-allowed"
+          className="duo-lobby-action riso-focus bg-riso-blue text-carbon transition-all disabled:cursor-not-allowed"
           data-testid="quick-join-button"
         >
           <Swords size={32} strokeWidth={2.4} />
@@ -108,7 +108,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                     <div className="flex items-center gap-4">
                       <button
                         onClick={() => onViewProfile(hostName)}
-                        className="rounded-xl riso-focus w-12 h-12 sm:w-14 sm:h-14 bg-riso-blue text-paper font-riso-display text-xl sm:text-2xl border-2 border-carbon flex items-center justify-center hover:bg-riso-blue-deep transition-colors"
+                        className="rounded-xl riso-focus w-12 h-12 sm:w-14 sm:h-14 bg-riso-blue text-carbon font-riso-display text-xl sm:text-2xl border-2 border-carbon flex items-center justify-center hover:bg-riso-blue-deep transition-colors"
                         title="Profili Görüntüle"
                       >
                         {hostName.charAt(0).toUpperCase()}

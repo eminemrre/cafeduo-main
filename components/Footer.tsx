@@ -85,7 +85,7 @@ export const Footer: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Twitter"
-                className="riso-focus inline-flex h-11 w-11 items-center justify-center border-2 border-carbon bg-paper text-carbon hover:bg-riso-blue hover:text-paper transition-colors"
+                className="riso-focus inline-flex h-11 w-11 items-center justify-center border-2 border-carbon bg-paper text-carbon hover:bg-riso-blue hover:text-carbon transition-colors"
               >
                 <XIcon />
               </a>

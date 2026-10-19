@@ -59,7 +59,7 @@ export const PrivacyPolicy: React.FC = () => {
             number={1}
             title="Veri Sorumlusu"
             icon={<Users size={20} />}
-            iconBg="bg-riso-blue text-paper"
+            iconBg="bg-riso-blue text-carbon"
           >
             <p>
               6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında, kişisel

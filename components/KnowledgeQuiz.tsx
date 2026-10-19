@@ -401,11 +401,11 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
                       <span
                         className={`w-7 h-7 border-2 border-carbon flex items-center justify-center font-riso-display text-xs font-bold shrink-0 ${
                           selectedOption === null
-                            ? 'bg-riso-blue text-paper'
+                            ? 'bg-riso-blue text-carbon'
                             : isPicked && isCorrect
                               ? 'bg-riso-spring text-carbon'
                               : isPicked
-                                ? 'bg-riso-redox text-paper'
+                                ? 'bg-riso-redox text-carbon'
                                 : isCorrect
                                   ? 'bg-riso-spring/60 text-carbon'
                                   : 'bg-paper text-carbon-muted'

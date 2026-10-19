@@ -333,7 +333,7 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
               onClick={() => setMapTarget('primary')}
               className={`px-3 py-1.5 text-xs uppercase tracking-[0.1em] font-riso-display transition-colors ${
                 mapTarget === 'primary'
-                  ? 'bg-riso-blue text-paper font-bold'
+                  ? 'bg-riso-blue text-carbon font-bold'
                   : 'text-carbon hover:bg-riso-blue/15'
               }`}
             >
@@ -374,7 +374,7 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
               <button
                 type="submit"
                 disabled={searchLoading || !searchQuery.trim()}
-                className="riso-focus riso-press inline-flex items-center justify-center gap-2 border-2 border-carbon bg-riso-blue px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-paper disabled:cursor-not-allowed disabled:opacity-50"
+                className="riso-focus riso-press inline-flex items-center justify-center gap-2 border-2 border-carbon bg-riso-blue px-4 py-2 text-xs font-bold uppercase tracking-[0.08em] text-carbon disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Search size={15} />
                 {searchLoading ? 'Aranıyor...' : 'Adres ara'}

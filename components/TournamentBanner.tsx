@@ -69,7 +69,7 @@ export const TournamentBanner: React.FC<TournamentBannerProps> = ({
           type="button"
           onClick={onOpenLeaderboard}
           data-testid="tournament-open-leaderboard"
-          className="riso-focus shrink-0 inline-flex items-center gap-1.5 border-2 border-carbon bg-paper px-3 py-2 min-h-[44px] font-riso-display text-xs sm:text-sm font-bold uppercase tracking-wider text-carbon hover:bg-riso-pink hover:text-paper transition-colors"
+          className="riso-focus shrink-0 inline-flex items-center gap-1.5 border-2 border-carbon bg-paper px-3 py-2 min-h-[44px] font-riso-display text-xs sm:text-sm font-bold uppercase tracking-wider text-carbon hover:bg-riso-pink hover:text-carbon transition-colors"
         >
           <span className="hidden sm:inline">Sıralama</span>
           <span className="sm:hidden">Sıra</span>

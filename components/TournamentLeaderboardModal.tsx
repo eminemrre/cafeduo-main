@@ -152,7 +152,7 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
                         rank
                       )}
                     </div>
-                    <div className="relative h-9 w-9 shrink-0 overflow-hidden border-2 border-carbon bg-riso-blue text-paper">
+                    <div className="relative h-9 w-9 shrink-0 overflow-hidden border-2 border-carbon bg-riso-blue text-carbon">
                       <AvatarImage
                         src={row.avatar_url}
                         initials={String(row.username || '?')

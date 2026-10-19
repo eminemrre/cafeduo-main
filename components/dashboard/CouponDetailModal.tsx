@@ -137,7 +137,7 @@ export const CouponDetailModal: React.FC<CouponDetailModalProps> = ({
                 className={`riso-focus shrink-0 px-3 border-l-2 border-carbon transition-colors flex items-center gap-1.5 font-riso-display text-xs font-bold uppercase tracking-wider ${
                   copied
                     ? 'bg-riso-spring text-carbon'
-                    : 'bg-riso-pink text-carbon hover:bg-riso-pink-deep hover:text-paper'
+                    : 'bg-riso-pink text-carbon hover:bg-riso-pink-deep hover:text-carbon'
                 }`}
               >
                 {copied ? (

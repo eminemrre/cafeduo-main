@@ -40,36 +40,42 @@ module.exports = {
         // Riso Kantin palette — PR #24. Mirrors the CSS vars defined under
         // `.riso-kantin` in index.css so Tailwind autocompletes them and
         // arbitrary-value users get type-checked names.
+        /* Design v2 (DESIGN.md): paper is the white surface, paper-deep is the ice
+         * ground Masa screens sit on, paper-dim is the well inside a surface. */
         paper: {
-          DEFAULT: '#FBF7EE',
-          deep: '#F2EAD8',
-          dim: '#ECE3CC',
+          DEFAULT: '#FFFFFF',
+          deep: '#EEF6F8',
+          dim: '#D9EAEF',
         },
         carbon: {
-          DEFAULT: '#141413',
-          soft: '#2A2A28',
-          muted: '#6A6A66',
+          DEFAULT: '#17140F',
+          soft: '#2A251C',
+          muted: '#4A4540',
         },
+        /* The candy set from DESIGN.md: lokum, gök, limon, fıstık. Fills only —
+         * candy used as text is deepened in identity.css, never lightened. */
         riso: {
-          pink: '#FF3E94',
-          'pink-deep': '#D8246F',
-          blue: '#1E3FB5',
-          'blue-deep': '#142C82',
-          mustard: '#F1B41E',
-          'mustard-deep': '#C9921A',
-          spring: '#5BC25A',
-          redox: '#E03B1E',
+          pink: '#FF5C8A',
+          'pink-deep': '#E03A6B',
+          blue: '#1FB3FF',
+          'blue-deep': '#0E7CC0',
+          mustard: '#FFD23F',
+          'mustard-deep': '#E0AE18',
+          spring: '#B6D31B',
+          redox: '#D62F2F',
         },
       },
+      /* Design v2: Baloo 2 draws every display line, Onest every other line.
+       * riso-mono survives as a name but renders Onest with tabular figures, so
+       * codes, scores and timers keep their alignment without a second family. */
       fontFamily: {
-        sans: ['"Space Grotesk"', '"Chakra Petch"', '"Noto Sans"', 'sans-serif'],
-        display: ['"Press Start 2P"', '"Space Grotesk"', 'monospace'],
-        body: ['"Space Grotesk"', '"Chakra Petch"', '"Noto Sans"', 'sans-serif'],
-        mono: ['"IBM Plex Mono"', 'monospace'],
-        // Riso Kantin
-        'riso-display': ['"Unbounded Variable"', '"Unbounded"', 'system-ui', 'sans-serif'],
-        'riso-body': ['"Familjen Grotesk"', 'system-ui', 'sans-serif'],
-        'riso-mono': ['"JetBrains Mono Variable"', '"JetBrains Mono"', 'ui-monospace', 'monospace'],
+        sans: ['"Onest"', 'system-ui', 'sans-serif'],
+        display: ['"Baloo 2"', 'system-ui', 'sans-serif'],
+        body: ['"Onest"', 'system-ui', 'sans-serif'],
+        mono: ['"Onest"', 'system-ui', 'sans-serif'],
+        'riso-display': ['"Baloo 2"', 'system-ui', 'sans-serif'],
+        'riso-body': ['"Onest"', 'system-ui', 'sans-serif'],
+        'riso-mono': ['"Onest"', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
         soft: '0 10px 30px rgba(15, 17, 21, 0.35)',

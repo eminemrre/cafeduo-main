@@ -2654,29 +2654,29 @@ main {
    * autofill in a dark theme even when the explicit Tailwind bg is paper. */
   color-scheme: light;
 
-  /* Surfaces */
-  --paper: #fbf7ee;
-  --paper-deep: #f2ead8;
-  --paper-dim: #ece3cc;
+  /* Surfaces — design v2: white paper on an ice ground (DESIGN.md). */
+  --paper: #ffffff;
+  --paper-deep: #eef6f8;
+  --paper-dim: #d9eaef;
 
   /* Ink */
-  --ink: #141413;
-  --ink-soft: #2a2a28;
-  --ink-muted: #6a6a66;
+  --ink: #17140f;
+  --ink-soft: #2a251c;
+  --ink-muted: #4a4540;
 
-  /* Spot colours */
-  --riso-pink: #ff3e94;
-  --riso-pink-deep: #d8246f;
-  --riso-blue: #1e3fb5;
-  --riso-blue-deep: #142c82;
-  --riso-mustard: #f1b41e;
-  --riso-mustard-deep: #c9921a;
+  /* Spot colours — the candy set: lokum, gök, limon, fıstık. */
+  --riso-pink: #ff5c8a;
+  --riso-pink-deep: #e03a6b;
+  --riso-blue: #1fb3ff;
+  --riso-blue-deep: #0e7cc0;
+  --riso-mustard: #ffd23f;
+  --riso-mustard-deep: #e0ae18;
 
   /* Semantic */
-  --win-spring: #5bc25a;
-  --alarm-redox: #e03b1e;
+  --win-spring: #b6d31b;
+  --alarm-redox: #d62f2f;
 
-  font-family: 'Familjen Grotesk', system-ui, sans-serif;
+  font-family: 'Onest', system-ui, sans-serif;
   background-color: var(--paper);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
@@ -2694,105 +2694,58 @@ main {
 .riso-halftone {
   position: relative;
 }
+/* The dot overlay is retired in design v2: surfaces are flat, and the only
+ * decoration the language allows is perforation (see styles/landing.css). */
 .riso-halftone::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background-image: radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0);
-  background-size: 4px 4px;
-  opacity: 0.05;
-  mix-blend-mode: multiply;
-  z-index: 0;
-}
-.riso-halftone > * {
-  position: relative;
-  z-index: 1;
+  content: none;
 }
 
 /* Misregistration shadows — the signature character.
  * Used by Card + Button primitives via Tailwind shadow utility. */
-.riso-shadow-md {
-  box-shadow:
-    0 4px 0 rgba(20, 20, 19, 0.08),
-    0 12px 28px rgba(20, 20, 19, 0.04);
-}
-.riso-shadow-sm {
-  box-shadow: 0 3px 0 rgba(20, 20, 19, 0.08);
-}
-.riso-shadow-pink-only {
-  box-shadow: 5px 5px 0 var(--riso-pink);
-}
+/* In v2 nothing casts a shadow in the flow: separation comes from paper on ice
+ * and from ink rules. Floating things (dialogs, the cookie card) carry the one
+ * soft shadow defined in identity.css. */
+.riso-shadow-md,
+.riso-shadow-sm,
+.riso-shadow-pink-only,
 .riso-shadow-blue-only {
-  box-shadow: 5px 5px 0 var(--riso-blue);
+  box-shadow: none;
 }
-/* Pressed state — shadows collapse, the element "stamps down". */
 .riso-press:active {
-  transform: translate(2px, 2px);
-  box-shadow:
-    0 0 0 var(--riso-blue),
-    0 0 0 var(--riso-pink);
+  transform: translateY(2px);
 }
 
-/* Display font shorthand — for headlines (Unbounded). */
+/* Display font shorthand — every headline is Baloo 2 800 (DESIGN.md). */
 .font-riso-display {
-  font-family: 'Unbounded Variable', 'Unbounded', system-ui, sans-serif;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.01em;
 }
 
-/* Mono font shorthand — for scores, timers, codes. */
+/* The "mono" shorthand now renders Onest with tabular figures: codes, scores and
+ * timers keep their alignment without a second family. */
 .font-riso-mono {
-  font-family: 'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace;
+  font-family: 'Onest', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum' 1;
 }
 
-/* Squiggle underline — hand-drawn-looking accent under headlines.
- * Applied as ::after on elements with .riso-squiggle class. */
+/* The hand-drawn squiggle is retired in v2; keep the class harmless so older
+ * markup does not lose its spacing. */
 .riso-squiggle {
-  position: relative;
-  padding-bottom: 0.4em;
-}
-.riso-squiggle::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 8px;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 8' preserveAspectRatio='none'><path d='M0 4 Q 10 0, 20 4 T 40 4 T 60 4 T 80 4 T 100 4 T 120 4' stroke='%23FF3E94' stroke-width='2.5' fill='none' stroke-linecap='round'/></svg>");
-  background-repeat: no-repeat;
-  background-size: 100% 100%;
-}
-.riso-squiggle--blue::after {
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 8' preserveAspectRatio='none'><path d='M0 4 Q 10 0, 20 4 T 40 4 T 60 4 T 80 4 T 100 4 T 120 4' stroke='%231E3FB5' stroke-width='2.5' fill='none' stroke-linecap='round'/></svg>");
+  padding-bottom: 0;
 }
 
-/* Sticker rotation helpers — sparingly, on hero cards/posters. */
-.riso-tilt-left {
-  transform: rotate(-1.5deg);
-}
+/* No tilts: everything in the language stands square. */
+.riso-tilt-left,
 .riso-tilt-right {
-  transform: rotate(1deg);
-}
-@media (max-width: 640px) {
-  .riso-tilt-left {
-    transform: rotate(-1deg);
-  }
-  .riso-tilt-right {
-    transform: rotate(0.5deg);
-  }
+  transform: none;
 }
 
-/* Focus ring — keep accessibility while preserving the look.
- * Three-layer offset: ink → pink → blue. */
+/* One focus ring: a 3 px ink outline, the same as the landing's. */
 .riso-focus:focus-visible {
-  outline: none;
-  box-shadow:
-    0 0 0 3px var(--paper),
-    0 0 0 5px var(--ink),
-    4px 4px 0 var(--riso-pink),
-    8px 8px 0 var(--riso-blue);
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
 }
 
 /* Skip link — keyboard users jump straight to content. Visually hidden
@@ -2802,25 +2755,21 @@ main {
   left: 1rem;
   top: -4rem;
   z-index: 200;
-  border: 2px solid #141413;
-  background: #fbf7ee;
-  color: #141413;
+  border: 0;
+  background: #17140f;
+  color: #ffffff;
   padding: 0.6rem 1rem;
   font-weight: 700;
   transition: top 0.15s ease-out;
 }
 .skip-link:focus-visible {
   top: 1rem;
-  outline: none;
-  box-shadow:
-    0 0 0 3px #fbf7ee,
-    0 0 0 5px #141413,
-    4px 4px 0 #ff3e94,
-    8px 8px 0 #1e3fb5;
+  outline: 3px solid #17140f;
+  outline-offset: 2px;
 }
 
 /* Global focus fallback for elements outside .riso-focus. */
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 3px solid #1e3fb5;
+  outline: 3px solid #17140f;
   outline-offset: 2px;
 }

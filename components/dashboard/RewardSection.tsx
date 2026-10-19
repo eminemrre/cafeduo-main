@@ -147,7 +147,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                           <div
                             className={`flex h-10 w-10 items-center justify-center border-2 border-carbon ${
                               affordable
-                                ? 'bg-riso-blue text-paper'
+                                ? 'bg-riso-blue text-carbon'
                                 : 'bg-paper-dim text-carbon-muted'
                             }`}
                           >
@@ -297,7 +297,7 @@ export const RewardSection: React.FC<RewardSectionProps> = ({
                         onClick={() => setSelectedCoupon(item)}
                         disabled={dead}
                         data-testid={`coupon-show-${item.redeemId}`}
-                        className="riso-focus riso-press group mt-auto flex items-center justify-center gap-2 border-t-2 border-carbon bg-riso-pink text-carbon px-3 py-2.5 font-riso-display text-xs font-bold uppercase tracking-[0.14em] transition-all hover:bg-riso-pink-deep hover:text-paper disabled:cursor-not-allowed disabled:hover:bg-riso-pink disabled:hover:text-carbon"
+                        className="riso-focus riso-press group mt-auto flex items-center justify-center gap-2 border-t-2 border-carbon bg-riso-pink text-carbon px-3 py-2.5 font-riso-display text-xs font-bold uppercase tracking-[0.14em] transition-all hover:bg-riso-pink-deep hover:text-carbon disabled:cursor-not-allowed disabled:hover:bg-riso-pink disabled:hover:text-carbon"
                       >
                         Kasada Göster
                         <ArrowRight

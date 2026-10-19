@@ -72,7 +72,7 @@ export const CouponScanner: React.FC<CouponScannerProps> = ({
           type="button"
           onClick={() => setScannerOpen(true)}
           data-testid="open-qr-scanner-button"
-          className="riso-focus riso-press w-full mb-5 border-2 border-carbon bg-riso-blue text-paper py-3 px-4 font-riso-display text-sm sm:text-base font-bold uppercase tracking-[0.1em] riso-shadow-sm flex items-center justify-center gap-2 transition-all hover:-translate-y-[1px]"
+          className="riso-focus riso-press w-full mb-5 border-2 border-carbon bg-riso-blue text-carbon py-3 px-4 font-riso-display text-sm sm:text-base font-bold uppercase tracking-[0.1em] riso-shadow-sm flex items-center justify-center gap-2 transition-all hover:-translate-y-[1px]"
         >
           <Camera size={18} />
           Kamerayla QR Oku

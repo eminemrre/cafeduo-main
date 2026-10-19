@@ -189,7 +189,7 @@ export const Leaderboard: React.FC = () => {
                   </td>
                   <td className="px-3 py-2.5">
                     <div className="flex items-center gap-3">
-                      <div className="relative flex h-9 w-9 items-center justify-center border-2 border-carbon bg-riso-blue font-riso-display text-xs font-bold text-paper overflow-hidden">
+                      <div className="relative flex h-9 w-9 items-center justify-center border-2 border-carbon bg-riso-blue font-riso-display text-xs font-bold text-carbon overflow-hidden">
                         <AvatarImage
                           src={user.avatar_url}
                           initials={user.username.substring(0, 2).toUpperCase()}

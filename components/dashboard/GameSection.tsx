@@ -285,7 +285,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
                     <div className="flex items-center gap-2">
                       <span
                         className={`px-3 py-1 font-riso-mono text-xs font-bold uppercase tracking-wider border-2 border-carbon ${
-                          item.didWin ? 'bg-riso-blue text-paper' : 'bg-paper text-riso-pink-deep'
+                          item.didWin ? 'bg-riso-blue text-carbon' : 'bg-paper text-riso-pink-deep'
                         }`}
                       >
                         {item.didWin ? 'ZAFER' : 'MAĞLUBİYET'}

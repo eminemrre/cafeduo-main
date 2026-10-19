@@ -3,15 +3,15 @@
 .club-flow,
 .club-games,
 .club-about {
-  background: #fbf7ee;
-  color: #242824;
+  background: #ffffff;
+  color: #17140f;
 }
 .club-container {
   width: min(1180px, calc(100% - 64px));
   margin-inline: auto;
 }
 .club-kicker {
-  font-family: 'Familjen Grotesk', sans-serif;
+  font-family: 'Onest', system-ui, sans-serif;
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.015em;
@@ -21,8 +21,8 @@
   left: 0;
   transform: none;
   width: 100%;
-  background: #fbf7ee;
-  border-bottom: 1px solid #24282425;
+  background: #ffffff;
+  border-bottom: 1px solid #17140f1f;
 }
 .club-nav .duo-nav-bar {
   width: min(1180px, calc(100% - 64px));
@@ -30,7 +30,6 @@
   border: 0;
   border-radius: 0;
   padding: 17px 0;
-  box-shadow: none;
   backdrop-filter: none;
   background: transparent;
 }
@@ -38,26 +37,26 @@
   display: none;
 }
 .club-nav .duo-brand > span {
-  font-family: 'Fraunces Variable', Georgia, serif;
+  font-family: 'Baloo 2', system-ui, sans-serif;
   font-size: 27px;
   font-weight: 650;
   letter-spacing: -0.065em;
 }
 .club-nav .duo-brand > span > span:first-child {
-  color: #be3469;
+  color: #c4265f;
 }
 .club-nav .duo-nav-link {
   font-size: 14px;
   letter-spacing: 0;
   font-weight: 400;
-  border-radius: 2px;
+  border-radius: 0;
 }
 .club-nav .duo-nav-business {
-  border-left: 1px solid #24282425;
+  border-left: 1px solid #17140f1f;
   padding-left: 22px;
 }
 .club-nav .duo-menu-toggle {
-  border-radius: 3px;
+  border-radius: 0;
   background: transparent;
 }
 .club-home {
@@ -73,7 +72,7 @@
   align-items: center;
 }
 .club-intro h1 {
-  font-family: 'Fraunces Variable', Georgia, serif;
+  font-family: 'Baloo 2', system-ui, sans-serif;
   font-size: clamp(55px, 5.8vw, 82px);
   line-height: 1.03;
   font-weight: 450;
@@ -82,14 +81,14 @@
 }
 .club-intro h1 em {
   font-weight: 450;
-  color: #be3469;
+  color: #c4265f;
   white-space: nowrap;
 }
 .club-intro-copy {
   font-size: 18px;
   max-width: 365px;
   line-height: 1.65;
-  color: #50534c;
+  color: #2a251c;
 }
 .club-join {
   display: flex;
@@ -104,10 +103,10 @@
   justify-content: space-between;
   min-height: 48px;
   padding: 12px 19px;
-  background: #d75a85;
+  background: #ff5c8a;
   color: #141413;
-  border: 1px solid #242824;
-  border-radius: 3px;
+  border: 1px solid #17140f;
+  border-radius: 0;
   font-size: 16px;
   font-weight: 600;
   transition: background 0.15s;
@@ -124,11 +123,11 @@
   font-size: 14px;
   text-decoration: underline;
   text-underline-offset: 5px;
-  text-decoration-color: #24282470;
+  text-decoration-color: #17140f70;
 }
 .club-entry-note {
   font-size: 11px;
-  color: #65695f;
+  color: #4a4540;
   margin-top: 14px;
 }
 .club-table-note {
@@ -138,17 +137,17 @@
   max-width: 370px;
   padding-top: 29px;
   margin-top: 42px;
-  border-top: 1px solid #24282425;
+  border-top: 1px solid #17140f1f;
 }
 .club-table-note > span {
-  font-family: Georgia, serif;
+  font-family: 'Baloo 2', system-ui, sans-serif;
   font-size: 35px;
   line-height: 1;
   color: #8d927f;
 }
 .club-table-note p {
   font-size: 13px;
-  color: #65695f;
+  color: #4a4540;
   line-height: 1.6;
 }
 .club-board-preview {
@@ -168,15 +167,15 @@
   font-weight: 600;
 }
 .club-board-label > span:last-child {
-  font-family: 'Fraunces Variable', Georgia, serif;
+  font-family: 'Baloo 2', system-ui, sans-serif;
   font-style: italic;
   font-size: 18px;
 }
 .club-board {
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  border: 1px solid #242824;
-  background: #eee7d6;
+  border: 1px solid #17140f;
+  background: #d9eaef;
   width: 100%;
   aspect-ratio: 1;
 }
@@ -189,7 +188,7 @@
   border: 0;
   border-radius: 0;
   padding: 3px;
-  background: #eee7d6;
+  background: #d9eaef;
 }
 .club-square-dark {
   background: #91a7c6;
@@ -202,16 +201,14 @@
   pointer-events: none;
 }
 .club-square:hover {
-  box-shadow: inset 0 0 0 2px #24282455;
 }
 .club-square:focus-visible {
-  outline: 3px solid #be3469;
+  outline: 3px solid #c4265f;
   outline-offset: -3px;
   z-index: 1;
 }
 .club-square-selected {
-  box-shadow: inset 0 0 0 3px #be3469;
-  background: #edb0c4;
+  background: #ffc2d4;
 }
 .club-square[aria-disabled='true'] {
   cursor: wait;
@@ -221,7 +218,7 @@
   position: absolute;
   font-size: 8px;
   color: #4d554b;
-  font-family: 'JetBrains Mono Variable', monospace;
+  font-family: 'Onest', system-ui, sans-serif;
   line-height: 1;
   pointer-events: none;
 }
@@ -237,9 +234,8 @@
   position: absolute;
   height: 10px;
   width: 10px;
-  border-radius: 50%;
-  background: #be3469;
-  box-shadow: 0 0 0 3px #fbf7ee80;
+  border-radius: 0;
+  background: #c4265f;
   pointer-events: none;
 }
 .club-board-under {
@@ -247,13 +243,13 @@
   align-items: center;
   justify-content: space-between;
   min-height: 47px;
-  border-bottom: 1px solid #24282425;
+  border-bottom: 1px solid #17140f1f;
   gap: 15px;
 }
 .club-notation {
-  font-family: 'JetBrains Mono Variable', monospace;
+  font-family: 'Onest', system-ui, sans-serif;
   font-size: 10px;
-  color: #65695f;
+  color: #4a4540;
   line-height: 1.7;
   max-width: 85%;
   overflow-wrap: anywhere;
@@ -261,7 +257,7 @@
 }
 .club-board-under > button {
   font-size: 11px;
-  color: #50534c;
+  color: #2a251c;
   min-height: 44px;
   padding: 8px 0 8px 8px;
   text-decoration: underline;
@@ -269,13 +265,13 @@
 }
 .club-board-help {
   font-size: 12px;
-  color: #50534c;
+  color: #2a251c;
   margin-top: 13px;
   min-height: 20px;
 }
 .club-board-note {
   font-size: 10px;
-  color: #65695f;
+  color: #4a4540;
   margin-top: 5px;
   line-height: 1.5;
 }
@@ -287,12 +283,12 @@
   justify-content: space-between;
   gap: 20px;
   padding: 24px 0;
-  border-top: 1px solid #24282435;
-  border-bottom: 1px solid #24282435;
+  border-top: 1px solid #17140f24;
+  border-bottom: 1px solid #17140f24;
   font-size: 12px;
 }
 .club-index > span:first-child {
-  font-family: 'Fraunces Variable', Georgia, serif;
+  font-family: 'Baloo 2', system-ui, sans-serif;
   font-style: italic;
   font-size: 20px;
 }
@@ -313,7 +309,7 @@
 .club-flow h2,
 .club-games h2,
 .club-about h2 {
-  font-family: 'Fraunces Variable', Georgia, serif;
+  font-family: 'Baloo 2', system-ui, sans-serif;
   font-size: clamp(37px, 4vw, 51px);
   font-weight: 430;
   line-height: 1.13;
@@ -323,7 +319,7 @@
 .club-flow h2 em,
 .club-games h2 em,
 .club-about h2 em {
-  color: #be3469;
+  color: #c4265f;
 }
 .club-steps {
   list-style: none;
@@ -335,13 +331,13 @@
   grid-template-columns: 48px 1fr;
   gap: 18px;
   padding: 25px 0;
-  border-top: 1px solid #24282425;
+  border-top: 1px solid #17140f1f;
 }
 .club-steps li:last-child {
-  border-bottom: 1px solid #24282425;
+  border-bottom: 1px solid #17140f1f;
 }
 .club-step-number {
-  font-family: 'Fraunces Variable', Georgia, serif;
+  font-family: 'Baloo 2', system-ui, sans-serif;
   font-size: 26px;
   color: #909484;
 }
@@ -352,15 +348,15 @@
 }
 .club-steps p {
   font-size: 15px;
-  color: #65695f;
+  color: #4a4540;
   line-height: 1.6;
   max-width: 440px;
 }
 .club-games {
   padding: 74px 0 96px;
   background: #efeadd;
-  border-top: 1px solid #24282425;
-  border-bottom: 1px solid #24282425;
+  border-top: 1px solid #17140f1f;
+  border-bottom: 1px solid #17140f1f;
 }
 .club-games-heading {
   display: flex;
@@ -371,12 +367,12 @@
 }
 .club-games-heading > p {
   font-size: 15px;
-  color: #65695f;
+  color: #4a4540;
   line-height: 1.7;
   padding-bottom: 7px;
 }
 .club-game-list {
-  border-top: 1px solid #24282465;
+  border-top: 1px solid #17140f65;
 }
 .club-game-row {
   width: 100%;
@@ -385,27 +381,27 @@
   align-items: center;
   gap: 23px;
   text-align: left;
-  border-bottom: 1px solid #24282430;
+  border-bottom: 1px solid #17140f1f;
   padding: 32px 0;
   transition: background 0.15s;
 }
 .club-game-row:hover {
-  background: #24282404;
+  background: #17140f04;
 }
 .club-game-number {
-  font-family: 'JetBrains Mono Variable', monospace;
+  font-family: 'Onest', system-ui, sans-serif;
   font-size: 10px;
-  color: #65695f;
+  color: #4a4540;
 }
 .club-game-mark {
-  font-family: 'Fraunces Variable', Georgia, serif;
+  font-family: 'Baloo 2', system-ui, sans-serif;
   font-size: 51px;
   line-height: 1;
-  color: #234a9b;
+  color: #0e7cc0;
   text-align: center;
 }
 .club-game-row:nth-child(2) .club-game-mark {
-  color: #be3469;
+  color: #c4265f;
   font-style: italic;
 }
 .club-game-row:nth-child(3) .club-game-mark {
@@ -413,12 +409,12 @@
 }
 .club-game-tag {
   font-size: 10px;
-  color: #65695f;
+  color: #4a4540;
   display: block;
   margin-bottom: 5px;
 }
 .club-game-name h3 {
-  font-family: 'Fraunces Variable', Georgia, serif;
+  font-family: 'Baloo 2', system-ui, sans-serif;
   font-size: 28px;
   letter-spacing: -0.03em;
   line-height: 1.2;
@@ -426,13 +422,13 @@
 .club-game-description {
   font-size: 14px;
   line-height: 1.65;
-  color: #50534c;
+  color: #2a251c;
 }
 .club-game-description small {
   display: block;
   font-size: 10px;
   margin-top: 8px;
-  color: #65695f;
+  color: #4a4540;
 }
 .club-game-action {
   display: flex;
@@ -463,7 +459,7 @@
 .club-about-layout > div > p {
   font-size: 16px;
   line-height: 1.7;
-  color: #65695f;
+  color: #4a4540;
   margin-top: 22px;
   max-width: 480px;
 }
@@ -477,28 +473,28 @@
   text-underline-offset: 5px;
 }
 .club-members-note {
-  border: 1px solid #24282430;
+  border: 1px solid #17140f1f;
   padding: 27px;
   transform: rotate(-2deg);
   background: #ede3c8;
 }
 .club-members-note > span {
-  font-family: 'Fraunces Variable', Georgia, serif;
+  font-family: 'Baloo 2', system-ui, sans-serif;
   font-size: 29px;
   letter-spacing: -0.08em;
   padding-bottom: 23px;
   display: block;
-  border-bottom: 1px solid #24282430;
+  border-bottom: 1px solid #17140f1f;
 }
 .club-members-note p {
-  font-family: 'Fraunces Variable', Georgia, serif;
+  font-family: 'Baloo 2', system-ui, sans-serif;
   font-size: 24px;
   line-height: 1.45;
   letter-spacing: -0.02em;
   padding-top: 24px;
 }
 .club-members-note p em {
-  color: #be3469;
+  color: #c4265f;
 }
 @media (max-width: 1080px) {
   .club-spread {
@@ -700,7 +696,7 @@
   inset: 0 0 auto;
   height: 3px;
   z-index: 101;
-  background: linear-gradient(90deg, #be3469, #234a9b);
+  background: linear-gradient(90deg, #c4265f, #0e7cc0);
   transform: scaleX(var(--club-progress));
   transform-origin: left;
   pointer-events: none;
@@ -717,14 +713,14 @@
   gap: 8px;
   min-height: 44px;
   padding: 8px 11px;
-  border: 1px solid #24282430;
-  border-radius: 24px;
+  border: 1px solid #17140f1f;
+  border-radius: 0;
   font-size: 11px;
-  color: #50534c;
-  background: #fbf7ee;
+  color: #2a251c;
+  background: #ffffff;
 }
 .club-motion-control:hover:not(:disabled) {
-  border-color: #be3469;
+  border-color: #c4265f;
 }
 .club-motion-control:disabled {
   cursor: default;
@@ -749,7 +745,7 @@
   overflow: visible;
   pointer-events: none;
   fill: none;
-  stroke: #d75a85;
+  stroke: #ff5c8a;
   stroke-width: 2.5px;
   stroke-linecap: round;
 }
@@ -770,7 +766,7 @@
   position: absolute;
   inset: 6px 0 20px;
   border-radius: 48% 44% 40% 45%;
-  background: #dbe4f3;
+  background: #d9eaef;
   transform: rotate(-4deg);
   z-index: -1;
 }
@@ -778,7 +774,7 @@
   content: '';
   position: absolute;
   inset: 12px;
-  border: 1px solid #234a9b25;
+  border: 1px solid #0e7cc025;
   border-radius: inherit;
 }
 .club-scene-stamp {
@@ -791,10 +787,10 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: #edb0c4;
-  color: #242824;
-  border: 1px solid #be3469;
-  border-radius: 50%;
+  background: #ffc2d4;
+  color: #17140f;
+  border: 1px solid #c4265f;
+  border-radius: 0;
   z-index: 2;
   pointer-events: none;
 }
@@ -802,11 +798,11 @@
   content: '';
   position: absolute;
   inset: 6px;
-  border: 1px dashed #be346975;
-  border-radius: 50%;
+  border: 1px dashed #c4265f75;
+  border-radius: 0;
 }
 .club-scene-stamp > span {
-  font-family: 'Fraunces Variable', Georgia, serif;
+  font-family: 'Baloo 2', system-ui, sans-serif;
   font-size: 30px;
   font-weight: 600;
   letter-spacing: -0.09em;
@@ -824,9 +820,8 @@
   left: -16px;
   bottom: 7px;
   padding: 15px 21px;
-  background: #fbf7ee;
-  border: 1px solid #242824;
-  box-shadow: 4px 4px 0 #234a9b15;
+  background: #ffffff;
+  border: 1px solid #17140f;
   transform: rotate(-5deg);
   z-index: 2;
   pointer-events: none;
@@ -839,8 +834,8 @@
   line-height: 1.5;
 }
 .club-scene-ticket em {
-  font-family: 'Fraunces Variable', Georgia, serif;
-  color: #be3469;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  color: #c4265f;
   font-size: 20px;
 }
 .club-join-button {
@@ -849,10 +844,8 @@
     box-shadow 0.2s;
 }
 .club-join-button:hover {
-  box-shadow: 4px 4px 0 #242824;
 }
 .club-join-button:active {
-  box-shadow: 1px 1px 0 #242824;
 }
 .club-join-button > span {
   transition: transform 0.2s;
@@ -875,9 +868,9 @@
   top: 14px;
   left: 0;
   padding: 16px 25px;
-  background: #234a9b;
-  color: #fff;
-  font-family: 'Fraunces Variable', Georgia, serif;
+  background: #0e7cc0;
+  color: #ffffff;
+  font-family: 'Baloo 2', system-ui, sans-serif;
   font-size: 24px;
   transform: rotate(-6deg);
 }
@@ -889,14 +882,14 @@
   position: absolute;
   top: 92px;
   left: 22px;
-  border: 1px solid #be3469;
-  border-radius: 50%;
+  border: 1px solid #c4265f;
+  border-radius: 0;
   display: grid;
   place-items: center;
   width: 67px;
   height: 67px;
-  background: #edb0c4;
-  color: #242824;
+  background: #ffc2d4;
+  color: #17140f;
   font-size: 40px;
 }
 .club-journey-reward {
@@ -904,27 +897,27 @@
   top: 52px;
   right: 0;
   padding: 21px;
-  border: 1px solid #242824;
-  background: #fbf7ee;
+  border: 1px solid #17140f;
+  background: #ffffff;
   transform: rotate(4deg);
   font-size: 13px;
   line-height: 1.7;
 }
 .club-journey-reward em {
-  color: #be3469;
+  color: #c4265f;
 }
 .club-steps li {
   position: relative;
   transition: border-color 0.2s;
 }
 .club-steps li:hover {
-  border-top-color: #be3469;
+  border-top-color: #c4265f;
 }
 .club-steps li:hover .club-step-number {
-  color: #be3469;
+  color: #c4265f;
 }
 .club-games {
-  background: #dbe4f3;
+  background: #d9eaef;
 }
 .club-game-row {
   position: relative;
@@ -935,17 +928,17 @@
   position: absolute;
   inset: auto 0 -1px;
   height: 2px;
-  background: #234a9b;
+  background: #0e7cc0;
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.3s;
 }
 .club-game-row:nth-child(2)::before {
-  background: #be3469;
+  background: #c4265f;
 }
 .club-game-row:hover,
 .club-game-row:focus-visible {
-  background: #fbf7ee55;
+  background: #ffffff55;
 }
 .club-game-row:hover::before,
 .club-game-row:focus-visible::before {
@@ -964,25 +957,25 @@
   transform: translateX(5px);
 }
 .club-members-note {
-  background: #edb0c4;
+  background: #ffc2d4;
 }
 .club-last-call {
   margin-top: 75px;
   padding-top: 48px;
-  border-top: 1px solid #24282430;
+  border-top: 1px solid #17140f1f;
   display: flex;
   gap: 30px;
   align-items: center;
   justify-content: space-between;
 }
 .club-last-call > p {
-  font-family: 'Fraunces Variable', Georgia, serif;
+  font-family: 'Baloo 2', system-ui, sans-serif;
   font-size: clamp(32px, 3.6vw, 48px);
   letter-spacing: -0.045em;
   line-height: 1.2;
 }
 .club-last-call > p em {
-  color: #be3469;
+  color: #c4265f;
 }
 .club-last-call > div {
   display: grid;
@@ -990,7 +983,7 @@
 }
 .club-last-call > div > span {
   font-size: 11px;
-  color: #65695f;
+  color: #4a4540;
 }
 .club-piece {
   position: absolute;
@@ -1011,7 +1004,7 @@
   background: #d0dcee;
 }
 .club-square-selected {
-  background: #edb0c4;
+  background: #ffc2d4;
 }
 @keyframes club-ticket-float {
   0%,

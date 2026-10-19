@@ -10,6 +10,7 @@ const {
 } = require('../../../utils/gameStateMachine');
 const { mapTransitionError } = require('../utils/errorHelpers');
 const { applyDbSettlement, applyMemorySettlement } = require('../settlementUtils');
+const { rollbackQuietly } = require('../../../utils/transaction');
 
 const createResignGameHandler = (deps) => {
   const {
@@ -45,14 +46,14 @@ const createResignGameHandler = (deps) => {
         );
 
         if (result.rows.length === 0) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(404).json({ error: 'Oyun bulunamadı.' });
         }
 
         const game = result.rows[0];
         const actorParticipant = normalizeParticipantName(actorName, game);
         if (!actorParticipant) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(403).json({ error: 'Bu oyunda teslim olma yetkin yok.' });
         }
         const resignStatus = assertRequiredGameStatus({
@@ -61,13 +62,13 @@ const createResignGameHandler = (deps) => {
           context: 'resign_game',
         });
         if (!resignStatus.ok) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(409).json(mapTransitionError(resignStatus));
         }
 
         const winnerByResign = findOpponentName(actorParticipant, game, getGameParticipants);
         if (!winnerByResign) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res
             .status(409)
             .json({ error: 'Rakip bulunamadığı için teslim işlemi yapılamadı.' });
@@ -79,7 +80,7 @@ const createResignGameHandler = (deps) => {
           context: 'resign_game',
         });
         if (!resignTransition.ok) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(409).json(mapTransitionError(resignTransition));
         }
 
@@ -147,7 +148,7 @@ const createResignGameHandler = (deps) => {
         });
         return res.json({ success: true, winner: winnerByResign, reason: 'resign' });
       } catch (err) {
-        await client.query('ROLLBACK');
+        await rollbackQuietly(client);
         logger.error('Resign game error', err);
         return res.status(500).json({ error: 'Teslim olma işlemi başarısız.' });
       } finally {

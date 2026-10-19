@@ -14,6 +14,7 @@
  */
 // eslint-disable-next-line no-redeclare
 const crypto = require('crypto');
+const { rollbackQuietly } = require('../utils/transaction');
 
 const TOURNAMENT_JOB_INTERVAL_MS = Number(process.env.TOURNAMENT_JOB_INTERVAL_MS || 60_000);
 
@@ -38,13 +39,13 @@ const finalizeOneTournament = async ({ pool, logger, tournamentId, clearCache })
       [tournamentId]
     );
     if (tournamentRes.rows.length === 0) {
-      await client.query('ROLLBACK');
+      await rollbackQuietly(client);
       return;
     }
     const tournament = tournamentRes.rows[0];
     if (tournament.status !== 'finalizing') {
       // Some other tick beat us to it.
-      await client.query('ROLLBACK');
+      await rollbackQuietly(client);
       return;
     }
 
@@ -143,7 +144,7 @@ const finalizeOneTournament = async ({ pool, logger, tournamentId, clearCache })
     }
   } catch (err) {
     try {
-      await client.query('ROLLBACK');
+      await rollbackQuietly(client);
     } catch {
       // ignore — rollback failure is logged below as part of the original error
     }

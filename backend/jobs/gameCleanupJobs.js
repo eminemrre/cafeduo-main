@@ -10,7 +10,14 @@ const registerGameCleanupJobs = ({
   logger,
 }) => {
   // 1) Stale "waiting" games: never joined. Safe to delete entirely.
-  setInterval(async () => {
+  // setInterval ignores the returned promise, so a rejection here would be
+  // unhandled and exit the process; every tick ends in its own catch.
+  const runSafely = (label, job) => () =>
+    Promise.resolve()
+      .then(job)
+      .catch((err) => logger.error(`Cleanup job failed (${label}):`, err));
+
+  setInterval(runSafely('waiting games', async () => {
     logger.info('Running cleanup job for stale waiting games.');
     const thirtyMinutesAgo = new Date(Date.now() - STALE_WAITING_GAME_THRESHOLD_MS).toISOString();
 
@@ -41,13 +48,13 @@ const registerGameCleanupJobs = ({
       logger.info(`Deleted ${deletedCount} stale waiting games from memory.`);
       setMemoryGames(nextGames);
     }
-  }, CLEANUP_INTERVAL_MS);
+  }), CLEANUP_INTERVAL_MS);
 
   // 2) Stuck "active" games: started but never finished (2h+). Force-close.
   // NOTE: We close without running settlement so we never "magically" transfer
   // points based on incomplete data. Operators get a structured warning per
   // stuck row so they can inspect / replay if needed.
-  setInterval(async () => {
+  setInterval(runSafely('stuck games', async () => {
     if (!(await isDbConnected())) return;
 
     try {
@@ -90,7 +97,7 @@ const registerGameCleanupJobs = ({
     } catch (err) {
       logger.error('Cleanup error (stuck games):', err);
     }
-  }, CLEANUP_INTERVAL_MS);
+  }), CLEANUP_INTERVAL_MS);
 };
 
 module.exports = { registerGameCleanupJobs };

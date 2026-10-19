@@ -4,6 +4,7 @@ const { executeDataMode, sendApiError, sendApiProblem } = require('../utils/rout
 // Cache invalidator for GET /rewards — the route is wrapped in cache(600s) so
 // admin create/delete must flush or users see stale catalog for up to 10min.
 const { clearCache } = require('../middleware/cache');
+const { rollbackQuietly } = require('../utils/transaction');
 
 const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
 
@@ -329,7 +330,7 @@ const createCommerceHandlers = ({
         userId,
       ]);
       if (userRes.rows.length === 0) {
-        await client.query('ROLLBACK');
+        await rollbackQuietly(client);
         return sendApiProblem(res, {
           status: 404,
           code: 'USER_NOT_FOUND',
@@ -342,7 +343,7 @@ const createCommerceHandlers = ({
         [requestedRewardId]
       );
       if (rewardRes.rows.length === 0) {
-        await client.query('ROLLBACK');
+        await rollbackQuietly(client);
         return sendApiProblem(res, {
           status: 404,
           code: 'REWARD_NOT_FOUND',
@@ -353,7 +354,7 @@ const createCommerceHandlers = ({
       const reward = rewardRes.rows[0];
       const currentPoints = userRes.rows[0].points;
       if (currentPoints < reward.cost) {
-        await client.query('ROLLBACK');
+        await rollbackQuietly(client);
         return sendApiProblem(res, {
           status: 400,
           code: 'INSUFFICIENT_POINTS',
@@ -399,7 +400,7 @@ const createCommerceHandlers = ({
         }
       }
       if (!redeemRes) {
-        await client.query('ROLLBACK');
+        await rollbackQuietly(client);
         return sendApiError(
           res,
           logger,
@@ -412,7 +413,7 @@ const createCommerceHandlers = ({
       await client.query('COMMIT');
       return res.json({ success: true, newPoints, reward: redeemRes.rows[0] });
     } catch (err) {
-      await client.query('ROLLBACK');
+      await rollbackQuietly(client);
       return sendApiError(res, logger, 'Shop buy error', err, 'İşlem başarısız.');
     } finally {
       client.release();
@@ -744,7 +745,7 @@ const createCommerceHandlers = ({
       // Confirm the cafe exists before we burn a daily-spin slot for it.
       const cafeRes = await client.query(`SELECT id FROM cafes WHERE id = $1`, [cafeId]);
       if (cafeRes.rows.length === 0) {
-        await client.query('ROLLBACK');
+        await rollbackQuietly(client);
         return sendApiProblem(res, {
           status: 404,
           code: 'CAFE_NOT_FOUND',
@@ -821,7 +822,7 @@ const createCommerceHandlers = ({
           spin: spinRes.rows[0],
         });
       } catch (err) {
-        await client.query('ROLLBACK');
+        await rollbackQuietly(client);
         if (err && err.code === '23505') {
           return sendApiProblem(res, {
             status: 409,

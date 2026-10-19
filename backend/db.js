@@ -26,6 +26,8 @@ const useSslByDefault = process.env.NODE_ENV === 'production' && !isLocalHost(re
 const useSsl = explicitSsl ?? useSslByDefault;
 const sslRejectUnauthorized = parseBool(process.env.DB_SSL_REJECT_UNAUTHORIZED) ?? false;
 
+const logger = require('./utils/logger');
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: useSsl ? { rejectUnauthorized: sslRejectUnauthorized } : false,
@@ -66,7 +68,6 @@ pool.on('acquire', () => {
   });
 });
 
-const logger = require('./utils/logger');
 const DB_STATUS_CACHE_MS = Number(process.env.DB_STATUS_CACHE_MS || 5000);
 
 const dbStatusCache = {

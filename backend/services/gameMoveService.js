@@ -1,5 +1,6 @@
 const { Chess } = require('chess.js');
 const { GAME_STATUS } = require('../utils/gameStateMachine');
+const { rollbackQuietly } = require('../utils/transaction');
 
 const createGameMoveService = ({
   pool,
@@ -106,7 +107,7 @@ const createGameMoveService = ({
         );
 
         if (gameResult.rows.length === 0) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(404).json({ error: 'Oyun bulunamadı.' });
         }
 
@@ -115,7 +116,7 @@ const createGameMoveService = ({
         const actorParticipant = normalizeParticipantName(actorName, game);
         const adminActor = isAdminActor(req.user);
         if (!actorParticipant && !adminActor) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
         }
 
@@ -124,7 +125,7 @@ const createGameMoveService = ({
 
         if (chessMove) {
           if (!isChessGameType(game.game_type)) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.status(400).json({ error: 'Bu oyun türü satranç hamlesi kabul etmiyor.' });
           }
 
@@ -134,7 +135,7 @@ const createGameMoveService = ({
             context: 'chess_move',
           });
           if (!chessMoveStatus.ok) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.status(409).json(mapTransitionError(chessMoveStatus));
           }
 
@@ -144,13 +145,13 @@ const createGameMoveService = ({
               : 'w'
             : resolveParticipantColor(actorParticipant, game);
           if (resolvedColor !== 'w' && resolvedColor !== 'b') {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.status(403).json({ error: 'Bu satranç oyunu için hamle yetkin yok.' });
           }
 
           const safeMove = sanitizeChessMovePayload(chessMove);
           if (!safeMove) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.status(400).json({ error: 'Geçersiz satranç hamlesi formatı.' });
           }
 
@@ -234,7 +235,7 @@ const createGameMoveService = ({
           }
 
           if (chess.turn() !== resolvedColor) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.status(409).json({ error: 'Sıra sende değil.' });
           }
 
@@ -247,7 +248,7 @@ const createGameMoveService = ({
             appliedMove = null;
           }
           if (!appliedMove) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.status(400).json({ error: 'Yasadışı hamle.' });
           }
 
@@ -319,7 +320,7 @@ const createGameMoveService = ({
             context: 'chess_move',
           });
           if (!chessTransition.ok) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.status(409).json(mapTransitionError(chessTransition));
           }
           const moveSan = String(appliedMove.san || '').slice(0, 64);
@@ -378,17 +379,17 @@ const createGameMoveService = ({
             context: 'live_submission',
           });
           if (!liveSubmissionStatus.ok) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.status(409).json(mapTransitionError(liveSubmissionStatus));
           }
           if (!actorParticipant) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
           }
 
           const safeLive = sanitizeLiveSubmission(liveSubmission);
           if (safeLive.mode && safeLive.mode !== String(game.game_type || '').trim()) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.status(400).json({ error: 'Canlı ilerleme oyun türü eşleşmiyor.' });
           }
 
@@ -406,7 +407,7 @@ const createGameMoveService = ({
           const incomingLiveKey = normalizeSubmissionKey(safeLive.submissionKey);
           const existingLiveKey = normalizeSubmissionKey(currentActorSubmission?.submissionKey);
           if (incomingLiveKey && existingLiveKey && incomingLiveKey === existingLiveKey) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             const participants = getGameParticipants(game);
             const waitingFor = participants.filter((name) => !currentSubmissions[name]?.done);
             const resolvedWinner = participants.every((name) =>
@@ -486,12 +487,12 @@ const createGameMoveService = ({
             context: 'score_submission',
           });
           if (!scoreSubmissionStatus.ok) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.status(409).json(mapTransitionError(scoreSubmissionStatus));
           }
 
           if (!actorParticipant) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
           }
 
@@ -512,7 +513,7 @@ const createGameMoveService = ({
           const incomingScoreKey = normalizeSubmissionKey(incomingScoreSubmission?.submissionKey);
           const existingScoreKey = normalizeSubmissionKey(currentActorScore?.submissionKey);
           if (incomingScoreKey && existingScoreKey && incomingScoreKey === existingScoreKey) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             const participants = getGameParticipants(game);
             const resolvedWinner = pickWinnerFromResults(currentResults, participants);
             return res.json({
@@ -568,7 +569,7 @@ const createGameMoveService = ({
             context: 'game_state_update',
           });
           if (!gameStateUpdateStatus.ok) {
-            await client.query('ROLLBACK');
+            await rollbackQuietly(client);
             return res.status(409).json(mapTransitionError(gameStateUpdateStatus));
           }
 
@@ -604,7 +605,7 @@ const createGameMoveService = ({
           context: 'legacy_move',
         });
         if (!legacyMoveStatus.ok) {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(409).json(mapTransitionError(legacyMoveStatus));
         }
 
@@ -628,7 +629,7 @@ const createGameMoveService = ({
               : null;
 
         if (resolvedPlayer !== 'host' && resolvedPlayer !== 'guest') {
-          await client.query('ROLLBACK');
+          await rollbackQuietly(client);
           return res.status(403).json({ error: 'Bu hamleyi yapmaya yetkin yok.' });
         }
 
@@ -646,7 +647,7 @@ const createGameMoveService = ({
         });
         return res.json({ success: true });
       } catch (err) {
-        await client.query('ROLLBACK');
+        await rollbackQuietly(client);
         logger.error('Game move update error', err);
         return res.status(500).json({ error: 'Hamle kaydedilemedi.' });
       } finally {

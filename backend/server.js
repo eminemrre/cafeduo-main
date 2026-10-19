@@ -74,6 +74,10 @@ if (process.env.SENTRY_DSN) {
 
 // Core dependencies
 const express = require('express');
+const { installAsyncRouteErrors } = require('./middleware/asyncRouteErrors');
+
+// Async route rejections must reach handleApiError instead of killing the process.
+installAsyncRouteErrors();
 const http = require('http');
 const cors = require('cors');
 const cookie = require('cookie');
@@ -1325,4 +1329,7 @@ initDb().then(async () => {
   });
 
   startServer(PORT);
+}).catch((err) => {
+  logger.error('CRITICAL: Server failed to start', err);
+  process.exit(1);
 });

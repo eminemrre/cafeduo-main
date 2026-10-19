@@ -166,7 +166,7 @@ describe('API branch coverage', () => {
         },
       });
 
-      await expect(api.games.list()).rejects.toThrow('HTTP 502');
+      await expect(api.games.list()).rejects.toThrow('Sunucuya şu an ulaşılamıyor. Birkaç saniye sonra tekrar dene.');
     });
 
     it('adds retry hint for 429 with retry-after header', async () => {

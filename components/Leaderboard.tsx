@@ -8,7 +8,7 @@ import { AvatarImage } from './ui/AvatarImage';
 import React, { useState, useEffect, useCallback } from 'react';
 import { Trophy, Medal } from 'lucide-react';
 import { PAU_DEPARTMENTS } from '../constants';
-import { Card, Select, Squiggle } from './ui';
+import { Card, Select, } from './ui';
 
 interface LeaderboardUser {
   id: number;
@@ -92,7 +92,6 @@ export const Leaderboard: React.FC = () => {
             Liderlik Tablosu
           </h2>
           <div className="mt-1 h-2 w-32">
-            <Squiggle tone="mustard" />
           </div>
         </div>
 

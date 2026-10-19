@@ -462,7 +462,7 @@ export const MapLocationPicker: React.FC<MapLocationPickerProps> = ({
                 <Leaflet.Circle
                   center={secondaryCoords}
                   radius={Math.max(10, Number(secondaryRadius) || 150)}
-                  pathOptions={{ color: '#FF3E94', fillColor: '#FF3E94', fillOpacity: 0.15 }}
+                  pathOptions={{ color: '#ff5c8a', fillColor: '#ff5c8a', fillOpacity: 0.15 }}
                 />
               </>
             )}

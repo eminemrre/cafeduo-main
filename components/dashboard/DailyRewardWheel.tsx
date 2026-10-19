@@ -81,15 +81,14 @@ function wedgePath(startDeg: number, endDeg: number, radius = SLICE_R): string {
   return `M${CX},${CY} L${s.x.toFixed(2)},${s.y.toFixed(2)} A${radius},${radius} 0 ${largeArc} 1 ${e.x.toFixed(2)},${e.y.toFixed(2)} Z`;
 }
 
-// Friendly, saturated palette in the spirit of the reference wheel:
-// teal, blue, orange, pink, purple, green. Labels are white for contrast.
+// The candy set from DESIGN.md. Labels sit on candy, so they read in ink.
 const SLICE_FILL = [
-  '#1fc7a3', // teal
-  '#2e7dd1', // blue
-  '#f5a623', // orange
-  '#e9258c', // pink
-  '#7b5cd6', // purple
-  '#5bc25a', // green
+  '#1fb3ff', // gok
+  '#ffd23f', // limon
+  '#ff5c8a', // lokum
+  '#b6d31b', // fistik
+  '#0e7cc0', // gok-deep
+  '#e03a6b', // lokum-deep
 ];
 
 export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
@@ -268,23 +267,23 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
           <Gift size={20} className="text-carbon" />
         </div>
         <div className="min-w-0">
-          <p className="font-riso-mono text-[10px] uppercase tracking-[0.18em] text-carbon-muted font-bold">
+          <p className="font-riso-mono text-xs text-carbon-muted font-bold">
             Günün Çarkı
           </p>
-          <h3 className="font-riso-display text-lg sm:text-xl text-carbon uppercase tracking-[0.04em] leading-tight">
+          <h3 className="font-riso-display text-xl text-carbon leading-tight sm:text-2xl">
             {status?.cafeName ? `${status.cafeName}` : 'Bu Kafenin Çarkı'}
           </h3>
         </div>
       </div>
 
       {loading && (
-        <div className="border-2 border-carbon border-dashed bg-paper-deep p-6 text-center font-riso-mono text-xs uppercase tracking-wider text-carbon-muted animate-pulse">
+        <div className="bg-paper-deep p-6 text-center font-riso-mono text-xs text-carbon-muted animate-pulse">
           Çark yükleniyor...
         </div>
       )}
 
       {error && !loading && (
-        <div className="border-2 border-carbon border-l-[6px] border-l-riso-redox bg-riso-redox/15 p-3 text-xs text-carbon font-riso-body mb-3">
+        <div className="bg-riso-redox/15 p-3 text-xs text-carbon font-riso-body mb-3">
           {error}
         </div>
       )}
@@ -302,7 +301,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
                   aria-hidden="true"
                 >
                   <circle cx={CX} cy={CY} r={RING_OUTER} fill={RING_COLOR} />
-                  <circle cx={CX} cy={CY} r={RING_INNER} fill="#ffffff" />
+                  <circle cx={CX} cy={CY} r={RING_INNER} fill="#17140f" />
                 </svg>
 
                 {/* Rotating wheel face — equal coloured slices + labels. */}
@@ -341,7 +340,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
                           dominantBaseline="middle"
                           className="font-riso-display"
                           style={{ fontSize: `${g.fontSize}px`, fontWeight: 800 }}
-                          fill="#ffffff"
+                          fill="#17140f"
                         >
                           {g.label}
                         </text>
@@ -360,13 +359,13 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
                     cx={CX}
                     cy={CY}
                     r={HUB_R}
-                    fill="#ffffff"
+                    fill="#17140f"
                     stroke={RING_COLOR}
                     strokeWidth={2}
                   />
                   <path
                     d={`M88,5 L112,5 L100,32 Z`}
-                    fill="#ffffff"
+                    fill="#17140f"
                     stroke={RING_COLOR}
                     strokeWidth={2}
                     strokeLinejoin="round"
@@ -383,11 +382,11 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
                       className="absolute inset-0 flex items-center justify-center pointer-events-none z-20"
                     >
                       {justGift !== null ? (
-                        <div className="border-4 border-carbon bg-riso-mustard text-carbon px-4 py-2 font-riso-display text-lg sm:text-xl font-bold riso-shadow-md rotate-[-4deg] text-center flex items-center gap-2">
+                        <div className="bg-riso-mustard text-carbon px-4 py-2 font-riso-display text-lg font-bold sm:text-xl text-center flex items-center gap-2">
                           <Gift size={20} /> {justGift.toUpperCase()}
                         </div>
                       ) : (
-                        <div className="border-4 border-carbon bg-riso-spring text-carbon px-4 py-2 font-riso-display text-2xl font-bold riso-shadow-md rotate-[-4deg]">
+                        <div className="bg-riso-spring text-carbon px-4 py-2 font-riso-display text-2xl font-bold">
                           +{justWon} PUAN
                         </div>
                       )}
@@ -396,7 +395,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
                 </AnimatePresence>
               </>
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center border-2 border-dashed border-carbon bg-paper-deep text-carbon-muted font-riso-mono text-xs rounded-full">
+              <div className="absolute inset-0 flex items-center justify-center bg-paper-deep text-carbon-muted font-riso-mono text-xs">
                 Henüz dilim yok
               </div>
             )}
@@ -406,7 +405,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
               when the user just won a coupon, since the points balance
               didn't change. */}
           {justGift && (
-            <div className="mb-3 border-2 border-carbon border-l-[6px] border-l-riso-mustard bg-riso-mustard/20 p-3 text-xs text-carbon font-riso-body">
+            <div className="mb-3 bg-riso-mustard/20 p-3 text-xs text-carbon font-riso-body">
               <strong>Tebrikler!</strong> {justGift} kuponun envanterine eklendi. Kasada QR kodu
               okutarak teslim alabilirsin.
             </div>
@@ -418,7 +417,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
             onClick={handleSpin}
             disabled={spinning || status.alreadySpunToday || slices.length === 0}
             data-testid="wheel-spin-button"
-            className="duo-button riso-focus w-full border-2 border-carbon bg-riso-pink text-carbon py-3 px-4 font-riso-display text-sm sm:text-base font-bold uppercase tracking-[0.12em] riso-shadow-sm flex items-center justify-center gap-2 transition-all hover:-translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+            className="duo-button riso-focus w-full bg-riso-pink text-carbon py-3 px-4 font-riso-display text-base font-bold flex items-center justify-center gap-2 transition-transform hover:-translate-y-[1px] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
           >
             <RotateCw size={18} className={spinning ? 'animate-spin' : ''} />
             {spinning
@@ -431,7 +430,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
           </button>
 
           {!status.alreadySpunToday && slices.length > 0 && (
-            <p className="text-[11px] text-carbon-muted mt-2 text-center font-riso-mono uppercase tracking-wider">
+            <p className="text-xs text-carbon-muted mt-2 text-center font-riso-mono">
               Günde 1 kez, her kafede ayrı
             </p>
           )}

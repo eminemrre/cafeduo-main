@@ -9,7 +9,7 @@ import React, { useState, useEffect } from 'react';
 import { Trophy, Lock, Star, Footprints, Gamepad2, Crown, Coins } from 'lucide-react';
 import { api } from '../lib/api';
 import type { Achievement } from '../types';
-import { Card, Squiggle } from './ui';
+import { Card, } from './ui';
 
 interface AchievementsProps {
   userId: string | number;
@@ -90,7 +90,6 @@ export const Achievements: React.FC<AchievementsProps> = ({ userId }) => {
         </p>
         <h2 className="mt-1.5 font-riso-display text-2xl text-carbon sm:text-3xl">Başarımlar</h2>
         <div className="mt-1 h-2 w-28">
-          <Squiggle tone="pink" />
         </div>
       </div>
 

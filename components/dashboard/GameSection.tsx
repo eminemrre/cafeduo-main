@@ -263,7 +263,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
                   key={item.id}
                   className="bg-paper border-l-4 border-y border-r border-carbon p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-transform hover:translate-x-2"
                   style={{
-                    borderLeftColor: item.didWin ? '#5BC25A' : '#FF3E94',
+                    borderLeftColor: item.didWin ? '#b6d31b' : '#ff5c8a',
                   }}
                 >
                   <div className="flex-1 min-w-0">

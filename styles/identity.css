@@ -551,3 +551,8 @@ html::-webkit-scrollbar-thumb {
 [class*='shadow-']:not([class~='fixed']):not([class~='absolute']):not([class~='sticky']) {
   box-shadow: none;
 }
+
+/* Dashed outlines become the language's perforation. */
+[class*='border-dashed'] {
+  border-style: dotted;
+}

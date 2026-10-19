@@ -19,7 +19,6 @@
  */
 import React, { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Cookie, X } from 'lucide-react';
 
 const CONSENT_KEY = 'cookie_consent';
 
@@ -102,53 +101,26 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({ variant = 'default
       aria-label="Çerez bildirimi"
       className="riso-kantin pointer-events-none fixed bottom-4 left-4 right-4 z-[130] sm:left-auto sm:right-6 sm:bottom-6 sm:w-[24rem]"
     >
-      <div className="duo-cookie-card pointer-events-auto relative border-2 border-carbon bg-paper p-4 riso-shadow-md">
-        {/* Sticker accent */}
-        <div
-          aria-hidden="true"
-          className="absolute -top-2 right-6 h-2 w-12 bg-riso-mustard rotate-[-4deg] pointer-events-none hidden sm:block"
-        />
-        <button
-          type="button"
-          onClick={handleReject}
-          aria-label="Reddet ve kapat"
-          className="riso-focus absolute top-2 right-2 w-7 h-7 border-2 border-carbon bg-paper text-carbon hover:bg-paper-deep flex items-center justify-center"
-        >
-          <X size={14} />
-        </button>
-        <div className="flex items-start gap-3">
-          <div className="shrink-0 border-2 border-carbon bg-riso-mustard p-2 text-carbon flex">
-            <Cookie size={18} />
-          </div>
-          <div className="min-w-0 flex-1 pr-6">
-            <p className="mb-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-carbon-muted font-riso-mono">
-              Küçük bir bilgi
-            </p>
-            <h2 className="mb-1 font-riso-body text-[15px] font-semibold text-carbon">
-              Çerez Kullanımı
-            </h2>
-            <p className="mb-3 break-words text-xs leading-5 text-carbon-soft font-riso-body">
-              Giriş yapmak için çerezleri kabul etmen gerekir. Sadece anasayfayı gezeceksen
-              reddedebilirsin.
-            </p>
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={handleReject}
-                className="riso-focus flex-1 border-2 border-carbon bg-paper-deep text-carbon py-2 text-xs font-bold uppercase tracking-[0.08em] font-riso-display transition-all hover:bg-paper-dim"
-              >
-                Reddet
-              </button>
-              <button
-                type="button"
-                onClick={handleAccept}
-                className="riso-focus riso-press flex-1 border-2 border-carbon bg-riso-pink text-carbon py-2 text-xs font-bold uppercase tracking-[0.1em] font-riso-display transition-all riso-shadow-sm hover:-translate-y-[1px]"
-              >
-                Kabul Et
-              </button>
-            </div>
-          </div>
+      <div className="duo-cookie-card pointer-events-auto relative bg-paper p-4">
+        <h2 className="mb-1 font-riso-display text-[1.75rem] leading-none text-carbon">Çerezler</h2>
+        <p className="mb-4 break-words text-[0.9375rem] leading-6 text-carbon font-riso-body">
+          Giriş için çerez onayı gerekir. Yalnızca gezeceksen reddedebilirsin.
+        </p>
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={handleReject}
+            className="riso-focus min-h-11 bg-paper-deep px-4 text-[0.9375rem] font-semibold text-carbon font-riso-body transition-colors hover:bg-paper-dim"
+          >
+            Reddet
+          </button>
+          <button
+            type="button"
+            onClick={handleAccept}
+            className="riso-focus min-h-11 bg-riso-pink px-4 text-[0.9375rem] font-semibold text-carbon font-riso-body transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
+          >
+            Kabul et
+          </button>
         </div>
       </div>
     </div>,

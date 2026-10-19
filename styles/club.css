@@ -38,12 +38,9 @@
 }
 .club-nav .duo-brand > span {
   font-family: 'Baloo 2', system-ui, sans-serif;
-  font-size: 27px;
-  font-weight: 650;
-  letter-spacing: -0.065em;
-}
-.club-nav .duo-brand > span > span:first-child {
-  color: #c4265f;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 .club-nav .duo-nav-link {
   font-size: 14px;

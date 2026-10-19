@@ -170,6 +170,8 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                   <div className="flex items-center gap-2">
                     <select
                       aria-label="Bölüm"
+                      // Shown only after the user presses edit, so focus moves to the control they asked for.
+                      // eslint-disable-next-line jsx-a11y/no-autofocus
                       autoFocus
                       disabled={loading}
                       value={department}

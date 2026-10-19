@@ -410,16 +410,24 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
               {/* Chess tempo (conditional) */}
               {gameType === 'Retro Satranç' && (
                 <div>
-                  <label className="block font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.18em] text-carbon-soft mb-2">
+                  <span
+                    id="create-game-chess-tempo"
+                    className="block font-riso-mono text-[0.7rem] font-bold uppercase tracking-[0.18em] text-carbon-soft mb-2"
+                  >
                     SATRANÇ TEMPOSU
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
+                  </span>
+                  <div
+                    role="group"
+                    aria-labelledby="create-game-chess-tempo"
+                    className="grid grid-cols-2 gap-2"
+                  >
                     {CHESS_TEMPO_OPTIONS.map((tempo) => {
                       const active = chessTempoId === tempo.id;
                       return (
                         <button
                           key={tempo.id}
                           type="button"
+                          aria-pressed={active}
                           onClick={() => setChessTempoId(tempo.id)}
                           className={`riso-focus px-3 py-2 font-riso-body text-sm font-bold border-2 border-carbon transition-colors ${
                             active

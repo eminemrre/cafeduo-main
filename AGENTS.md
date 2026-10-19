@@ -171,5 +171,11 @@ npm run migrate:status   # when touching migrations
   requests when Redis fails (recommended in production).
 - **PWA is enabled**: `vite-plugin-pwa` generates a service worker with `registerType:
   'autoUpdate'` (`vite.config.ts`), so a deploy reaches open clients on their next load.
+- **Toy fallbacks carry labels in the display face**: `public/landing/toys/*.webp` are stills of
+  the Three.js scene, rendered through the dev-only page `toy-render.html` (git-excluded via
+  `.git/info/exclude`, so recreate it when missing; it must import `@fontsource/baloo-2/800.css`
+  and wait for `document.fonts.load('100px "Baloo 2"')`). Re-render them whenever the display
+  face or its weight changes — `toy-render.html?layout=single&only=knight`, sized 720×720 with
+  `deviceScaleFactor: 2`, converted with `magick <png> -quality 84 <webp>`.
 - **Production images install without dev dependencies**, so `prepare` must stay
   `husky || true`.

@@ -56,7 +56,7 @@ export const Achievements: React.FC<AchievementsProps> = ({ userId }) => {
 
   if (loading) {
     return (
-      <Card tone="paper" shadow="md">
+      <Card tone="paper">
         <p
           aria-busy="true"
           aria-live="polite"
@@ -70,7 +70,7 @@ export const Achievements: React.FC<AchievementsProps> = ({ userId }) => {
 
   if (error) {
     return (
-      <Card tone="paper" shadow="md">
+      <Card tone="paper">
         <p
           role="alert"
           aria-live="polite"
@@ -83,7 +83,7 @@ export const Achievements: React.FC<AchievementsProps> = ({ userId }) => {
   }
 
   return (
-    <Card tone="paper" shadow="md" data-testid="achievements-card">
+    <Card tone="paper" data-testid="achievements-card">
       <h2 className="mb-5 font-riso-display text-[32px] leading-none text-carbon sm:text-[40px]">
         Başarımlar
       </h2>

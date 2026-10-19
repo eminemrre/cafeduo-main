@@ -3,7 +3,6 @@ import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router'
 import { Navbar } from './components/Navbar';
 import { LandingExperience } from './components/LandingExperience';
 import { ClubLanding, LandingFooter, LandingHeader } from './components/landing/ClubLanding';
-import { Footer } from './components/Footer';
 import { AuthModal } from './components/AuthModal';
 
 import { User, UserProfileUpdates } from './types';
@@ -15,7 +14,6 @@ import { CafeSelection } from './components/CafeSelection';
 import { CookieConsent } from './components/CookieConsent';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { DecodeText } from './components/ui/DecodeText';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
 
@@ -54,15 +52,8 @@ const PageLoader = () => (
     aria-label="Sayfa yükleniyor"
     className="min-h-screen flex flex-col items-center justify-center text-carbon"
   >
-    <div
-      aria-hidden="true"
-      className="w-14 h-14 border-4 border-carbon border-t-transparent rounded-full animate-spin"
-    ></div>
-    <DecodeText
-      text="YÜKLENİYOR"
-      className="mt-4 font-riso-mono text-[11px] uppercase tracking-[0.3em] text-carbon-muted"
-      data-testid="page-loader-decode"
-    />
+    <div aria-hidden="true" className="h-10 w-10 border-4 border-carbon border-t-transparent animate-spin" />
+    <p className="mt-4 text-[0.9375rem] text-carbon-soft">Yükleniyor…</p>
   </div>
 );
 
@@ -194,7 +185,7 @@ const AppContent: React.FC = () => {
 
     // Check for Daily Bonus
     if (userData.bonusReceived) {
-      toast.success('🎉 Günlük giriş ödülü: 10 PUAN!');
+      toast.success('Günlük giriş ödülü: 10 puan');
     } else {
       toast.success(`Hoş geldin, ${userData.username}!`);
     }
@@ -369,7 +360,7 @@ const AppContent: React.FC = () => {
         </Suspense>
       </main>
 
-      {isPublicPage ? <LandingFooter /> : <Footer />}
+      <LandingFooter />
 
       <AuthModal
         isOpen={isAuthOpen}

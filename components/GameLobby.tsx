@@ -135,7 +135,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                     ) : (
                       <div className="flex items-center gap-4 w-full sm:w-auto">
                         <span className="bg-paper px-3 py-1.5 text-[15px] font-semibold text-carbon">
-                          <span className="duo-sentence">SENİN LOBİN</span>
+                          Senin lobin
                         </span>
                         <button
                           onClick={() => onCancelGame(req.id)}

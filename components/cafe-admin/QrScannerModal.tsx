@@ -59,16 +59,16 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
       aria-label="Kupon QR kodunu okut"
       className="riso-kantin fixed inset-0 z-[150] flex items-center justify-center p-4"
     >
-      <div className="absolute inset-0 bg-carbon/75" onClick={onClose} />
+      <div className="absolute inset-0 bg-carbon/80" onClick={onClose} aria-hidden="true" />
 
       <div
-        className="relative w-full max-w-md bg-paper overflow-hidden"
+        className="duo-float relative w-full max-w-md bg-paper overflow-hidden"
         data-testid="qr-scanner-modal"
       >
         {/* Header */}
         <div className="px-5 py-4 border-b-[3px] border-dotted border-carbon/35 flex items-start justify-between gap-3">
           <div className="min-w-0 flex items-center gap-2">
-            <Camera size={18} className="text-riso-blue shrink-0" />
+            <Camera size={18} className="text-carbon shrink-0" aria-hidden="true" />
             <div>
               <h3 className="font-riso-body text-base sm:text-lg text-carbon">
                 QR Kodu Okut
@@ -79,7 +79,7 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
             type="button"
             onClick={onClose}
             aria-label="Kapat"
-            className="riso-focus shrink-0 w-9 h-9 bg-paper text-carbon hover:bg-riso-redox hover:text-paper flex items-center justify-center transition-colors"
+            className="riso-focus shrink-0 w-11 h-11 bg-paper-deep text-carbon hover:bg-carbon hover:text-paper flex items-center justify-center transition-colors"
           >
             <X size={18} />
           </button>
@@ -148,7 +148,7 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
           <button
             type="button"
             onClick={onClose}
-            className="riso-focus bg-paper-deep text-carbon py-2 font-riso-body text-xs font-bold hover:bg-paper-dim transition-colors"
+            className="riso-focus min-h-11 bg-paper-deep text-carbon font-riso-body text-[0.9375rem] font-semibold hover:bg-paper-dim transition-colors"
           >
             Manuel Girişe Dön
           </button>

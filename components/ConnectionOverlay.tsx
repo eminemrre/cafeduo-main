@@ -47,7 +47,7 @@ export const ConnectionOverlay: React.FC<ConnectionOverlayProps> = () => {
   if (isConnected || !showReconnecting) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-carbon/60">
+    <div className="fixed inset-0 z-[130] flex items-center justify-center bg-carbon/70">
       <div role="alert" className="duo-float mx-4 max-w-sm bg-paper p-6 text-carbon">
         <h3 className="mb-2 font-riso-display text-[28px] leading-none">Bağlantı kesildi</h3>
         <p className="mb-5 font-riso-body text-[15px] text-carbon-muted">

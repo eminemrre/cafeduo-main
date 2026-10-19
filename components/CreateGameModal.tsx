@@ -490,7 +490,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
             >
               {isSubmitting ? (
                 <span className="inline-flex items-center gap-2">
-                  <span className="inline-block h-4 w-4 animate-spin border-2 border-carbon/30 border-t-carbon rounded-full" />
+                  <span className="inline-block h-4 w-4 animate-spin border-2 border-carbon/30 border-t-carbon" />
                   Oluşturuluyor...
                 </span>
               ) : (

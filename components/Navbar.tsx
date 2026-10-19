@@ -12,7 +12,6 @@ import { useLocation, useNavigate } from 'react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import { NAV_ITEMS } from '../constants';
 import { DURATION, EASE } from '../lib/motion';
-import { HoverUnderline } from './ui/HoverUnderline';
 import { menuBackdrop, menuItem, menuPanel } from './ui/motionVariants';
 import type { User } from '../types';
 
@@ -102,7 +101,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                     onClick={() => scrollToSection(item.id)}
                     className="duo-nav-link riso-focus"
                   >
-                    <HoverUnderline>{item.label}</HoverUnderline>
+                    {item.label}
                   </button>
                 ))}
                 <button
@@ -192,7 +191,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
               aria-hidden={false}
             >
               <motion.div variants={menuItem} className="flex items-center justify-between">
-                <span className="font-riso-display text-lg text-carbon">Menü</span>
+                <span className="font-riso-display text-[1.75rem] leading-none text-carbon">Menü</span>
                 {!isLoggedIn && <Bell size={18} className="text-carbon-muted" />}
               </motion.div>
               {!isLoggedIn ? (
@@ -202,7 +201,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                       key={item.id}
                       variants={menuItem}
                       onClick={() => scrollToSection(item.id)}
-                      className="riso-focus flex items-center justify-between border-b-2 border-paper-dim py-3 font-riso-body text-base font-semibold text-carbon transition-colors hover:text-riso-pink-deep"
+                      className="riso-focus flex items-center justify-between border-b-[3px] border-dotted border-carbon/25 py-3 font-riso-body text-base font-semibold text-carbon transition-colors hover:text-riso-pink-deep"
                     >
                       {item.label}
                       <ChevronRight size={20} className="text-carbon-muted" />
@@ -225,7 +224,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                   {user && !isHomePage && (
                     <motion.div
                       variants={menuItem}
-                      className="flex items-center justify-between border-b-2 border-paper-dim py-3 font-riso-body text-base font-semibold text-carbon"
+                      className="flex items-center justify-between border-b-[3px] border-dotted border-carbon/25 py-3 font-riso-body text-base font-semibold text-carbon"
                     >
                       <span className="flex items-center gap-2">
                         <Wallet size={20} /> Cüzdan

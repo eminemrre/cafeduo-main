@@ -42,17 +42,15 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
       <div className="riso-kantin fixed inset-0 z-[125] flex items-center justify-center px-3 py-4 sm:px-4 sm:py-6">
         <div className="absolute inset-0 bg-carbon/80" onClick={onClose} aria-hidden="true" />
 
-        <div className="relative z-10 w-full max-w-md max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)] flex flex-col bg-paper border-2 border-carbon riso-shadow-md">
-          <div className="shrink-0 flex items-center justify-between border-b-2 border-carbon px-5 py-3">
-            <h3 className="font-riso-display text-lg uppercase tracking-widest text-carbon">
-              Avatar Seç
-            </h3>
+        <div className="duo-float relative z-10 w-full max-w-md max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)] flex flex-col bg-paper">
+          <div className="shrink-0 flex items-center justify-between border-b-[3px] border-dotted border-carbon/35 px-5 py-4">
+            <h3 className="font-riso-display text-[1.75rem] leading-none text-carbon">Avatar seç</h3>
             <button
               ref={closeButton}
               type="button"
               onClick={onClose}
               aria-label="Kapat"
-              className="riso-focus inline-flex h-11 w-11 items-center justify-center border-2 border-carbon bg-paper text-carbon hover:bg-paper-deep transition-colors"
+              className="riso-focus inline-flex h-11 w-11 items-center justify-center bg-paper-deep text-carbon hover:bg-carbon hover:text-paper transition-colors"
             >
               <X size={16} strokeWidth={2.5} />
             </button>
@@ -61,7 +59,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
           {error && (
             <p
               role="alert"
-              className="shrink-0 px-5 py-3 text-sm text-carbon border-l-2 border-riso-redox"
+              className="shrink-0 bg-riso-redox/10 px-5 py-3 text-sm text-carbon"
             >
               {error}
             </p>
@@ -69,7 +67,7 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
           <div className="min-h-0 overflow-y-auto overscroll-contain p-5" aria-busy={saving}>
             <p
               role={saving ? 'status' : undefined}
-              className="mb-3 min-h-8 font-riso-mono text-xs uppercase tracking-[0.16em] text-carbon-soft"
+              className="mb-3 min-h-8 text-[0.8125rem] text-carbon-soft"
             >
               {saving ? 'Avatar kaydediliyor…' : '16 avatar · Kendine birini seç'}
             </p>
@@ -90,14 +88,14 @@ export const AvatarPickerModal: React.FC<AvatarPickerModalProps> = ({
                     aria-label={`Avatar: ${seed}`}
                     aria-pressed={isCurrent}
                     data-testid={`avatar-option-${seed}`}
-                    className={`riso-focus relative h-16 w-full border-2 border-carbon bg-paper-deep transition-transform hover:scale-[1.04] disabled:opacity-60 disabled:cursor-wait ${
-                      isCurrent ? 'ring-2 ring-riso-pink ring-offset-2 ring-offset-paper' : ''
+                    className={`riso-focus relative h-16 w-full transition-transform hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-wait ${
+                      isCurrent ? 'bg-riso-pink' : 'bg-paper-deep'
                     }`}
                   >
                     <AvatarImage
                       src={getAvatarUrl(seed)}
                       initials={seed.substring(0, 2).toUpperCase()}
-                      initialsClassName="font-riso-display font-bold text-carbon"
+                      initialsClassName="font-riso-body font-semibold text-carbon"
                       imageClassName="p-1"
                       loading="eager"
                     />

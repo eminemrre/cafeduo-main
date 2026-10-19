@@ -12,16 +12,7 @@ interface SkeletonProps {
 }
 
 export const Skeleton: React.FC<SkeletonProps> = ({ className = '' }) => (
-  <div
-    className={`relative overflow-hidden bg-paper-dim border-2 border-carbon-muted ${className}`}
-  >
-    <div
-      className="absolute inset-0 -translate-x-full animate-shimmer"
-      style={{
-        background: 'linear-gradient(90deg, transparent, rgba(20, 20, 19, 0.08), transparent)',
-      }}
-    />
-  </div>
+  <div className={`relative overflow-hidden bg-paper-dim animate-pulse ${className}`} />
 );
 
 export const SkeletonText: React.FC<{ lines?: number; className?: string }> = ({
@@ -36,7 +27,7 @@ export const SkeletonText: React.FC<{ lines?: number; className?: string }> = ({
 );
 
 export const SkeletonCard: React.FC = () => (
-  <div className="border-2 border-carbon bg-paper-deep border-gray-800 p-6 space-y-4">
+  <div className="bg-paper-deep p-6 space-y-4">
     <div className="flex items-center gap-4">
       <Skeleton className="w-12 h-12" />
       <div className="flex-1 space-y-2">
@@ -75,7 +66,7 @@ export const SkeletonStats: React.FC = () => (
     <Skeleton className="w-12 h-12" />
     <div className="flex gap-4">
       {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="bg-paper-dim border-2 border-carbon-muted px-4 py-2 min-w-[80px]">
+        <div key={i} className="bg-paper-deep px-4 py-2 min-w-[80px]">
           <Skeleton className="h-6 w-12 mb-1" />
           <Skeleton className="h-3 w-16" />
         </div>
@@ -104,10 +95,10 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 }) => (
   <div className={`flex flex-col items-center justify-center gap-3 ${className}`}>
     <div
-      className={`${spinnerSizes[size]} border-carbon-muted border-t-carbon rounded-full animate-spin`}
+      className={`${spinnerSizes[size]} border-carbon border-t-transparent animate-spin`}
     />
     {text && (
-      <p className={`${textSizes[size]} text-carbon-muted uppercase tracking-wider animate-pulse`}>
+      <p className={`${textSizes[size]} text-carbon-soft`}>
         {text}
       </p>
     )}
@@ -128,7 +119,7 @@ export const LoadingOverlay: React.FC<LoadingOverlayProps> = ({
   <div className="relative">
     {children}
     {isLoading && (
-      <div className="absolute inset-0 bg-paper/85 backdrop-blur-sm flex items-center justify-center z-10 animate-fade-in">
+      <div className="absolute inset-0 bg-paper/90 flex items-center justify-center z-10 animate-fade-in">
         <LoadingSpinner size="lg" text={text} />
       </div>
     )}
@@ -140,7 +131,7 @@ export const DotLoader: React.FC<{ className?: string }> = ({ className = '' }) 
     {[0, 1, 2].map((i) => (
       <div
         key={i}
-        className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+        className="w-2 h-2 bg-carbon animate-bounce"
         style={{ animationDelay: `${i * 150}ms` }}
       />
     ))}

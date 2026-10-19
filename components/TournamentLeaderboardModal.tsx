@@ -103,33 +103,31 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
     >
       <div className="absolute inset-0 bg-carbon/80" onClick={onClose} aria-hidden="true" />
 
-      <div className="relative z-10 w-full max-w-lg bg-paper border-2 border-carbon riso-shadow-md max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)] flex flex-col">
-        <div className="flex items-center justify-between border-b-2 border-carbon px-4 sm:px-5 py-3 shrink-0">
+      <div className="duo-float relative z-10 w-full max-w-lg bg-paper max-h-[calc(100dvh-2rem)] sm:max-h-[calc(100dvh-3rem)] flex flex-col">
+        <div className="flex items-start justify-between gap-4 border-b-[3px] border-dotted border-carbon/35 px-5 pt-5 pb-4 shrink-0">
           <div className="min-w-0">
-            <p className="font-riso-mono text-xs uppercase tracking-[0.18em] text-carbon-soft">
-              Turnuva Sıralaması
-            </p>
-            <h3 className="font-riso-display text-lg uppercase tracking-wide text-carbon truncate">
+            <h3 className="font-riso-display text-[1.75rem] leading-none text-carbon truncate">
               {tournament.name}
             </h3>
+            <p className="mt-1.5 text-[0.8125rem] text-carbon-soft">Turnuva sıralaması</p>
           </div>
           <button
             type="button"
             onClick={onClose}
             aria-label="Kapat"
-            className="riso-focus inline-flex h-8 w-8 items-center justify-center border-2 border-carbon bg-paper text-carbon hover:bg-paper-deep transition-colors"
+            className="riso-focus inline-flex h-11 w-11 shrink-0 items-center justify-center bg-paper-deep text-carbon hover:bg-carbon hover:text-paper transition-colors"
           >
             <X size={16} strokeWidth={2.5} />
           </button>
         </div>
 
-        <div className="p-3 sm:p-4 overflow-y-auto">
+        <div className="p-4 sm:p-5 overflow-y-auto">
           {loading && !data ? (
-            <p className="font-riso-body text-carbon-muted animate-pulse">Yükleniyor...</p>
+            <p role="status" className="font-riso-body text-carbon-soft">Yükleniyor...</p>
           ) : error ? (
-            <p className="font-riso-body text-riso-redox">{error}</p>
+            <p role="alert" className="bg-riso-redox/10 px-3 py-2 font-riso-body text-sm text-carbon">{error}</p>
           ) : !data || data.leaderboard.length === 0 ? (
-            <p className="font-riso-body text-carbon-muted">
+            <p className="bg-paper-deep p-4 font-riso-body text-sm text-carbon-soft">
               Henüz oynayan olmadı. Bir oyun bitince burada görüneceksin.
             </p>
           ) : (
@@ -140,42 +138,46 @@ export const TournamentLeaderboardModal: React.FC<TournamentLeaderboardModalProp
                 return (
                   <li
                     key={row.id}
-                    className="flex items-center gap-2.5 sm:gap-3 border-2 border-carbon bg-paper-deep p-2 sm:p-2.5"
+                    className="flex items-center gap-3 bg-paper-deep p-3"
                     data-testid={`tournament-leaderboard-row-${row.id}`}
                   >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center border-2 border-carbon bg-paper font-riso-display text-sm font-bold text-carbon">
+                    <div
+                      className={`flex h-9 w-9 shrink-0 items-center justify-center text-sm font-semibold text-carbon [font-variant-numeric:tabular-nums] ${
+                        rank === 1 ? 'bg-riso-mustard' : 'bg-paper'
+                      }`}
+                    >
                       {rank === 1 ? (
-                        <Trophy size={14} className="text-riso-mustard-deep" strokeWidth={2.4} />
+                        <Trophy size={16} strokeWidth={2.4} aria-label="Birinci" />
                       ) : rank <= 3 ? (
                         <Medal size={14} strokeWidth={2.4} />
                       ) : (
                         rank
                       )}
                     </div>
-                    <div className="relative h-9 w-9 shrink-0 overflow-hidden border-2 border-carbon bg-riso-blue text-carbon">
+                    <div className="relative h-9 w-9 shrink-0 overflow-hidden bg-riso-blue text-carbon">
                       <AvatarImage
                         src={row.avatar_url}
                         initials={String(row.username || '?')
                           .substring(0, 2)
                           .toUpperCase()}
-                        initialsClassName="font-riso-display text-xs font-bold"
+                        initialsClassName="font-riso-body text-[13px] font-semibold"
                       />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="font-riso-body font-bold text-carbon truncate">
+                      <p className="font-riso-body font-semibold text-carbon truncate">
                         {row.username}
                       </p>
                       {prize && (
-                        <p className="font-riso-mono text-xs uppercase tracking-wider text-riso-pink-deep">
+                        <p className="text-[0.8125rem] text-carbon-soft">
                           Ödül: {prize}
                         </p>
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="font-riso-mono text-base font-bold text-riso-mustard-deep">
+                      <p className="text-base font-bold text-carbon [font-variant-numeric:tabular-nums]">
                         {formatPoints(row.total_points)}
                       </p>
-                      <p className="font-riso-mono text-xs uppercase tracking-wider text-carbon-muted">
+                      <p className="text-[0.8125rem] text-carbon-soft">
                         {row.games_counted} oyun
                       </p>
                     </div>

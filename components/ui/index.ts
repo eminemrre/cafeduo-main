@@ -24,5 +24,3 @@ export {
   menuItem,
   menuBackdrop,
 } from './motionVariants';
-export { DecodeText } from './DecodeText';
-export { HoverUnderline } from './HoverUnderline';

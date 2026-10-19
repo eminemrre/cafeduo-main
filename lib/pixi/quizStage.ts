@@ -106,25 +106,25 @@ export const createQuizStage = async (canvas: HTMLCanvasElement): Promise<QuizSt
   const playCorrect = (): void => {
     const { x, y } = center();
     // Layered burst: green core, cyan mid, gold rim — confetti shape
-    burst(x, y, 0x39ff6a, 18, 4.5, 'confetti');
-    burst(x, y, 0x10e7ff, 10, 3.6, 'confetti');
-    burst(x, y, 0xffd338, 8, 3.0, 'circle');
+    burst(x, y, 0xb6d31b, 18, 4.5, 'confetti');
+    burst(x, y, 0x1fb3ff, 10, 3.6, 'confetti');
+    burst(x, y, 0xffd23f, 8, 3.0, 'circle');
   };
 
   const playWrong = (): void => {
     const { x, y } = center();
     // Faster, harsher scatter — more red than orange
-    burst(x, y, 0xff3045, 14, 5.0, 'circle');
-    burst(x, y, 0xffb340, 8, 4.0, 'circle');
+    burst(x, y, 0xd62f2f, 14, 5.0, 'circle');
+    burst(x, y, 0xff5c8a, 8, 4.0, 'circle');
   };
 
   const playFinale = (): void => {
     const { x, y } = center();
     // Multi-wave celebration (mirrors PR #21's checkmate energy)
-    burst(x, y, 0x39ff6a, 30, 5.2, 'confetti');
-    burst(x, y, 0x10e7ff, 20, 4.4, 'confetti');
-    burst(x, y, 0xffd338, 16, 3.8, 'confetti');
-    burst(x, y, 0xff66cc, 12, 3.4, 'confetti'); // magenta accent
+    burst(x, y, 0xb6d31b, 30, 5.2, 'confetti');
+    burst(x, y, 0x1fb3ff, 20, 4.4, 'confetti');
+    burst(x, y, 0xffd23f, 16, 3.8, 'confetti');
+    burst(x, y, 0xff5c8a, 12, 3.4, 'confetti'); // lokum accent
   };
 
   // === Tick: drive decay loop ===

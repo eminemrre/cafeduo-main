@@ -108,7 +108,7 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
             value={formData.latitude}
             onChange={(e) => onFormChange({ ...formData, latitude: e.target.value })}
             placeholder="37.741000"
-            className="cc-mono"
+            className="[font-variant-numeric:tabular-nums]"
           />
           <Input
             label="Boylam"
@@ -117,7 +117,7 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
             value={formData.longitude}
             onChange={(e) => onFormChange({ ...formData, longitude: e.target.value })}
             placeholder="29.101000"
-            className="cc-mono"
+            className="[font-variant-numeric:tabular-nums]"
           />
         </div>
         <div className="mt-4">
@@ -150,7 +150,7 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
             step="0.000001"
             value={formData.secondaryLatitude}
             onChange={(e) => onFormChange({ ...formData, secondaryLatitude: e.target.value })}
-            className="cc-mono"
+            className="[font-variant-numeric:tabular-nums]"
           />
           <Input
             label="Ek Boylam"
@@ -158,7 +158,7 @@ export const AddCafeModal: React.FC<AddCafeModalProps> = ({
             step="0.000001"
             value={formData.secondaryLongitude}
             onChange={(e) => onFormChange({ ...formData, secondaryLongitude: e.target.value })}
-            className="cc-mono"
+            className="[font-variant-numeric:tabular-nums]"
           />
         </div>
         <div className="mt-4">

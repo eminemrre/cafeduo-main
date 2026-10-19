@@ -64,9 +64,6 @@ jest.mock('./components/landing/ClubLanding', () => ({
   ),
 }));
 
-jest.mock('./components/Footer', () => ({
-  Footer: () => <div data-testid="footer-view">footer</div>,
-}));
 
 jest.mock('./components/CookieConsent', () => ({
   CookieConsent: () => <div data-testid="cookie-view">cookie</div>,

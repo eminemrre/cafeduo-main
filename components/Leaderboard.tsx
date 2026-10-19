@@ -81,7 +81,7 @@ export const Leaderboard: React.FC = () => {
   };
 
   return (
-    <Card tone="paper" shadow="md" data-testid="leaderboard-card">
+    <Card tone="paper" data-testid="leaderboard-card">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <h2 className="font-riso-display text-[32px] leading-none text-carbon sm:text-[40px]">
           Liderlik Tablosu

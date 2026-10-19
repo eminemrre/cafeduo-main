@@ -168,9 +168,9 @@ export const PrivacyPolicy: React.FC = () => {
               KVKK kapsamındaki haklarınızı kullanmak için aşağıdaki kanallardan bizimle iletişime
               geçebilirsiniz:
             </p>
-            <div className="mt-3 bg-paper border-2 border-carbon p-4">
-              <p className="font-riso-mono text-sm text-carbon">
-                <strong className="text-riso-pink-deep">E-posta:</strong> cafeduotr@gmail.com
+            <div className="mt-3 bg-paper p-4">
+              <p className="text-sm text-carbon">
+                <strong className="font-semibold">E-posta:</strong> cafeduotr@gmail.com
               </p>
             </div>
           </PolicySection>
@@ -203,10 +203,10 @@ export const PrivacyPolicy: React.FC = () => {
         <div className="mt-10 sm:mt-12 text-center">
           <Link
             to="/"
-            className="riso-focus riso-press inline-flex items-center gap-2 border-2 border-carbon bg-riso-pink text-carbon px-6 py-3 font-riso-display font-bold text-sm uppercase tracking-[0.12em] riso-shadow-md transition-all hover:-translate-y-[1px]"
+            className="riso-focus inline-flex min-h-12 items-center gap-2 bg-carbon px-6 font-riso-body text-[0.9375rem] font-semibold text-paper transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
           >
-            <ArrowLeft size={16} />
-            Ana Sayfaya Dön
+            <ArrowLeft size={16} aria-hidden="true" />
+            Ana sayfaya dön
           </Link>
         </div>
       </div>
@@ -231,7 +231,7 @@ const PolicySection: React.FC<PolicySectionProps> = ({ number, title, icon, icon
       <div className={`flex h-10 w-10 shrink-0 items-center justify-center ${iconBg}`}>
         {icon}
       </div>
-      <h2 className="font-riso-display text-xl text-carbon sm:text-2xl">
+      <h2 className="font-riso-display text-[1.75rem] leading-none text-carbon">
         <span className="text-carbon-muted mr-2">{number}.</span>
         {title}
       </h2>

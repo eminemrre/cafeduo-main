@@ -170,7 +170,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
       setFloatingScore('+1');
       window.setTimeout(() => setFloatingScore(null), 800);
     } else {
-      setFloatingScore(isTimeout ? '⏱' : '✕');
+      setFloatingScore(isTimeout ? 'Süre' : 'Yanlış');
       window.setTimeout(() => setFloatingScore(null), 700);
     }
 
@@ -316,7 +316,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
           className={`relative overflow-hidden bg-paper-deep p-4 sm:p-5 ${feedbackAnimation === 'correct' ? 'animate-flash-green' : feedbackAnimation === 'incorrect' ? 'animate-flash-red animate-shake' : ''}`}
         >
           {/* PixiJS overlay — sits above floatingScore (z-30 vs z-20) so confetti
-              renders ON TOP of the "+1" / "✕" text. */}
+              renders ON TOP of the "+1" / "Yanlış" text. */}
           <QuizStageCanvas
             ref={quizStageRef}
             className="pointer-events-none absolute inset-0 z-30 h-full w-full"

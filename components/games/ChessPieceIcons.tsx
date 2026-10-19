@@ -3,8 +3,8 @@
  *
  * Six inline SVG components (Pawn / Rook / Knight / Bishop / Queen / King)
  * designed in the printed-zine aesthetic: chunky 2px ink stroke with
- * paper or ink solid fill. White pieces are paper #FBF7EE + ink stroke,
- * black pieces are ink #141413 + ink stroke. Single shared viewBox
+ * paper or ink solid fill. White pieces are paper #FFFFFF + ink stroke,
+ * black pieces are ink #17140F + ink stroke. Single shared viewBox
  * (0 0 45 45 — standard chess SVG convention) so they line up in a grid.
  *
  * Choice of inline SVG over file assets:
@@ -31,9 +31,9 @@ interface ChessPieceIconProps {
   className?: string;
 }
 
-const FILL_WHITE = '#FBF7EE'; // paper
-const FILL_BLACK = '#141413'; // ink
-const STROKE = '#141413'; // ink for all outlines
+const FILL_WHITE = '#FFFFFF'; // paper
+const FILL_BLACK = '#17140F'; // ink
+const STROKE = '#17140F'; // ink for all outlines
 
 const SHARED_PROPS = {
   viewBox: '0 0 45 45',

@@ -166,7 +166,7 @@ export const DailyRewardWheel: React.FC<DailyRewardWheelProps> = ({
         mid: start + sweep / 2,
         fill: SLICE_FILL[idx % SLICE_FILL.length],
         fontSize,
-        label: slice.gift ? '★' : `+${slice.points}`,
+        label: slice.gift ? 'Hediye' : `+${slice.points}`,
       };
     });
   }, [slices]);

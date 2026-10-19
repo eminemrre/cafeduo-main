@@ -154,7 +154,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
             </div>
           </div>
 
-          <div className="pt-2 border-t border-riso-blue/20 space-y-4">
+          <div className="pt-4 border-t-[3px] border-dotted border-carbon/25 space-y-4">
             <p className="text-[0.9375rem] font-semibold text-carbon">İkinci konum <span className="font-normal text-carbon-soft">(isteğe bağlı)</span></p>
             <div>
               <label
@@ -247,7 +247,7 @@ export const LocationManager: React.FC<LocationManagerProps> = ({
             >
               {loading ? (
                 <>
-                  <div className="w-5 h-5 border-t-transparent animate-spin" />
+                  <div className="w-5 h-5 border-[3px] border-carbon border-t-transparent animate-spin" />
                   Kaydediliyor...
                 </>
               ) : (

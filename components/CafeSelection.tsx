@@ -117,20 +117,20 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
             delay: shouldReduceMotion ? 0 : 0.1,
           }}
         >
-          <Card tone="paper" shadow="md" halftone={false} data-testid="cafe-selection-card">
+          <Card tone="paper" data-testid="cafe-selection-card">
             {/* Error banner */}
             {error && (
               <div
                 role="alert"
                 aria-live="polite"
                 data-testid="cafe-selection-error"
-                className="mb-5 border-2 border-riso-redox bg-paper p-3.5"
+                className="mb-5 bg-riso-redox/10 p-3.5"
               >
                 <div className="flex items-start gap-2.5">
                   <AlertTriangle size={18} className="mt-0.5 shrink-0 text-riso-redox" />
                   <div className="min-w-0">
-                    <p className="font-riso-display text-sm font-bold uppercase tracking-wider text-riso-redox">
-                      Giriş Başarısız
+                    <p className="font-riso-body text-[0.9375rem] font-semibold text-carbon">
+                      Giriş başarısız
                     </p>
                     <p className="mt-1 text-sm leading-relaxed text-carbon">{error}</p>
                   </div>
@@ -241,7 +241,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                 data-testid="checkin-submit-button"
                 leadingIcon={
                   loading ? (
-                    <span className="h-4 w-4 animate-spin border-2 border-carbon/30 border-t-carbon rounded-full" />
+                    <span className="h-4 w-4 animate-spin border-2 border-carbon/30 border-t-carbon" />
                   ) : (
                     <Coffee size={20} />
                   )

@@ -23,12 +23,14 @@ import { Application, Container, Graphics, Text, Ticker } from 'pixi.js';
 
 export type HitTier = 'miss' | 'hit1' | 'hit2' | 'hit3';
 
+// DESIGN.md palette: danger for a miss, then limon, gök and the game's own lokum.
 const TIER_COLORS: Record<HitTier, number> = {
-  miss: 0xff3045, // crimson — fail
-  hit1: 0xffd338, // gold — graze
-  hit2: 0x10e7ff, // cyan — clean
-  hit3: 0x39ff6a, // green — bullseye
+  miss: 0xd62f2f, // danger — fail
+  hit1: 0xffd23f, // limon — graze
+  hit2: 0x1fb3ff, // gök — clean
+  hit3: 0xff5c8a, // lokum — bullseye
 };
+const INK = 0x17140f;
 
 const TIER_PARTICLE_COUNT: Record<HitTier, number> = {
   miss: 6,
@@ -93,18 +95,9 @@ export const createAimBattleStage = async (canvas: HTMLCanvasElement): Promise<A
     gridGraphics.clear();
     const w = app.screen.width;
     const h = app.screen.height;
-    // Vertical lines every 40px, faint cyan
-    for (let x = 0; x <= w; x += 40) {
-      gridGraphics.moveTo(x, 0).lineTo(x, h);
-    }
-    for (let y = 0; y <= h; y += 40) {
-      gridGraphics.moveTo(0, y).lineTo(w, y);
-    }
-    gridGraphics.stroke({ width: 1, color: 0x10e7ff, alpha: 0.08 });
-
-    // Center marker line (vertical, more prominent)
+    // The ice ground stays plain (no grid); only the centre the player aims for is drawn.
     const cx = w / 2;
-    gridGraphics.moveTo(cx, 0).lineTo(cx, h).stroke({ width: 2, color: 0x39ff6a, alpha: 0.25 });
+    gridGraphics.moveTo(cx, 0).lineTo(cx, h).stroke({ width: 2, color: INK, alpha: 0.3 });
   };
   drawGrid();
   bgLayer.addChild(gridGraphics);
@@ -114,7 +107,7 @@ export const createAimBattleStage = async (canvas: HTMLCanvasElement): Promise<A
   const drawReticle = (): void => {
     reticle.clear();
     // Outer ring
-    reticle.circle(0, 0, 28).stroke({ width: 2.5, color: 0x10e7ff, alpha: 0.9 });
+    reticle.circle(0, 0, 28).stroke({ width: 3, color: INK, alpha: 1 });
     // Inner crosshair lines
     reticle
       .moveTo(-18, 0)
@@ -125,9 +118,9 @@ export const createAimBattleStage = async (canvas: HTMLCanvasElement): Promise<A
       .lineTo(0, -8)
       .moveTo(0, 8)
       .lineTo(0, 18)
-      .stroke({ width: 2, color: 0x10e7ff, alpha: 0.95 });
-    // Center dot
-    reticle.circle(0, 0, 2.5).fill(0x39ff6a);
+      .stroke({ width: 3, color: INK, alpha: 1 });
+    // Center dot in the game's colour
+    reticle.circle(0, 0, 3.5).fill(0xff5c8a);
   };
   drawReticle();
   reticle.y = 0; // y set on first frame from screen height
@@ -249,11 +242,10 @@ export const createAimBattleStage = async (canvas: HTMLCanvasElement): Promise<A
     const text = new Text({
       text: label,
       style: {
-        fontFamily: 'Inter, system-ui, sans-serif',
+        fontFamily: 'Onest, system-ui, sans-serif',
         fontSize: 22,
         fontWeight: '700',
-        fill: TIER_COLORS[tier],
-        stroke: { color: 0x000000, width: 3 },
+        fill: tier === 'miss' ? 0xb8241a : INK,
       },
     });
     text.anchor.set(0.5);

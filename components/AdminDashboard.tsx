@@ -875,7 +875,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                             onChange={(e) =>
                               setEditCafeData({ ...editCafeData, latitude: e.target.value })
                             }
-                            className="cc-mono"
+                            className="[font-variant-numeric:tabular-nums]"
                           />
                           <Input
                             label="Boylam"
@@ -888,7 +888,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                 longitude: e.target.value,
                               })
                             }
-                            className="cc-mono"
+                            className="[font-variant-numeric:tabular-nums]"
                           />
                         </div>
                         <div className="mt-4">
@@ -925,7 +925,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                 secondaryLatitude: e.target.value,
                               })
                             }
-                            className="cc-mono"
+                            className="[font-variant-numeric:tabular-nums]"
                           />
                           <Input
                             label="Ek Boylam"
@@ -938,7 +938,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ currentUser }) =
                                 secondaryLongitude: e.target.value,
                               })
                             }
-                            className="cc-mono"
+                            className="[font-variant-numeric:tabular-nums]"
                           />
                         </div>
                         <div className="mt-4">

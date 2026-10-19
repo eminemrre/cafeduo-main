@@ -388,7 +388,7 @@ export const LandingFooter: React.FC = () => (
     </div>
     <div className="cdl-footer-close">
       <p>© {new Date().getFullYear()} CafeDuo</p>
-      <a className="cdl-button cdl-button-small" href="#ust">
+      <a className="cdl-button cdl-button-small" href="#">
         Başa dön
       </a>
     </div>

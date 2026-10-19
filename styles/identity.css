@@ -93,8 +93,10 @@ textarea.duo-input {
   border-radius: 0;
 }
 .duo-nav-link:hover {
-  background: #eef6f8;
   color: #17140f;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
 }
 .duo-nav-business {
   display: flex;
@@ -512,10 +514,8 @@ html::-webkit-scrollbar-thumb {
 }
 
 /* =====================================================================
- * Design v2 — the app-wide flattening pass. These rules apply the
- * language in DESIGN.md to screens that still carry Tailwind utility
- * classes from the previous look: candy is a fill, nothing is outlined,
- * no tracked uppercase micro-labels, nothing readable below 12 px.
+ * Design v2 — candy is a fill: whatever sits on a candy field reads in ink,
+ * text and icons alike (DESIGN.md, Colour).
  * ===================================================================== */
 .bg-riso-pink,
 .bg-riso-blue,
@@ -529,44 +529,11 @@ html::-webkit-scrollbar-thumb {
 .hover\:bg-riso-spring:hover {
   color: #17140f;
 }
-[class~='border-2'][class~='border-carbon'] {
-  border-width: 0;
-}
-[class~='uppercase'][class*='tracking-'] {
-  text-transform: none;
-  letter-spacing: 0;
-}
-.text-\[10px\],
-.text-\[11px\] {
-  font-size: 13px;
-}
-
-/* Square every edge the utilities still round. The one exception is the
- * loading spinner, whose ring reads as a circle. */
-[class*='rounded-']:not([class*='animate-spin']) {
-  border-radius: 0;
-}
-
-/* Icons sitting on candy read in ink, like the text they sit with. */
 [class*='bg-riso-pink'] svg,
 [class*='bg-riso-blue'] svg,
 [class*='bg-riso-mustard'] svg,
 [class*='bg-riso-spring'] svg {
   color: #17140f;
-}
-
-/* Nothing in the flow casts a shadow: separation is paper on ice and ink rules.
- * Floating things (fixed/absolute) keep their one soft shadow, and inset
- * shadows are not shadows here: they draw the 3 px tab underline and rules. */
-[class*='shadow-']:not([class~='fixed']):not([class~='absolute']):not([class~='sticky']):not(
-    [class*='shadow-[inset']
-  ) {
-  box-shadow: none;
-}
-
-/* Dashed outlines become the language's perforation. */
-[class*='border-dashed'] {
-  border-style: dotted;
 }
 
 /* =====================================================================

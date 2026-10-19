@@ -420,7 +420,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     type="button"
                     onClick={() => switchMode('login')}
                     aria-pressed={mode === 'login'}
-                    className={`h-11 font-riso-display text-lg transition-colors ${
+                    className={`h-11 font-riso-body text-[0.9375rem] font-semibold transition-colors ${
                       mode === 'login'
                         ? 'text-carbon shadow-[inset_0_-3px_0_#17140f]'
                         : 'text-carbon-muted hover:text-carbon'
@@ -432,7 +432,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     type="button"
                     onClick={() => switchMode('register')}
                     aria-pressed={mode === 'register'}
-                    className={`h-11 font-riso-display text-lg transition-colors ${
+                    className={`h-11 font-riso-body text-[0.9375rem] font-semibold transition-colors ${
                       mode === 'register'
                         ? 'text-carbon shadow-[inset_0_-3px_0_#17140f]'
                         : 'text-carbon-muted hover:text-carbon'
@@ -628,7 +628,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 >
                   {isLoading ? (
                     <span className="flex items-center justify-center gap-2">
-                      <div className="w-4 h-4 border-2 border-carbon border-t-transparent rounded-full animate-spin" />
+                      <div className="w-4 h-4 border-[3px] border-carbon border-t-transparent animate-spin" />
                       {isForgotPasswordMode
                         ? 'Bağlantı gönderiliyor...'
                         : mode === 'login'

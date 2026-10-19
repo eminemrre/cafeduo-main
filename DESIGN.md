@@ -1,7 +1,7 @@
 ---
 version: alpha
 name: CafeDuo — Masa Oyuncakları
-description: A café table turned into a toy set. Candy-coloured fields, fat rounded type and real 3D toys (cup, knight, question card, target, coin) that the visitor can play with.
+description: A café table turned into a toy set. The page is the stationery of the café table — table tent, order slip, colour sheets, the menu — with real 3D toys (cup, knight, question card, target, coin) as its objects.
 colors:
   primary: "#FF5C8A"
   on-primary: "#17140F"
@@ -23,71 +23,87 @@ colors:
   danger: "#D62F2F"
 typography:
   display-xl:
-    fontFamily: Bagel Fat One
-    fontSize: 6rem
-    fontWeight: 400
-    lineHeight: 0.95
+    fontFamily: Baloo 2
+    fontSize: 4.5rem
+    fontWeight: 800
+    lineHeight: 0.92
     letterSpacing: -0.01em
   display-xl-mobile:
-    fontFamily: Bagel Fat One
-    fontSize: 2.625rem
-    fontWeight: 400
-    lineHeight: 0.95
+    fontFamily: Baloo 2
+    fontSize: 2.5rem
+    fontWeight: 800
+    lineHeight: 0.92
     letterSpacing: -0.01em
   display-lg:
-    fontFamily: Bagel Fat One
-    fontSize: 4.5rem
-    fontWeight: 400
-    lineHeight: 0.95
-    letterSpacing: -0.01em
-  display-lg-mobile:
-    fontFamily: Bagel Fat One
-    fontSize: 2.5rem
-    fontWeight: 400
+    fontFamily: Baloo 2
+    fontSize: 4.25rem
+    fontWeight: 800
     lineHeight: 0.98
     letterSpacing: -0.01em
-  wordmark:
-    fontFamily: Bagel Fat One
-    fontSize: 1.75rem
-    fontWeight: 400
-    lineHeight: 1
-    letterSpacing: 0em
-  heading:
-    fontFamily: Bagel Fat One
+  display-lg-mobile:
+    fontFamily: Baloo 2
     fontSize: 2.25rem
-    fontWeight: 400
-    lineHeight: 1.05
-    letterSpacing: 0em
-  title:
-    fontFamily: Golos Text
-    fontSize: 1.375rem
-    fontWeight: 700
-    lineHeight: 1.25
+    fontWeight: 800
+    lineHeight: 0.98
     letterSpacing: -0.01em
-  body:
-    fontFamily: Golos Text
-    fontSize: 1.0625rem
+  masthead:
+    fontFamily: Baloo 2
+    fontSize: 15rem
+    fontWeight: 800
+    lineHeight: 0.76
+    letterSpacing: -0.035em
+  wordmark:
+    fontFamily: Baloo 2
+    fontSize: 1.75rem
+    fontWeight: 800
+    lineHeight: 1
+    letterSpacing: -0.02em
+  title:
+    fontFamily: Baloo 2
+    fontSize: 2.5rem
+    fontWeight: 800
+    lineHeight: 0.98
+    letterSpacing: -0.01em
+  statement:
+    fontFamily: Onest
+    fontSize: 2.25rem
+    fontWeight: 600
+    lineHeight: 1.25
+    letterSpacing: 0em
+  lead:
+    fontFamily: Onest
+    fontSize: 1.25rem
     fontWeight: 400
     lineHeight: 1.5
     letterSpacing: 0em
+  body:
+    fontFamily: Onest
+    fontSize: 1rem
+    fontWeight: 400
+    lineHeight: 1.55
+    letterSpacing: 0em
   label:
-    fontFamily: Golos Text
-    fontSize: 0.875rem
+    fontFamily: Onest
+    fontSize: 0.9375rem
+    fontWeight: 500
+    lineHeight: 1.4
+    letterSpacing: 0em
+  button:
+    fontFamily: Onest
+    fontSize: 1rem
     fontWeight: 600
-    lineHeight: 1.3
+    lineHeight: 1
     letterSpacing: 0em
   score:
-    fontFamily: Golos Text
+    fontFamily: Onest
     fontSize: 2.5rem
-    fontWeight: 800
+    fontWeight: 700
     lineHeight: 1
     letterSpacing: -0.02em
     fontFeature: "'tnum' 1"
 rounded:
-  sm: 10px
-  md: 20px
-  lg: 32px
-  pill: 999px
+  none: 0px
+  notch: 34px
 spacing:
   xs: 4px
   sm: 8px
@@ -100,59 +116,69 @@ components:
   button-primary:
     backgroundColor: "{colors.ink}"
     textColor: "{colors.paper}"
-    typography: "{typography.title}"
-    rounded: "{rounded.pill}"
-    height: 52px
-    padding: 0 28px
-  button-primary-on-ice:
+    typography: "{typography.button}"
+    rounded: "{rounded.none}"
+    height: 48px
+    padding: 0 20px
+  button-primary-on-candy:
     backgroundColor: "{colors.lokum}"
     textColor: "{colors.ink}"
-    typography: "{typography.title}"
-    rounded: "{rounded.pill}"
-    height: 52px
-    padding: 0 28px
-  button-secondary:
+    typography: "{typography.button}"
+    rounded: "{rounded.none}"
+    height: 48px
+    padding: 0 22px
+  button-quiet:
+    backgroundColor: none
+    textColor: "{colors.ink}"
+    typography: "{typography.label}"
+    rounded: "{rounded.none}"
+    height: 44px
+  table-tent:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.pill}"
-    height: 44px
-    padding: 0 20px
-  chip-satranc:
+    rounded: "{rounded.none}"
+    padding: 96px 48px 56px
+    width: 560px
+  slip-sheet:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.none}"
+    padding: 36px 32px 52px
+  colour-sheet:
     backgroundColor: "{colors.gok}"
     textColor: "{colors.ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.pill}"
-    padding: 6px 12px
-  chip-bilgi:
-    backgroundColor: "{colors.limon}"
-    textColor: "{colors.ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.pill}"
-    padding: 6px 12px
-  chip-nisanci:
-    backgroundColor: "{colors.lokum}"
-    textColor: "{colors.ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.pill}"
-    padding: 6px 12px
-  chip-odul:
-    backgroundColor: "{colors.fistik}"
-    textColor: "{colors.ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.pill}"
-    padding: 6px 12px
-  sticker-card:
-    backgroundColor: "{colors.limon}"
+    rounded: "{rounded.none}"
+  menu-bar:
+    backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
     typography: "{typography.body}"
-    rounded: "{rounded.lg}"
-    padding: 24px
+    rounded: "{rounded.none}"
+    height: 56px
+    padding: 0 18px
+  action-cell:
+    backgroundColor: "{colors.lokum}"
+    textColor: "{colors.ink}"
+    typography: "{typography.button}"
+    rounded: "{rounded.none}"
+    height: 72px
+  cell-quiet-on-ink:
+    backgroundColor: "#2A251C"
+    textColor: "{colors.paper}"
+    typography: "{typography.button}"
+    rounded: "{rounded.none}"
+    height: 72px
+  input:
+    backgroundColor: "{colors.ice}"
+    textColor: "{colors.ink}"
+    typography: "{typography.body}"
+    rounded: "{rounded.none}"
+    height: 52px
+    padding: 0 14px
   panel-surface:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
     typography: "{typography.body}"
-    rounded: "{rounded.md}"
+    rounded: "{rounded.none}"
     padding: 20px
   panel-ground:
     backgroundColor: "{colors.ice}"
@@ -160,15 +186,32 @@ components:
   panel-well:
     backgroundColor: "{colors.ice-deep}"
     textColor: "{colors.ink-soft}"
-    rounded: "{rounded.sm}"
+    rounded: "{rounded.none}"
     padding: 12px
-  input:
-    backgroundColor: "{colors.paper}"
+  chip-satranc:
+    backgroundColor: "{colors.gok}"
     textColor: "{colors.ink}"
-    typography: "{typography.body}"
-    rounded: "{rounded.sm}"
-    height: 52px
-    padding: 0 16px
+    typography: "{typography.label}"
+    rounded: "{rounded.none}"
+    padding: 6px 12px
+  chip-bilgi:
+    backgroundColor: "{colors.limon}"
+    textColor: "{colors.ink}"
+    typography: "{typography.label}"
+    rounded: "{rounded.none}"
+    padding: 6px 12px
+  chip-nisanci:
+    backgroundColor: "{colors.lokum}"
+    textColor: "{colors.ink}"
+    typography: "{typography.label}"
+    rounded: "{rounded.none}"
+    padding: 6px 12px
+  chip-odul:
+    backgroundColor: "{colors.fistik}"
+    textColor: "{colors.ink}"
+    typography: "{typography.label}"
+    rounded: "{rounded.none}"
+    padding: 6px 12px
   board-square-light:
     backgroundColor: "{colors.board-light}"
     textColor: "{colors.ink}"
@@ -185,11 +228,11 @@ components:
   status-success:
     backgroundColor: "{colors.success}"
     textColor: "{colors.paper}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.none}"
   status-danger:
     backgroundColor: "{colors.danger}"
     textColor: "{colors.paper}"
-    rounded: "{rounded.pill}"
+    rounded: "{rounded.none}"
 ---
 
 ## Overview
@@ -199,15 +242,28 @@ knight, the question card, the target, the coin and the table tent with its code
 real 3D objects in soft, matte, vinyl-toy candy colours. The visitor plays with them before reading
 about them; the opponent is the next table and the prize is that café's reward (see PRODUCT.md).
 
+**The direction (v2, 2026-10-19): the page is the object.** The landing does not illustrate the
+product — it *is* the stationery of the café table. The first screen is the table tent (a 5:7
+card, scalloped at the top corners, cropped by the fold, with a real QR to cafeduotr.com). Below
+it, in order: the order slip (how it works, with dotted leaders and one inverted result bar), three
+sticky colour sheets (one per game, stacking at −72 px steps while the headings stay in the visible
+band), the live table (a square ice plate with the real 3D toy set and three text tabs), the menu
+(the reward catalogue as a fillable price list under a container-sized "MENÜ" masthead), and a
+sentence with a blank (the sign-up: the visitor's e-mail is the fill-in). The footer is the back of
+the box: the wordmark built out of seven coloured rectangles, bottom-aligned letters, a dotted tear
+line above the closing row.
+
 Sources: The Tie-break (play first, the reward is revealed by playing), Léo Parpeix (one tactile 3D
 toy inside a quiet interface), Anidachi (each section one drenched candy colour, giant cropped
 objects), Aardvark Book Club (fat rounded type, tilted sticker cards, objects that move on scroll),
 Butter (the product as collectable objects). Analysis: `docs/design/references/README.md`.
+Taste-skill draw for the landing: seed 1485260991, sector consumer-app, tone playful, "keep palette
+and type", with illustration → `page-is-the-object`.
 
 The world has two registers, chosen by the surface's mode:
 
 - **Vitrin (Persuade):** the landing and `/kafeler`. Whole sections are drenched in one candy
-  colour, toys are huge and cropped by the screen edge, display type runs up to 96 px. Loud.
+  colour, toys are huge and cropped by the screen edge, display type runs up to 72 px. Loud.
 - **Masa (Operate):** auth, check-in, the player panel, the games, the café panel and admin. Ice
   ground, white surfaces, candy colours only as the identity of a game or the one primary action,
   display type only for screen titles and scores. Calm, dense enough for a phone held in one hand.
@@ -225,78 +281,118 @@ surfaces (ice and white, one candy accent per game).
 - **Lokum (#FF5C8A)**, Turkish-delight pink, is the brand colour and **Nişancı Düellosu**'s colour.
 - **Limon (#FFD23F)** is **Bilgi Yarışı**.
 - **Gök (#1FB3FF)** is **Retro Satranç**; the board's dark squares are a paler gök (#7FC9EE).
-- **Fıstık (#B6D31B)**, pistachio, is **points and rewards** (coins, coupons, the wheel).
+- **Fıstık (#B6D31B)**, pistachio, is **points and rewards** (coins, coupons, the wheel, the menu).
 - **Ice (#EEF6F8)** and **ice-deep (#D9EAEF)** are the Masa ground and wells; **paper (#FFFFFF)**
-  is the surface on top of them.
+  is the surface on top of them (the tent, the slip, the sheets' content, the menu bars).
 - **Success (#177A41)** and **danger (#D62F2F)** are for states only, never decoration.
 
 A game keeps its colour on every surface: its chip, its lobby row marker, its 3D toy and its
-section on the landing. No other colour is introduced for a game.
+sheet on the landing. No other colour is introduced for a game. The landing's running order is
+limon (tent) → ice (slip) → gök / limon / lokum (sheets) → ink (live table) → fıstık (menu) →
+paper (the sentence) → ink (footer).
 
 ## Typography
 
-- **Bagel Fat One** (OFL, latin-ext) is the display face: fat, rounded, toy-like. Headlines, the
-  wordmark, screen titles and big numerals on Vitrin. Never below 28 px, never for running text,
-  never italic. The wordmark is the one exception to the 28 px floor.
-- **Golos Text** (OFL, latin-ext, 400–900) is everything else: body, labels, buttons, inputs,
-  tables, and scores (`score`, weight 800, tabular figures).
-- Both are self-hosted through `@fontsource`; every face must render `ı İ ş Ş ğ Ğ ç Ç ö Ö ü Ü`.
+- **Baloo 2** (OFL, latin-ext, weight 800) is the display face: fat, rounded, toy-like. Headlines,
+  the wordmark, sheet and panel titles, the giant "MENÜ" masthead, the footer mark. Never below
+  28 px, never for running text, never italic.
+- **Onest** (OFL, latin-ext, 400–700) is everything else: body, labels, buttons, inputs, tables and
+  scores (`score`, weight 700, tabular figures).
+- The former pair is retired and must not come back: **Bagel Fat One has no ğ, ş or İ glyphs at
+  all**, and **Golos Text renders ğ as a plain g** — the visible production bug of v1.
+- Both faces are self-hosted through `@fontsource`; every face must render
+  `ı İ ş Ş ğ Ğ ç Ç ö Ö ü Ü`. Verify with `python3 /tmp/glyphcheck.py <woff2>` before adding a face.
+- Seven steps, no more: display-xl / display-lg / title / statement / lead / body / label, plus the
+  wordmark and the container-sized masthead. The masthead (`.cdl-menu-masthead`) is `37.5cqw`
+  because "MENÜ" measures 2.65em in Baloo 2 800.
 - Sentence case everywhere. No letter-spaced uppercase labels. Nothing readable below 12 px;
-  12–13 px only for secondary metadata.
-- Mobile sizes: `display-xl-mobile` 2.625 rem and `display-lg-mobile` 2.5 rem, growing fluidly to `display-xl` and `display-lg`. The wordmark is set at `wordmark` (1.75 rem), the one display use below 28 px.
+  12–13 px only for secondary metadata. A statement (the closing sentence) stays at or below 36 px
+  and never runs past four lines on a phone.
 
 ## Layout
 
-- Phone first. Margins 20 px on phones, 40 px from 900 px, content up to 1280 px; Vitrin fields
-  and toys run edge to edge.
+- Phone first. Margins 20 px on phones, 28 px from 640 px, 40 px from 1100 px; the menu column is
+  620 px and the sentence column 940 px, both centred. Vitrin fields and toys run edge to edge.
 - Spacing scale 4 / 8 / 16 / 24 / 40 / 80 / 128. Sections on Vitrin are separated by a colour
   change, not by gaps or lines; inside a section, more space above a heading than below it.
 - Masa screens: one column on phones, a 12-column grid from 900 px; the primary action sits in
   the lower half of a phone screen, within thumb reach.
-- "Masaya katıl" and "Giriş yap" are always reachable on Vitrin (sticky header).
+- "Kaydol" (signed in: "Panele geç") and "Giriş yap" are always reachable on Vitrin (sticky
+  header). There is exactly one sign-up button per screen area, never a duplicate pair.
+- The sticky sheets slot their headings into the top band: sheet *i* sticks at `88px + i·72px`
+  (phones `56px + i·52px`), so 72 px of every sheet stays visible while it is covered.
+- The landing ends with ink: the wordmark built from coloured blocks, four columns, the contact and
+  a dotted tear line above the closing row.
 
 ## Elevation & Depth
 
 Depth comes from the 3D toys, not from UI shadows. Toys carry their own soft studio light and one
-soft contact shadow on the field below them. UI is flat: cards, chips and buttons have no shadow at
-rest. Only things that float above the page (dialogs, menus, the toast) get one soft shadow
-(`0 16px 40px rgba(23,20,15,0.18)`).
+soft contact shadow on the field below them. UI is flat: cards, sheets, bars and buttons have no
+shadow at rest. Only things that float above the page (dialogs, menus, the toast, the cookie
+notice) get one soft shadow (`0 16px 34px rgba(23,20,15,0.22)`).
 
 ## Shapes
 
-- **Pill** for every button, chip and tab.
-- **lg (32 px)** for Vitrin fields that do not bleed and for sticker cards; **md (20 px)** for Masa
-  surfaces; **sm (10 px)** for inputs, wells and board corners.
-- **Sticker cards** (steps, game cards, rewards on Vitrin) may tilt between −4° and +4° and overlap
-  a little, like stickers on a table. At most one row of them per screen; never on Masa surfaces.
-- Borders: 2 px ink on inputs and focus rings only. No hairlines, no side stripes.
+- **Square (0 px) everywhere.** Buttons, inputs, cards, panels, chips, sheets and images are
+  rectangles with real edges. No pills, no rounded corners, no outlined boxes, no gradients.
+- **The only two curved things** are the tent's scalloped corner notches (`notch`, 34 px circles of
+  the field colour cut into the tent's top corners) and the circles that are objects (the coin, the
+  ball, the clock face).
+- **Perforation is the system's decoration:** a torn zigzag bottom edge (`clip-path`) on the slip,
+  4 px dotted leaders inside the slip and the menu, a 4 px dotted tear line above the footer's
+  closing row. Nothing else draws a line.
+- Type is staggered on purpose: the tent's title lines are offset ±7 %, the tent's foot sits at the
+  card's bottom, the menu masthead fills its column edge to edge.
+- Borders: 3 px ink underline on inputs, 3 px ink focus rings, 3 px underline on tab buttons.
 
 ## Components
 
-- **Buttons:** `button-primary` (ink pill, white text) on candy fields; `button-primary-on-ice`
-  (lokum pill, ink text) on ice and white. One primary per screen. Press: scale 0.97; hover:
-  lift 2 px. Minimum 44 px tall, 52 px for primary.
-- **Game chips:** the game's colour, ink text, pill. The same chip appears in lobby rows, history
+- **Buttons:** `button-primary` (ink rectangle, paper text) on candy fields; `button-primary-on-candy`
+  (lokum rectangle, ink text) on paper and ink; `button-quiet` (no box, underlined on hover) for
+  the second action. One primary per screen area. Press: scale 0.98; hover: lift 2 px. 48 px tall
+  (44 px small), 16–22 px padding, 0 radius.
+- **Table tent:** the hero's object. Paper, 5:7, 560 px wide, scalloped top corners, everything
+  centred; title at the top, the offer and the two real facts below, the QR at the bottom edge.
+- **Slip:** paper with a torn bottom edge; group labels in Onest 600 15 px, rows as
+  `what ··· value` with 4 px dotted leaders and tabular values; the closing row inverted (ink
+  band, paper text).
+- **Colour sheets:** one game each (gök, limon, lokum), full width, 84 svh, sticky; the game's
+  name in the top-left band, the paragraph bottom-left, the toy bottom-right and clipped by the
+  sheet's edge.
+- **Live table:** a square ice plate holding the real ToyStage (the same toys as the hero of v1),
+  with the play control at its top-left and the status line under it; three underline tabs plus a
+  title and paragraph to the left; two 72 px action cells under it.
+- **Menu bar:** a paper bar with a 56 px summary row (label left, a plus that becomes a minus right)
+  and, when open, item rows with 4 px dotted separators and tabular prices.
+- **Action cell:** a flat 72 px rectangle, one per action; the primary is lokum, the quiet one is
+  `#2A251C` on ink.
+- **Input:** ice fill, ink text, 3 px ink underline, 0 radius, 52 px tall, label above or inline
+  (never only a placeholder). On the landing the input *is* the blank of the closing sentence.
+- **Panel surface:** paper on ice, 0 radius, 20 px padding, no shadow, no border.
+- **Game chips:** the game's colour, ink text, square. The same chip appears in lobby rows, history
   and on the landing.
-- **Sticker card:** a candy colour, ink text, 32 px radius, optional tilt (Vitrin only).
-- **Panel surface:** white on ice, 20 px radius, 20 px padding, no shadow, no border.
-- **Inputs:** white, 2 px ink border on focus, 10 px radius, 52 px tall, label above (never only a
-  placeholder).
 - **Chess board:** light squares `board-light`, dark squares `board-dark`, last move tinted limon,
   selection ring lokum, coordinates 11 px inside the squares (decorative; the board has screen-reader
   labels).
 - **Coin and coupon:** points are shown as a fıstık coin with the number in `score`; a coupon is a
-  white ticket with a QR code and a fıstık edge.
-- **Logo:** a new wordmark "CafeDuo" in Bagel Fat One; the two o's may become a coin and a cup. To be
-  drawn; the old cup-icon logo is retired.
+  paper ticket with a QR code and a fıstık edge.
+- **Footer mark:** the wordmark built from seven coloured rectangles of different heights with the
+  letters bottom-aligned inside them, on ink.
 
 ## Motion
 
 - Toys move like toys: springy (overshoot, ~500 ms), a small squash on landing, an idle sway of a
   few degrees. One orchestrated entrance per screen, not scattered fades.
+- The landing's entrance is authored: the tent's card rises, its title lines land, the toys stand
+  still until touched. `[data-landing-reveal]` elements rise 28 px as they enter (700 ms), the
+  diamond drops, the sheets stick and stack.
 - Playing is the reward: a move, a correct answer or a hit makes the toy react (bounce, spin, coin
-  pop). Scroll may turn and move toys on Vitrin (GSAP-style), never hide text behind them.
-- Transform and opacity only. `prefers-reduced-motion`: toys stand still, states change instantly.
+  pop). Scroll may turn and move toys on Vitrin, never hide text behind them.
+- There is no motion toggle on the landing. The landing follows the system preference; `/kafeler`
+  still carries the pause control, which writes `localStorage.cafeduo_landing_motion` and sets
+  `data-motion` on `.club-landing`.
+- Transform and opacity only. `prefers-reduced-motion`: toys stand still, states change instantly,
+  no `cdl-` animation runs.
 
 ## 3D Toys
 
@@ -305,9 +401,10 @@ Toy materials add three tones that never appear in the UI: `gok-deep` (the knigh
 
 The toy set is rendered with Three.js (already a dependency): matte vinyl material, rounded bevels,
 candy colours from this file, one key light and one fill. Cap 30 fps and 1.5 DPR, load only when
-visible, pause when hidden. Every toy has a static PNG/WebP fallback of the same pose, used without
+visible, pause when hidden. Every toy has a static WebP fallback of the same pose, used without
 WebGL, with reduced motion and before the scene loads; content and actions never depend on the
-canvas.
+canvas. Canvas labels are drawn in Baloo 2, so re-render the fallbacks (`/tmp/cdl-scripts/render-toys.mjs`)
+when the display face or its weight changes.
 
 | Toy | Colour | Meaning |
 | --- | --- | --- |
@@ -326,12 +423,16 @@ Do:
 - Give each game its one colour everywhere.
 - Keep text ink on candy, and keep Masa screens calm.
 - Use only real rules and numbers (PRODUCT.md): 100 starting points, stakes, the reward catalogue.
+- Keep square edges; let a torn, dotted or scalloped edge be the only decoration.
 
 Don't:
 
 - No cream or beige grounds, no italic serif headlines, no gradient text, no neon on near-black,
   no glassmorphism, no side-stripe cards, no hairline dividers, no tracked uppercase micro-labels.
+- No pills, no outlined cards, no 32 px radius, no shadows in the flow.
+- No motion toggle or other control without a real function.
 - No icon-on-top feature card grids, no fake stats, players, testimonials or café names.
 - No white text on candy fields; no candy fields behind long running text on Masa screens.
 - No emoji as icons; no stock 3D blobs. Every object is one of the toys above.
-- Never block "Masaya katıl" or "Giriş yap" with the game.
+- Never block "Kaydol" or "Giriş yap" with the game.
+- Never set the display face below 28 px, and never set the wordmark in anything but Baloo 2 800.

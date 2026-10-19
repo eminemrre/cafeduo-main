@@ -24,6 +24,8 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialMode: 'login' | 'register';
+  /** Pre-fills the e-mail field, e.g. from the landing's sign-up sentence. */
+  initialEmail?: string;
   onLoginSuccess: (user: UserType) => void;
 }
 
@@ -61,6 +63,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
   initialMode,
+  initialEmail,
   onLoginSuccess,
 }) => {
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -160,7 +163,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   useEffect(() => {
     setMode(initialMode);
     resetForm();
-  }, [initialMode, isOpen]);
+    if (initialEmail) setEmail(initialEmail);
+  }, [initialMode, isOpen, initialEmail]);
 
   const resetForm = () => {
     setError('');

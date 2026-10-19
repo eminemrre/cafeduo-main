@@ -94,7 +94,7 @@ function labelTexture(text: string, background: string, size: number, width = 51
     context.fillStyle = background;
     context.fillRect(0, 0, width, height);
     context.fillStyle = TOY_COLORS.ink;
-    context.font = `${size}px "Bagel Fat One", "Golos Text", sans-serif`;
+    context.font = `${size}px "Baloo 2", "Onest", sans-serif`;
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.fillText(text, width / 2, height / 2 + size * 0.05);

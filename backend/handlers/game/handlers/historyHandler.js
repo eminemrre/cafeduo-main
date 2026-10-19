@@ -4,15 +4,10 @@
  */
 
 const { isAdminActor } = require('../validation');
+const { sendApiProblem } = require('../../../utils/routeHelpers');
 
 const createHistoryHandler = (deps) => {
-  const {
-    pool,
-    isDbConnected,
-    logger,
-    supportedGameTypes,
-    getMemoryGames,
-  } = deps;
+  const { pool, isDbConnected, logger, supportedGameTypes, getMemoryGames } = deps;
 
   const getUserGameHistory = async (req, res) => {
     const targetUsername = String(req.params?.username || '').trim();
@@ -20,11 +15,19 @@ const createHistoryHandler = (deps) => {
     const adminActor = isAdminActor(req.user);
 
     if (!targetUsername) {
-      return res.status(400).json({ error: 'username zorunludur.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'VALIDATION_ERROR',
+        message: 'username zorunludur.',
+      });
     }
 
     if (!adminActor && actorUsername.toLowerCase() !== targetUsername.toLowerCase()) {
-      return res.status(403).json({ error: 'Sadece kendi oyun geçmişini görüntüleyebilirsin.' });
+      return sendApiProblem(res, {
+        status: 403,
+        code: 'FORBIDDEN',
+        message: 'Sadece kendi oyun geçmişini görüntüleyebilirsin.',
+      });
     }
 
     const mapHistoryRow = (game) => {
@@ -35,9 +38,11 @@ const createHistoryHandler = (deps) => {
       const opponentName = isHost ? guestName || 'Rakip' : hostName || 'Rakip';
       const winner = game.winner ? String(game.winner) : null;
       const gameState = game.gameState && typeof game.gameState === 'object' ? game.gameState : {};
-      const chessState = gameState.chess && typeof gameState.chess === 'object' ? gameState.chess : {};
+      const chessState =
+        gameState.chess && typeof gameState.chess === 'object' ? gameState.chess : {};
       const moveHistory = Array.isArray(chessState.moveHistory) ? chessState.moveHistory : [];
-      const clockState = chessState.clock && typeof chessState.clock === 'object' ? chessState.clock : {};
+      const clockState =
+        chessState.clock && typeof chessState.clock === 'object' ? chessState.clock : {};
       const baseMs = Number(clockState.baseMs);
       const incrementMs = Number(clockState.incrementMs);
       const tempoLabel =
@@ -91,7 +96,11 @@ const createHistoryHandler = (deps) => {
         return res.json(result.rows.map(mapHistoryRow));
       } catch (err) {
         logger.error('Get game history error', err);
-        return res.status(500).json({ error: 'Oyun geçmişi yüklenemedi.' });
+        return sendApiProblem(res, {
+          status: 500,
+          code: 'INTERNAL_ERROR',
+          message: 'Oyun geçmişi yüklenemedi.',
+        });
       }
     }
 
@@ -102,7 +111,9 @@ const createHistoryHandler = (deps) => {
         if (!supportedGameTypes.has(String(game.gameType || '').trim())) return false;
         const hostLower = String(game.hostName || '').toLowerCase();
         const guestLower = String(game.guestName || '').toLowerCase();
-        return hostLower === targetUsername.toLowerCase() || guestLower === targetUsername.toLowerCase();
+        return (
+          hostLower === targetUsername.toLowerCase() || guestLower === targetUsername.toLowerCase()
+        );
       })
       .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
       .slice(0, 25)

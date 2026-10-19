@@ -4,6 +4,7 @@
  */
 
 const { isAdminActor } = require('../validation');
+const { sendApiProblem } = require('../../../utils/routeHelpers');
 
 const createDeleteGameHandler = (deps) => {
   const {
@@ -34,18 +35,24 @@ const createDeleteGameHandler = (deps) => {
         [id, req.user?.username || '', isAdminActor(req.user)]
       );
       if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'Oyun bulunamadı veya silme yetkiniz yok.' });
+        return sendApiProblem(res, {
+          status: 404,
+          code: 'GAME_NOT_FOUND',
+          message: 'Oyun bulunamadı veya silme yetkiniz yok.',
+        });
       }
-      
+
       const deletedGame = result.rows[0];
-      
+
       // Cache invalidation - oyun silindi
-      lobbyCacheService?.onGameDeleted({
-        tableCode: deletedGame.table_code,
-      }).catch((err) => {
-        logger.warn(`Cache invalidation failed on game deleted: ${err.message}`);
-      });
-      
+      lobbyCacheService
+        ?.onGameDeleted({
+          tableCode: deletedGame.table_code,
+        })
+        .catch((err) => {
+          logger.warn(`Cache invalidation failed on game deleted: ${err.message}`);
+        });
+
       emitLobbyUpdate({
         action: 'game_deleted',
         gameId: id,
@@ -61,10 +68,17 @@ const createDeleteGameHandler = (deps) => {
       deletedTableCode = game.table;
       if (isAdminActor(req.user)) return false;
       const actor = String(req.user?.username || '').toLowerCase();
-      return String(game.hostName || '').toLowerCase() !== actor && String(game.guestName || '').toLowerCase() !== actor;
+      return (
+        String(game.hostName || '').toLowerCase() !== actor &&
+        String(game.guestName || '').toLowerCase() !== actor
+      );
     });
     if (nextGames.length === currentGames.length) {
-      return res.status(404).json({ error: 'Oyun bulunamadı veya silme yetkiniz yok.' });
+      return sendApiProblem(res, {
+        status: 404,
+        code: 'GAME_NOT_FOUND',
+        message: 'Oyun bulunamadı veya silme yetkiniz yok.',
+      });
     }
     setMemoryGames(nextGames);
     emitLobbyUpdate({

@@ -1,9 +1,4 @@
-const {
-  buildErrorResponse,
-  mapTransitionError,
-  sendError,
-  handleGameError,
-} = require('./errorHelpers');
+const { mapTransitionError, sendTransitionError } = require('./errorHelpers');
 
 const createMockRes = () => {
   const res = { statusCode: 0, body: null };
@@ -17,18 +12,6 @@ const createMockRes = () => {
   });
   return res;
 };
-
-describe('buildErrorResponse', () => {
-  it('builds error with default 400 and no code', () => {
-    expect(buildErrorResponse('Hata')).toEqual({ statusCode: 400, body: { error: 'Hata' } });
-  });
-  it('includes code when provided', () => {
-    expect(buildErrorResponse('Hata', 403, 'forbidden')).toEqual({
-      statusCode: 403,
-      body: { error: 'Hata', code: 'forbidden' },
-    });
-  });
-});
 
 describe('mapTransitionError', () => {
   it('maps missing result to generic transition error', () => {
@@ -58,49 +41,34 @@ describe('mapTransitionError', () => {
   });
 });
 
-describe('sendError', () => {
-  it('sends error JSON with status', () => {
+describe('sendTransitionError', () => {
+  it('answers with the shared contract and keeps the transition in details', () => {
     const res = createMockRes();
-    sendError(res, 'Kötü istek', 400);
-    expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.body).toEqual({ error: 'Kötü istek' });
-  });
-  it('includes code when provided', () => {
-    const res = createMockRes();
-    sendError(res, 'Yasak', 403, 'forbidden');
-    expect(res.body).toEqual({ error: 'Yasak', code: 'forbidden' });
-  });
-});
-
-describe('handleGameError', () => {
-  const logger = { error: jest.fn() };
-
-  beforeEach(() => logger.error.mockClear());
-
-  it('logs the error with context', () => {
-    const res = createMockRes();
-    handleGameError(res, new Error('booom'), logger, 'test_ctx');
-    expect(logger.error).toHaveBeenCalledWith('test_ctx error', expect.any(Error));
-  });
-
-  it('maps ECONNREFUSED to 503', () => {
-    const res = createMockRes();
-    handleGameError(res, { code: 'ECONNREFUSED' }, logger);
-    expect(res.statusCode).toBe(503);
-    expect(res.body.error).toContain('Veritabanı');
-  });
-
-  it('maps postgres unique violation (23505) to 409', () => {
-    const res = createMockRes();
-    handleGameError(res, { code: '23505' }, logger);
+    sendTransitionError(res, {
+      message: 'olmaz',
+      code: 'bad_status',
+      from: 'waiting',
+      to: 'playing',
+    });
     expect(res.statusCode).toBe(409);
-    expect(res.body.error).toContain('çakışma');
+    expect(res.body).toEqual({
+      code: 'bad_status',
+      message: 'olmaz',
+      details: { fromStatus: 'waiting', toStatus: 'playing' },
+      requestId: null,
+      error: 'olmaz',
+      status: 409,
+    });
   });
 
-  it('falls back to 500 generic error', () => {
+  it('falls back to the generic transition error without a result', () => {
     const res = createMockRes();
-    handleGameError(res, new Error('generic'), logger);
-    expect(res.statusCode).toBe(500);
-    expect(res.body.error).toContain('hata');
+    sendTransitionError(res, null, 400);
+    expect(res.statusCode).toBe(400);
+    expect(res.body).toMatchObject({
+      code: 'invalid_transition',
+      error: 'Geçersiz durum geçişi.',
+      details: null,
+    });
   });
 });

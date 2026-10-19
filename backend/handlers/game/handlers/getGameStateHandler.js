@@ -5,6 +5,7 @@
 
 const { isAdminActor } = require('../validation');
 const { GAME_STATUS, assertGameStatusTransition } = require('../../../utils/gameStateMachine');
+const { sendApiProblem } = require('../../../utils/routeHelpers');
 
 const createGetGameStateHandler = (deps) => {
   const {
@@ -43,7 +44,11 @@ const createGetGameStateHandler = (deps) => {
 
       const result = await pool.query(baseSelectQuery, [id]);
       if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'Game not found' });
+        return sendApiProblem(res, {
+          status: 404,
+          code: 'GAME_NOT_FOUND',
+          message: 'Game not found',
+        });
       }
 
       let row = result.rows[0];
@@ -54,7 +59,11 @@ const createGetGameStateHandler = (deps) => {
         .trim()
         .toLowerCase();
       if (!adminActor && actor && actor !== host && actor !== guest) {
-        return res.status(403).json({ error: 'Bu oyunun detaylarını görme yetkin yok.' });
+        return sendApiProblem(res, {
+          status: 403,
+          code: 'FORBIDDEN',
+          message: 'Bu oyunun detaylarını görme yetkin yok.',
+        });
       }
 
       const timeoutResolution = buildChessTimeoutResolution({
@@ -115,7 +124,11 @@ const createGetGameStateHandler = (deps) => {
 
     const game = getMemoryGames().find((item) => String(item.id) === String(id));
     if (!game) {
-      return res.status(404).json({ error: 'Game not found' });
+      return sendApiProblem(res, {
+        status: 404,
+        code: 'GAME_NOT_FOUND',
+        message: 'Game not found',
+      });
     }
     const host = String(game.hostName || '')
       .trim()
@@ -124,7 +137,11 @@ const createGetGameStateHandler = (deps) => {
       .trim()
       .toLowerCase();
     if (!adminActor && actor && actor !== host && actor !== guest) {
-      return res.status(403).json({ error: 'Bu oyunun detaylarını görme yetkin yok.' });
+      return sendApiProblem(res, {
+        status: 403,
+        code: 'FORBIDDEN',
+        message: 'Bu oyunun detaylarını görme yetkin yok.',
+      });
     }
 
     const timeoutResolution = buildChessTimeoutResolution({

@@ -158,6 +158,8 @@ body:has(.cdl) {
 }
 
 .cdl-quiet {
+  display: inline-flex;
+  align-items: center;
   min-height: 44px;
   padding: 0 2px;
   border: 0;

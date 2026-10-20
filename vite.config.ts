@@ -1,8 +1,42 @@
+import fs from 'fs';
 import path from 'path';
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { execSync } from 'child_process';
+import { PUBLIC_PAGES, findPublicPage } from './components/landing/routePages';
+import { renderPageHtml, renderSitemap } from './components/landing/staticShells';
+
+/**
+ * One HTML file per public page, each with its own title, description, canonical address and
+ * static first screen, plus the sitemap. nginx serves dist/kafeler/index.html for /kafeler.
+ */
+const publicPages = (): Plugin => {
+  let outDir = 'dist';
+  return {
+    name: 'cafeduo-public-pages',
+    configResolved(config) {
+      outDir = path.resolve(config.root, config.build.outDir);
+    },
+    transformIndexHtml(html, ctx) {
+      const pathname = new URL(ctx.originalUrl || ctx.path || '/', 'http://local').pathname;
+      return renderPageHtml(html, findPublicPage(pathname) ?? PUBLIC_PAGES[0]);
+    },
+    writeBundle() {
+      const rootHtml = fs.readFileSync(path.join(outDir, 'index.html'), 'utf-8');
+      for (const page of PUBLIC_PAGES) {
+        if (page.path === '/') continue;
+        const dir = path.join(outDir, page.path);
+        fs.mkdirSync(dir, { recursive: true });
+        fs.writeFileSync(path.join(dir, 'index.html'), renderPageHtml(rootHtml, page));
+      }
+      fs.writeFileSync(
+        path.join(outDir, 'sitemap.xml'),
+        renderSitemap(new Date().toISOString().slice(0, 10))
+      );
+    },
+  };
+};
 
 export default defineConfig(({ mode }) => {
   const _env = loadEnv(mode, '.', '');
@@ -38,6 +72,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
+      publicPages(),
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'route-flag.js'],

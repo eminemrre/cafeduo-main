@@ -9,19 +9,12 @@
 import React, { useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { LandingExperience } from './LandingExperience';
-import { toyImage } from './landing/landingContent';
+import { OWNER_HERO_FACTS, toyImage } from './landing/landingContent';
 import { CONTACT_EMAIL, DEFAULT_PILOT_MESSAGE, pilotMailto, whatsappLink } from '../lib/ownerContact';
 
 const whatsappHref = whatsappLink();
 
 const external = { target: '_blank', rel: 'noopener noreferrer' } as const;
-
-const HERO_FACTS = [
-  { what: 'İlk 2 kafe, ilk ay', value: 'ücretsiz' },
-  { what: 'Kurulum', value: 'birlikte' },
-  { what: 'Sözleşme', value: 'istediğiniz an iptal' },
-  { what: 'CafeDuo Pro', value: '₺800/ay' },
-] as const;
 
 /** The pilot card: what the owner gets, on one sheet of the table's stationery. The page's
  *  primary action (Pilota başvur) lives in the header, so the card carries none of its own. */
@@ -45,7 +38,7 @@ const Hero: React.FC = () => (
             yeniden gelsin.
           </p>
           <ul className="cdl-owner-facts" aria-label="Anahtar sayılar">
-            {HERO_FACTS.map((fact) => (
+            {OWNER_HERO_FACTS.map((fact) => (
               <li className="cdl-slip-row" key={fact.what}>
                 <span className="cdl-slip-what">{fact.what}</span>
                 <span className="cdl-slip-dots" aria-hidden="true" />

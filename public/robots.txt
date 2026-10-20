@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /admin
+Disallow: /cafe-admin
+Disallow: /reset-password
+Disallow: /api/
+
+Sitemap: https://cafeduotr.com/sitemap.xml

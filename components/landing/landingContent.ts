@@ -5,6 +5,14 @@
 
 export const toyImage = (name: string) => `/landing/toys/${name}.webp`;
 
+/** The key numbers on the café-owner pilot card (/kafeler). */
+export const OWNER_HERO_FACTS = [
+  { what: 'İlk 2 kafe, ilk ay', value: 'ücretsiz' },
+  { what: 'Kurulum', value: 'birlikte' },
+  { what: 'Sözleşme', value: 'istediğiniz an iptal' },
+  { what: 'CafeDuo Pro', value: '₺800/ay' },
+] as const;
+
 /** The three games, in the order they stack on the page. */
 export const GAMES = [
   {

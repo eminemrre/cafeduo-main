@@ -1609,6 +1609,11 @@ body:has(.cdl) {
   margin: 0;
 }
 
+/* The short line is the phone one; the full sentence is for wider screens. */
+.cdl-cookie-short {
+  display: none;
+}
+
 .cdl-cookie-actions {
   display: flex;
   justify-content: flex-end;
@@ -1656,6 +1661,10 @@ body:has(.cdl) {
   .cdl-cookie h2,
   .cdl-cookie-more {
     display: none;
+  }
+
+  .cdl-cookie-short {
+    display: inline;
   }
 
   .cdl-cookie-actions {

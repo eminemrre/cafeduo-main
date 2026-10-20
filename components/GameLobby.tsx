@@ -51,7 +51,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
           className="duo-lobby-action duo-focus bg-candy-lokum text-carbon disabled:cursor-not-allowed"
         >
           <Gamepad2 size={28} strokeWidth={2.4} aria-hidden="true" />
-          {isInGame ? <span>Oyundasın</span> : <span className="duo-sentence">Oyun Kur</span>}
+          {isInGame ? <span>Oyundasın</span> : <span>Oyun kur</span>}
         </motion.button>
 
         <motion.button
@@ -142,7 +142,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                           className="duo-quiet duo-focus"
                           data-testid={`cancel-game-${req.id}`}
                         >
-                          <span className="duo-sentence">İPTAL ET</span>
+                          İptal et
                         </button>
                       </div>
                     )}

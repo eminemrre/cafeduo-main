@@ -147,8 +147,8 @@ describe('MatchResultCard', () => {
     expect(screen.getByTestId('match-result-card')).toBeInTheDocument();
   });
 
-  it('"Maç Sonucu" etiketini render eder', () => {
+  it('"Maç sonucu" etiketini render eder', () => {
     render(<MatchResultCard {...baseProps} />);
-    expect(screen.getByText('Maç Sonucu')).toBeInTheDocument();
+    expect(screen.getByText('Maç sonucu')).toBeInTheDocument();
   });
 });

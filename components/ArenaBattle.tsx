@@ -305,7 +305,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
           <p className="duo-game-sub truncate">{participants}</p>
         </div>
         <button type="button" onClick={onLeave} className="duo-quiet duo-focus shrink-0">
-          <span className="duo-sentence">Oyundan Çık</span>
+          Oyundan çık
         </button>
       </header>
 

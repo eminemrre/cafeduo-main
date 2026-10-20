@@ -77,7 +77,7 @@ describe('RetroChess (classic)', () => {
       />
     );
 
-    fireEvent.click(screen.getByText('Oyundan Çık'));
+    fireEvent.click(screen.getByText('Oyundan çık'));
     expect(onLeave).toHaveBeenCalledTimes(1);
   });
 

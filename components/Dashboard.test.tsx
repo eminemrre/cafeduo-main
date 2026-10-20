@@ -537,7 +537,7 @@ describe('Dashboard Integration', () => {
             gamesPlayed: 11,
           })
         );
-        expect(screen.getByText('Maç Sonucu')).toBeInTheDocument();
+        expect(screen.getByText('Maç sonucu')).toBeInTheDocument();
       });
 
       fireEvent.click(screen.getByText('Sonucu gördüm, lobiye dön'));

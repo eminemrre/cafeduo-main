@@ -46,13 +46,13 @@ describe('CreateGameModal', () => {
     it('renders nothing when isOpen is false', () => {
       render(<CreateGameModal {...defaultProps} isOpen={false} />);
 
-      expect(screen.queryByText('YENİ OYUN KUR')).not.toBeInTheDocument();
+      expect(screen.queryByText('Yeni oyun kur')).not.toBeInTheDocument();
     });
 
     it('renders modal when isOpen is true', () => {
       render(<CreateGameModal {...defaultProps} />);
 
-      expect(screen.getByText('YENİ OYUN KUR')).toBeInTheDocument();
+      expect(screen.getByText('Yeni oyun kur')).toBeInTheDocument();
       expect(screen.getByText('Mevcut Puanınız:')).toBeInTheDocument();
       expect(screen.getByText('1000')).toBeInTheDocument();
     });
@@ -194,7 +194,7 @@ describe('CreateGameModal', () => {
       if (form) {
         fireEvent.submit(form);
       } else {
-        fireEvent.click(screen.getByText('LOBİYE GÖNDER'));
+        fireEvent.click(screen.getByText('Lobiye gönder'));
       }
 
       await waitFor(
@@ -209,7 +209,7 @@ describe('CreateGameModal', () => {
       render(<CreateGameModal {...defaultProps} />);
 
       fireEvent.change(screen.getByTestId('game-points-input'), { target: { value: '50' } });
-      fireEvent.click(screen.getByText('LOBİYE GÖNDER'));
+      fireEvent.click(screen.getByText('Lobiye gönder'));
 
       await waitFor(() => {
         expect(defaultProps.onClose).toHaveBeenCalled();
@@ -228,7 +228,7 @@ describe('CreateGameModal', () => {
       if (form) {
         fireEvent.submit(form);
       } else {
-        fireEvent.click(screen.getByText('LOBİYE GÖNDER'));
+        fireEvent.click(screen.getByText('Lobiye gönder'));
       }
 
       // Wait for validation to trigger
@@ -247,7 +247,7 @@ describe('CreateGameModal', () => {
 
       fireEvent.change(screen.getByTestId('game-points-input'), { target: { value: '50' } });
 
-      const submitButton = screen.getByText('LOBİYE GÖNDER');
+      const submitButton = screen.getByText('Lobiye gönder');
       fireEvent.click(submitButton);
 
       // Button should show loading state or be disabled
@@ -271,7 +271,7 @@ describe('CreateGameModal', () => {
     it('calls onClose when mobile footer close button clicked', () => {
       render(<CreateGameModal {...defaultProps} />);
 
-      fireEvent.click(screen.getByRole('button', { name: 'KAPAT' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Kapat' }));
 
       expect(defaultProps.onClose).toHaveBeenCalled();
     });

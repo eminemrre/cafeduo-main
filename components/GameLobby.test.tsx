@@ -71,7 +71,7 @@ describe('GameLobby', () => {
     it('renders action buttons', () => {
       render(<GameLobby {...defaultProps} />);
 
-      expect(screen.getByText('Oyun Kur')).toBeInTheDocument();
+      expect(screen.getByText('Oyun kur')).toBeInTheDocument();
       expect(screen.getByText('Hızlı eşleş')).toBeInTheDocument();
     });
 
@@ -103,7 +103,7 @@ describe('GameLobby', () => {
     it('calls onCreateGameClick when OYUN KUR button clicked', () => {
       render(<GameLobby {...defaultProps} />);
 
-      fireEvent.click(screen.getByText('Oyun Kur'));
+      fireEvent.click(screen.getByText('Oyun kur'));
 
       expect(defaultProps.onCreateGameClick).toHaveBeenCalledTimes(1);
     });
@@ -150,7 +150,7 @@ describe('GameLobby', () => {
 
       expect(screen.getByText('Senin lobin')).toBeInTheDocument();
       expect(screen.queryByText('Oyuna katıl')).not.toBeInTheDocument();
-      expect(screen.getByText('İPTAL ET')).toBeInTheDocument();
+      expect(screen.getByText('İptal et')).toBeInTheDocument();
     });
   });
 
@@ -192,7 +192,7 @@ describe('GameLobby', () => {
     it('renders with empty requests array', () => {
       render(<GameLobby {...defaultProps} requests={[]} />);
 
-      expect(screen.getByText('Oyun Kur')).toBeInTheDocument();
+      expect(screen.getByText('Oyun kur')).toBeInTheDocument();
       expect(screen.getByText('Hızlı eşleş')).toBeInTheDocument();
     });
   });

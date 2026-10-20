@@ -8,8 +8,11 @@
  *
  * The list is read from the environment so it can be changed without a code
  * change: `CHECKIN_LOCATION_EXEMPT_USERS=test102,other.user` (comma separated,
- * case-insensitive). An empty list means nobody is exempt.
+ * case-insensitive). When the variable is not set at all the built-in default
+ * applies, so the exemption does not depend on the host passing it through;
+ * set it to an empty string to exempt nobody.
  */
+const DEFAULT_EXEMPT_USERS = 'test102';
 const parseUsernames = (raw) =>
   new Set(
     String(raw || '')
@@ -18,7 +21,9 @@ const parseUsernames = (raw) =>
       .filter(Boolean)
   );
 
-const exemptUsernames = parseUsernames(process.env.CHECKIN_LOCATION_EXEMPT_USERS);
+const exemptUsernames = parseUsernames(
+  process.env.CHECKIN_LOCATION_EXEMPT_USERS ?? DEFAULT_EXEMPT_USERS
+);
 
 /** True when this account skips the café's location (geofence) verification. */
 const isLocationCheckExempt = (user) => {

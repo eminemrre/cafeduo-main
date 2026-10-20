@@ -16,6 +16,7 @@ import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
+import { usePageMeta } from './hooks/usePageMeta';
 
 // Lazy Load Components
 const Dashboard = lazyWithRetry(
@@ -112,6 +113,7 @@ const AppContent: React.FC = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
+  usePageMeta(location.pathname);
   const previousPathRef = useRef(location.pathname);
   const isLanding = location.pathname === '/';
   // The two public pages share the landing's header, footer and cookie notice.

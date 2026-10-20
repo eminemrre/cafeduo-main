@@ -5,30 +5,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="cafeduo:app-version" content="%VITE_APP_VERSION%" />
-  <title>CafeDuo - Kafe Oyun Platformu | Satranç, Nişancı Düellosu, Bilgi Yarışması</title>
-  <meta name="description"
-    content="CafeDuo ile kafede arkadaşlarınla oyun oyna. Retro satranç, nişancı düellosu ve bilgi yarışması. Puan kazan, ödüller al. Ücretsiz kaydol!" />
-  <meta name="keywords" content="kafe oyunu, satranç, nişangah oyunu, bilgi yarışması, multiplayer, kafe, oyun platformu, cafeduo" />
   <meta name="author" content="CafeDuo" />
   <meta name="robots" content="index, follow" />
-
-  <!-- Open Graph (Facebook, LinkedIn, vb.) -->
-  <meta property="og:title" content="CafeDuo - Kafe Oyun Platformu" />
-  <meta property="og:description"
-    content="Kafede arkadaşlarınla oyun oyna, puan kazan, ödüller al. Retro satranç, nişancı düellosu ve bilgi yarışması." />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://cafeduotr.com" />
   <meta property="og:site_name" content="CafeDuo" />
   <meta property="og:locale" content="tr_TR" />
-
-  <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="CafeDuo - Kafe Oyun Platformu" />
-  <meta name="twitter:description"
-    content="Kafede arkadaşlarınla oyun oyna, puan kazan, ödüller al." />
-
-  <!-- Canonical URL -->
-  <link rel="canonical" href="https://cafeduotr.com" />
+  <!-- Title, description, canonical and structured data per page: the build fills this in
+       from components/landing/routePages.ts. -->
+  <!--page:head--><title>CafeDuo</title><!--/page:head-->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <meta name="theme-color" content="#FFFFFF">
   <meta name="background-color" content="#FFFFFF">
@@ -47,61 +32,9 @@
 </head>
 
 <body>
-  <!-- A static copy of the landing's first screen: what crawlers and a page
-       without JavaScript read. React replaces it on mount (ClubLanding). -->
-  <div id="root">
-    <div class="duo-app riso-kantin riso-kantin-app min-h-screen font-riso-body cdl-static">
-      <header class="cdl cdl-header">
-        <a href="/" class="cdl-wordmark" aria-label="CafeDuo, ana sayfa">CafeDuo</a>
-        <nav class="cdl-nav" aria-label="Sayfa bölümleri">
-          <a href="/#oyunlar">Oyunlar</a>
-          <a href="/#oduller">Ödüller</a>
-          <a href="/kafeler">Kafeler için</a>
-        </nav>
-        <div class="cdl-header-actions">
-          <a class="cdl-quiet" href="/?auth=login">Giriş yap</a>
-          <a class="cdl-button" href="/?auth=register">Kaydol</a>
-        </div>
-      </header>
-      <main id="main-content">
-        <div class="club-landing" data-motion="off">
-          <div class="cdl">
-            <section id="ust" class="cdl-field cdl-hero" aria-labelledby="cdl-hero-title">
-              <div class="cdl-tent">
-                <div class="cdl-tent-stack">
-                  <div class="cdl-tent-card">
-                    <i class="cdl-scallop cdl-scallop-tl" aria-hidden="true"></i>
-                    <i class="cdl-scallop cdl-scallop-tr" aria-hidden="true"></i>
-                    <h1 id="cdl-hero-title">
-                      <span class="cdl-tent-line-1">Rakibin</span>
-                      <span class="cdl-tent-line-2">yan masada.</span>
-                    </h1>
-                    <p class="cdl-tent-offer">
-                      Aynı kafedeki biriyle satranç, bilgi yarışı ya da düello oyna; kazandığın puanı
-                      kafenin ödüllerinde harca.
-                    </p>
-                    <p class="cdl-tent-meta">
-                      <span>İlk 100 puan hediye</span>
-                      <i class="cdl-diamond" aria-hidden="true"></i>
-                      <span>Her gün çark</span>
-                    </p>
-                    <div class="cdl-tent-foot">
-                      <p class="cdl-tent-scan">Telefonla okut: cafeduotr.com</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <nav class="cdl-hero-links" aria-label="Sayfa bölümleri">
-                <a href="/#oyunlar">Oyunlar</a>
-                <a href="/#oduller">Ödüller</a>
-                <a href="/kafeler">Kafeler için</a>
-              </nav>
-            </section>
-          </div>
-        </div>
-      </main>
-    </div>
-  </div>
+  <!-- A static copy of the page's first screen: what crawlers and a page without
+       JavaScript read. The build fills it in per page (routePages.ts); React replaces it. -->
+  <div id="root"><!--page:shell--><!--/page:shell--></div>
   <script type="module" src="/index.tsx"></script>
 </body>
 

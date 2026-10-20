@@ -7,10 +7,10 @@
  * tempo and a slip-style summary that closes on an ink bar. Text content and
  * data-testid attributes are preserved so CreateGameModal.test.tsx passes:
  *   - "Yeni oyun kur", "Kapat", "Lobiye gönder" (sentence case in the source)
- *   - "Mevcut Puanınız:" + the wallet balance
+ *   - "Puanın:" + the wallet balance
  *   - exact game descriptions for the 3 cards
- *   - "Min" / "100" / "250" / "Max" preset labels
- *   - "Oyun:" / "Katılım Puanı:" / "Kalan:" summary labels
+ *   - "En az" / "100" / "250" / "En çok" preset labels
+ *   - "Oyun:" / "Katılım puanın:" / "Kalan:" summary labels
  *   - data-testid: create-game-modal, game-type-{chess,knowledge,aim},
  *     game-points-input, create-game-submit
  */
@@ -141,7 +141,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
     const newErrors: ValidationError = {};
     if (!gameType) newErrors.gameType = 'Oyun türü seçmelisiniz';
     if (points < minPoints) newErrors.points = `${gameType} için minimum ${minPoints} puan gerekli`;
-    if (points > maxPoints) newErrors.points = `Maksimum ${maxPoints} puan kullanabilirsiniz`;
+    if (points > maxPoints) newErrors.points = `En fazla ${maxPoints} puan kullanabilirsin`;
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -154,7 +154,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
       if (numValue < minPoints)
         newErrors.points = `${gameType} için minimum ${minPoints} puan gerekli`;
       else if (numValue > maxPoints)
-        newErrors.points = `Maksimum ${maxPoints} puan kullanabilirsiniz`;
+        newErrors.points = `En fazla ${maxPoints} puan kullanabilirsin`;
       else delete newErrors.points;
       setErrors(newErrors);
     }
@@ -166,7 +166,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
     const newMinPoints = game?.minPoints || 0;
     if (points < newMinPoints) {
       setPoints(newMinPoints);
-      toast.warning(`${newGameType} için minimum ${newMinPoints} puan ayarlandı`);
+      toast.warning(`${newGameType} için en az ${newMinPoints} puan ayarlandı`);
     }
     if (errors.gameType) {
       setErrors((prev) => ({ ...prev, gameType: undefined }));
@@ -214,10 +214,10 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
   };
 
   const presetPoints = [
-    { label: 'Min', value: minPoints },
+    { label: 'En az', value: minPoints },
     { label: '100', value: 100 },
     { label: '250', value: 250 },
-    { label: 'Max', value: maxPoints },
+    { label: 'En çok', value: maxPoints },
   ].filter((p) => p.value >= minPoints && p.value <= maxPoints);
 
   if (!isOpen) return null;
@@ -259,7 +259,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
               per-match stake cap. Form validation uses the capped value
               (`maxPoints`) but the display shows what they actually have. */}
             <div className="flex items-center justify-between bg-candy-fistik px-4 py-2.5">
-              <span className="font-candy-body text-[15px] font-medium">Mevcut Puanınız:</span>
+              <span className="font-candy-body text-[15px] font-medium">Puanın:</span>
               <span className="font-candy-mono text-2xl font-bold leading-none">
                 {maxPointsProp}
               </span>
@@ -333,7 +333,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
               {/* Points slider */}
               <div>
                 <label className="mb-2 flex justify-between gap-3 text-[15px] font-semibold">
-                  <span>Puan yatırımı</span>
+                  <span>Puan yatırımın</span>
                   <span className="font-candy-mono">{`${points} / ${maxPoints}`}</span>
                 </label>
 
@@ -425,9 +425,9 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                   <span className="duo-leader-value">{gameType}</span>
                 </div>
                 <div className="duo-leader-row">
-                  <span className="text-carbon-muted">Katılım Puanı:</span>
+                  <span className="text-carbon-muted">Katılım puanın:</span>
                   <span className="duo-leader-dots" aria-hidden="true" />
-                  <span className="duo-leader-value">{`${points} Puan`}</span>
+                  <span className="duo-leader-value">{`${points} puan`}</span>
                 </div>
                 {gameType === 'Retro Satranç' && (
                   <div className="duo-leader-row">
@@ -442,7 +442,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                   }`}
                 >
                   <span>Kalan:</span>
-                  <span className="font-candy-mono font-bold">{remaining} Puan</span>
+                  <span className="font-candy-mono font-bold">{remaining} puan</span>
                 </div>
               </div>
               {activeTournament && (

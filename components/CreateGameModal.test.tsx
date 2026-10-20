@@ -53,7 +53,7 @@ describe('CreateGameModal', () => {
       render(<CreateGameModal {...defaultProps} />);
 
       expect(screen.getByText('Yeni oyun kur')).toBeInTheDocument();
-      expect(screen.getByText('Mevcut Puanınız:')).toBeInTheDocument();
+      expect(screen.getByText('Puanın:')).toBeInTheDocument();
       expect(screen.getByText('1000')).toBeInTheDocument();
     });
 
@@ -85,16 +85,16 @@ describe('CreateGameModal', () => {
       // shows (value=0 since minPoints=0), 100 is in range, Max maps to 150.
       render(<CreateGameModal {...defaultProps} />);
 
-      expect(screen.getByText('Min')).toBeInTheDocument();
+      expect(screen.getByText('En az')).toBeInTheDocument();
       expect(screen.getByText('100')).toBeInTheDocument();
-      expect(screen.getByText('Max')).toBeInTheDocument();
+      expect(screen.getByText('En çok')).toBeInTheDocument();
     });
 
     it('renders summary section', () => {
       render(<CreateGameModal {...defaultProps} />);
 
       expect(screen.getByText('Oyun:')).toBeInTheDocument();
-      expect(screen.getByText('Katılım Puanı:')).toBeInTheDocument();
+      expect(screen.getByText('Katılım puanın:')).toBeInTheDocument();
       expect(screen.getByText('Kalan:')).toBeInTheDocument();
     });
   });
@@ -308,7 +308,7 @@ describe('CreateGameModal', () => {
       fireEvent.change(screen.getByTestId('game-points-input'), { target: { value: '500' } });
 
       // Should show 500 points in summary (first occurrence)
-      expect(screen.getAllByText('500 Puan')[0]).toBeInTheDocument();
+      expect(screen.getAllByText('500 puan')[0]).toBeInTheDocument();
     });
 
     it('calculates remaining points correctly (PR #36 caps form max at 150)', () => {
@@ -317,7 +317,7 @@ describe('CreateGameModal', () => {
       fireEvent.change(screen.getByTestId('game-points-input'), { target: { value: '100' } });
 
       // Should show 900 remaining (1000 wallet - 100 stake) in summary
-      expect(screen.getByText('900 Puan')).toBeInTheDocument();
+      expect(screen.getByText('900 puan')).toBeInTheDocument();
     });
   });
 

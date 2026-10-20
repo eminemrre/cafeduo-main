@@ -26,6 +26,8 @@ const appFrame = (body: string) => `
     </div>
   `;
 
+// The sign-in links open a dialog on the home page; rel="nofollow" keeps crawlers from
+// counting /?auth=… as pages of their own.
 const playersShell = () =>
   appFrame(`
       <header class="cdl cdl-header">
@@ -36,8 +38,8 @@ const playersShell = () =>
           <a href="/kafeler">Kafeler için</a>
         </nav>
         <div class="cdl-header-actions">
-          <a class="cdl-quiet" href="/?auth=login">Giriş yap</a>
-          <a class="cdl-button" href="/?auth=register">Kaydol</a>
+          <a class="cdl-quiet" href="/?auth=login" rel="nofollow">Giriş yap</a>
+          <a class="cdl-button" href="/?auth=register" rel="nofollow">Kaydol</a>
         </div>
       </header>
       <main id="main-content">
@@ -88,7 +90,7 @@ const ownersShell = () =>
           <a href="/">Oyuncular için</a>
         </nav>
         <div class="cdl-header-actions">
-          <a class="cdl-quiet" href="/?auth=login">Giriş yap</a>
+          <a class="cdl-quiet" href="/?auth=login" rel="nofollow">Giriş yap</a>
           <a class="cdl-button" href="${escapeHtml(whatsappLink())}" target="_blank" rel="noopener noreferrer">Pilota başvur</a>
         </div>
       </header>

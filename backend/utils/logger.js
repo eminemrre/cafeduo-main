@@ -1,4 +1,5 @@
 const winston = require('winston');
+const { findError, reportError } = require('./errorReporting');
 
 const logger = winston.createLogger({
     level: 'info',
@@ -25,5 +26,17 @@ logger.add(new winston.transports.Console({
             })
     ),
 }));
+
+// Errors logged together with an Error object go to Sentry as well (a no-op
+// without SENTRY_DSN). Plain error messages stay in the log only.
+const SPLAT = Symbol.for('splat');
+class ErrorReportingTransport extends winston.Transport {
+    log(info, callback) {
+        const err = findError([...(info[SPLAT] || []), info]);
+        if (err) reportError(err, { context: typeof info.message === 'string' ? info.message : undefined });
+        callback();
+    }
+}
+logger.add(new ErrorReportingTransport({ level: 'error' }));
 
 module.exports = logger;

@@ -19,6 +19,8 @@ export interface MatchStats {
   playerScore?: number;
   opponentScore?: number;
   maxRounds?: number;
+  /** Bilgi Yarışı: doğru cevap sayısı. */
+  correctAnswers?: number;
   moveCount?: number;
   durationMs?: number;
 }
@@ -118,7 +120,11 @@ export const MatchResultCard: React.FC<MatchResultCardProps> = ({
       chips.push({ label: 'Skor', value: `${stats.playerScore}–${stats.opponentScore}` });
     }
     if (stats.kind === 'quiz' && typeof stats.maxRounds === 'number') {
-      chips.push({ label: 'Soru', value: String(stats.maxRounds) });
+      chips.push(
+        typeof stats.correctAnswers === 'number'
+          ? { label: 'Doğru', value: `${stats.correctAnswers}/${stats.maxRounds}` }
+          : { label: 'Soru', value: String(stats.maxRounds) }
+      );
     }
     if (stats.kind === 'chess' && typeof stats.moveCount === 'number') {
       chips.push({ label: 'Hamle', value: String(stats.moveCount) });

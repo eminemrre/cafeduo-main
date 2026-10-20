@@ -3,7 +3,13 @@ import { User } from '../types';
 import { RetroButton } from './RetroButton';
 import { playGameSfx } from '../lib/gameAudio';
 import { ConnectionOverlay } from './ConnectionOverlay';
-import { buildQuizRoundSet } from '../lib/knowledgeQuizQuestions';
+import {
+  QUESTION_TIME_SECONDS,
+  buildQuizRoundSet,
+  halfAndHalf,
+  quizSeed,
+  scoreAnswer,
+} from '../lib/knowledgeQuizQuestions';
 import { useLiveScoreGame, type LiveMatchStats } from '../hooks/useLiveScoreGame';
 import { QuizStageCanvas, type QuizStageHandle } from './games/QuizStageCanvas';
 
@@ -15,7 +21,7 @@ interface KnowledgeQuizProps {
   onGameEnd: (
     winner: string,
     points: number,
-    stats?: LiveMatchStats & { maxRounds?: number }
+    stats?: LiveMatchStats & { maxRounds?: number; correctAnswers?: number }
   ) => void;
   onLeave: () => void;
   /** Fires the instant the match is settled (live.done flips true) so the
@@ -26,10 +32,7 @@ interface KnowledgeQuizProps {
 const QUIZ_ROUND_COUNT = 10;
 const QUIZ_GAME_TYPE = 'Bilgi Yarışı';
 const FINALIZATION_FALLBACK_MS = 10_000;
-/** Per-question time limit (seconds). When 0 is reached the question is
- *  auto-submitted as wrong and the next round starts. Pure client-side in V1
- *  — multiplayer doesn't yet enforce this server-side. */
-const QUESTION_TIME_SECONDS = 15;
+const LEVEL_LABEL = { orta: 'Orta', zor: 'Zor' } as const;
 
 export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
   currentUser,
@@ -51,12 +54,22 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
     logName: 'KnowledgeQuiz',
     statsKind: 'quiz',
     onGameEnd: (winner, points, stats) =>
-      onGameEnd(winner, points, stats && { ...stats, maxRounds: QUIZ_ROUND_COUNT }),
+      onGameEnd(
+        winner,
+        points,
+        stats && {
+          ...stats,
+          maxRounds: QUIZ_ROUND_COUNT,
+          correctAnswers: correctAnswersRef.current,
+        }
+      ),
   });
 
   const [roundIndex, setRoundIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
-  const [message, setMessage] = useState('Soruları hızlı ve doğru yanıtla. En yüksek net kazanır.');
+  const [message, setMessage] = useState(
+    'Hızlı doğru cevap daha çok puan getirir. Seriler ve son soru ekstra kazandırır.'
+  );
   const [feedbackAnimation, setFeedbackAnimation] = useState<'correct' | 'incorrect' | null>(null);
   const [scoreAnimation, setScoreAnimation] = useState<'player' | 'opponent' | null>(null);
   const [floatingScore, setFloatingScore] = useState<string | null>(null);
@@ -69,6 +82,16 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
   /** Stable ref to handleAnswer so the countdown effect can call the latest
    *  version without rerunning every time handleAnswer's closure changes. */
   const handleAnswerRef = useRef<(idx: number) => void>(() => {});
+  /** Correct answers in a row, for the streak bonus; the bot keeps its own. */
+  const [streak, setStreak] = useState(0);
+  const botStreakRef = useRef(0);
+  const correctAnswersRef = useRef(0);
+  /** "Yarı yarıya" can be used once per match; it hides two wrong options. */
+  const [jokerUsed, setJokerUsed] = useState(false);
+  const [hiddenOptions, setHiddenOptions] = useState<number[]>([]);
+  /** A solo game gets a fresh set of questions every match. */
+  const [soloSeed] = useState(() => `solo:${Date.now().toString(36)}`);
+  const seed = gameId ? quizSeed(gameId) : soloSeed;
 
   const fallbackQuestion = useMemo(
     () => ({
@@ -80,17 +103,13 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
         string,
       ],
       answerIndex: 0,
+      category: '',
+      level: 'orta' as const,
     }),
     []
   );
-  const quizQuestions = useMemo(
-    () =>
-      buildQuizRoundSet(
-        `${String(gameId || 'local')}:${String(currentUser.username || '')}`,
-        QUIZ_ROUND_COUNT
-      ),
-    [currentUser.username, gameId]
-  );
+  // Seeded by the game alone, so both players get the same questions in the same order.
+  const quizQuestions = useMemo(() => buildQuizRoundSet(seed, QUIZ_ROUND_COUNT), [seed]);
   const maxRounds = quizQuestions.length;
   const currentQuestion =
     quizQuestions[Math.min(roundIndex, Math.max(0, maxRounds - 1))] || fallbackQuestion;
@@ -100,7 +119,12 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
   useEffect(() => {
     setRoundIndex(0);
     setSelectedOption(null);
-    setMessage('Soruları hızlı ve doğru yanıtla. En yüksek net kazanır.');
+    setStreak(0);
+    setJokerUsed(false);
+    setHiddenOptions([]);
+    botStreakRef.current = 0;
+    correctAnswersRef.current = 0;
+    setMessage('Hızlı doğru cevap daha çok puan getirir. Seriler ve son soru ekstra kazandırır.');
   }, [gameId]);
 
   // Update status message when opponent name arrives via snapshot.
@@ -147,9 +171,30 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
     // (timer-driven), highlight the correct option, and proceed normally.
     const isTimeout = optionIndex === -1;
     const isCorrect = !isTimeout && optionIndex === currentQuestion.answerIndex;
-    const rivalCorrect = isBot ? Math.random() < 0.55 : false;
-    const nextPlayerScore = live.playerScore + (isCorrect ? 1 : 0);
-    const nextOpponentScore = live.opponentScore + (rivalCorrect ? 1 : 0);
+    const isLastRound = roundIndex >= maxRounds - 1;
+    const gain = scoreAnswer({
+      correct: isCorrect,
+      secondsLeft: timeLeft,
+      streakBefore: streak,
+      isFinal: isLastRound,
+    });
+    setStreak(gain.streak);
+    if (isCorrect) correctAnswersRef.current += 1;
+
+    // The bot answers about half the questions right, at a human pace.
+    let botPoints = 0;
+    if (isBot) {
+      const bot = scoreAnswer({
+        correct: Math.random() < 0.5,
+        secondsLeft: 3 + Math.floor(Math.random() * 9),
+        streakBefore: botStreakRef.current,
+        isFinal: isLastRound,
+      });
+      botStreakRef.current = bot.streak;
+      botPoints = bot.points;
+    }
+    const nextPlayerScore = live.playerScore + gain.points;
+    const nextOpponentScore = live.opponentScore + botPoints;
 
     // For timeout, store a sentinel so the option grid renders all options
     // as "neither picked correct nor picked wrong" while still showing the
@@ -167,7 +212,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
     window.setTimeout(() => setScoreAnimation(null), 400);
 
     if (isCorrect) {
-      setFloatingScore('+1');
+      setFloatingScore(`+${gain.points}`);
       window.setTimeout(() => setFloatingScore(null), 800);
     } else {
       setFloatingScore(isTimeout ? 'Süre' : 'Yanlış');
@@ -177,9 +222,14 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
     live.setPlayerScore(nextPlayerScore);
     live.setOpponentScore(nextOpponentScore);
     const correctText = currentQuestion.options[currentQuestion.answerIndex];
+    const bonuses = [
+      gain.timeBonus > 0 ? `süre +${gain.timeBonus}` : '',
+      gain.streakBonus > 0 ? `seri +${gain.streakBonus}` : '',
+      gain.doubled ? 'son soru ×2' : '',
+    ].filter(Boolean);
     setMessage(
       isCorrect
-        ? 'Doğru cevap, puanı aldın.'
+        ? `Doğru! +${gain.points} puan${bonuses.length ? ` (${bonuses.join(', ')})` : ''}.`
         : isTimeout
           ? `Süre doldu! Doğru cevap: ${correctText}`
           : isBot
@@ -188,7 +238,6 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
     );
     playGameSfx(isCorrect ? 'success' : 'fail', isCorrect ? 0.3 : 0.22);
 
-    const isLastRound = roundIndex >= maxRounds - 1;
     void live.syncLiveProgress(nextPlayerScore, roundIndex + 1, isLastRound);
 
     if (isLastRound) {
@@ -210,9 +259,21 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
     advanceTimerRef.current = window.setTimeout(() => {
       setRoundIndex((prev) => prev + 1);
       setSelectedOption(null);
-      setMessage('Yeni soru hazır. Hızlı karar ver.');
+      setHiddenOptions([]);
+      setMessage(
+        roundIndex + 1 >= maxRounds - 1
+          ? 'Son soru: puanı çift sayılır.'
+          : 'Yeni soru hazır. Hızlı karar ver.'
+      );
       playGameSfx('select', 0.18);
-    }, 700);
+    }, 900);
+  };
+
+  const playJoker = () => {
+    if (jokerUsed || selectedOption !== null || live.done || live.resolvingMatch) return;
+    setJokerUsed(true);
+    setHiddenOptions(halfAndHalf(currentQuestion, seed));
+    playGameSfx('select', 0.18);
   };
 
   // Keep the ref pointing at the freshest handleAnswer closure so the
@@ -312,6 +373,21 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
           {message}
         </p>
 
+        <div className="mb-3 flex flex-wrap items-center gap-2" data-testid="knowledge-meta">
+          {currentQuestion.category && (
+            <span className="duo-game-chip bg-candy-gok">{currentQuestion.category}</span>
+          )}
+          <span className="duo-game-chip bg-paper-deep">{LEVEL_LABEL[currentQuestion.level]}</span>
+          {roundIndex >= maxRounds - 1 && (
+            <span className="duo-game-chip bg-candy-lokum">Son soru · ×2</span>
+          )}
+          {streak >= 2 && (
+            <span className="duo-game-chip bg-candy-fistik" data-testid="knowledge-streak">
+              Seri: {streak}
+            </span>
+          )}
+        </div>
+
         <div
           className={`relative overflow-hidden bg-paper-deep p-4 sm:p-5 ${feedbackAnimation === 'correct' ? 'animate-flash-green' : feedbackAnimation === 'incorrect' ? 'animate-flash-red animate-shake' : ''}`}
         >
@@ -324,7 +400,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
           {floatingScore && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
               <span
-                className={`font-candy-display text-6xl animate-float-up ${floatingScore === '+1' ? 'text-[#177A41]' : 'text-candy-danger'}`}
+                className={`font-candy-display text-6xl animate-float-up ${floatingScore.startsWith('+') ? 'text-[#177A41]' : 'text-candy-danger'}`}
               >
                 {floatingScore}
               </span>
@@ -338,6 +414,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
           </p>
           <div className="grid grid-cols-1 gap-2">
             {currentQuestion.options.map((option, idx) => {
+              const isHidden = hiddenOptions.includes(idx) && selectedOption === null;
               const isPicked = selectedOption === idx;
               const isCorrect = idx === currentQuestion.answerIndex;
               // Answer states are states, never decoration: success and danger
@@ -361,8 +438,9 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
                   key={`${roundIndex}-${idx}`}
                   data-testid={`knowledge-option-${idx}`}
                   onClick={() => handleAnswer(idx)}
-                  disabled={selectedOption !== null || live.done || live.resolvingMatch}
-                  className={`duo-focus min-h-[52px] text-left px-3 py-2.5 transition-[transform,background-color] duration-200 font-candy-body disabled:cursor-not-allowed ${stateClass}`}
+                  disabled={isHidden || selectedOption !== null || live.done || live.resolvingMatch}
+                  aria-hidden={isHidden || undefined}
+                  className={`duo-focus min-h-[52px] ${isHidden ? 'invisible' : ''} text-left px-3 py-2.5 transition-[transform,background-color] duration-200 font-candy-body disabled:cursor-not-allowed ${stateClass}`}
                 >
                   <span className="flex items-center gap-3">
                     <span
@@ -378,11 +456,24 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
           </div>
         </div>
 
-        {live.done && (
-          <div className="duo-game-actions mt-5">
-            <RetroButton onClick={onLeave}>Lobiye dön</RetroButton>
-          </div>
-        )}
+        <div className="duo-game-actions mt-5 flex flex-col gap-3 sm:flex-row">
+          {!live.done && (
+            <RetroButton
+              onClick={playJoker}
+              disabled={jokerUsed || selectedOption !== null || live.resolvingMatch}
+              variant="secondary"
+              data-testid="knowledge-joker"
+              className="flex-1"
+            >
+              {jokerUsed ? 'Joker kullanıldı' : 'Yarı yarıya (1 joker)'}
+            </RetroButton>
+          )}
+          {live.done && (
+            <RetroButton onClick={onLeave} className="flex-1">
+              Lobiye dön
+            </RetroButton>
+          )}
+        </div>
       </div>
     </>
   );

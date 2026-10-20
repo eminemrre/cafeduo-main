@@ -33,11 +33,17 @@ jest.mock('./RetroButton', () => ({
 
 // PixiJS overlay requires WebGL; mock as inert canvas in tests so the
 // dynamic import + app.init() don't fire in jsdom.
+// `mockStageComesUp` decides whether the fake stage reports itself ready.
+let mockStageComesUp = false;
 jest.mock('./games/AimBattleStageCanvas', () => ({
   AimBattleStageCanvas: React.forwardRef(function MockAimBattleStageCanvas(
-    _props: { className?: string },
+    props: { className?: string; onReadyChange?: (ready: boolean) => void },
     _ref: React.Ref<unknown>
   ) {
+    const { onReadyChange } = props;
+    React.useEffect(() => {
+      if (mockStageComesUp) onReadyChange?.(true);
+    }, [onReadyChange]);
     return <canvas data-testid="aim-battle-pixi-canvas" />;
   }),
 }));
@@ -54,6 +60,7 @@ describe('ArenaBattle', () => {
 
   beforeEach(() => {
     jest.useFakeTimers();
+    mockStageComesUp = false;
   });
 
   afterEach(() => {
@@ -162,5 +169,32 @@ describe('ArenaBattle', () => {
 
     fireEvent.click(screen.getByText('Oyundan çık'));
     expect(onLeave).toHaveBeenCalledTimes(1);
+  });
+
+  it('draws the reticle in CSS while the WebGL stage is not up', () => {
+    render(
+      <ArenaBattle
+        currentUser={mockUser}
+        gameId={null}
+        isBot
+        onGameEnd={jest.fn()}
+        onLeave={jest.fn()}
+      />
+    );
+    expect(screen.getByTestId('arena-reticle')).toBeInTheDocument();
+  });
+
+  it('leaves the reticle to the WebGL stage once it draws', () => {
+    mockStageComesUp = true;
+    render(
+      <ArenaBattle
+        currentUser={mockUser}
+        gameId={null}
+        isBot
+        onGameEnd={jest.fn()}
+        onLeave={jest.fn()}
+      />
+    );
+    expect(screen.queryByTestId('arena-reticle')).not.toBeInTheDocument();
   });
 });

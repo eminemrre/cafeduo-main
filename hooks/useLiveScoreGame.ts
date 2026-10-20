@@ -283,8 +283,9 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
         // Bot/local: no server settlement, show cosmetic reward only.
         const points = localWinner === currentUser.username ? BOT_WIN_REWARD : 0;
         finishHandledRef.current = true;
-        const botStats = buildStats();
-        window.setTimeout(() => onGameEnd(localWinner, points, botStats), 900);
+        // Read the stats when the delay is over: the last answer's score lands in the same
+        // tick as this call, so reading it now would leave that answer out.
+        window.setTimeout(() => onGameEnd(localWinner, points, buildStats()), 900);
         return;
       }
 

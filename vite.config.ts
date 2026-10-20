@@ -19,6 +19,8 @@ const publicPages = (): Plugin => {
       outDir = path.resolve(config.root, config.build.outDir);
     },
     transformIndexHtml(html, ctx) {
+      // Other HTML entries (the dev-only toy-render.html, say) carry no page markers.
+      if (!html.includes('<!--page:head-->')) return html;
       const pathname = new URL(ctx.originalUrl || ctx.path || '/', 'http://local').pathname;
       return renderPageHtml(html, findPublicPage(pathname) ?? PUBLIC_PAGES[0]);
     },

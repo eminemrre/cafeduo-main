@@ -10,10 +10,10 @@
  *     surfaced inside the modal so they can fall back to manual entry.
  *   - Esc closes the modal. Backdrop click also closes.
  *
- * Library: @yudiel/react-qr-scanner — modern React 18+ wrapper around
- * the BarcodeDetector API with fallback to a polyfill scanner. Lazy-
- * loaded so the dependency doesn't ship in the dashboard bundle for
- * users who never open the cafe-admin panel.
+ * The camera view (QrCameraScanner) tries the browser's BarcodeDetector and
+ * falls back to jsQR, so it works on iOS too and needs no WebAssembly or CDN.
+ * Lazy-loaded so it doesn't ship in the dashboard bundle for users who never
+ * open the cafe-admin panel.
  */
 import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -21,9 +21,7 @@ import { Camera, X, AlertTriangle } from 'lucide-react';
 
 // Lazy import to keep the dashboard bundle slim — only the cafe-admin
 // panel needs this, and even then only when the scanner button is clicked.
-const Scanner = lazy(() =>
-  import('@yudiel/react-qr-scanner').then((mod) => ({ default: mod.Scanner }))
-);
+const QrCameraScanner = lazy(() => import('./QrCameraScanner'));
 
 interface QrScannerModalProps {
   isOpen: boolean;
@@ -70,9 +68,7 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
           <div className="min-w-0 flex items-center gap-2">
             <Camera size={18} className="text-carbon shrink-0" aria-hidden="true" />
             <div>
-              <h3 className="font-candy-body text-base sm:text-lg text-carbon">
-                QR Kodu Okut
-              </h3>
+              <h3 className="font-candy-body text-base sm:text-lg text-carbon">QR kodu okut</h3>
             </div>
           </div>
           <button
@@ -106,38 +102,7 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
                   </div>
                 }
               >
-                <Scanner
-                  formats={['qr_code']}
-                  scanDelay={500}
-                  onScan={(results) => {
-                    // Library returns an array of detected codes; take the
-                    // first non-empty payload and close.
-                    const first = Array.isArray(results) ? results[0] : null;
-                    const raw = first?.rawValue || '';
-                    if (raw) {
-                      onScan(raw);
-                    }
-                  }}
-                  onError={(err) => {
-                    const message =
-                      err instanceof Error
-                        ? err.message
-                        : typeof err === 'string'
-                          ? err
-                          : 'Kamera açılamadı.';
-                    setError(
-                      message.toLowerCase().includes('permission') ||
-                        message.toLowerCase().includes('denied') ||
-                        message.toLowerCase().includes('notallowed')
-                        ? 'Kamera izni reddedildi. Tarayıcı izinlerinden kameraya erişim ver veya kodu manuel gir.'
-                        : `Kamera açılamadı: ${message}`
-                    );
-                  }}
-                  styles={{
-                    container: { width: '100%', height: '100%' },
-                    video: { width: '100%', height: '100%', objectFit: 'cover' },
-                  }}
-                />
+                <QrCameraScanner onScan={onScan} onError={setError} />
               </Suspense>
               {/* Framing reticle — purely decorative, helps the user
                   position the QR within the camera frame */}
@@ -150,7 +115,7 @@ export const QrScannerModal: React.FC<QrScannerModalProps> = ({ isOpen, onClose,
             onClick={onClose}
             className="duo-focus min-h-11 bg-paper-deep text-carbon font-candy-body text-[0.9375rem] font-semibold hover:bg-paper-dim transition-colors"
           >
-            Manuel Girişe Dön
+            Elle girişe dön
           </button>
         </div>
       </div>

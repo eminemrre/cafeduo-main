@@ -169,7 +169,7 @@ const registerTournamentJobs = ({ pool, isDbConnected, logger, clearCache }) => 
          RETURNING id, cafe_id, name`
       );
       if (activated.rowCount > 0) {
-        logger.info(`🏁 ${activated.rowCount} tournament(s) activated`, {
+        logger.info(`${activated.rowCount} tournament(s) activated`, {
           ids: activated.rows.map((r) => r.id),
         });
         if (typeof clearCache === 'function') {

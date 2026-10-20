@@ -19,18 +19,8 @@ const generateCouponCode = () => {
   return `CD-${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}`;
 };
 
-/**
- * Daily reward wheel — global, identical for every cafe (cafe admins can
- * no longer tune their own wheel; the user dropped that per-cafe knob
- * after the editor surfaced a 500 we couldn't diagnose fast enough).
- *
- * Slices (weights are relative — backend normalizes against the running
- * total so they don't need to sum to 100):
- *   - 15 puan,  75 weight  (≈%71)
- *   - 50 puan,  25 weight  (≈%24)
- *   - 250 puan, 4 weight   (≈%4)
- *   - Bedava Kahve gift, 1 weight (≈%1) — issues a coupon row, no points
- */
+// One wheel for every cafe. Weights are relative to their sum, so they need not add up to 100.
+// The gift slice issues a coupon instead of points.
 const DAILY_WHEEL_SLICES = Object.freeze([
   { points: 15, weight: 75 },
   { points: 50, weight: 20 },

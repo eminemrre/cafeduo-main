@@ -17,12 +17,12 @@ function loadEnvFile() {
   for (const envPath of possiblePaths) {
     if (fs.existsSync(envPath)) {
       require('dotenv').config({ path: envPath });
-      console.log(`✅ Loaded .env from: ${envPath}`);
+      console.log(`Loaded .env from: ${envPath}`);
       return;
     }
   }
 
-  console.warn('⚠️  .env file NOT FOUND in any standard location!');
+  console.warn('.env file not found in any standard location');
   console.warn('Checked paths:', possiblePaths);
 }
 
@@ -43,7 +43,7 @@ if (process.env.SENTRY_DSN) {
     const { ProfilingIntegration } = require('@sentry/profiling-node');
     integrations.push(new ProfilingIntegration());
   } catch {
-    console.log('⚠️  @sentry/profiling-node not available - profiling disabled');
+    console.log('@sentry/profiling-node not available, profiling disabled');
   }
 
   Sentry.init({
@@ -67,9 +67,9 @@ if (process.env.SENTRY_DSN) {
     },
   });
   isSentryInitialized = true;
-  console.log('✅ Sentry APM initialized');
+  console.log('Sentry APM initialized');
 } else {
-  console.log('⚠️  SENTRY_DSN not set - APM monitoring disabled');
+  console.log('SENTRY_DSN not set, APM monitoring disabled');
 }
 
 // Core dependencies
@@ -313,7 +313,7 @@ const canAccessGameRoom = async (socket, normalizedGameId) => {
 const isSocketInGameRoom = (socket, normalizedGameId) => socket.rooms.has(normalizedGameId);
 
 io.on('connection', (socket) => {
-  logger.info(`⚡ Client connected: ${socket.id} (User: ${socket.username})`);
+  logger.info(`Client connected: ${socket.id} (User: ${socket.username})`);
 
   // Genel oyun odasına katılım
   socket.on('join_game', async (gameId) => {
@@ -359,8 +359,7 @@ io.on('connection', (socket) => {
     logger.info(`Socket ${socket.id} (${socket.username}) left game: ${normalizedGameId}`);
   });
 
-  // 🔒 SECURITY: Allowed move action types for validation
-  const ALLOWED_MOaE_ACTIONS = new Set([
+  const ALLOWED_MOVE_ACTIONS = new Set([
     'shot_result',
     'turn_timeout',
     'game_over',
@@ -380,12 +379,10 @@ io.on('connection', (socket) => {
     }
 
     const move = data?.move;
-    // aalidate move data size and structure
     if (move && typeof move === 'object') {
       const moveKeys = Object.keys(move);
       if (moveKeys.length > 20) return; // Prevent oversized payloads
-      // aalidate action type if present
-      if (move.action && !ALLOWED_MOaE_ACTIONS.has(String(move.action))) {
+      if (move.action && !ALLOWED_MOVE_ACTIONS.has(String(move.action))) {
         logger.warn(`Blocked game_move with invalid action: ${move.action}`, {
           socketId: socket.id,
           gameId: normalizedGameId,
@@ -439,36 +436,20 @@ io.on('connection', (socket) => {
 const JWT_SECRET = getRequiredJwtSecret();
 const BLACKLIST_FAIL_MODE = getBlacklistFailMode();
 
-// 4) START SERaER / INIT DB
-logger.info('🚀 Starting Server...');
+logger.info('Starting server');
 logger.info(
-  '🔑 Google Client ID:',
-  process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID ? 'Loaded ✅' : 'MISSING ❌'
+  'Google Client ID:',
+  process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID ? 'loaded' : 'missing'
 );
-logger.info('🗄️  Database URL:', process.env.DATABASE_URL ? 'Loaded ✅' : 'MISSING ❌');
-logger.info('🔐 Security defaults:', {
+logger.info('Database URL:', process.env.DATABASE_URL ? 'loaded' : 'missing');
+logger.info('Security defaults:', {
   blacklistFailMode: BLACKLIST_FAIL_MODE,
   rateLimitPassOnStoreError: getPassOnStoreError(),
   jwtSecretLength: JWT_SECRET.length,
   nodeEnv: process.env.NODE_ENV || 'development',
 });
 
-// ==========================================
-// SECURITY MIDDLEWARE - Enhanced Authentication
-// ==========================================
-
-/**
- * Enhanced JWT Authentication Middleware
- * aerifies token and fetches fresh user data from DB
- */
-// Middleware (Moved to backend/middleware/auth.js)
-
-// Security Middleware
 app.use(helmet(buildSecurityHeadersOptions({ production: process.env.NODE_ENV === 'production' })));
-
-// Sentry Request and Tracing Handlers (must be before other middleware)
-// In Sentry v10+, request/tracing is automatic via instrumentation
-// No need for explicit requestHandler/tracingHandler
 
 // Device logout cleanup requires a valid CSRF token; API limits still apply afterward.
 app.post('/api/auth/logout', ...prepareLogout);
@@ -521,11 +502,10 @@ app.use(
 app.use(express.json({ limit: '200kb' }));
 app.use(express.urlencoded({ extended: false, limit: '100kb', parameterLimit: 100 }));
 
-// Initialize Database Schema (Robust aersion)
 const initDb = async () => {
   if (await isDbConnected()) {
     try {
-      logger.info('🔄 aeritabanı şeması kontrol ediliyor...');
+      logger.info('Veritabanı şeması kontrol ediliyor...');
 
       // 1. Users Table
       await pool.query(`
@@ -587,13 +567,8 @@ const initDb = async () => {
         );
       `);
 
-      // Defensive ALTER TABLEs — production has been throwing 42703
-      // 'column X does not exist' even though the corresponding migration
-      // shows as applied in pgmigrations. Suspected cause: the migration
-      // ran against a DB that was later replaced (Docker volume issue,
-      // legacy container, whatever). Belt-and-braces approach: every API
-      // boot, idempotently add the columns we know we need. IF NOT EXISTS
-      // makes this a no-op when the schema is already right.
+      // Production has returned 42703 (column does not exist) for columns whose
+      // migrations are recorded as applied, so every boot re-adds them idempotently.
       await pool.query(`
         ALTER TABLE games ADD COLUMN IF NOT EXISTS cafe_id INTEGER REFERENCES cafes(id) ON DELETE SET NULL;
       `);
@@ -641,14 +616,14 @@ const initDb = async () => {
         try {
           await pool.query(`ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS ${column} ${type}`);
         } catch (e) {
-          logger.warn(`⚠️ Sütun eklenemedi: ${table}.${column} - ${e.message}`);
+          logger.warn(`Sütun eklenemedi: ${table}.${column} - ${e.message}`);
         }
       };
       const createIndex = async (indexName, query) => {
         try {
           await pool.query(query);
         } catch (e) {
-          logger.warn(`⚠️ Index oluşturulamadı: ${indexName} - ${e.message}`);
+          logger.warn(`Index oluşturulamadı: ${indexName} - ${e.message}`);
         }
       };
 
@@ -769,7 +744,7 @@ const initDb = async () => {
             ('Efsane', '100 galibiyet al.', 'crown', 1000, 'wins', 100),
             ('Milyoner', '50.000 puana ulaş.', 'coins', 1200, 'points', 50000)
           `);
-        logger.info('🏆 Başlangıç başarımları eklendi.');
+        logger.info('Başlangıç başarımları eklendi.');
         clearCache('achievements:*');
       } else {
         // Existing DBs (production) already have the 5 legacy rows. Upgrade
@@ -878,7 +853,7 @@ const initDb = async () => {
           await pool.query(`ALTER TABLE ${table} DROP CONSTRAINT IF EXISTS ${constraint}`);
           await pool.query(`ALTER TABLE ${table} ADD CONSTRAINT ${constraint} ${fkClause}`);
         } catch (e) {
-          logger.warn(`⚠️ FK upgrade skipped: ${table}.${constraint} - ${e.message}`);
+          logger.warn(`FK upgrade skipped: ${table}.${constraint} - ${e.message}`);
         }
       };
       await upgradeFkCascade(
@@ -902,13 +877,13 @@ const initDb = async () => {
             ('Cheesecake İkramı', 400, 'Tatlı bir mola ver.', 'dessert', true),
             ('Oyun Jetonu x5', 100, 'Ekstra oyun hakkı.', 'game', true)
           `);
-        logger.info('🎁 Başlangıç ödülleri eklendi.');
+        logger.info('Başlangıç ödülleri eklendi.');
         clearCache('rewards:*');
       }
 
-      logger.info('✅ Veritabanı şeması başarıyla güncellendi.');
+      logger.info('Veritabanı şeması başarıyla güncellendi.');
     } catch (err) {
-      logger.error('❌ Kritik Şema Hatası:', err);
+      logger.error('Kritik şema hatası:', err);
     }
   }
 };
@@ -1197,9 +1172,9 @@ try {
       customSiteTitle: 'CafeDuo API Documentation',
     })
   );
-  console.log('✅ Swagger UI available at /api-docs');
+  console.log('Swagger UI available at /api-docs');
 } catch (swaggerErr) {
-  console.warn('⚠️  Swagger UI not loaded:', swaggerErr.message);
+  console.warn('Swagger UI not loaded:', swaggerErr.message);
 }
 
 // --- API ROUTES ---
@@ -1213,12 +1188,6 @@ app.use('/api/cafes', cafeRoutes);
 // Store Routes (Phase 3)
 app.use('/api/store', storeRoutes);
 
-// 3. CAFE ENDPOINTS (Moved to cafeController)
-
-// 3.3 CHECK-IN (Moved to cafeController)
-
-// 3.4 UPDATE PIN (Moved to cafeController)
-
 // Admin Routes (Modularized)
 app.use('/api/admin', adminRoutes);
 
@@ -1226,9 +1195,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api', commerceRoutes);
 app.use('/api', tournamentRoutes);
 
-// 2.6 FUNCTIONS REMOaED (Moved to backend/utils/geo.js)
-
-// 6. GAME ROUTES (Modularized)
+// Game Routes (Modularized)
 app.use('/api', gameRoutes);
 
 // Profile/Leaderboard Routes (Modularized)
@@ -1237,28 +1204,8 @@ app.use('/api', profileRoutes);
 // System Routes (health/meta/root)
 app.use('/', systemRoutes);
 
-// NOTE: Duplicate admin endpoints removed. Using protected versions above.
-
-// CHECK-IN (Moved to cafeController)
-
-// 19.5 UPDATE CAFE PIN (For Cafe Admins) - YENİ aERSİYON
-// userId ile çalışır, cafe_id'yi veritabanından alır
-// 19.5 UPDATE CAFE PIN (Moved to cafeController)
-
-// 20. ADMIN: CREATE CAFE -> duplicated route removed.
-
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, '../dist')));
-
-// ... (keep existing API routes)
-
-// Duplicate /api/rewards endpoints removed. The secured canonical handlers are defined above.
-
-// NOTE: Duplicate endpoints removed. Protected versions are defined above.
-
-// ==========================================
-// GLOBAL ERROR HANDLING
-// ==========================================
 
 // Debug endpoint for testing Sentry integration
 app.get('/debug-sentry', (_req, _res) => {
@@ -1272,10 +1219,6 @@ if (isSentryInitialized) {
 
 app.use(notFoundHandler);
 app.use(handleApiError);
-
-// ==========================================
-// PROCESS ERROR HANDLERS
-// ==========================================
 
 process.on('uncaughtException', (err) => {
   logger.error('CRITICAL: Uncaught Exception', err);
@@ -1313,7 +1256,7 @@ initDb().then(async () => {
 
   const startServer = (portToUse) => {
     server.listen(portToUse, () => {
-      logger.info(`🚀 Server running on http://localhost:${portToUse}`);
+      logger.info(`Server running on http://localhost:${portToUse}`);
     });
   };
 

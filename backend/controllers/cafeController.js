@@ -3,6 +3,7 @@ const { clearCache } = require('../middleware/cache');
 const { getDistanceFromLatLonInMeters } = require('../utils/geo');
 const memoryState = require('../store/memoryState');
 const logger = require('../utils/logger');
+const { isLocationCheckExempt } = require('../utils/locationExempt');
 
 const FALLBACK_CAFES = [
   {
@@ -437,8 +438,12 @@ const cafeController = {
           .json({ error: `Masa numarası 1-${maxTableCount} aralığında olmalıdır.` });
       }
 
+      // Accounts listed in CHECKIN_LOCATION_EXEMPT_USERS skip the location
+      // verification: they check in from wherever they are.
+      const locationExempt = isLocationCheckExempt(req.user);
+
       const locationTargets = buildCafeLocationTargets(cafe);
-      if (hasLocation) {
+      if (hasLocation && !locationExempt) {
         if (locationTargets.length === 0) {
           return res.status(400).json({
             error:
@@ -467,6 +472,7 @@ const cafeController = {
           });
         }
       } else if (
+        !locationExempt &&
         !isVerificationCodeValid({
           providedCode: normalizedVerificationCode,
           cafe,
@@ -526,7 +532,11 @@ const cafeController = {
           .json({ error: `Masa numarası 1-${maxTableCount} aralığında olmalıdır.` });
       }
 
-      if (hasLocation) {
+      // Accounts listed in CHECKIN_LOCATION_EXEMPT_USERS skip the location
+      // verification: they check in from wherever they are.
+      const locationExempt = isLocationCheckExempt(req.user);
+
+      if (hasLocation && !locationExempt) {
         // 2. Location Check (Geofencing)
         const locationTargets = buildCafeLocationTargets(cafe);
         if (locationTargets.length === 0) {
@@ -557,6 +567,7 @@ const cafeController = {
           });
         }
       } else if (
+        !locationExempt &&
         !isVerificationCodeValid({
           providedCode: normalizedVerificationCode,
           cafe,

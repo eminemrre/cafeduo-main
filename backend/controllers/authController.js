@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { pool, isDbConnected } = require('../db');
 const logger = require('../utils/logger');
+const { isLocationCheckExempt } = require('../utils/locationExempt');
 const memoryState = require('../store/memoryState');
 const { sendPasswordResetEmail } = require('../services/emailService');
 const { revokeToken } = require('../utils/tokenRevocation');
@@ -197,6 +198,8 @@ const clearAuthCookie = (res) => {
 
 const toPublicUser = (user) => {
   const safeUser = { ...user };
+  // Accounts that skip the café's location verification (see utils/locationExempt).
+  safeUser.locationCheckExempt = isLocationCheckExempt(safeUser);
   if (safeUser.games_played !== undefined && safeUser.gamesPlayed === undefined) {
     safeUser.gamesPlayed = safeUser.games_played;
   }
@@ -650,6 +653,8 @@ const authController = {
     if (user.table_number && !isNaN(user.table_number)) {
       user.table_number = `MASA${user.table_number.toString().padStart(2, '0')}`;
     }
+    // Accounts that skip the café's location verification.
+    user.locationCheckExempt = isLocationCheckExempt(user);
     res.json(user);
   },
 };

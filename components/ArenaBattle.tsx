@@ -114,6 +114,9 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
   const directionRef = useRef<1 | -1>(1);
   const nextRoundTimeoutRef = useRef<number | null>(null);
   const pixiStageRef = useRef<AimBattleStageHandle | null>(null);
+  // The WebGL stage draws the reticle; until it is up (or when it never comes up) the CSS one
+  // does, so the game is never played blind.
+  const [pixiReady, setPixiReady] = useState(false);
 
   const target = useMemo(() => (isBot ? 'BOT' : opponentName || 'Rakip'), [isBot, opponentName]);
 
@@ -328,16 +331,28 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
 
       <div className="relative mb-5 aspect-[2/1] overflow-hidden bg-paper-deep">
         {/* PixiJS WebGL overlay — fills the stage, renders animated reticle + hit effects */}
-        <AimBattleStageCanvas ref={pixiStageRef} className="absolute inset-0 h-full w-full" />
-        {/* CSS reticle kept as a11y/test fallback and for environments without WebGL */}
-        <div
-          className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 text-carbon pointer-events-none opacity-0"
-          style={{ left: `${gauge}%` }}
-          data-testid="arena-reticle"
-          aria-hidden="true"
-        >
-          <Crosshair size={42} />
-        </div>
+        <AimBattleStageCanvas
+          ref={pixiStageRef}
+          onReadyChange={setPixiReady}
+          className="absolute inset-0 h-full w-full"
+        />
+        {!pixiReady && (
+          <>
+            {/* Without the WebGL stage: the centre line and the reticle, drawn in CSS. */}
+            <span
+              className="pointer-events-none absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-carbon/30"
+              aria-hidden="true"
+            />
+            <div
+              className="pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 text-carbon"
+              style={{ left: `${gauge}%` }}
+              data-testid="arena-reticle"
+              aria-hidden="true"
+            >
+              <Crosshair size={56} strokeWidth={2.5} />
+            </div>
+          </>
+        )}
         <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex items-center justify-between font-candy-mono text-xs text-carbon-muted">
           <span>0</span>
           <span className="bg-paper px-2 py-0.5 font-semibold text-carbon">Merkez 50</span>

@@ -6,10 +6,10 @@
  * (ArenaBattle.tsx) can drive reticle position + hit/miss feedback without
  * triggering React re-renders per frame.
  *
- * Stage failures are non-fatal: if WebGL is unavailable (e.g. test env,
- * locked-down kiosk browser) the canvas just stays blank. The CSS-based
- * background of ArenaBattle's existing wrapper still provides the visual
- * frame, so the game remains playable.
+ * Stage failures are non-fatal: if WebGL is unavailable (test env, a phone
+ * that refuses a context, a stale cached app that cannot load the pixi chunk)
+ * the canvas stays blank. `onReadyChange` tells the parent whether the stage
+ * is really drawing, so ArenaBattle can show its CSS reticle until it is.
  */
 
 import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
@@ -24,11 +24,15 @@ export interface AimBattleStageHandle {
 
 interface AimBattleStageCanvasProps {
   className?: string;
+  /** True once the stage draws the reticle; false again when it goes away. */
+  onReadyChange?: (ready: boolean) => void;
 }
 
 export const AimBattleStageCanvas = forwardRef<AimBattleStageHandle, AimBattleStageCanvasProps>(
-  function AimBattleStageCanvas({ className }, ref) {
+  function AimBattleStageCanvas({ className, onReadyChange }, ref) {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const onReadyChangeRef = useRef(onReadyChange);
+    onReadyChangeRef.current = onReadyChange;
     const stageRef = useRef<AimBattleStage | null>(null);
     const queuedRef = useRef<{ x?: number; flash?: HitTier; popup?: [string, HitTier] }>({});
 
@@ -79,6 +83,7 @@ export const AimBattleStageCanvas = forwardRef<AimBattleStageHandle, AimBattleSt
           if (q.flash) stage.flash(q.flash);
           if (q.popup) stage.showScorePopup(q.popup[0], q.popup[1]);
           queuedRef.current = {};
+          onReadyChangeRef.current?.(true);
         })
         .catch((err) => {
           // Non-fatal — game logic still works without the overlay
@@ -91,6 +96,7 @@ export const AimBattleStageCanvas = forwardRef<AimBattleStageHandle, AimBattleSt
         if (stageRef.current) {
           stageRef.current.destroy();
           stageRef.current = null;
+          onReadyChangeRef.current?.(false);
         }
       };
     }, []);

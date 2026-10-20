@@ -302,10 +302,14 @@ export function useCafeSelection({
     setLoading(true);
     setError(null);
 
+    // Accounts listed on the server skip the location verification: they check
+    // in from wherever they are, so we don't ask the device for a position.
+    const locationExempt = Boolean(currentUser.locationCheckExempt);
+
     try {
       const normalizedVerificationCode = String(tableVerificationCodeState || '').trim();
       let coords: LocationCoords | null = null;
-      if (!normalizedVerificationCode) {
+      if (!normalizedVerificationCode && !locationExempt) {
         coords = locationCoords;
         try {
           // Refresh GPS only when it is the chosen verification method.
@@ -318,7 +322,7 @@ export function useCafeSelection({
       }
       // Code verification must omit cached coordinates: the server prioritizes
       // geofencing whenever coordinates are supplied. It validates the code otherwise.
-      if (!coords && !normalizedVerificationCode) {
+      if (!coords && !normalizedVerificationCode && !locationExempt) {
         throw new Error('Konum alınamadı. Masa doğrulama kodunu girip tekrar deneyin.');
       }
       const result = await api.cafes.checkIn({
@@ -357,6 +361,7 @@ export function useCafeSelection({
       setLoading(false);
     }
   }, [
+    currentUser.locationCheckExempt,
     locationCoords,
     maxTableCount,
     onCheckInSuccess,

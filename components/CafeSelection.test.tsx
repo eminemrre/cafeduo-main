@@ -230,7 +230,7 @@ describe('CafeSelection', () => {
     expect(screen.getByRole('spinbutton')).toBeDisabled();
     expect(screen.getByRole('combobox')).toBeDisabled();
     expect(screen.getByLabelText(/Masa Doğrulama Kodu/i)).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Konumu Doğrula' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Konumu doğrula' })).toBeDisabled();
     expect(getSubmitButton()).toBeDisabled();
     resolveCheckIn({ table: 'MASA03' });
     await waitFor(() => expect(getSubmitButton()).toBeEnabled());

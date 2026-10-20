@@ -49,6 +49,9 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
   const [hasSubmitted, setHasSubmitted] = React.useState(false);
   const [showVerificationField, setShowVerificationField] = React.useState(false);
   const shouldReduceMotion = useReducedMotion();
+  // Some accounts check in without the café's location verification; for them
+  // the whole GPS step is skipped.
+  const locationExempt = Boolean(currentUser.locationCheckExempt);
 
   const locationLabel = (() => {
     if (tableVerificationCode.trim()) {
@@ -104,7 +107,9 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
             Kafeye Giriş
           </h1>
           <p className="mt-3 text-sm text-carbon-muted">
-            Hangi masadasın? Konumun veya masa kodunla oyuna katıl.
+            {locationExempt
+              ? 'Hangi masadasın? Kafeyi seç, masanı yaz, içeri gir.'
+              : 'Hangi masadasın? Konumun veya masa kodunla oyuna katıl.'}
           </p>
         </motion.div>
 
@@ -172,7 +177,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
               />
 
               {/* Verification code — collapsed by default, toggle reveals it. */}
-              {!showVerificationField && (
+              {!locationExempt && !showVerificationField && (
                 <button
                   type="button"
                   disabled={loading}
@@ -188,7 +193,7 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                 </button>
               )}
 
-              {showVerificationField && (
+              {showVerificationField && !locationExempt && (
                 <Input
                   id="checkin-verification-code"
                   data-testid="checkin-verification-input"
@@ -205,32 +210,37 @@ export const CafeSelection: React.FC<CafeSelectionProps> = ({ currentUser, onChe
                 />
               )}
 
-              <Button
-                tone="blue"
-                size="md"
-                block
-                disabled={loading || locationStatus === 'requesting'}
-                onClick={() => void requestLocationAccess()}
-                onFocus={clearError}
-                leadingIcon={<LocateFixed size={18} />}
-              >
-                Konumu Doğrula
-              </Button>
+              {!locationExempt && (
+                <>
+                  <Button
+                    tone="blue"
+                    size="md"
+                    block
+                    disabled={loading || locationStatus === 'requesting'}
+                    onClick={() => void requestLocationAccess()}
+                    onFocus={clearError}
+                    leadingIcon={<LocateFixed size={18} />}
+                  >
+                    Konumu doğrula
+                  </Button>
 
-              {/* Location status indicator */}
-              <div
-                role="status"
-                className={`flex items-center justify-center gap-2 text-sm font-medium ${locationLabel.color}`}
-              >
-                {locationLabel.icon}
-                <span>{locationLabel.text}</span>
-              </div>
+                  {/* Location status indicator */}
+                  <div
+                    role="status"
+                    className={`flex items-center justify-center gap-2 text-sm font-medium ${locationLabel.color}`}
+                  >
+                    {locationLabel.icon}
+                    <span>{locationLabel.text}</span>
+                  </div>
 
-              <div className="bg-paper-deep p-3 text-center">
-                <p className="text-xs leading-relaxed text-carbon-muted">
-                  Konum izni yalnızca kafe doğrulaması için kullanılır. Hiçbir yere kaydedilmez.
-                </p>
-              </div>
+                  <div className="bg-paper-deep p-3 text-center">
+                    <p className="text-xs leading-relaxed text-carbon-muted">
+                      Konum izni yalnızca kafe doğrulaması için kullanılır. Hiçbir yere
+                      kaydedilmez.
+                    </p>
+                  </div>
+                </>
+              )}
 
               <Button
                 type="submit"

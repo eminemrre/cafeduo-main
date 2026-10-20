@@ -35,6 +35,8 @@ export interface User {
   table_number?: string;
   avatar_url?: string;
   bonusReceived?: boolean;
+  /** True when this account checks in without the café's location verification. */
+  locationCheckExempt?: boolean;
 }
 
 export interface UserProfileUpdates {

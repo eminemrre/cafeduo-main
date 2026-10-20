@@ -80,8 +80,10 @@ export const CookieConsent: React.FC<CookieConsentProps> = ({ variant = 'default
       <div role="region" aria-label="Çerez bildirimi" className="cdl-cookie">
         <h2>Çerezler</h2>
         <p>
-          Giriş için çerez onayı gerekir.{' '}
-          <span className="cdl-cookie-more">Yalnızca gezeceksen reddedebilirsin.</span>
+          <span className="cdl-cookie-short">Çerez onayı gerekli.</span>
+          <span className="cdl-cookie-more">
+            Giriş için çerez onayı gerekir. Yalnızca gezeceksen reddedebilirsin.
+          </span>
         </p>
         <div className="cdl-cookie-actions">
           <button type="button" className="cdl-cookie-reject" onClick={handleReject}>

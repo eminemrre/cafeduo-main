@@ -1,3 +1,5 @@
+const { reportError } = require('./errorReporting');
+
 const executeDataMode = async (isDbConnected, handlers) => {
   const isConnected = await isDbConnected();
   if (isConnected) {
@@ -30,6 +32,8 @@ const sendApiError = (res, logger, context, err, message, status = 500) => {
   };
   if (logger && typeof logger.error === 'function') logger.error(diagnostic);
   else console.error(diagnostic);
+  // The log line leaves the error text out; Sentry gets the error itself.
+  reportError(err, { context, requestId: diagnostic.requestId });
   // SQL metadata, exception messages, and arbitrary error codes are internal only.
   const payload = buildApiErrorPayload(res, {
     code: status >= 500 ? 'INTERNAL_ERROR' : 'REQUEST_FAILED',

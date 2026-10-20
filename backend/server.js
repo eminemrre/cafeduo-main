@@ -36,22 +36,13 @@ let isSentryInitialized = false;
 
 // Only initialize Sentry if DSN is provided
 if (process.env.SENTRY_DSN) {
-  const integrations = [];
-
-  // Try to load profiling integration (optional dependency)
-  try {
-    const { ProfilingIntegration } = require('@sentry/profiling-node');
-    integrations.push(new ProfilingIntegration());
-  } catch {
-    console.log('⚠️  @sentry/profiling-node not available - profiling disabled');
-  }
-
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV || 'development',
+    release: process.env.APP_VERSION || undefined,
     tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    profilesSampleRate: 1.0,
-    integrations,
+    // Shares a project with the frontend; this tag tells the two apart.
+    initialScope: { tags: { service: 'api' } },
     // Filter out sensitive data
     beforeSend(event, _hint) {
       // Remove password_hash from user object if present
@@ -62,7 +53,9 @@ if (process.env.SENTRY_DSN) {
       if (event.request?.headers) {
         delete event.request.headers['authorization'];
         delete event.request.headers['cookie'];
+        delete event.request.headers['x-csrf-token'];
       }
+      if (event.request) delete event.request.cookies;
       return event;
     },
   });
@@ -1260,10 +1253,12 @@ app.use(express.static(path.join(__dirname, '../dist')));
 // GLOBAL ERROR HANDLING
 // ==========================================
 
-// Debug endpoint for testing Sentry integration
-app.get('/debug-sentry', (_req, _res) => {
-  throw new Error('Sentry test error!');
-});
+// Throws on purpose to check the Sentry wiring; never exposed in production.
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/debug-sentry', (_req, _res) => {
+    throw new Error('Sentry test error!');
+  });
+}
 
 // Sentry Error Handler (must be before other error handlers)
 if (isSentryInitialized) {
@@ -1277,22 +1272,22 @@ app.use(handleApiError);
 // PROCESS ERROR HANDLERS
 // ==========================================
 
+// Give Sentry a moment to send the crash before the process goes away.
+const exitAfterReporting = () => {
+  const flushed = isSentryInitialized ? Sentry.flush(2000) : Promise.resolve();
+  Promise.race([flushed, new Promise((resolve) => setTimeout(resolve, 2500))]).finally(() => {
+    process.exit(1);
+  });
+};
+
 process.on('uncaughtException', (err) => {
   logger.error('CRITICAL: Uncaught Exception', err);
-
-  // Graceful shutdown
-  setTimeout(() => {
-    process.exit(1);
-  }, 1000);
+  exitAfterReporting();
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('CRITICAL: Unhandled Rejection', { reason, promise });
-
-  // Graceful shutdown
-  setTimeout(() => {
-    process.exit(1);
-  }, 1000);
+  exitAfterReporting();
 });
 
 // Graceful shutdown on SIGTERM/SIGINT

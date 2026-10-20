@@ -64,7 +64,8 @@ services:
       REQUEST_LOG_SLOW_MS: "${REQUEST_LOG_SLOW_MS:-1200}"
       APP_VERSION: "${APP_VERSION:-}"
       APP_BUILD_TIME: "${APP_BUILD_TIME:-}"
-      SENTRY_DSN: "${SENTRY_DSN:-}"
+      # Server errors go to the frontend's Sentry project unless the API has its own DSN.
+      SENTRY_DSN: "${SENTRY_DSN:-${VITE_SENTRY_DSN:-}}"
       BOOTSTRAP_ADMIN_EMAILS: "${BOOTSTRAP_ADMIN_EMAILS:-}"
       # Accounts that check in without the café's location verification.
       CHECKIN_LOCATION_EXEMPT_USERS: "${CHECKIN_LOCATION_EXEMPT_USERS:-test102}"

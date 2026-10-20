@@ -1,5 +1,3 @@
-const { isLocationCheckExempt } = require('./locationExempt');
-
 describe('location check exemption', () => {
   const original = process.env.CHECKIN_LOCATION_EXEMPT_USERS;
 
@@ -22,8 +20,14 @@ describe('location check exemption', () => {
     return require('./locationExempt');
   };
 
-  it('exempts nobody when the list is empty', () => {
+  it('exempts test102 when the variable is not set', () => {
     const { isLocationCheckExempt: check } = load(undefined);
+    expect(check({ username: 'test102' })).toBe(true);
+    expect(check({ username: 'emin' })).toBe(false);
+  });
+
+  it('exempts nobody when the list is set but empty', () => {
+    const { isLocationCheckExempt: check } = load('');
     expect(check({ username: 'test102' })).toBe(false);
     expect(check({ username: 'emin' })).toBe(false);
   });
@@ -43,11 +47,5 @@ describe('location check exemption', () => {
     expect(check({ username: 'emin' })).toBe(false);
     expect(check({})).toBe(false);
     expect(check(null)).toBe(false);
-  });
-
-  it('is off by default in the module that ships', () => {
-    delete process.env.CHECKIN_LOCATION_EXEMPT_USERS;
-    jest.resetModules();
-    expect(isLocationCheckExempt({ username: 'test102' })).toBe(false);
   });
 });

@@ -506,7 +506,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                         onChange={(e) => setDepartment(e.target.value)}
                         className={`${inputBaseClass} ${inputBorderClass} appearance-none cursor-pointer pr-10`}
                       >
-                        <option value="">Bölüm seçiniz (isteğe bağlı)</option>
+                        <option value="">Bölüm seç (isteğe bağlı)</option>
                         {PAU_DEPARTMENTS.map((dept) => (
                           <option key={dept} value={dept}>
                             {dept}
@@ -651,7 +651,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <div className="space-y-2 text-center">
                 {mode === 'login' && !isForgotPasswordMode && (
                   <p className="text-sm font-candy-body text-carbon-soft">
-                    Hesabınız yok mu?{' '}
+                    Hesabın yok mu?{' '}
                     <button
                       type="button"
                       onClick={() => switchMode('register')}
@@ -663,7 +663,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 )}
                 {mode === 'register' && !isForgotPasswordMode && (
                   <p className="text-sm font-candy-body text-carbon-soft">
-                    Zaten hesabınız var mı?{' '}
+                    Zaten hesabın var mı?{' '}
                     <button
                       type="button"
                       onClick={() => switchMode('login')}
@@ -675,7 +675,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 )}
                 {mode === 'login' && isForgotPasswordMode && (
                   <p className="text-sm font-candy-body text-carbon-soft">
-                    Şifrenizi hatırladınız mı?{' '}
+                    Şifreni hatırladın mı?{' '}
                     <button
                       type="button"
                       onClick={() => {

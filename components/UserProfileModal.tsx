@@ -159,7 +159,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                       onChange={(e) => setDepartment(e.target.value)}
                       className="duo-input duo-focus min-h-11 min-w-0 flex-1 px-3 font-candy-body text-base text-carbon"
                     >
-                      <option value="">Bölüm Seçiniz</option>
+                      <option value="">Bölüm seç</option>
                       {PAU_DEPARTMENTS.map((dept) => (
                         <option key={dept} value={dept}>
                           {dept}

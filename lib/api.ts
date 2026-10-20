@@ -248,8 +248,8 @@ async function fetchAPI<TResponse = unknown>(
   } catch (error) {
     const message =
       error instanceof Error && error.name === 'AbortError'
-        ? 'İstek zaman aşımına uğradı. Lütfen bağlantınızı kontrol edip tekrar deneyin.'
-        : 'Sunucuya bağlanılamadı. Ağ bağlantınızı ve API adresini kontrol edin.';
+        ? 'İstek zaman aşımına uğradı. Bağlantını kontrol edip tekrar dene.'
+        : 'Sunucuya bağlanılamadı. Ağ bağlantını ve API adresini kontrol et.';
     throw new Error(message);
   } finally {
     window.clearTimeout(timeoutId);

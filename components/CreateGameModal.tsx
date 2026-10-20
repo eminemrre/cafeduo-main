@@ -6,7 +6,7 @@
  * range plus an underlined number input, preset chips, the optional chess
  * tempo and a slip-style summary that closes on an ink bar. Text content and
  * data-testid attributes are preserved so CreateGameModal.test.tsx passes:
- *   - "YENİ OYUN KUR", "KAPAT", "LOBİYE GÖNDER" (shown in sentence case via CSS)
+ *   - "Yeni oyun kur", "Kapat", "Lobiye gönder" (sentence case in the source)
  *   - "Mevcut Puanınız:" + the wallet balance
  *   - exact game descriptions for the 3 cards
  *   - "Min" / "100" / "250" / "Max" preset labels
@@ -241,7 +241,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
           {/* Sticky header */}
           <div className="shrink-0 flex items-center justify-between gap-4 px-4 pt-4 pb-3 sm:px-6 sm:pt-5">
             <h3 className="font-candy-display text-[28px] leading-none sm:text-[40px]">
-              <span className="duo-sentence">YENİ OYUN KUR</span>
+              Yeni oyun kur
             </h3>
             <button
               type="button"
@@ -315,7 +315,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
 
                           {game.minPoints > 0 && (
                             <div className="hidden sm:block mt-auto pt-2 text-[15px] font-semibold">
-                              <span className="duo-sentence">MIN {game.minPoints} PUAN</span>
+                              En az {game.minPoints} puan
                             </div>
                           )}
                         </div>
@@ -479,7 +479,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
               </p>
             )}
             <button type="button" onClick={onClose} className="duo-quiet duo-focus min-h-12">
-              <span className="duo-sentence">KAPAT</span>
+              Kapat
             </button>
             <button
               type="submit"
@@ -494,7 +494,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                   Oluşturuluyor...
                 </span>
               ) : (
-                <span className="duo-sentence">LOBİYE GÖNDER</span>
+                'Lobiye gönder'
               )}
             </button>
           </div>

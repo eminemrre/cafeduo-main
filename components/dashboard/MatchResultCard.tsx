@@ -138,11 +138,11 @@ export const MatchResultCard: React.FC<MatchResultCardProps> = ({
       aria-live="polite"
     >
       <p className="text-[15px] font-medium">
-        <span className="duo-sentence">Maç Sonucu</span>
+        Maç sonucu
       </p>
       <p className="mt-1 font-candy-display text-[40px] leading-[0.98] tracking-[-0.01em]">
         {/* The sentinel titles keep their capitals in the source; a winner's name keeps its own case. */}
-        <span className={outcome === 'lose' ? undefined : 'duo-sentence'}>{title}</span>
+        {title}
       </p>
 
       <div className="mt-4 flex flex-wrap items-baseline gap-3">

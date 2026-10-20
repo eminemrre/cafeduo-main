@@ -891,7 +891,7 @@ export const RetroChess: React.FC<RetroChessProps> = ({
             <p className="duo-game-sub truncate">Rakip: {opponentLabel}</p>
           </div>
           <button type="button" onClick={handleLeave} className="duo-quiet duo-focus shrink-0">
-            <span className="duo-sentence">Oyundan Çık</span>
+            Oyundan çık
           </button>
         </header>
 

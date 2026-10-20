@@ -543,13 +543,6 @@ html::-webkit-scrollbar-thumb {
  * ===================================================================== */
 
 /* Sentence case for labels whose source string is kept in capitals. */
-.duo-sentence {
-  display: inline-block;
-  text-transform: lowercase;
-}
-.duo-sentence::first-letter {
-  text-transform: uppercase;
-}
 
 .duo-game-head {
   display: flex;

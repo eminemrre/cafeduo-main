@@ -50,6 +50,14 @@ describe('public page HTML', () => {
     }
   });
 
+  it('keeps the sign-in dialog links out of the crawl', () => {
+    for (const { html } of pages) {
+      for (const link of html.match(/<a [^>]*href="\/\?auth=[^>]*>/g) ?? []) {
+        expect(link).toContain('rel="nofollow"');
+      }
+    }
+  });
+
   it('can be rendered again from its own output', () => {
     const once = renderPageHtml(indexHtml, PUBLIC_PAGES[0]);
     expect(renderPageHtml(once, PUBLIC_PAGES[1])).toBe(renderPageHtml(indexHtml, PUBLIC_PAGES[1]));

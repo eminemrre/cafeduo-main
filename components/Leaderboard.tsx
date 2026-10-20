@@ -33,13 +33,13 @@ export const Leaderboard: React.FC = () => {
       const res = await fetch(
         `/api/leaderboard?type=${filterType}&department=${encodeURIComponent(selectedDepartment)}`
       );
-      const data = await res.json();
+      const payload = await res.json();
       if (!res.ok) {
         throw new Error(
-          typeof data?.error === 'string' ? data.error : 'Liderlik tablosu yüklenemedi.'
+          typeof payload?.error === 'string' ? payload.error : 'Liderlik tablosu yüklenemedi.'
         );
       }
-      setUsers(Array.isArray(data) ? data : []);
+      setUsers(Array.isArray(payload) ? payload : []);
       setError(null);
     } catch (err) {
       console.error(err);

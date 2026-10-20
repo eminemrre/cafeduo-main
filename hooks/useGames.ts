@@ -159,11 +159,11 @@ const isSameActiveGame = (a: GameRequest | null, b: GameRequest | null): boolean
 
 const normalizeGameId = (game: Partial<GameRequest>): string => String(game.id ?? '').trim();
 
-const normalizeLobbyList = (data: unknown, resolvedTableCode: string): GameRequest[] => {
-  if (!Array.isArray(data)) return [];
+const normalizeLobbyList = (rawGames: unknown, resolvedTableCode: string): GameRequest[] => {
+  if (!Array.isArray(rawGames)) return [];
 
   const seenIds = new Set<string>();
-  return data
+  return rawGames
     .filter((item): item is GameRequest => typeof item === 'object' && item !== null)
     .filter((game) => String(game.status || '').toLowerCase() === 'waiting')
     .filter((game) => {
@@ -237,11 +237,11 @@ export function useGames({ currentUser, tableCode }: UseGamesProps): UseGamesRet
         if (!silent) {
           setLoading(true);
         }
-        const data = await api.games.list({
+        const rawGames = await api.games.list({
           tableCode: resolvedTableCode,
           includeAll: isAdminActor || Boolean(resolvedTableCode),
         });
-        const list = normalizeLobbyList(data, resolvedTableCode);
+        const list = normalizeLobbyList(rawGames, resolvedTableCode);
         setGames((prev) => (isSameGameList(prev, list) ? prev : list));
         setError((prev) => (prev ? null : prev));
       } catch (err) {

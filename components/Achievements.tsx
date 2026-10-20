@@ -23,8 +23,8 @@ export const Achievements: React.FC<AchievementsProps> = ({ userId }) => {
   useEffect(() => {
     const fetchAchievements = async () => {
       try {
-        const data = await api.achievements.list(userId);
-        setAchievements(Array.isArray(data) ? data : []);
+        const fetched = await api.achievements.list(userId);
+        setAchievements(Array.isArray(fetched) ? fetched : []);
         setError(null);
       } catch (err: unknown) {
         console.error(err);

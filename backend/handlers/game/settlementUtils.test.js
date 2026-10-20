@@ -70,6 +70,13 @@ describe('settlementUtils helpers', () => {
       expect(normalizeParticipantKey(null)).toBe('');
       expect(normalizeParticipantKey(undefined)).toBe('');
     });
+
+    it('is the same function settlement, draw offers and validation compare names with', () => {
+      const validation = require('./validation/playerValidation');
+      const drawOffers = require('./drawOfferUtils');
+      expect(normalizeParticipantKey).toBe(validation.normalizeParticipantKey);
+      expect(drawOffers.normalizeParticipantKey).toBe(validation.normalizeParticipantKey);
+    });
   });
 
   describe('isNonCompetitiveGameType', () => {
@@ -336,7 +343,11 @@ describe('applyDbSettlement', () => {
       { tournamentId: 7, userId: 2, gameId: 42, points: 0.5 },
     ]);
     expect(users[0]).toEqual({
-      id: 2, username: 'Bob', points: 100, wins: 0, games_played: 1,
+      id: 2,
+      username: 'Bob',
+      points: 100,
+      wins: 0,
+      games_played: 1,
     });
   });
 

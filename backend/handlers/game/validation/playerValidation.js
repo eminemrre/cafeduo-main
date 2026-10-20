@@ -4,11 +4,16 @@
  */
 
 /**
- * Normalize participant name to lowercase key for comparison
+ * Normalize participant name to lowercase key for comparison.
+ * The single definition: settlement and draw-offer code compare names with the
+ * same key, so a change here must reach every caller at once.
  * @param {string} value - Participant name
  * @returns {string} Normalized lowercase name
  */
-const normalizeParticipantKey = (value) => String(value || '').trim().toLowerCase();
+const normalizeParticipantKey = (value) =>
+  String(value || '')
+    .trim()
+    .toLowerCase();
 
 /**
  * Validate participant has enough points for stake
@@ -41,7 +46,7 @@ const validateStakeRequirement = (user, stake) => {
 const findOpponentName = (actorParticipant, game, getGameParticipants) => {
   const actorKey = normalizeParticipantKey(actorParticipant);
   if (!actorKey) return null;
-  
+
   const participants = getGameParticipants(game).filter(Boolean);
   return participants.find((name) => normalizeParticipantKey(name) !== actorKey) || null;
 };
@@ -53,8 +58,12 @@ const findOpponentName = (actorParticipant, game, getGameParticipants) => {
  * @returns {Object} Validation result
  */
 const validateParticipantInGame = (participant, game) => {
-  const hostName = String(game?.host_name || game?.hostName || '').trim().toLowerCase();
-  const guestName = String(game?.guest_name || game?.guestName || '').trim().toLowerCase();
+  const hostName = String(game?.host_name || game?.hostName || '')
+    .trim()
+    .toLowerCase();
+  const guestName = String(game?.guest_name || game?.guestName || '')
+    .trim()
+    .toLowerCase();
   const participantKey = normalizeParticipantKey(participant);
 
   if (!participantKey || (participantKey !== hostName && participantKey !== guestName)) {

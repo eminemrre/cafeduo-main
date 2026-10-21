@@ -176,7 +176,7 @@ describe('BattleshipGame practice', () => {
     fireEvent.click(cell('battleship-target-grid', 27));
     expect(fire).toHaveTextContent("D4'e ateş et");
     fireEvent.click(fire);
-    expect(cell('battleship-target-grid', 27)).toBeDisabled();
+    expect(cell('battleship-target-grid', 27)).toHaveAttribute('aria-disabled', 'true');
     expect(screen.getByTestId('battleship-turn')).toHaveTextContent('Sıra rakipte');
 
     act(() => {
@@ -225,7 +225,10 @@ describe('BattleshipGame practice', () => {
     fireEvent.click(screen.getByTestId('battleship-confirm'));
     for (let target = 0; target < 64 && !onGameEnd.mock.calls.length; target += 1) {
       const button = cell('battleship-target-grid', target);
-      if (!screen.queryByTestId('battleship-fire') || button.disabled) {
+      if (
+        !screen.queryByTestId('battleship-fire') ||
+        button.getAttribute('aria-disabled') === 'true'
+      ) {
         act(() => {
           jest.advanceTimersByTime(1000);
         });
@@ -337,7 +340,7 @@ describe('BattleshipGame ranked', () => {
     expect(screen.getByTestId('battleship-turn')).toHaveTextContent('Sıra sende');
     expect(cell('battleship-target-grid', 4).className).toContain('duo-bs-cell--miss');
     expect(cell('battleship-target-grid', 36).className).toContain('duo-bs-cell--sunk');
-    expect(cell('battleship-target-grid', 4)).toBeDisabled();
+    expect(cell('battleship-target-grid', 4)).toHaveAttribute('aria-disabled', 'true');
     expect(
       screen.getByTestId('battleship-own-grid').querySelectorAll('.duo-bs-cell--hit')
     ).toHaveLength(1);
@@ -368,7 +371,7 @@ describe('BattleshipGame ranked', () => {
       />
     );
     await screen.findByTestId('battleship-battle');
-    expect(cell('battleship-target-grid', 20)).toBeDisabled();
+    expect(cell('battleship-target-grid', 20)).toHaveAttribute('aria-disabled', 'true');
     expect(screen.getByTestId('battleship-fire')).toBeDisabled();
   });
 });

@@ -184,7 +184,7 @@ test.describe('Amiral Battı', () => {
         });
         const target = page
           .getByTestId('battleship-target-grid')
-          .locator('button:not([disabled])')
+          .locator('button[aria-disabled="false"]')
           .first();
         await target.click();
         await page.getByTestId('battleship-fire').click();
@@ -298,7 +298,7 @@ test.describe('Amiral Battı', () => {
       await page.getByTestId('battleship-shuffle').click();
       await page.getByTestId('battleship-confirm').click();
       await expect(page.getByTestId('battleship-turn')).toContainText('Sıra sende');
-      await page.getByTestId('battleship-target-grid').locator('button:not([disabled])').first().click();
+      await page.getByTestId('battleship-target-grid').locator('button[aria-disabled="false"]').first().click();
       await page.getByTestId('battleship-fire').click();
       await expect(page.getByTestId('battleship-turn')).toContainText('Sıra sende', { timeout: 5_000 });
       await expect(page.getByTestId('battleship-own-grid').locator('.duo-bs-cell--hit, .duo-bs-cell--miss')).toHaveCount(1);

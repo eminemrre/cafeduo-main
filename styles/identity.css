@@ -797,10 +797,10 @@ button.duo-bs-cell {
   touch-action: manipulation;
   transition: background-color 120ms ease;
 }
-button.duo-bs-cell:disabled {
+button.duo-bs-cell[aria-disabled='true'] {
   cursor: default;
 }
-button.duo-bs-cell:not(:disabled):hover {
+button.duo-bs-cell[aria-disabled='false']:hover {
   background: #c4dfe6;
 }
 button.duo-bs-cell:focus-visible {
@@ -811,7 +811,7 @@ button.duo-bs-cell:focus-visible {
 .duo-bs-cell--sunk {
   background: #17140f;
 }
-button.duo-bs-cell.duo-bs-cell--ship:not(:disabled):hover {
+button.duo-bs-cell.duo-bs-cell--ship[aria-disabled='false']:hover {
   background: #2a251c;
 }
 .duo-bs-cell--hit {
@@ -943,6 +943,33 @@ button.duo-bs-cell.duo-bs-cell--selected,
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+
+.duo-bs-tabs {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.duo-bs-tabs button {
+  min-height: 44px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  color: #17140f;
+}
+.duo-bs-tabs button[aria-selected='true'] {
+  border-bottom-color: #17140f;
+}
+.duo-bs-tabs button:focus-visible {
+  outline: 3px solid #17140f;
+  outline-offset: 3px;
+}
+@media (min-width: 900px) {
+  .duo-bs-tabs {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

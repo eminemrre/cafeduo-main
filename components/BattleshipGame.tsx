@@ -271,7 +271,7 @@ const SeaGrid: React.FC<GridProps> = ({
         }
         return (
           <button
-            key={lastCell === cell ? `${cell}-${lastKey}` : cell}
+            key={cell}
             ref={(element) => {
               refs.current[cell] = element;
             }}
@@ -280,10 +280,12 @@ const SeaGrid: React.FC<GridProps> = ({
             tabIndex={cell === focusCell ? 0 : -1}
             aria-label={`${cellName(cell)}, ${stateLabel}`}
             aria-pressed={selected === cell ? true : undefined}
-            disabled={!canPick}
+            aria-disabled={!canPick}
             onKeyDown={(event) => move(event, cell)}
             onFocus={() => setFocusCell(cell)}
-            onClick={() => onCell?.(cell)}
+            onClick={() => {
+              if (canPick) onCell?.(cell);
+            }}
             data-cell={cell}
           >
             {state === 'hit' && <HitMark tone="ink" />}
@@ -354,6 +356,7 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
   const [direction, setDirection] = useState<ShipDirection>('h');
   const [placementError, setPlacementError] = useState<string | null>(null);
   const [target, setTarget] = useState<number | null>(null);
+  const [ownExpanded, setOwnExpanded] = useState(false);
   const botDoneRef = useRef(false);
   const onGameEndRef = useRef(onGameEnd);
   const onMatchSettledRef = useRef(onMatchSettled);
@@ -369,6 +372,7 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
     setDraft(emptyDraft());
     setActiveShip(0);
     setTarget(null);
+    setOwnExpanded(false);
     botDoneRef.current = false;
   }, [gameId, isBot]);
 
@@ -738,8 +742,26 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
             </p>
           )}
 
+          <div className="duo-bs-tabs" role="tablist" aria-label="Deniz görünümü">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={!ownExpanded}
+              onClick={() => setOwnExpanded(false)}
+            >
+              Rakip suları
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={ownExpanded}
+              onClick={() => setOwnExpanded(true)}
+            >
+              Senin suların
+            </button>
+          </div>
           <div className="duo-bs-layout">
-            <div className="min-w-0">
+            <div className={`min-w-0${ownExpanded ? ' hidden min-[900px]:block' : ''}`}>
               <FleetBars
                 label={`Rakip filo · ${myHits}/${FLEET_CELLS} isabet`}
                 sunk={opBoard.sunk.map((ship) => ship.size)}
@@ -768,7 +790,7 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
                 board={myBoard}
                 ships={myShips}
                 interactive={false}
-                size="mini"
+                size={ownExpanded ? 'full' : 'mini'}
                 testId="battleship-own-grid"
                 lastKey={
                   lastNote?.by === 'op' && lastNote.cell !== null ? `x-${lastNote.cell}` : null
@@ -777,7 +799,7 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
               <p className="duo-game-status min-h-[44px]" aria-live="polite">
                 {status}
               </p>
-              {phase === 'battle' && (
+              {phase === 'battle' && !ownExpanded && (
                 <RetroButton
                   variant="ink"
                   size="lg"

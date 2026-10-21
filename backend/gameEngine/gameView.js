@@ -129,9 +129,6 @@ const sanitizeRound = (round) => {
   if (round.correctIndex !== undefined && round.correctIndex !== null) {
     out.correctIndex = Number(round.correctIndex);
   }
-  if (Array.isArray(round.hiddenOptions)) {
-    out.hiddenOptions = round.hiddenOptions.map((index) => Number(index)).slice(0, 8);
-  }
   if (round.scoreDelta && typeof round.scoreDelta === 'object') {
     out.scoreDelta = pick(round.scoreDelta, PICK_KEYS);
   }
@@ -201,7 +198,7 @@ const SERIALIZED_GAME_KEYS = [
   'tournamentId',
 ];
 
-const serializeGameForActor = (game) => {
+const serializeGameForActor = (game, actorName, receivedAt) => {
   if (!game) return null;
   const gameType = String(read(game, 'gameType', 'game_type') || '').trim();
   const out = {};
@@ -220,6 +217,33 @@ const serializeGameForActor = (game) => {
   if (out.winner === undefined) out.winner = null;
   out.gameState = serializeGameState(gameType, read(game, 'gameState', 'game_state'));
 
+  // Actor-only projection is deliberately outside the common gameState used
+  // by sockets/history. Never infer the actor from a request payload.
+  if (isQuizType(gameType) && actorName) {
+    const actor = String(actorName).trim().toLowerCase();
+    const key = ['host', 'guest'].find(
+      (role) =>
+        String(readField(game, `${role}Name`) || '')
+          .trim()
+          .toLowerCase() === actor
+    );
+    const joker = key && read(game, 'gamePrivateState', 'game_private_state')?.jokers?.[key];
+    const round = out.gameState.engine?.round;
+    if (joker && round?.id === joker.roundId && Array.isArray(joker.hidden)) {
+      out.actorView = {
+        joker: {
+          roundId: joker.roundId,
+          hiddenOptions: joker.hidden
+            .filter(
+              (index) =>
+                Number.isInteger(index) && index >= 0 && index < (round.options?.length || 0)
+            )
+            .slice(0, 2),
+        },
+      };
+    }
+  }
+
   if (isCompetitiveEngineGameType(gameType)) {
     const engine = out.gameState.engine;
     out.protocolVersion = engine?.version === 2 ? 2 : 1;
@@ -228,6 +252,7 @@ const serializeGameForActor = (game) => {
       // never writes game time; this only lets it estimate where the server
       // clock is before the next snapshot.
       out.serverNow = new Date().toISOString();
+      if (Number.isFinite(receivedAt)) out.serverReceivedAt = new Date(receivedAt).toISOString();
     }
   }
 

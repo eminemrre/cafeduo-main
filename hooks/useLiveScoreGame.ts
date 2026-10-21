@@ -210,7 +210,7 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
   );
 
   const applySnapshot = useCallback(
-    (next: CompetitiveGame, receivedAt = Date.now()) => {
+    (next: CompetitiveGame, receivedAt = Date.now(), sentAt?: number) => {
       if (isBot) return;
 
       const nextEngine = engineOf(next);
@@ -241,7 +241,10 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
         return;
       }
 
-      clockOffsetRef.current = serverClockOffset(next, receivedAt);
+      // Unsolicited socket arrivals have no measured round trip. Never let
+      // their downstream delay undo the calibrated HTTP clock estimate.
+      if (sentAt !== undefined)
+        clockOffsetRef.current = serverClockOffset(next, receivedAt, sentAt);
       engineRef.current = nextEngine;
       snapshotRef.current = next;
       setSnapshot(next);
@@ -264,10 +267,11 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
       if (fetchInFlightRef.current) return null;
       fetchInFlightRef.current = true;
       const requestedGameId = String(gameId);
+      const sentAt = Date.now();
       try {
         const next = (await api.games.get(gameId)) as CompetitiveGame;
         if (!mountedRef.current || String(gameIdRef.current) !== requestedGameId) return null;
-        applySnapshot(next);
+        applySnapshot(next, Date.now(), sentAt);
         return next;
       } catch (err) {
         if (!silent) {
@@ -317,6 +321,7 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
       setError(null);
 
       const requestedGameId = String(gameId);
+      const sentAt = Date.now();
       try {
         const response = await api.games.action(gameId, payload);
         if (!mountedRef.current || String(gameIdRef.current) !== requestedGameId) {
@@ -324,7 +329,7 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
         }
         retryRef.current = null;
         if (response?.game) {
-          applySnapshot(response.game as CompetitiveGame);
+          applySnapshot(response.game as CompetitiveGame, Date.now(), sentAt);
         } else {
           await fetchSnapshot(true);
         }

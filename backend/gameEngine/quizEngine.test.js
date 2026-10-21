@@ -164,7 +164,8 @@ describe('quizEngine', () => {
       nowMs: 1000,
     });
     expect(hostJoker.ok).toBe(true);
-    const hidden = hostJoker.state.round.hiddenOptions;
+    expect(hostJoker.state.round.hiddenOptions).toBeUndefined();
+    const hidden = hostJoker.privateState.jokers.host.hidden;
     expect(hidden).toHaveLength(2);
     expect(hidden).not.toContain(1);
 
@@ -175,7 +176,8 @@ describe('quizEngine', () => {
       envelope: { actionId: 'act_joker_guest', roundId: 'r1', type: 'joker' },
       nowMs: 2000,
     });
-    expect(guestJoker.state.round.hiddenOptions).toEqual(hidden);
+    expect(guestJoker.state.round.hiddenOptions).toBeUndefined();
+    expect(guestJoker.privateState.jokers.guest.hidden).toEqual(hidden);
 
     const twice = applyQuizAction({
       state: guestJoker.state,

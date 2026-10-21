@@ -262,23 +262,31 @@ const advanceQuiz = (state, privateState, nowMs = Date.now()) => {
   const next = clone(state);
   let changed = false;
 
-  if (next.phase === 'open' && next.round) {
-    const responses = getRoundResponses(privateState, next.round.id);
-    const bothAnswered = Boolean(responses.host && responses.guest);
-    if (bothAnswered || nowMs >= toMs(next.round.endsAt)) {
-      resolveRound(next, privateState, Math.min(nowMs, toMs(next.round.endsAt) || nowMs));
-      changed = true;
+  // At most one open/reveal pair per match round. Never anchor a persisted
+  // deadline to the time of a late reader, restart or worker tick.
+  for (let step = 0; step < QUIZ_ROUND_COUNT; step += 1) {
+    if (next.phase === 'open' && next.round) {
+      const responses = getRoundResponses(privateState, next.round.id);
+      const bothAnswered = Boolean(responses.host && responses.guest);
+      if (bothAnswered || nowMs >= toMs(next.round.endsAt)) {
+        const closedAt = bothAnswered
+          ? Math.max(toMs(responses.host.receivedAt), toMs(responses.guest.receivedAt))
+          : toMs(next.round.endsAt);
+        resolveRound(next, privateState, closedAt);
+        changed = true;
+      }
     }
-  }
 
-  if (next.phase === 'reveal' && nowMs >= toMs(next.phaseEndsAt)) {
-    const nextIndex = next.roundIndex;
-    if (nextIndex >= next.totalRounds || !privateState.questions[nextIndex]) {
-      finishQuiz(next, nowMs);
-    } else {
-      openRound(next, privateState, nextIndex, nowMs);
-    }
-    changed = true;
+    if (next.phase === 'reveal' && nowMs >= toMs(next.phaseEndsAt)) {
+      const nextIndex = next.roundIndex;
+      const opensAt = toMs(next.phaseEndsAt);
+      if (nextIndex >= next.totalRounds || !privateState.questions[nextIndex]) {
+        finishQuiz(next, opensAt);
+      } else {
+        openRound(next, privateState, nextIndex, opensAt);
+      }
+      changed = true;
+    } else break;
   }
 
   return { state: next, changed };
@@ -300,6 +308,9 @@ const applyQuizAction = ({ state, privateState, actorKey, envelope, nowMs = Date
   }
   if (!next.round || envelope.roundId !== next.round.id) {
     return reject(409, 'STALE_ROUND', 'Bu tur artık açık değil.');
+  }
+  if (nowMs < toMs(next.round.startedAt)) {
+    return reject(409, 'ACTION_BEFORE_ROUND', 'Eylem bu tur başlamadan ulaştı.');
   }
 
   const nextPrivate = clone(privateState);
@@ -361,7 +372,6 @@ const applyQuizAction = ({ state, privateState, actorKey, envelope, nowMs = Date
     const second = (first + 1 + (seed[1] % (wrongIndexes.length - 1))) % wrongIndexes.length;
     const hidden = [wrongIndexes[first], wrongIndexes[second]].sort((a, b) => a - b);
     nextPrivate.jokers = { ...(nextPrivate.jokers || {}), [actorKey]: { roundId, hidden } };
-    next.round.hiddenOptions = hidden;
     player.jokerUsed = true;
     next.updatedAt = iso(nowMs);
     next.revision += 1;

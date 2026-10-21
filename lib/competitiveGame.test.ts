@@ -68,6 +68,19 @@ beforeEach(() => {
 });
 
 describe('competitive game helpers', () => {
+  it.each([50, 150, 300])(
+    'removes symmetric %i ms RTT and server processing from display clock',
+    (rtt) => {
+      const sentAt = 100000;
+      const offset = 700;
+      const processing = 200;
+      const snapshot = buildSnapshot({
+        serverReceivedAt: new Date(sentAt + rtt / 2 + offset).toISOString(),
+        serverNow: new Date(sentAt + rtt / 2 + offset + processing).toISOString(),
+      });
+      expect(serverClockOffset(snapshot, sentAt + rtt + processing, sentAt)).toBe(offset);
+    }
+  );
   it('recognizes only the two ranked game types', () => {
     expect(isCompetitiveGameType('Bilgi Yarışı')).toBe(true);
     expect(isCompetitiveGameType('Nişancı Düellosu')).toBe(true);

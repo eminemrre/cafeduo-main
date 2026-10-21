@@ -56,10 +56,21 @@ export const secondsLeftAt = (endsAt: string | null | undefined, nowMs: number):
  */
 export const serverClockOffset = (
   snapshot: CompetitiveGame | null | undefined,
-  receivedAt = Date.now()
+  receivedAt = Date.now(),
+  sentAt?: number
 ): number => {
   const serverNow = Date.parse(String(snapshot?.serverNow || ''));
   if (!Number.isFinite(serverNow)) return 0;
+  if (Number.isFinite(sentAt) && receivedAt >= (sentAt as number)) {
+    const serverReceivedAt = Date.parse(String(snapshot?.serverReceivedAt || ''));
+    // Four-timestamp estimate removes server processing time. Its residual
+    // uncertainty is half the path asymmetry; it is display-only, never a
+    // shooting timestamp or scoring compensation.
+    if (Number.isFinite(serverReceivedAt) && serverReceivedAt <= serverNow) {
+      return (serverReceivedAt - (sentAt as number) + (serverNow - receivedAt)) / 2;
+    }
+    return serverNow - ((sentAt as number) + receivedAt) / 2;
+  }
   return serverNow - receivedAt;
 };
 

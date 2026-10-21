@@ -179,23 +179,29 @@ const advanceAim = (state, privateState, nowMs = Date.now()) => {
   const next = clone(state);
   let changed = false;
 
-  if (next.phase === 'open' && next.round) {
-    const shots = getRoundShots(privateState, next.round.id);
-    const bothFired = Boolean(shots.host && shots.guest);
-    if (bothFired || nowMs >= toMs(next.round.endsAt)) {
-      resolveAimRound(next, privateState, Math.min(nowMs, toMs(next.round.endsAt) || nowMs));
-      changed = true;
+  for (let step = 0; step < AIM_ROUND_COUNT; step += 1) {
+    if (next.phase === 'open' && next.round) {
+      const shots = getRoundShots(privateState, next.round.id);
+      const bothFired = Boolean(shots.host && shots.guest);
+      if (bothFired || nowMs >= toMs(next.round.endsAt)) {
+        const closedAt = bothFired
+          ? Math.max(toMs(shots.host.receivedAt), toMs(shots.guest.receivedAt))
+          : toMs(next.round.endsAt);
+        resolveAimRound(next, privateState, closedAt);
+        changed = true;
+      }
     }
-  }
 
-  if (next.phase === 'reveal' && nowMs >= toMs(next.phaseEndsAt)) {
-    const nextIndex = next.roundIndex;
-    if (nextIndex >= next.totalRounds || !privateState.rounds[nextIndex]) {
-      finishAim(next, nowMs);
-    } else {
-      openAimRound(next, privateState, nextIndex, nowMs);
-    }
-    changed = true;
+    if (next.phase === 'reveal' && nowMs >= toMs(next.phaseEndsAt)) {
+      const nextIndex = next.roundIndex;
+      const opensAt = toMs(next.phaseEndsAt);
+      if (nextIndex >= next.totalRounds || !privateState.rounds[nextIndex]) {
+        finishAim(next, opensAt);
+      } else {
+        openAimRound(next, privateState, nextIndex, opensAt);
+      }
+      changed = true;
+    } else break;
   }
 
   return { state: next, changed };
@@ -215,6 +221,9 @@ const applyAimAction = ({ state, privateState, actorKey, envelope, nowMs = Date.
   if (next.phase === 'finished') return reject(409, 'GAME_FINISHED', 'Oyun tamamlandı.');
   if (!next.round || envelope.roundId !== next.round.id) {
     return reject(409, 'STALE_ROUND', 'Bu tur artık açık değil.');
+  }
+  if (nowMs < toMs(next.round.startedAt)) {
+    return reject(409, 'ACTION_BEFORE_ROUND', 'Eylem bu tur başlamadan ulaştı.');
   }
 
   const nextPrivate = clone(privateState);

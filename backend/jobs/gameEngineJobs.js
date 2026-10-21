@@ -9,7 +9,8 @@
  */
 
 const { COMPETITIVE_ENGINE_GAME_TYPES } = require('../utils/gameEngineConfig');
-const { finalizeEngineGameById } = require('../gameEngine/settlement');
+const { finalizeEngineGameById, finalizeMemoryEngineGame } = require('../gameEngine/settlement');
+const { defaultRegistry } = require('../gameEngine/gameLock');
 
 const ENGINE_TICK_INTERVAL_MS = 2_000;
 const ENGINE_BATCH_SIZE = 50;
@@ -20,8 +21,41 @@ const runGameEngineTick = async ({
   logger,
   nowMs = Date.now(),
   batchSize = ENGINE_BATCH_SIZE,
+  getMemoryGames = () => [],
+  getMemoryUsers = () => [],
 }) => {
-  if (!(await isDbConnected())) return { processed: 0, failed: 0 };
+  if (!(await isDbConnected())) {
+    const candidates = getMemoryGames()
+      .filter((game) => {
+        const engine = game.gameState?.engine;
+        return (
+          engine &&
+          !engine.result?.settled &&
+          ((['open', 'reveal'].includes(engine.phase) && Date.parse(engine.phaseEndsAt) <= nowMs) ||
+            engine.phase === 'finished')
+        );
+      })
+      .slice(0, batchSize);
+    let processed = 0;
+    let failed = 0;
+    for (const game of candidates) {
+      try {
+        await defaultRegistry.runExclusive(game.id, async () => {
+          finalizeMemoryEngineGame({
+            game,
+            privateState: game.gamePrivateState,
+            getMemoryUsers,
+            nowMs,
+          });
+        });
+        processed += 1;
+      } catch (error) {
+        failed += 1;
+        logger.error('Memory game engine tick failed', { gameId: game.id, error: error.message });
+      }
+    }
+    return { processed, failed };
+  }
   const gameTypes = Array.from(COMPETITIVE_ENGINE_GAME_TYPES);
   const nowIso = new Date(nowMs).toISOString();
 
@@ -65,10 +99,18 @@ const runGameEngineTick = async ({
   return { processed, failed };
 };
 
-const registerGameEngineJobs = ({ pool, isDbConnected, logger }) => {
+const registerGameEngineJobs = ({
+  pool,
+  isDbConnected,
+  logger,
+  getMemoryGames,
+  getMemoryUsers,
+}) => {
   const runSafely = () =>
     Promise.resolve()
-      .then(() => runGameEngineTick({ pool, isDbConnected, logger }))
+      .then(() =>
+        runGameEngineTick({ pool, isDbConnected, logger, getMemoryGames, getMemoryUsers })
+      )
       .catch((err) => logger.error('Game engine job failed:', err));
 
   const timer = setInterval(runSafely, ENGINE_TICK_INTERVAL_MS);

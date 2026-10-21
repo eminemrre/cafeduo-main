@@ -1129,6 +1129,8 @@ registerGameEngineJobs({
   pool,
   isDbConnected,
   logger,
+  getMemoryGames: () => MEMORY_GAMES,
+  getMemoryUsers: () => MEMORY_USERS,
 });
 
 // --- SWAGGER UI ---

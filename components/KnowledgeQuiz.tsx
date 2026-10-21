@@ -390,7 +390,12 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
     : phase === 'open'
       ? optimisticPick
       : serverPick;
-  const hiddenOptions = isBot ? bot.hiddenOptions : liveEngine?.round?.hiddenOptions || [];
+  const ownJoker = live.snapshot?.actorView?.joker;
+  const hiddenOptions = isBot
+    ? bot.hiddenOptions
+    : ownJoker?.roundId === liveEngine?.round?.id
+      ? ownJoker?.hiddenOptions || []
+      : [];
   const jokerUsed = isBot ? bot.jokerUsed : Boolean(livePlayer?.jokerUsed);
   const streak = isBot ? bot.streak : Number(livePlayer?.streak || 0);
   const playerScore = isBot ? bot.playerScore : live.playerScore;

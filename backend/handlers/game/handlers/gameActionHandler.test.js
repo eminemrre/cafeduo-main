@@ -76,6 +76,62 @@ const request = (username, body) => ({
 });
 
 describe('gameActionHandler (memory)', () => {
+  it('scores using ingress time even after waiting beyond the deadline for a memory lock', async () => {
+    const start = Date.now();
+    const game = buildMemoryGame(start);
+    const deps = makeDeps({ games: [game] });
+    const clock = jest.spyOn(Date, 'now').mockReturnValue(start + 1000);
+    deps.gameLock = {
+      runExclusive: async (_id, task) => {
+        clock.mockReturnValue(start + 20000);
+        return task();
+      },
+    };
+    try {
+      const res = createMockRes();
+      await createGameActionHandler(deps)(
+        request('Alice', {
+          actionId: 'ingress_time_1',
+          roundId: 'r1',
+          type: 'answer',
+          optionIndex: game.gamePrivateState.questions[0].answerIndex,
+        }),
+        res
+      );
+      expect(res.statusCode).toBe(200);
+      expect(game.gamePrivateState.responses.r1.host.secondsLeft).toBe(14);
+      expect(game.gamePrivateState.responses.r1.host.receivedAt).toBe(
+        new Date(start + 1000).toISOString()
+      );
+    } finally {
+      clock.mockRestore();
+    }
+  });
+
+  it('returns only the requesting actor joker and never emits it', async () => {
+    const game = buildMemoryGame();
+    const deps = makeDeps({ games: [game] });
+    const handler = createGameActionHandler(deps);
+    const host = createMockRes();
+    await handler(
+      request('Alice', { actionId: 'host_joker_test', roundId: 'r1', type: 'joker' }),
+      host
+    );
+    expect(host.payload.game.actorView.joker.hiddenOptions).toHaveLength(2);
+    expect(JSON.stringify(deps.emitRealtimeUpdate.mock.calls)).not.toContain('hiddenOptions');
+    const guest = createMockRes();
+    await handler(
+      request('Bob', {
+        actionId: 'guest_answer_test',
+        roundId: 'r1',
+        type: 'answer',
+        optionIndex: 0,
+      }),
+      guest
+    );
+    expect(guest.payload.game.actorView).toBeUndefined();
+    expect(JSON.stringify(guest.payload.game)).not.toContain('hiddenOptions');
+  });
   it('applies an answer, persists private state and emits only a summary', async () => {
     const game = buildMemoryGame();
     const deps = makeDeps({ games: [game] });

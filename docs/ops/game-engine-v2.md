@@ -1,5 +1,11 @@
 # Server-authoritative games (protocol v2)
 
+> **Release blocked after independent review.** Read
+> [game-authority-review.md](game-authority-review.md) first. Its migration-first
+> and disabled-auto-deploy prerequisites supersede the rollout order below.
+> Queue ordering, aim playability and fresh-install migration issues remain
+> open; previous green tests are not activation approval.
+
 CafeDuo's ranked **Bilgi Yarışı** and **Nişancı Düellosu** matches are run by the
 server. The client renders public snapshots and sends actions; it never sends a
 score, a winner, a clock value or a settlement flag.
@@ -15,6 +21,9 @@ score, a winner, a clock value or a settlement flag.
 - `games.game_private_state` holds answer keys, future questions, trajectory
   seeds, joker choices, per-action receipts and shots. It is never selected for
   an API/socket/list/history response.
+  An authenticated action/GET may project only the requesting player's current
+  joker choices into the separate allowlisted `actorView.joker`; common
+  `gameState` and sockets never contain `hiddenOptions`.
 - Write paths for legacy `liveSubmission`, `scoreSubmission`, `move` and
   `finish({ winner })` answer `410 LEGACY_PROTOCOL_DISABLED`.
 - `game_move` and `update_game_state` sockets are rejected. Socket events only

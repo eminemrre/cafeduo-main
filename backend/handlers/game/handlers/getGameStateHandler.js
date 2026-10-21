@@ -25,6 +25,7 @@ const createGetGameStateHandler = (deps) => {
   } = deps;
 
   const getGameState = async (req, res) => {
+    const receivedAt = Date.now();
     const { id } = req.params;
     const actor = String(req.user?.username || '')
       .trim()
@@ -199,7 +200,7 @@ const createGetGameStateHandler = (deps) => {
         }
       }
 
-      return res.json(serializeGameForActor(row));
+      return res.json(serializeGameForActor(row, req.user?.username, receivedAt));
     }
 
     const game = getMemoryGames().find((item) => String(item.id) === String(id));
@@ -285,7 +286,7 @@ const createGetGameStateHandler = (deps) => {
       }
     }
 
-    return res.json(serializeGameForActor(game));
+    return res.json(serializeGameForActor(game, req.user?.username, receivedAt));
   };
 
   return getGameState;

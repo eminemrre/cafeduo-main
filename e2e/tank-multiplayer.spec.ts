@@ -184,7 +184,7 @@ async function openPlayerPages(
   browser: Browser,
   root: string,
   pair: Pair,
-  options: { guestWebgl?: boolean } = {}
+  options: { guestWebgl?: boolean; guestClockOffset?: number } = {}
 ): Promise<GamePages> {
   const hostContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const guestContext = await browser.newContext({
@@ -192,6 +192,12 @@ async function openPlayerPages(
     isMobile: true,
     hasTouch: true,
   });
+  if (options.guestClockOffset) {
+    await guestContext.addInitScript((offset) => {
+      const realNow = Date.now.bind(Date);
+      Date.now = () => realNow() + offset;
+    }, options.guestClockOffset);
+  }
   if (options.guestWebgl === false) {
     await guestContext.addInitScript(() => {
       const original = HTMLCanvasElement.prototype.getContext;
@@ -278,14 +284,14 @@ test.describe('Server-authoritative competitive games', () => {
       const firstRoundId = first.gameState.engine.round.id;
 
       // The joker must come from the server and hide exactly two wrong options
-      // for both players. The client cannot choose which options to hide.
+      // only for its owner. The opponent must spend their own joker.
       await pages.hostPage.getByTestId('knowledge-joker').click();
       const jokerView = await waitForEngine(
         request,
         root,
         pair.host,
         gameId,
-        (engine) => Array.isArray(engine.round?.hiddenOptions) && engine.round.hiddenOptions.length === 2,
+        (_engine, game) => game.actorView?.joker?.hiddenOptions?.length === 2,
         'the server joker result'
       );
       expect(jokerView.gameState.engine.round.id).toBe(firstRoundId);
@@ -294,9 +300,30 @@ test.describe('Server-authoritative competitive games', () => {
       ).toHaveCount(2);
       await expect(
         pages.guestPage.locator('[data-testid^="knowledge-option-"][aria-hidden="true"]')
+      ).toHaveCount(0);
+      const guestBeforeJoker = await getGame(request, root, pair.guest, gameId);
+      expect(JSON.stringify(guestBeforeJoker)).not.toContain('hiddenOptions');
+      for (const endpoint of [
+        `/api/users/${pair.guest.credentials.username}/active-game`,
+        `/api/users/${pair.guest.credentials.username}/game-history`,
+      ]) {
+        const response = await request.get(`${apiRoot}${endpoint}`, { headers: authHeaders(pair.guest) });
+        expect(response.ok()).toBe(true);
+        expect(await response.text()).not.toContain('hiddenOptions');
+      }
+      const repeatedJoin = await request.post(`${apiRoot}/api/games/${gameId}/join`, {
+        headers: authHeaders(pair.guest), data: { guestName: pair.guest.credentials.username },
+      });
+      expect(repeatedJoin.ok()).toBe(true);
+      expect(await repeatedJoin.text()).not.toContain('hiddenOptions');
+      await pages.guestPage.getByTestId('knowledge-joker').click();
+      await expect(
+        pages.guestPage.locator('[data-testid^="knowledge-option-"][aria-hidden="true"]')
       ).toHaveCount(2);
+      const guestAfterJoker = await getGame(request, root, pair.guest, gameId);
+      expect(guestAfterJoker.actorView.joker).toEqual(jokerView.actorView.joker);
 
-      const firstOption = visibleOption(jokerView.gameState.engine);
+      const firstOption = [0, 1, 2, 3].find(index => !jokerView.actorView.joker.hiddenOptions.includes(index))!;
       await Promise.all([
         pages.hostPage.getByTestId(`knowledge-option-${firstOption}`).click(),
         pages.guestPage.getByTestId(`knowledge-option-${firstOption}`).click(),
@@ -393,7 +420,7 @@ test.describe('Server-authoritative competitive games', () => {
     }
   });
 
-  test('@v2 @advanced aim plays five rounds, works without WebGL and survives request delay', async ({
+  test('@v2 @advanced aim plays five rounds and works without WebGL', async ({
     browser,
     request,
     baseURL,
@@ -412,7 +439,6 @@ test.describe('Server-authoritative competitive games', () => {
       });
 
       const roundsSeen = new Set<number>();
-      const rttDelaysSeen = new Set<number>();
       let finalView: any = null;
       let usedHostUiFire = false;
       for (let guard = 0; guard < 100; guard += 1) {
@@ -449,51 +475,11 @@ test.describe('Server-authoritative competitive games', () => {
           }
 
           if (!engine.players?.guest?.answered) {
-            const delayByRound: Record<number, number> = { 1: 50, 2: 150, 3: 300 };
-            const delayMs = delayByRound[engine.round.index] ?? null;
-            let result: { status: number; body: any };
-            if (delayMs !== null) {
-              // A page-originated request with a deliberate client delay. The
-              // payload carries no timestamp or position; the server scores at
-              // its own receive time against the shared trajectory.
-              result = await pages.guestPage.evaluate(
-                async ({ url, token, csrf, envelope, delay }) => {
-                  await new Promise((resolve) => setTimeout(resolve, delay));
-                  const res = await fetch(url, {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: {
-                      Authorization: `Bearer ${token}`,
-                      'X-CSRF-Token': csrf,
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(envelope),
-                  });
-                  return {
-                    status: res.status,
-                    body: await res.json().catch(() => ({})),
-                  };
-                },
-                {
-                  url: `${apiRoot}/api/games/${gameId}/actions`,
-                  token: pair.guest.token,
-                  csrf: pair.guest.csrfToken,
-                  envelope: {
-                    actionId: actionId(`aim_rtt_${roundId}`),
-                    roundId,
-                    type: 'fire',
-                  },
-                  delay: delayMs,
-                }
-              );
-              if (result.status === 200) rttDelaysSeen.add(delayMs);
-            } else {
-              result = await sendAction(request, root, pair.guest, gameId, {
+            const result = await sendAction(request, root, pair.guest, gameId, {
                 actionId: actionId(`aim_guest_${roundId}`),
                 roundId,
                 type: 'fire',
               });
-            }
             if (result.status !== 200 && result.status !== 409) {
               throw new Error(`Guest fire rejected: ${result.status} ${JSON.stringify(result.body)}`);
             }
@@ -503,7 +489,6 @@ test.describe('Server-authoritative competitive games', () => {
         await sleep(120);
       }
 
-      expect([...rttDelaysSeen].sort((a, b) => a - b)).toEqual([50, 150, 300]);
       expect(finalView, 'aim should finish within the guard window').toBeTruthy();
       expect(finalView.status).toBe('finished');
       expect(finalView.gameState.engine.result?.settled).toBe(true);
@@ -523,6 +508,76 @@ test.describe('Server-authoritative competitive games', () => {
       await closeGamePages(pages);
     }
   });
+
+  for (const rtt of [50, 150, 300]) {
+    test(`@v2 @rtt aim measures UI shot with ${rtt} ms symmetric network RTT and clock skew`, async ({ browser, request, baseURL }, testInfo) => {
+      const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
+      const pair = await provisionPair(request, root, 'rtt');
+      const pages = await openPlayerPages(browser, root, pair, { guestWebgl: false, guestClockOffset: 700 });
+      const gameId = await createAndJoin(request, root, pair, AIM);
+      const timings: Array<{ method: string; path: string; elapsedMs: number }> = [];
+      try {
+        // Real browser requests are held on BOTH legs. Unlike the old
+        // pre-fetch sleep this changes observed RTT and clock calibration.
+        await pages.guestPage.route(`**/api/games/${gameId}{,/actions}`, async route => {
+          const began = Date.now();
+          await sleep(rtt / 2);
+          const response = await route.fetch();
+          await sleep(rtt / 2);
+          await route.fulfill({ response });
+          timings.push({ method: route.request().method(), path: new URL(route.request().url()).pathname, elapsedMs: Date.now() - began });
+        });
+        await enterGame(pages, 'arena-battle');
+        await expect(pages.guestPage.getByTestId('arena-reticle')).toBeVisible();
+        const snapshot = await getGame(request, root, pair.host, gameId);
+        const round = snapshot.gameState.engine.round;
+        expect(round.id).toBe('r1');
+        expect((await sendAction(request, root, pair.host, gameId, { actionId: actionId('rtt_host'), roundId: round.id, type: 'fire' })).status).toBe(200);
+        await pages.guestPage.evaluate(() => {
+          document.querySelector('[data-testid="arena-fire-button"]')!.addEventListener('click', () => {
+            (window as any).__aimClick = { clientAt: Date.now(), displayedPosition: parseFloat((document.querySelector('[data-testid="arena-reticle"]') as HTMLElement).style.left) };
+          }, { capture: true, once: true });
+        });
+        const button = pages.guestPage.getByTestId('arena-fire-button');
+        await expect(button).toBeEnabled();
+        await button.scrollIntoViewIfNeeded();
+        const box = (await button.boundingBox())!;
+        await pages.guestPage.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+        await pages.guestPage.waitForFunction(() => {
+          const reticle = document.querySelector('[data-testid="arena-reticle"]') as HTMLElement | null;
+          // Rendering samples every 46 ms (~4 units). A <1-unit trigger can
+          // miss the centre forever even though the 3-point zone was drawn.
+          return reticle && Math.abs(parseFloat(reticle.style.left) - 50) <= 2.05;
+        }, undefined, { polling: 'raf', timeout: 5000 });
+        const responsePromise = pages.guestPage.waitForResponse(response => response.url().endsWith(`/api/games/${gameId}/actions`) && response.request().method() === 'POST', { timeout: 10000 });
+        await pages.guestPage.mouse.down();
+        await pages.guestPage.mouse.up();
+        const response = await responsePromise;
+        expect(response.status()).toBe(200);
+        const body = await response.json();
+        const click = await pages.guestPage.evaluate(() => (window as any).__aimClick);
+        const shot = body.game.gameState.engine.round.shots.guest;
+        const { positionAt, pointsAt } = require('../shared/aimTrajectory');
+        const receivedAt = Date.parse(body.game.serverReceivedAt);
+        const elapsed = receivedAt - Date.parse(round.startedAt);
+        expect(shot.position).toBeCloseTo(positionAt(round.trajectory, elapsed), 5);
+        expect(shot.points).toBe(pointsAt(round.trajectory, elapsed));
+        const displayedPoints = Math.abs(click.displayedPosition - 50) <= 4 ? 3 : Math.abs(click.displayedPosition - 50) <= 10 ? 2 : Math.abs(click.displayedPosition - 50) <= 18 ? 1 : 0;
+        expect(displayedPoints).toBe(3);
+        const clickServerAt = click.clientAt - 700;
+        const truePositionAtClick = positionAt(round.trajectory, clickServerAt - Date.parse(round.startedAt));
+        const report = { configuredRttMs: rtt, clientClockSkewMs: 700, timings, displayedPosition: click.displayedPosition, truePositionAtClick, displayPositionError: click.displayedPosition - truePositionAtClick, displayedPoints, officialPosition: shot.position, officialPoints: shot.points, pointsDelta: shot.points - displayedPoints, ingressAfterClickMs: receivedAt - clickServerAt, activationApproved: false };
+        console.log(`AIM_RTT_MEASUREMENT ${JSON.stringify(report)}`);
+        await testInfo.attach(`aim-rtt-${rtt}.json`, { body: JSON.stringify(report, null, 2), contentType: 'application/json' });
+        expect(timings.some(timing => timing.method === 'GET' && timing.elapsedMs >= rtt)).toBe(true);
+        // Measurement integrity is gated. Playability approval is deliberately
+        // NOT inferred from HTTP 200 or a score below the cap.
+        expect(Number.isFinite(report.displayPositionError)).toBe(true);
+      } finally {
+        await closeGamePages(pages);
+      }
+    });
+  }
 
   test('@v2 @advanced rejects forged results, replay conflicts and duplicate jokers', async ({
     request,

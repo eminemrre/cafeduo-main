@@ -49,7 +49,7 @@ const createGameRoutes = ({ authenticateToken, gameHandlers, gameService }) => {
 
     try {
       const activeGame = await gameService.getActiveGameForUser(username);
-      return res.json(serializeGameForActor(activeGame));
+      return res.json(serializeGameForActor(activeGame, req.user?.username));
     } catch {
       return res.status(500).json({ error: 'Aktif oyun sorgulanamadı.' });
     }

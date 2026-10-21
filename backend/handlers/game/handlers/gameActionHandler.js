@@ -60,6 +60,9 @@ const createGameActionHandler = (deps) => {
   };
 
   const gameAction = async (req, res) => {
+    // Capture trusted server time before connectivity checks, pool acquisition
+    // or row/memory locks. Client timestamps are never consulted.
+    const receivedAt = Date.now();
     const { id } = req.params;
     const actorName = String(req.user?.username || '').trim();
     const parsed = normalizeActionEnvelope(req.body);
@@ -89,7 +92,7 @@ const createGameActionHandler = (deps) => {
           game,
           actorName,
           envelope: parsed.envelope,
-          nowMs: Date.now(),
+          nowMs: receivedAt,
         });
         if (!processed.ok) {
           await client.query('ROLLBACK');
@@ -149,13 +152,14 @@ const createGameActionHandler = (deps) => {
           announce(id, status, nextGameState.engine, winner);
         }
         game.game_state = nextGameState;
+        game.game_private_state = processed.privateState;
         game.status = status;
         game.winner = winner;
 
         return res.json({
           success: true,
           duplicate: Boolean(processed.duplicate),
-          game: serializeGameForActor(game),
+          game: serializeGameForActor(game, actorName, receivedAt),
         });
       } catch (err) {
         await client.query('ROLLBACK').catch(() => undefined);
@@ -181,7 +185,7 @@ const createGameActionHandler = (deps) => {
         game,
         actorName,
         envelope: parsed.envelope,
-        nowMs: Date.now(),
+        nowMs: receivedAt,
       });
       if (!processed.ok) {
         return { error: processed };
@@ -211,7 +215,7 @@ const createGameActionHandler = (deps) => {
 
       return {
         duplicate: Boolean(processed.duplicate),
-        game: serializeGameForActor(game),
+        game: serializeGameForActor(game, actorName, receivedAt),
       };
     });
 

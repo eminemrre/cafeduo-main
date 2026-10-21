@@ -3,14 +3,14 @@ services:
     image: pgvector/pgvector:pg15
     restart: unless-stopped
     environment:
-      POSTGRES_USER: "${DB_USER:-postgres}"
-      POSTGRES_PASSWORD: "${DB_PASSWORD:-change-me}"
-      POSTGRES_DB: "${DB_NAME:-cafeduo}"
+      POSTGRES_USER: '${DB_USER:-postgres}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD:-change-me}'
+      POSTGRES_DB: '${DB_NAME:-cafeduo}'
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ../schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -18,11 +18,11 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: ["redis-server", "--appendonly", "yes"]
+    command: ['redis-server', '--appendonly', 'yes']
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -40,54 +40,55 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
-      DATABASE_URL: "postgres://${DB_USER:-postgres}:${DB_PASSWORD:-change-me}@postgres:5432/${DB_NAME:-cafeduo}"
-      REDIS_URL: "redis://redis:6379"
-      DB_SSL: "${DB_SSL:-false}"
-      DB_SSL_REJECT_UNAUTHORIZED: "${DB_SSL_REJECT_UNAUTHORIZED:-false}"
-      JWT_SECRET: "${JWT_SECRET}"
-      JWT_EXPIRES_IN: "${JWT_EXPIRES_IN:-7d}"
-      JWT_REFRESH_EXPIRES_IN: "${JWT_REFRESH_EXPIRES_IN:-30d}"
-      CORS_ORIGIN: "${CORS_ORIGIN}"
-      API_RATE_LIMIT_WINDOW_MS: "${API_RATE_LIMIT_WINDOW_MS:-900000}"
-      API_RATE_LIMIT_MAX_REQUESTS: "${API_RATE_LIMIT_MAX_REQUESTS:-600}"
-      AUTH_RATE_LIMIT_WINDOW_MS: "${AUTH_RATE_LIMIT_WINDOW_MS:-900000}"
-      AUTH_LOGIN_RATE_LIMIT_MAX_REQUESTS: "${AUTH_LOGIN_RATE_LIMIT_MAX_REQUESTS:-20}"
-      AUTH_REGISTER_RATE_LIMIT_MAX_REQUESTS: "${AUTH_REGISTER_RATE_LIMIT_MAX_REQUESTS:-10}"
-      RATE_LIMIT_STORE: "${RATE_LIMIT_STORE:-redis}"
-      RATE_LIMIT_REDIS_PREFIX: "${RATE_LIMIT_REDIS_PREFIX:-cafeduo:ratelimit}"
-      RATE_LIMIT_PASS_ON_STORE_ERROR: "${RATE_LIMIT_PASS_ON_STORE_ERROR:-false}"
-      BLACKLIST_FAIL_MODE: "${BLACKLIST_FAIL_MODE:-closed}"
-      TRUST_PROXY: "${TRUST_PROXY:-1}"
-      RATE_LIMIT_WINDOW_MS: "${RATE_LIMIT_WINDOW_MS:-900000}"
-      RATE_LIMIT_MAX_REQUESTS: "${RATE_LIMIT_MAX_REQUESTS:-600}"
-      LOG_LEVEL: "${LOG_LEVEL:-info}"
-      REQUEST_LOG_SLOW_MS: "${REQUEST_LOG_SLOW_MS:-1200}"
-      APP_VERSION: "${APP_VERSION:-}"
-      APP_BUILD_TIME: "${APP_BUILD_TIME:-}"
+      GAME_ENGINE_V2_ENABLED: '${GAME_ENGINE_V2_ENABLED:-false}'
+      DATABASE_URL: 'postgres://${DB_USER:-postgres}:${DB_PASSWORD:-change-me}@postgres:5432/${DB_NAME:-cafeduo}'
+      REDIS_URL: 'redis://redis:6379'
+      DB_SSL: '${DB_SSL:-false}'
+      DB_SSL_REJECT_UNAUTHORIZED: '${DB_SSL_REJECT_UNAUTHORIZED:-false}'
+      JWT_SECRET: '${JWT_SECRET}'
+      JWT_EXPIRES_IN: '${JWT_EXPIRES_IN:-7d}'
+      JWT_REFRESH_EXPIRES_IN: '${JWT_REFRESH_EXPIRES_IN:-30d}'
+      CORS_ORIGIN: '${CORS_ORIGIN}'
+      API_RATE_LIMIT_WINDOW_MS: '${API_RATE_LIMIT_WINDOW_MS:-900000}'
+      API_RATE_LIMIT_MAX_REQUESTS: '${API_RATE_LIMIT_MAX_REQUESTS:-600}'
+      AUTH_RATE_LIMIT_WINDOW_MS: '${AUTH_RATE_LIMIT_WINDOW_MS:-900000}'
+      AUTH_LOGIN_RATE_LIMIT_MAX_REQUESTS: '${AUTH_LOGIN_RATE_LIMIT_MAX_REQUESTS:-20}'
+      AUTH_REGISTER_RATE_LIMIT_MAX_REQUESTS: '${AUTH_REGISTER_RATE_LIMIT_MAX_REQUESTS:-10}'
+      RATE_LIMIT_STORE: '${RATE_LIMIT_STORE:-redis}'
+      RATE_LIMIT_REDIS_PREFIX: '${RATE_LIMIT_REDIS_PREFIX:-cafeduo:ratelimit}'
+      RATE_LIMIT_PASS_ON_STORE_ERROR: '${RATE_LIMIT_PASS_ON_STORE_ERROR:-false}'
+      BLACKLIST_FAIL_MODE: '${BLACKLIST_FAIL_MODE:-closed}'
+      TRUST_PROXY: '${TRUST_PROXY:-1}'
+      RATE_LIMIT_WINDOW_MS: '${RATE_LIMIT_WINDOW_MS:-900000}'
+      RATE_LIMIT_MAX_REQUESTS: '${RATE_LIMIT_MAX_REQUESTS:-600}'
+      LOG_LEVEL: '${LOG_LEVEL:-info}'
+      REQUEST_LOG_SLOW_MS: '${REQUEST_LOG_SLOW_MS:-1200}'
+      APP_VERSION: '${APP_VERSION:-}'
+      APP_BUILD_TIME: '${APP_BUILD_TIME:-}'
       # Server errors go to the frontend's Sentry project unless the API has its own DSN.
-      SENTRY_DSN: "${SENTRY_DSN:-${VITE_SENTRY_DSN:-}}"
-      BOOTSTRAP_ADMIN_EMAILS: "${BOOTSTRAP_ADMIN_EMAILS:-}"
+      SENTRY_DSN: '${SENTRY_DSN:-${VITE_SENTRY_DSN:-}}'
+      BOOTSTRAP_ADMIN_EMAILS: '${BOOTSTRAP_ADMIN_EMAILS:-}'
       # Accounts that check in without the café's location verification.
-      CHECKIN_LOCATION_EXEMPT_USERS: "${CHECKIN_LOCATION_EXEMPT_USERS:-test102}"
-      BOOTSTRAP_ADMIN_PASSWORD: "${BOOTSTRAP_ADMIN_PASSWORD:-}"
+      CHECKIN_LOCATION_EXEMPT_USERS: '${CHECKIN_LOCATION_EXEMPT_USERS:-test102}'
+      BOOTSTRAP_ADMIN_PASSWORD: '${BOOTSTRAP_ADMIN_PASSWORD:-}'
     expose:
-      - "3001"
+      - '3001'
 
   web:
     build:
       context: ..
       dockerfile: Dockerfile.web
       args:
-        VITE_API_BASE_URL: "${VITE_API_BASE_URL:-}"
-        VITE_SOCKET_URL: "${VITE_SOCKET_URL:-}"
-        VITE_APP_VERSION: "${APP_VERSION:-}"
-        VITE_BUILD_TIME: "${APP_BUILD_TIME:-}"
-        VITE_SENTRY_DSN: "${VITE_SENTRY_DSN:-}"
+        VITE_API_BASE_URL: '${VITE_API_BASE_URL:-}'
+        VITE_SOCKET_URL: '${VITE_SOCKET_URL:-}'
+        VITE_APP_VERSION: '${APP_VERSION:-}'
+        VITE_BUILD_TIME: '${APP_BUILD_TIME:-}'
+        VITE_SENTRY_DSN: '${VITE_SENTRY_DSN:-}'
     restart: unless-stopped
     depends_on:
       - api
     expose:
-      - "8080"
+      - '8080'
 
 volumes:
   postgres_data:

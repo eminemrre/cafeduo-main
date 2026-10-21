@@ -224,7 +224,6 @@ export interface CompetitiveEngineRound {
   category?: string;
   level?: 'orta' | 'zor';
   correctIndex?: number | null;
-  hiddenOptions?: number[];
   picks?: { host: number | null; guest: number | null };
   scoreDelta?: { host: number; guest: number };
   shots?: {
@@ -270,10 +269,12 @@ export interface CompetitiveEngineState {
 }
 
 export interface CompetitiveGame extends GameRequest {
+  actorView?: { joker?: { roundId: string; hiddenOptions: number[] } };
   winner?: string | null;
   createdAt?: string;
   protocolVersion?: number;
   serverNow?: string;
+  serverReceivedAt?: string;
   gameState?: {
     engine?: CompetitiveEngineState;
   };

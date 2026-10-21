@@ -11,6 +11,11 @@
 
 const { Pool } = require('pg');
 const { finalizeEngineGameById } = require('./settlement');
+const { createGameActionHandler } = require('../handlers/game/handlers/gameActionHandler');
+const { createFinishGameHandler } = require('../handlers/game/handlers/finishGameHandler');
+const { runGameEngineTick } = require('../jobs/gameEngineJobs');
+const quiz = require('./quizEngine');
+const aim = require('./aimEngine');
 
 const connectionString = process.env.TEST_DATABASE_URL;
 const describePostgres = connectionString ? describe : describe.skip;
@@ -19,7 +24,7 @@ const logger = { info: () => undefined, warn: () => undefined, error: () => unde
 const runId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 let nameCounter = 0;
 
-const username = (tag) => `pgs_${runId}_${tag}_${(nameCounter += 1)}`.slice(0, 20);
+const username = (tag) => `pgs_${(nameCounter += 1)}_${tag}_${runId}`.slice(0, 20);
 const iso = (ms) => new Date(ms).toISOString();
 
 const finishedEngine = ({ kind = 'quiz', host, guest, winner, hostScore, guestScore }) => ({
@@ -135,6 +140,259 @@ describePostgres('settlement on real PostgreSQL', () => {
     return result.rows[0];
   };
 
+  const response = () => ({
+    statusCode: 200,
+    status(code) {
+      this.statusCode = code;
+      return this;
+    },
+    json(body) {
+      this.body = body;
+      return this;
+    },
+  });
+  const action = async (gameId, user, body, actionPool = pool) => {
+    const res = response();
+    await createGameActionHandler({
+      pool: actionPool,
+      isDbConnected: async () => true,
+      logger,
+      emitRealtimeUpdate: () => {},
+    })({ params: { id: gameId }, user: { username: user.username }, body }, res);
+    return res;
+  };
+  const liveGame = async (kind, host, guest) => {
+    const privateState =
+      kind === 'quiz' ? quiz.createQuizPrivateState() : aim.createAimPrivateState();
+    const state = (kind === 'quiz' ? quiz.startQuizState : aim.startAimState)({
+      state: (kind === 'quiz' ? quiz.createQuizPublicState : aim.createAimPublicState)({
+        hostName: host.username,
+        guestName: guest.username,
+      }),
+      privateState,
+      hostName: host.username,
+      guestName: guest.username,
+      nowMs: Date.now(),
+    });
+    const id = await insertGame({ host, guest, kind, points: 10, privateState, state });
+    return { id, state, privateState };
+  };
+
+  for (const kind of ['quiz', 'aim']) {
+    it(`${kind}: explicitly rejects a queued pre-deadline action if a worker has already committed closure (ordering limitation)`, async () => {
+      const host = await insertUser(100);
+      const guest = await insertUser(100);
+      const { id } = await liveGame(kind, host, guest);
+      let release;
+      let waiting;
+      const queued = new Promise((resolve) => {
+        waiting = resolve;
+      });
+      const gate = new Promise((resolve) => {
+        release = resolve;
+      });
+      const delayedPool = {
+        connect: async () => {
+          waiting();
+          await gate;
+          return pool.connect();
+        },
+      };
+      const pending = action(
+        id,
+        host,
+        {
+          actionId: `worker_first_${kind}`,
+          roundId: 'r1',
+          type: kind === 'quiz' ? 'answer' : 'fire',
+          ...(kind === 'quiz' ? { optionIndex: 0 } : {}),
+        },
+        delayedPool
+      );
+      await queued;
+      try {
+        await finalizeEngineGameById({ pool, gameId: id, logger, nowMs: Date.now() + 3600000 });
+      } finally {
+        release();
+      }
+      const res = await pending;
+      expect(res.statusCode).toBe(409);
+      expect(res.body.code).toBe('GAME_FINISHED');
+      const row = (
+        await pool.query('SELECT status, game_state, game_private_state FROM games WHERE id = $1', [
+          id,
+        ])
+      ).rows[0];
+      expect(row.status).toBe('finished');
+      expect(row.game_state.engine.result).toMatchObject({ cancelled: true, settled: true });
+      expect(row.game_private_state.actions.host).toEqual({});
+      expect(await userRow(host.id)).toEqual({ points: 100, wins: 0, games_played: 0 });
+    });
+
+    it(`${kind}: preserves trusted ingress time across an actual PostgreSQL row-lock wait past deadline`, async () => {
+      const host = await insertUser(100);
+      const guest = await insertUser(100);
+      const { id, state } = await liveGame(kind, host, guest);
+      const now = Date.now();
+      const duration = kind === 'quiz' ? 15000 : 8000;
+      state.round.startedAt = iso(now - duration + 250);
+      state.round.endsAt = iso(now + 250);
+      state.phaseEndsAt = state.round.endsAt;
+      await pool.query('UPDATE games SET game_state = $1::jsonb WHERE id = $2', [
+        JSON.stringify({ engine: state }),
+        id,
+      ]);
+      const lock = await pool.connect();
+      try {
+        await lock.query('BEGIN');
+        await lock.query('SELECT id FROM games WHERE id = $1 FOR UPDATE', [id]);
+        const pending = action(id, host, {
+          actionId: `row_wait_${kind}`,
+          roundId: 'r1',
+          type: kind === 'quiz' ? 'answer' : 'fire',
+          ...(kind === 'quiz' ? { optionIndex: 0 } : {}),
+        });
+        await new Promise((resolve) => setTimeout(resolve, 400));
+        await lock.query('COMMIT');
+        const res = await pending;
+        expect(res.statusCode).toBe(200);
+        expect(Date.parse(res.body.game.serverReceivedAt)).toBeLessThan(
+          Date.parse(state.round.endsAt)
+        );
+        expect(Date.now()).toBeGreaterThan(Date.parse(state.round.endsAt));
+        const row = (await pool.query('SELECT game_private_state FROM games WHERE id = $1', [id]))
+          .rows[0];
+        const receipt =
+          kind === 'quiz'
+            ? row.game_private_state.responses.r1.host
+            : row.game_private_state.shots.r1.host;
+        expect(receipt.receivedAt).toBe(res.body.game.serverReceivedAt);
+      } finally {
+        await lock.query('ROLLBACK');
+        lock.release();
+      }
+    });
+
+    it(`${kind}: serializes concurrent same-ID and different-ID actions against real rows`, async () => {
+      const host = await insertUser(100);
+      const guest = await insertUser(100);
+      const { id } = await liveGame(kind, host, guest);
+      const body = {
+        actionId: `pg_${kind}_same`,
+        roundId: 'r1',
+        type: kind === 'quiz' ? 'answer' : 'fire',
+        ...(kind === 'quiz' ? { optionIndex: 0 } : {}),
+      };
+      const same = await Promise.all([action(id, host, body), action(id, host, body)]);
+      expect(same.map((res) => res.statusCode)).toEqual([200, 200]);
+      expect(same.map((res) => res.body.duplicate).sort()).toEqual([false, true]);
+      const others = await Promise.all([
+        action(id, guest, { ...body, actionId: `pg_${kind}_guest1` }),
+        action(id, guest, { ...body, actionId: `pg_${kind}_guest2` }),
+      ]);
+      expect(others.map((res) => res.statusCode).sort()).toEqual([200, 409]);
+      const row = (
+        await pool.query('SELECT game_state, game_private_state FROM games WHERE id = $1', [id])
+      ).rows[0];
+      expect(row.game_state.engine.phase).toBe('reveal');
+      expect(Object.keys(row.game_private_state.actions.host)).toHaveLength(1);
+      expect(Object.keys(row.game_private_state.actions.guest)).toHaveLength(1);
+      expect(row.game_state.engine.players.host.score).toBeGreaterThanOrEqual(0);
+      const conflict = await action(id, host, { ...body, type: 'resign' });
+      expect(conflict.statusCode).toBe(409);
+      expect(conflict.body.code).toBe('ACTION_ID_CONFLICT');
+    });
+
+    it(`${kind}: rolls back a real UPDATE failure and accepts the same actionId on retry`, async () => {
+      const host = await insertUser(100);
+      const guest = await insertUser(100);
+      const { id } = await liveGame(kind, host, guest);
+      const body = {
+        actionId: `rollback_${kind}`,
+        roundId: 'r1',
+        type: kind === 'quiz' ? 'answer' : 'fire',
+        ...(kind === 'quiz' ? { optionIndex: 0 } : {}),
+      };
+      // Real transaction and SQL; inject a transport/application failure AFTER
+      // PostgreSQL executed UPDATE, proving ROLLBACK discards both receipts
+      // and state. This is not a SQL-shaped fake database.
+      const failingPool = {
+        connect: async () => {
+          const client = await pool.connect();
+          return {
+            release: () => client.release(),
+            query: async (sql, params) => {
+              const result = await client.query(sql, params);
+              if (String(sql).includes('UPDATE games'))
+                throw new Error('injected after real UPDATE');
+              return result;
+            },
+          };
+        },
+      };
+      expect((await action(id, host, body, failingPool)).statusCode).toBe(500);
+      const rolledBack = (
+        await pool.query('SELECT game_private_state FROM games WHERE id = $1', [id])
+      ).rows[0];
+      expect(rolledBack.game_private_state.actions.host).toEqual({});
+      const retry = await action(id, host, body);
+      expect(retry.statusCode).toBe(200);
+      expect(retry.body.duplicate).toBe(false);
+      expect((await action(id, host, body)).body.duplicate).toBe(true);
+    });
+
+    it(`${kind}: action, deadline worker and finish race never pay twice or reopen a round`, async () => {
+      const host = await insertUser(100);
+      const guest = await insertUser(100);
+      const { id } = await liveGame(kind, host, guest);
+      const finish = async () => {
+        const res = response();
+        await createFinishGameHandler({
+          pool,
+          isDbConnected: async () => true,
+          logger,
+          emitRealtimeUpdate: () => {},
+          normalizeParticipantName: (name, game) =>
+            [game.host_name, game.guest_name].includes(name) ? name : null,
+          gameService: {
+            findGameByIdForUpdate: async (client, gameId) =>
+              (
+                await client.query(
+                  'SELECT id, host_name, guest_name, game_type, points, status, winner, game_state, game_private_state FROM games WHERE id = $1 FOR UPDATE',
+                  [gameId]
+                )
+              ).rows[0],
+          },
+        })({ params: { id }, user: { username: host.username }, body: {} }, res);
+        return res;
+      };
+      const [res, tick] = await Promise.all([
+        action(id, host, { actionId: `race_resign_${kind}`, roundId: 'r1', type: 'resign' }),
+        runGameEngineTick({
+          pool,
+          isDbConnected: async () => true,
+          logger,
+          nowMs: Date.now() + 3600000,
+        }),
+        finish(),
+      ]);
+      expect([200, 409]).toContain(res.statusCode);
+      expect(tick.failed).toBe(0);
+      await finalizeEngineGameById({ pool, gameId: id, logger, nowMs: Date.now() + 3600000 });
+      const row = (await pool.query('SELECT status, game_state FROM games WHERE id = $1', [id]))
+        .rows[0];
+      expect(row.status).toBe('finished');
+      expect(row.game_state.engine.result.settled).toBe(true);
+      const before = [await userRow(host.id), await userRow(guest.id)];
+      await Promise.all([finish(), finalizeEngineGameById({ pool, gameId: id, logger })]);
+      expect([await userRow(host.id), await userRow(guest.id)]).toEqual(before);
+      expect(before[0].points + before[1].points).toBe(200);
+      expect(before.map((u) => u.games_played)).toEqual(
+        row.game_state.engine.result.cancelled ? [0, 0] : [1, 1]
+      );
+    });
+  }
+
   it('pays exactly once when two finalizers race on the same game', async () => {
     const host = await insertUser(100);
     const guest = await insertUser(50);
@@ -185,8 +443,8 @@ describePostgres('settlement on real PostgreSQL', () => {
       privateState: appliedActions(),
     });
     const secondGame = await insertGame({
-      host,
-      guest,
+      host: guest,
+      guest: host,
       kind: 'aim',
       points: 20,
       hostScore: 9,
@@ -199,8 +457,8 @@ describePostgres('settlement on real PostgreSQL', () => {
       finalizeEngineGameById({ pool, gameId: secondGame, logger }),
     ]);
 
-    expect(await userRow(host.id)).toEqual({ points: 150, wins: 2, games_played: 2 });
-    expect(await userRow(guest.id)).toEqual({ points: 50, wins: 0, games_played: 2 });
+    expect(await userRow(host.id)).toEqual({ points: 110, wins: 1, games_played: 2 });
+    expect(await userRow(guest.id)).toEqual({ points: 90, wins: 1, games_played: 2 });
   });
 
   it('cancels an abandoned match without paying or counting it', async () => {

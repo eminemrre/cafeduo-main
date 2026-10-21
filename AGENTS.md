@@ -103,6 +103,12 @@ npm run migrate:status   # when touching migrations
 - Every game HTTP/socket payload goes through `backend/gameEngine/gameView.js`. Never return a raw
   `games` row. `games.game_state` is the public engine view; answer keys, future questions and
   action receipts live in `games.game_private_state` and are never selected for a response.
+  Joker choices are private per actor: only authenticated HTTP action/GET may project
+  `actorView.joker`. Shared `gameState` and sockets must never carry `hiddenOptions`.
+  Catch-up uses persisted deadlines, not reader/worker `now` as the next round start.
+  Capture trusted action time before pool/lock waits. Never reopen an already-closed round
+  or credit a timestamp preceding its start. See `docs/ops/game-authority-review.md` for
+  unresolved cross-instance ordering and aim-playability release blockers.
 - Competitive actions go through `POST /api/games/:id/actions` (authenticated HTTP, never a
   socket): `{ actionId, roundId, type, optionIndex? }`. DB rows are locked with
   `SELECT ... FOR UPDATE`; memory games use `gameLock`. Retries with the same payload return the

@@ -52,6 +52,57 @@ describe('normalizeActionEnvelope', () => {
       expect(result.envelope.optionIndex).toBeUndefined();
     }
   });
+
+  it('numbers rounds up to r999 for Amiral Battı turns', () => {
+    expect(normalizeActionEnvelope(validBody({ roundId: 'r201' })).ok).toBe(true);
+    expect(normalizeActionEnvelope(validBody({ roundId: 'r999' })).ok).toBe(true);
+    expect(normalizeActionEnvelope(validBody({ roundId: 'r1000' })).code).toBe('INVALID_ROUND_ID');
+    expect(normalizeActionEnvelope(validBody({ roundId: 'r0' })).code).toBe('INVALID_ROUND_ID');
+  });
+
+  it('keeps a valid target cell on fire and rejects one off the board', () => {
+    const fire = normalizeActionEnvelope(validBody({ type: 'fire', cell: 63, optionIndex: 1 }));
+    expect(fire.envelope).toEqual({
+      actionId: 'act_12345678',
+      roundId: 'r1',
+      type: 'fire',
+      cell: 63,
+    });
+    for (const cell of [64, -1, 2.5, 'A1']) {
+      expect(normalizeActionEnvelope(validBody({ type: 'fire', cell })).code).toBe('INVALID_CELL');
+    }
+    expect(normalizeActionEnvelope(validBody({ type: 'fire', cell: null })).envelope.cell).toBe(
+      undefined
+    );
+  });
+
+  it('canonicalises a placement and drops anything but cell and direction', () => {
+    const layout = [
+      { cell: 0, dir: 'H', ships: 'ignored' },
+      { cell: '16', dir: 'v' },
+      { cell: 21, dir: 'h' },
+      { cell: 55, dir: 'v', hit: true },
+    ];
+    const result = normalizeActionEnvelope(validBody({ type: 'place', layout }));
+    expect(result.ok).toBe(true);
+    expect(result.envelope.layout).toEqual([
+      { cell: 0, dir: 'h' },
+      { cell: 16, dir: 'v' },
+      { cell: 21, dir: 'h' },
+      { cell: 55, dir: 'v' },
+    ]);
+    for (const bad of [
+      undefined,
+      layout.slice(0, 3),
+      [...layout, { cell: 1, dir: 'h' }],
+      [{ cell: 70, dir: 'h' }, ...layout.slice(1)],
+      [{ cell: 0, dir: 'd' }, ...layout.slice(1)],
+    ]) {
+      expect(normalizeActionEnvelope(validBody({ type: 'place', layout: bad })).code).toBe(
+        'INVALID_LAYOUT'
+      );
+    }
+  });
 });
 
 describe('action receipts', () => {

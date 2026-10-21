@@ -13,6 +13,11 @@ const { finalizeEngineGameById, finalizeMemoryEngineGame } = require('../gameEng
 const { defaultRegistry } = require('../gameEngine/gameLock');
 
 const ENGINE_TICK_INTERVAL_MS = 2_000;
+// Every engine phase between the join and the result has a deadline: quiz/aim
+// 'open'/'reveal', Amiral Battı 'placement'/'battle'. Listing only some of them
+// would leave a new engine's abandoned matches open forever.
+const IDLE_PHASES = ['waiting', 'finished'];
+const isRunningPhase = (phase) => Boolean(phase) && !IDLE_PHASES.includes(phase);
 const ENGINE_BATCH_SIZE = 50;
 
 const runGameEngineTick = async ({
@@ -31,7 +36,7 @@ const runGameEngineTick = async ({
         return (
           engine &&
           !engine.result?.settled &&
-          ((['open', 'reveal'].includes(engine.phase) && Date.parse(engine.phaseEndsAt) <= nowMs) ||
+          ((isRunningPhase(engine.phase) && Date.parse(engine.phaseEndsAt) <= nowMs) ||
             engine.phase === 'finished')
         );
       })
@@ -68,7 +73,7 @@ const runGameEngineTick = async ({
         AND game_state->'engine' IS NOT NULL
         AND (
           (
-            game_state->'engine'->>'phase' IN ('open', 'reveal')
+            game_state->'engine'->>'phase' NOT IN ('waiting', 'finished')
             AND game_state->'engine'->>'phaseEndsAt' <= $2::text
           )
           OR (

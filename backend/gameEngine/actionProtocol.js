@@ -9,17 +9,20 @@
  */
 
 const { createHash } = require('crypto');
+const { CELL_COUNT, DIRECTIONS, FLEET } = require('../../shared/battleship');
 
 const ACTION_TYPES = Object.freeze({
   ANSWER: 'answer',
   JOKER: 'joker',
   FIRE: 'fire',
+  PLACE: 'place',
   RESIGN: 'resign',
 });
 
 const ACTION_TYPE_VALUES = Object.freeze(Object.values(ACTION_TYPES));
 const ACTION_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
-const ROUND_ID_PATTERN = /^r[1-9][0-9]?$/;
+// r1..r999: Amiral Battı numbers every turn (placement + up to 200 battle turns).
+const ROUND_ID_PATTERN = /^r[1-9][0-9]{0,2}$/;
 const MAX_OPTION_INDEX = 7;
 const MAX_RECEIPTS_PER_PLAYER = 64;
 
@@ -67,6 +70,34 @@ const normalizeActionEnvelope = (body) => {
       return { ok: false, code: 'INVALID_OPTION', message: 'Cevap seçeneği geçersiz.' };
     }
     envelope.optionIndex = optionIndex;
+  }
+
+  // Amiral Battı aims at a cell; Nişancı Düellosu sends no target at all.
+  if (type === ACTION_TYPES.FIRE && body?.cell !== undefined && body?.cell !== null) {
+    const cell = Number(body.cell);
+    if (!Number.isInteger(cell) || cell < 0 || cell >= CELL_COUNT) {
+      return { ok: false, code: 'INVALID_CELL', message: 'Atış karesi geçersiz.' };
+    }
+    envelope.cell = cell;
+  }
+
+  // Only the shape is checked here (and canonicalised for the fingerprint);
+  // the engine checks bounds and overlaps with the shared rules.
+  if (type === ACTION_TYPES.PLACE) {
+    const layout = body?.layout;
+    if (!Array.isArray(layout) || layout.length !== FLEET.length) {
+      return { ok: false, code: 'INVALID_LAYOUT', message: 'Filo yerleşimi geçersiz.' };
+    }
+    const entries = [];
+    for (const entry of layout) {
+      const cell = Number(entry?.cell);
+      const dir = text(entry?.dir).toLowerCase();
+      if (!Number.isInteger(cell) || cell < 0 || cell >= CELL_COUNT || !DIRECTIONS.includes(dir)) {
+        return { ok: false, code: 'INVALID_LAYOUT', message: 'Filo yerleşimi geçersiz.' };
+      }
+      entries.push({ cell, dir });
+    }
+    envelope.layout = entries;
   }
 
   return { ok: true, envelope };

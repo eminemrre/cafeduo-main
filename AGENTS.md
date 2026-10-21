@@ -97,7 +97,10 @@ npm run migrate:status   # when touching migrations
   `game_room_error`, `lobby_updated`. Sockets only carry server notifications; player actions go
   through the authenticated HTTP game endpoints. `game_move` and `update_game_state` are rejected.
   Call `emitLobbyUpdate(tableCode)` after game mutations, and emit only after the DB commit.
-- Competitive games (Bilgi Yarışı, Nişancı Düellosu) run only the server-authoritative protocol.
+- Competitive games (Bilgi Yarışı, Nişancı Düellosu, Amiral Battı; `competitive: true` in
+  `shared/gameRegistry.js`) run only the server-authoritative protocol. Create, join, actions,
+  readers and the deadline job reach their rules only through `backend/gameEngine/engines.js`;
+  a new competitive game is one entry there, never another type if-chain in a handler.
   No new game is created or joined while `GAME_ENGINE_V2_ENABLED` is false, and legacy
   live/score/state/winner writes answer `410 LEGACY_PROTOCOL_DISABLED`.
 - Every game HTTP/socket payload goes through `backend/gameEngine/gameView.js`. Never return a raw
@@ -125,6 +128,12 @@ npm run migrate:status   # when touching migrations
   server share the position function), and score only from the server-time position. The
   competitive gauge speed is the same on touch and desktop; `pointer: coarse` may change
   practice presentation only.
+- `backend/gameEngine/battleshipEngine.js` runs Amiral Battı with the rules in
+  `shared/battleship.js` (8x8, fleet 4+3+3+2, 45 s placement, 20 s turns, no extra shot on a
+  hit, three missed turns forfeit, 200-turn cap). Fleets, seeded auto layouts and the first
+  turn stay in `game_private_state`; the public state holds only shots, sunk ship shapes and
+  the turn. A player's own fleet is projected as `actorView.fleet` by authenticated HTTP
+  action/GET only. Actions: `place {layout}` and `fire {cell}`; turn ids run `r1`..`r999`.
 - Settlement for a competitive engine game happens only in `backend/gameEngine/settlement.js`
   and at most once: the `games` row is locked, the public engine result gets
   `settled/settledAt/transferredPoints`, and `applyDbSettlement`/`applyMemorySettlement` runs in
@@ -135,7 +144,9 @@ npm run migrate:status   # when touching migrations
   neither player produced an accepted action; it must not touch balances or games_played.
 - `backend/jobs/gameEngineJobs.js` advances expired engine clocks and settles finished matches in
   bounded batches. It relies on the row lock and the `settled` flag, so multiple instances and a
-  reader/action/finish race are safe. Do not force-close engine rows from the cleanup job.
+  reader/action/finish race are safe. Do not force-close engine rows from the cleanup job. It
+  picks every phase except `waiting`/`finished` whose `phaseEndsAt` passed; never list an
+  engine's phases by name there.
 - Game state changes go through the game handlers; chess moves use `gameMoveService.js` with
   transaction locking.
 - Settlement (`backend/handlers/game/settlementUtils.js`): the winner receives

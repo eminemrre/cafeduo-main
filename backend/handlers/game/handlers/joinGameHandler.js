@@ -13,9 +13,11 @@ const {
   isGameEngineV2Enabled,
 } = require('../../../utils/gameEngineConfig');
 const { serializeGameForActor } = require('../../../gameEngine/gameView');
-const { createQuizPublicState, startQuizState } = require('../../../gameEngine/quizEngine');
-const { createAimPublicState, startAimState } = require('../../../gameEngine/aimEngine');
-const { AIM_GAME_TYPE, QUIZ_GAME_TYPE } = require('../../../../shared/gameRegistry');
+const {
+  getEngine,
+  isEnginePrivateStateReady,
+  startEngineState,
+} = require('../../../gameEngine/engines');
 
 const maintenanceResponse = (res) =>
   res.status(503).json({
@@ -132,16 +134,8 @@ const createJoinGameHandler = (deps) => {
           return res.status(409).json({ error: 'Bu kullanıcı zaten aktif bir oyunda.' });
         }
 
-        if (game.game_type === QUIZ_GAME_TYPE || game.game_type === AIM_GAME_TYPE) {
-          const privateState = game.game_private_state;
-          const roundSource =
-            game.game_type === QUIZ_GAME_TYPE ? privateState?.questions : privateState?.rounds;
-          if (
-            !privateState ||
-            privateState.version !== 2 ||
-            !Array.isArray(roundSource) ||
-            roundSource.length === 0
-          ) {
+        if (getEngine(game.game_type)) {
+          if (!isEnginePrivateStateReady(game.game_type, game.game_private_state)) {
             await rollbackQuietly(client);
             return res.status(409).json({
               error: 'Bu oyun sunucu durumu olmadan başlatılamaz.',
@@ -159,36 +153,12 @@ const createJoinGameHandler = (deps) => {
               chess: activateChessClockState(current.chess),
             };
           }
-          if (game.game_type === QUIZ_GAME_TYPE) {
-            const privateState = game.game_private_state;
-            const base = createQuizPublicState({
-              hostName: game.host_name,
-              guestName,
-              totalRounds: privateState.questions.length,
-            });
+          if (getEngine(game.game_type)) {
             return {
               ...current,
-              engine: startQuizState({
-                state: base,
-                privateState,
-                hostName: game.host_name,
-                guestName,
-                nowMs: Date.now(),
-              }),
-            };
-          }
-          if (game.game_type === AIM_GAME_TYPE) {
-            const privateState = game.game_private_state;
-            const base = createAimPublicState({
-              hostName: game.host_name,
-              guestName,
-              totalRounds: privateState.rounds.length,
-            });
-            return {
-              ...current,
-              engine: startAimState({
-                state: base,
-                privateState,
+              engine: startEngineState({
+                gameType: game.game_type,
+                privateState: game.game_private_state,
                 hostName: game.host_name,
                 guestName,
                 nowMs: Date.now(),
@@ -291,16 +261,8 @@ const createJoinGameHandler = (deps) => {
       return res.status(409).json(mapTransitionError(memoryJoinTransition));
     }
 
-    if (game.gameType === QUIZ_GAME_TYPE || game.gameType === AIM_GAME_TYPE) {
-      const privateState = game.gamePrivateState;
-      const roundSource =
-        game.gameType === QUIZ_GAME_TYPE ? privateState?.questions : privateState?.rounds;
-      if (
-        !privateState ||
-        privateState.version !== 2 ||
-        !Array.isArray(roundSource) ||
-        roundSource.length === 0
-      ) {
+    if (getEngine(game.gameType)) {
+      if (!isEnginePrivateStateReady(game.gameType, game.gamePrivateState)) {
         return res.status(409).json({
           error: 'Bu oyun sunucu durumu olmadan başlatılamaz.',
           code: 'ENGINE_STATE_MISSING',
@@ -317,39 +279,14 @@ const createJoinGameHandler = (deps) => {
         ...current,
         chess: activateChessClockState(current.chess),
       };
-    } else if (game.gameType === QUIZ_GAME_TYPE) {
+    } else if (getEngine(game.gameType)) {
       const current =
         game.gameState && typeof game.gameState === 'object' ? { ...game.gameState } : {};
-      const privateState = game.gamePrivateState;
-      const base = createQuizPublicState({
-        hostName: game.hostName,
-        guestName,
-        totalRounds: privateState.questions.length,
-      });
       game.gameState = {
         ...current,
-        engine: startQuizState({
-          state: base,
-          privateState,
-          hostName: game.hostName,
-          guestName,
-          nowMs: Date.now(),
-        }),
-      };
-    } else if (game.gameType === AIM_GAME_TYPE) {
-      const current =
-        game.gameState && typeof game.gameState === 'object' ? { ...game.gameState } : {};
-      const privateState = game.gamePrivateState;
-      const base = createAimPublicState({
-        hostName: game.hostName,
-        guestName,
-        totalRounds: privateState.rounds.length,
-      });
-      game.gameState = {
-        ...current,
-        engine: startAimState({
-          state: base,
-          privateState,
+        engine: startEngineState({
+          gameType: game.gameType,
+          privateState: game.gamePrivateState,
           hostName: game.hostName,
           guestName,
           nowMs: Date.now(),

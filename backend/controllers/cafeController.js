@@ -4,6 +4,7 @@ const { getDistanceFromLatLonInMeters } = require('../utils/geo');
 const memoryState = require('../store/memoryState');
 const logger = require('../utils/logger');
 const { isLocationCheckExempt } = require('../utils/locationExempt');
+const { sendApiError, sendApiProblem } = require('../utils/routeHelpers');
 
 const FALLBACK_CAFES = [
   {
@@ -212,10 +213,16 @@ const cafeController = {
                  WHERE id = $1`,
         [id]
       );
-      if (result.rows.length === 0) return res.status(404).json({ error: 'Kafe bulunamadı.' });
+      if (result.rows.length === 0) {
+        return sendApiProblem(res, {
+          status: 404,
+          code: 'CAFE_NOT_FOUND',
+          message: 'Kafe bulunamadı.',
+        });
+      }
       res.json(result.rows[0]);
-    } catch {
-      res.status(500).json({ error: 'Server error' });
+    } catch (err) {
+      return sendApiError(res, logger, 'cafe.getCafeById', err, 'Kafe bilgisi alınamadı.');
     }
   },
 
@@ -225,11 +232,19 @@ const cafeController = {
     const { pin } = req.body;
 
     if (!hasCafeManagementAccess(req.user, id)) {
-      return res.status(403).json({ error: 'Bu kafe için işlem yetkiniz yok.' });
+      return sendApiProblem(res, {
+        status: 403,
+        code: 'CAFE_FORBIDDEN',
+        message: 'Bu kafe için işlem yetkiniz yok.',
+      });
     }
 
     if (!pin || !/^\d{4,6}$/.test(String(pin))) {
-      return res.status(400).json({ error: '4-6 haneli PIN giriniz.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'INVALID_PIN',
+        message: '4-6 haneli PIN giriniz.',
+      });
     }
 
     try {
@@ -243,8 +258,7 @@ const cafeController = {
 
       res.json({ success: true, message: 'PIN güncellendi.' });
     } catch (err) {
-      logger.error(err);
-      res.status(500).json({ error: 'PIN güncellenemedi.' });
+      return sendApiError(res, logger, 'cafe.updatePin', err, 'PIN güncellenemedi.');
     }
   },
 
@@ -255,7 +269,11 @@ const cafeController = {
     const { latitude, longitude, radius } = body;
 
     if (!hasCafeManagementAccess(req.user, id)) {
-      return res.status(403).json({ error: 'Bu kafe için işlem yetkiniz yok.' });
+      return sendApiProblem(res, {
+        status: 403,
+        code: 'CAFE_FORBIDDEN',
+        message: 'Bu kafe için işlem yetkiniz yok.',
+      });
     }
 
     const parsedLatitude = parseDecimal(latitude);
@@ -263,15 +281,27 @@ const cafeController = {
     const parsedRadius = parseDecimal(radius);
 
     if (!Number.isFinite(parsedLatitude) || parsedLatitude < -90 || parsedLatitude > 90) {
-      return res.status(400).json({ error: 'Enlem değeri -90 ile 90 arasında olmalıdır.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'INVALID_LATITUDE',
+        message: 'Enlem değeri -90 ile 90 arasında olmalıdır.',
+      });
     }
 
     if (!Number.isFinite(parsedLongitude) || parsedLongitude < -180 || parsedLongitude > 180) {
-      return res.status(400).json({ error: 'Boylam değeri -180 ile 180 arasında olmalıdır.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'INVALID_LONGITUDE',
+        message: 'Boylam değeri -180 ile 180 arasında olmalıdır.',
+      });
     }
 
     if (!Number.isFinite(parsedRadius) || parsedRadius < 10 || parsedRadius > 5000) {
-      return res.status(400).json({ error: 'Yarıçap 10-5000 metre aralığında olmalıdır.' });
+      return sendApiProblem(res, {
+        status: 400,
+        code: 'INVALID_RADIUS',
+        message: 'Yarıçap 10-5000 metre aralığında olmalıdır.',
+      });
     }
 
     const hasSecondaryLatitude =
@@ -305,24 +335,32 @@ const cafeController = {
 
     if (hasSecondaryUpdate) {
       if (hasSecondaryRadius && !hasSecondaryLatitude && !hasSecondaryLongitude) {
-        return res.status(400).json({ error: 'Ek yarıçap için ek enlem ve boylam da girin.' });
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'SECONDARY_LOCATION_REQUIRED',
+          message: 'Ek yarıçap için ek enlem ve boylam da girin.',
+        });
       }
 
       if (
         (secondaryLatitudeEmpty && !secondaryLongitudeEmpty) ||
         (!secondaryLatitudeEmpty && secondaryLongitudeEmpty)
       ) {
-        return res
-          .status(400)
-          .json({ error: 'Ek konum için enlem ve boylam birlikte girilmelidir.' });
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'SECONDARY_LOCATION_PAIR_REQUIRED',
+          message: 'Ek konum için enlem ve boylam birlikte girilmelidir.',
+        });
       }
 
       const clearingSecondary = secondaryLatitudeEmpty && secondaryLongitudeEmpty;
       if (clearingSecondary) {
         if (hasSecondaryRadius && !secondaryRadiusEmpty) {
-          return res
-            .status(400)
-            .json({ error: 'Ek konumu temizlerken yarıçap değeri gönderilemez.' });
+          return sendApiProblem(res, {
+            status: 400,
+            code: 'SECONDARY_RADIUS_NOT_ALLOWED',
+            message: 'Ek konumu temizlerken yarıçap değeri gönderilemez.',
+          });
         }
         secondaryLatitudeValue = null;
         secondaryLongitudeValue = null;
@@ -334,9 +372,11 @@ const cafeController = {
           parsedSecondaryLatitude < -90 ||
           parsedSecondaryLatitude > 90
         ) {
-          return res
-            .status(400)
-            .json({ error: 'Ek konum enlem değeri -90 ile 90 arasında olmalıdır.' });
+          return sendApiProblem(res, {
+            status: 400,
+            code: 'INVALID_SECONDARY_LATITUDE',
+            message: 'Ek konum enlem değeri -90 ile 90 arasında olmalıdır.',
+          });
         }
 
         const parsedSecondaryLongitude = parseDecimal(secondaryLongitudeRaw);
@@ -345,9 +385,11 @@ const cafeController = {
           parsedSecondaryLongitude < -180 ||
           parsedSecondaryLongitude > 180
         ) {
-          return res
-            .status(400)
-            .json({ error: 'Ek konum boylam değeri -180 ile 180 arasında olmalıdır.' });
+          return sendApiProblem(res, {
+            status: 400,
+            code: 'INVALID_SECONDARY_LONGITUDE',
+            message: 'Ek konum boylam değeri -180 ile 180 arasında olmalıdır.',
+          });
         }
 
         let parsedSecondaryRadius = parsedRadius;
@@ -358,9 +400,11 @@ const cafeController = {
             parsedSecondaryRadius < 10 ||
             parsedSecondaryRadius > 5000
           ) {
-            return res
-              .status(400)
-              .json({ error: 'Ek konum yarıçapı 10-5000 metre aralığında olmalıdır.' });
+            return sendApiProblem(res, {
+              status: 400,
+              code: 'INVALID_SECONDARY_RADIUS',
+              message: 'Ek konum yarıçapı 10-5000 metre aralığında olmalıdır.',
+            });
           }
         }
 
@@ -394,7 +438,11 @@ const cafeController = {
       );
 
       if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'Kafe bulunamadı.' });
+        return sendApiProblem(res, {
+          status: 404,
+          code: 'CAFE_NOT_FOUND',
+          message: 'Kafe bulunamadı.',
+        });
       }
 
       await clearCache(`cache:/api/cafes*`);
@@ -405,8 +453,7 @@ const cafeController = {
         cafe: result.rows[0],
       });
     } catch (err) {
-      logger.error('updateLocation error:', err);
-      return res.status(500).json({ error: 'Kafe konumu güncellenemedi.' });
+      return sendApiError(res, logger, 'cafe.updateLocation', err, 'Kafe konumu güncellenemedi.');
     }
   },
 
@@ -424,7 +471,13 @@ const cafeController = {
 
     if (!(await isDbConnected())) {
       const cafe = FALLBACK_CAFES.find((item) => Number(item.id) === Number(id));
-      if (!cafe) return res.status(404).json({ error: 'Kafe bulunamadı.' });
+      if (!cafe) {
+        return sendApiProblem(res, {
+          status: 404,
+          code: 'CAFE_NOT_FOUND',
+          message: 'Kafe bulunamadı.',
+        });
+      }
 
       const maxTableCount = Number(cafe.table_count || 20);
       const parsedTableNumber = Number(tableNumber);
@@ -433,9 +486,11 @@ const cafeController = {
         parsedTableNumber < 1 ||
         parsedTableNumber > maxTableCount
       ) {
-        return res
-          .status(400)
-          .json({ error: `Masa numarası 1-${maxTableCount} aralığında olmalıdır.` });
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'INVALID_TABLE_NUMBER',
+          message: `Masa numarası 1-${maxTableCount} aralığında olmalıdır.`,
+        });
       }
 
       // Accounts listed in CHECKIN_LOCATION_EXEMPT_USERS skip the location
@@ -445,8 +500,10 @@ const cafeController = {
       const locationTargets = buildCafeLocationTargets(cafe);
       if (hasLocation && !locationExempt) {
         if (locationTargets.length === 0) {
-          return res.status(400).json({
-            error:
+          return sendApiProblem(res, {
+            status: 400,
+            code: 'CAFE_LOCATION_NOT_SET',
+            message:
               'Bu kafe için konum doğrulaması henüz ayarlanmadı. Lütfen kafe yetkilisine bildirin.',
           });
         }
@@ -467,8 +524,10 @@ const cafeController = {
             ? nearest.effectiveRadius
             : getEffectiveRadius(150, parsedAccuracy);
           const nearestLabel = nearest ? ` (${nearest.label})` : '';
-          return res.status(400).json({
-            error: `Kafeden çok uzaktasınız. Yaklaşık ${nearestDistance}${nearestLabel} görünüyorsunuz, doğrulama sınırı ${nearestRadius} metre.`,
+          return sendApiProblem(res, {
+            status: 400,
+            code: 'CHECKIN_OUT_OF_RANGE',
+            message: `Kafeden çok uzaktasınız. Yaklaşık ${nearestDistance}${nearestLabel} görünüyorsunuz, doğrulama sınırı ${nearestRadius} metre.`,
           });
         }
       } else if (
@@ -479,8 +538,10 @@ const cafeController = {
           tableNumber: parsedTableNumber,
         })
       ) {
-        return res.status(400).json({
-          error: 'Konum doğrulanamadı. Masa doğrulama kodu geçersiz.',
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'INVALID_VERIFICATION_CODE',
+          message: 'Konum doğrulanamadı. Masa doğrulama kodu geçersiz.',
         });
       }
 
@@ -516,7 +577,13 @@ const cafeController = {
                  WHERE id = $1`,
         [id]
       );
-      if (cafeResult.rows.length === 0) return res.status(404).json({ error: 'Kafe bulunamadı.' });
+      if (cafeResult.rows.length === 0) {
+        return sendApiProblem(res, {
+          status: 404,
+          code: 'CAFE_NOT_FOUND',
+          message: 'Kafe bulunamadı.',
+        });
+      }
 
       const cafe = cafeResult.rows[0];
 
@@ -527,9 +594,11 @@ const cafeController = {
         parsedTableNumber < 1 ||
         parsedTableNumber > maxTableCount
       ) {
-        return res
-          .status(400)
-          .json({ error: `Masa numarası 1-${maxTableCount} aralığında olmalıdır.` });
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'INVALID_TABLE_NUMBER',
+          message: `Masa numarası 1-${maxTableCount} aralığında olmalıdır.`,
+        });
       }
 
       // Accounts listed in CHECKIN_LOCATION_EXEMPT_USERS skip the location
@@ -540,8 +609,10 @@ const cafeController = {
         // 2. Location Check (Geofencing)
         const locationTargets = buildCafeLocationTargets(cafe);
         if (locationTargets.length === 0) {
-          return res.status(400).json({
-            error:
+          return sendApiProblem(res, {
+            status: 400,
+            code: 'CAFE_LOCATION_NOT_SET',
+            message:
               'Bu kafe için konum doğrulaması henüz ayarlanmadı. Lütfen kafe yetkilisine bildirin.',
           });
         }
@@ -562,8 +633,10 @@ const cafeController = {
             ? nearest.effectiveRadius
             : getEffectiveRadius(150, parsedAccuracy);
           const nearestLabel = nearest ? ` (${nearest.label})` : '';
-          return res.status(400).json({
-            error: `Kafeden çok uzaktasınız. Yaklaşık ${distanceLabel}${nearestLabel} görünüyorsunuz, doğrulama sınırı ${nearestRadius} metre.`,
+          return sendApiProblem(res, {
+            status: 400,
+            code: 'CHECKIN_OUT_OF_RANGE',
+            message: `Kafeden çok uzaktasınız. Yaklaşık ${distanceLabel}${nearestLabel} görünüyorsunuz, doğrulama sınırı ${nearestRadius} metre.`,
           });
         }
       } else if (
@@ -574,8 +647,10 @@ const cafeController = {
           tableNumber: parsedTableNumber,
         })
       ) {
-        return res.status(400).json({
-          error:
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'INVALID_VERIFICATION_CODE',
+          message:
             'Konum alınamadı. Giriş için konum izni verin veya geçerli masa doğrulama kodu girin.',
         });
       }
@@ -595,8 +670,7 @@ const cafeController = {
         table: `MASA${String(parsedTableNumber).padStart(2, '0')}`,
       });
     } catch (err) {
-      logger.error(err);
-      res.status(500).json({ error: 'Check-in başarısız.' });
+      return sendApiError(res, logger, 'cafe.checkIn', err, 'Check-in başarısız.');
     }
   },
 };

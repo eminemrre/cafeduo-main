@@ -22,6 +22,8 @@ const createClient = () => ({
   release: jest.fn(),
 });
 
+const apiProblem = (code, message) => expect.objectContaining({ code, message, error: message });
+
 describe('storeController', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -71,10 +73,10 @@ describe('storeController', () => {
     await storeController.getInventory(req, res);
 
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      message: 'Envanter alınırken hata oluştu',
-    });
+    expect(res.json).toHaveBeenCalledWith(
+      apiProblem('INTERNAL_ERROR', 'Envanter alınırken hata oluştu')
+    );
+    expect(JSON.stringify(res.json.mock.calls[0][0])).not.toContain('db down');
   });
 
   it('buyItem validates missing itemId', async () => {
@@ -87,10 +89,7 @@ describe('storeController', () => {
     await storeController.buyItem(req, res);
 
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      message: 'Eşya ID gerekli',
-    });
+    expect(res.json).toHaveBeenCalledWith(apiProblem('INVALID_ITEM_ID', 'Eşya ID gerekli'));
     expect(client.query).not.toHaveBeenCalled();
     expect(client.release).toHaveBeenCalledTimes(1);
   });
@@ -105,10 +104,7 @@ describe('storeController', () => {
     await storeController.buyItem(req, res);
 
     expect(res.status).toHaveBeenCalledWith(404);
-    expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      message: 'Eşya bulunamadı',
-    });
+    expect(res.json).toHaveBeenCalledWith(apiProblem('ITEM_NOT_FOUND', 'Eşya bulunamadı'));
     expect(client.query).not.toHaveBeenCalled();
     expect(client.release).toHaveBeenCalledTimes(1);
   });
@@ -134,10 +130,9 @@ describe('storeController', () => {
     );
     expect(client.query).toHaveBeenNthCalledWith(3, 'ROLLBACK');
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      message: 'Yetersiz puan.',
-    });
+    expect(res.json).toHaveBeenCalledWith(
+      apiProblem('INSUFFICIENT_POINTS', 'Yetersiz puan.')
+    );
     expect(client.release).toHaveBeenCalledTimes(1);
   });
 
@@ -164,10 +159,9 @@ describe('storeController', () => {
     );
     expect(client.query).toHaveBeenNthCalledWith(4, 'ROLLBACK');
     expect(res.status).toHaveBeenCalledWith(400);
-    expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      message: 'Bu eşyaya zaten sahipsiniz',
-    });
+    expect(res.json).toHaveBeenCalledWith(
+      apiProblem('ITEM_ALREADY_OWNED', 'Bu eşyaya zaten sahipsin')
+    );
     expect(client.release).toHaveBeenCalledTimes(1);
   });
 
@@ -230,10 +224,10 @@ describe('storeController', () => {
 
     expect(client.query).toHaveBeenNthCalledWith(3, 'ROLLBACK');
     expect(res.status).toHaveBeenCalledWith(500);
-    expect(res.json).toHaveBeenCalledWith({
-      success: false,
-      message: 'Satın alma işlemi sırasında hata oluştu',
-    });
+    expect(res.json).toHaveBeenCalledWith(
+      apiProblem('INTERNAL_ERROR', 'Satın alma işlemi sırasında hata oluştu')
+    );
+    expect(JSON.stringify(res.json.mock.calls[0][0])).not.toContain('write failure');
     expect(client.release).toHaveBeenCalledTimes(1);
   });
 });

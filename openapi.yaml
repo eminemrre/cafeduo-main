@@ -829,6 +829,129 @@ paths:
           description: Yetki gerekli
 
   # ==========================================
+  # STORE
+  # ==========================================
+  /api/store/items:
+    get:
+      tags:
+        - Store
+      summary: Mağaza kataloğunu getir
+      description: Puanla satın alınabilen sabit eşya listesini döndürür
+      security: []
+      responses:
+        200:
+          description: Eşya listesi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StoreItem'
+        500:
+          description: Sunucu hatası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/store/inventory:
+    get:
+      tags:
+        - Store
+      summary: Kullanıcının envanterini getir
+      description: Oturum açmış kullanıcının satın aldığı eşyaları listeler
+      responses:
+        200:
+          description: Envanter listesi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  inventory:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserItem'
+        401:
+          description: Yetkilendirme hatası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        500:
+          description: Sunucu hatası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/store/buy:
+    post:
+      tags:
+        - Store
+      summary: Mağazadan eşya satın al
+      description: Puanı düşüp kullanıcıya özel bir kupon kodu üretir
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - itemId
+              properties:
+                itemId:
+                  type: integer
+                  example: 2
+      responses:
+        200:
+          description: Satın alma başarılı
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  inventoryItem:
+                    $ref: '#/components/schemas/UserItem'
+                  remainingPoints:
+                    type: integer
+        400:
+          description: Geçersiz eşya, yetersiz puan veya zaten sahip olunan eşya
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        401:
+          description: Yetkilendirme hatası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        404:
+          description: Eşya veya kullanıcı bulunamadı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        500:
+          description: Sunucu hatası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  # ==========================================
   # CAFES
   # ==========================================
   /api/cafes:
@@ -870,6 +993,16 @@ paths:
                 $ref: '#/components/schemas/Cafe'
         404:
           description: Kafe bulunamadı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        500:
+          description: Sunucu hatası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
 
   /api/cafes/checkin:
     post:
@@ -909,8 +1042,16 @@ paths:
                 $ref: '#/components/schemas/User'
         400:
           description: Eksik bilgi veya hatalı PIN
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         404:
           description: Kafe veya kullanıcı bulunamadı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
 
   /api/cafes/check-in:
     post:
@@ -955,10 +1096,22 @@ paths:
                     example: 'MASA05'
         400:
           description: Yanlış PIN veya eksik bilgi
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         401:
           description: Yetkilendirme hatası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         404:
           description: Kafe bulunamadı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
 
   /api/cafes/{id}/pin:
     put:
@@ -995,8 +1148,111 @@ paths:
           description: PIN güncellendi
         400:
           description: Geçersiz PIN formatı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        403:
+          description: Kafe yönetim yetkisi yok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         404:
           description: Kafe bulunamadı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        500:
+          description: Sunucu hatası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+
+  /api/cafes/{id}/location:
+    put:
+      tags:
+        - Cafes
+      summary: Kafe konumunu güncelle
+      description: Kafenin birincil ve isteğe bağlı ikincil konum doğrulama ayarlarını günceller
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - latitude
+                - longitude
+              properties:
+                latitude:
+                  type: number
+                  example: 37.741
+                longitude:
+                  type: number
+                  example: 29.101
+                radius:
+                  type: integer
+                  minimum: 10
+                  maximum: 5000
+                  example: 150
+                secondaryLatitude:
+                  type: number
+                  nullable: true
+                secondaryLongitude:
+                  type: number
+                  nullable: true
+                secondaryRadius:
+                  type: integer
+                  nullable: true
+                  minimum: 10
+                  maximum: 5000
+      responses:
+        200:
+          description: Konum güncellendi
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  cafe:
+                    $ref: '#/components/schemas/Cafe'
+        400:
+          description: Geçersiz konum veya yarıçap
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        403:
+          description: Kafe yönetim yetkisi yok
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        404:
+          description: Kafe bulunamadı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        500:
+          description: Sunucu hatası
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
 
   # ==========================================
   # LEADERBOARD
@@ -1567,6 +1823,33 @@ components:
         status:
           type: string
           enum: ['active', 'used']
+
+    StoreItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 2
+        title:
+          type: string
+          example: 'Hacker Çerçevesi (Kırmızı)'
+        code:
+          type: string
+          example: 'FRAME_HACKER_RED'
+        price:
+          type: integer
+          example: 1000
+        type:
+          type: string
+          enum: ['rank', 'frame', 'title', 'animation']
+        description:
+          type: string
+      required:
+        - id
+        - title
+        - code
+        - price
+        - type
 
     InventoryItem:
       type: object

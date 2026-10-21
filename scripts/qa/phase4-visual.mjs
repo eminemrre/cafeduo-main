@@ -35,10 +35,7 @@ const clickFirstVisible = async (page, locators) => {
 };
 
 const acceptCookieIfPresent = async (page) => {
-  const candidates = [
-    page.getByRole('button', { name: /kabul et/i }),
-    page.getByText(/kabul et/i),
-  ];
+  const candidates = [page.getByRole('button', { name: /kabul et/i }), page.getByText(/kabul et/i)];
   for (const locator of candidates) {
     const count = await locator.count();
     if (count === 0) continue;
@@ -90,7 +87,14 @@ const loginUser = async ({ page, email, password }) => {
 
 const logoutIfVisible = async (page) => {
   const count = await page.getByTestId('logout-button').count();
-  if (count > 0 && (await page.getByTestId('logout-button').first().isVisible().catch(() => false))) {
+  if (
+    count > 0 &&
+    (await page
+      .getByTestId('logout-button')
+      .first()
+      .isVisible()
+      .catch(() => false))
+  ) {
     await page.getByTestId('logout-button').first().click();
     await page.waitForURL('**/', { timeout: 15000 }).catch(() => undefined);
     await sleep(600);
@@ -99,7 +103,10 @@ const logoutIfVisible = async (page) => {
 
 const ensureAdminLogin = async ({ page, admin }) => {
   await loginUser({ page, email: admin.email, password: admin.password });
-  const reachedAdminByLogin = await page.waitForURL('**/admin', { timeout: 7000 }).then(() => true).catch(() => false);
+  const reachedAdminByLogin = await page
+    .waitForURL('**/admin', { timeout: 7000 })
+    .then(() => true)
+    .catch(() => false);
   if (reachedAdminByLogin) return;
 
   await page.getByRole('button', { name: 'KAYIT OL' }).first().click();
@@ -173,14 +180,16 @@ const runDesktopFlow = async (browser) => {
   await screenshot(page, '06-dashboard-user-desktop.png');
 
   await page.goto(`${BASE_URL}/store`, { waitUntil: 'domcontentloaded' });
-  await page.getByText('Siber Pazar').waitFor({ timeout: 15000 });
+  await page.getByText('Mağaza').waitFor({ timeout: 15000 });
   await screenshot(page, '07-store-desktop.png');
 
   await page.goto(`${BASE_URL}/gizlilik`, { waitUntil: 'domcontentloaded' });
   await page.getByRole('heading', { name: /KVKK Aydınlatma Metni/i }).waitFor({ timeout: 15000 });
   await screenshot(page, '08-privacy-desktop.png');
 
-  await page.goto(`${BASE_URL}/reset-password?token=phase4-visual-token`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE_URL}/reset-password?token=phase4-visual-token`, {
+    waitUntil: 'domcontentloaded',
+  });
   await page.getByText(/Şifreyi Yenile/i).waitFor({ timeout: 15000 });
   await screenshot(page, '09-reset-password-desktop.png');
 
@@ -231,7 +240,9 @@ const runMobileFlow = async (browser) => {
   await screenshot(publicPage, '16-auth-mobile.png');
 
   await publicPage.goto(`${BASE_URL}/gizlilik`, { waitUntil: 'domcontentloaded' });
-  await publicPage.getByRole('heading', { name: /KVKK Aydınlatma Metni/i }).waitFor({ timeout: 15000 });
+  await publicPage
+    .getByRole('heading', { name: /KVKK Aydınlatma Metni/i })
+    .waitFor({ timeout: 15000 });
   await screenshot(publicPage, '17-privacy-mobile.png');
   await publicContext.close();
 
@@ -245,7 +256,9 @@ const runMobileFlow = async (browser) => {
     });
     const cafePage = await cafeContext.newPage();
     await cafePage.goto(`${BASE_URL}/cafe-admin`, { waitUntil: 'domcontentloaded' });
-    await cafePage.getByRole('heading', { name: /Kafe Yönetim Paneli/i }).waitFor({ timeout: 20000 });
+    await cafePage
+      .getByRole('heading', { name: /Kafe Yönetim Paneli/i })
+      .waitFor({ timeout: 20000 });
     await screenshot(cafePage, '18-cafe-admin-mobile.png');
     await cafeContext.close();
   }

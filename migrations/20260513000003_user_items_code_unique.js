@@ -10,8 +10,8 @@
  *
  * Two things this migration does:
  *   1. Removes legacy duplicate codes (left over from the old
- *      storeController hardcoded codes like RANK_NEON_SWORD). We keep
- *      the earliest-redeemed copy and orphan the rest by suffixing
+ *      storeController hardcoded per-item codes). We keep the
+ *      earliest-redeemed copy and orphan the rest by suffixing
  *      `-LEGACY-<id>` so the UNIQUE INDEX creation doesn't fail.
  *   2. Adds the UNIQUE INDEX so future INSERTs cannot collide.
  *

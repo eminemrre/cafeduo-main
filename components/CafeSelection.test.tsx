@@ -13,8 +13,8 @@ jest.mock('../lib/api', () => ({
   },
 }));
 
-// Helper: find the submit button regardless of casing changes (Riso Kantin
-// renames the headline from "KAFEYE GİR & OYNA" to "Kafeye Gir & Oyna").
+// Helper: find the submit button regardless of casing changes (the
+// check-in screen renames the headline from "KAFEYE GİR & OYNA" to "Kafeye Gir & Oyna").
 const getSubmitButton = () => screen.getByTestId('checkin-submit-button');
 
 describe('CafeSelection', () => {
@@ -67,7 +67,7 @@ describe('CafeSelection', () => {
     await waitFor(() => {
       expect(api.cafes.list).toHaveBeenCalled();
     });
-    // Riso Kantin heading
+    // Check-in heading
     expect(screen.getByText('Kafeye Giriş')).toBeInTheDocument();
     expect(screen.getByText('Merkez Kafe')).toBeInTheDocument();
   });
@@ -262,7 +262,7 @@ describe('CafeSelection', () => {
 
     fireEvent.change(screen.getByRole('spinbutton'), { target: { value: '3' } });
 
-    // Riso Kantin: verification field is collapsed behind a toggle to keep
+    // The verification field is collapsed behind a toggle to keep
     // the primary flow focused on GPS check-in. Reveal it before typing.
     fireEvent.click(screen.getByTestId('checkin-show-verification'));
     fireEvent.change(screen.getByLabelText(/Masa Doğrulama Kodu/i), {

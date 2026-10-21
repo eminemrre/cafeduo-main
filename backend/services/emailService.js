@@ -130,9 +130,9 @@ const sendViaResend = async ({ from, to, subject, text, html }) => {
  *   - Single big CTA button, plus a plain `<a>` fallback in case the
  *     button gets stripped by aggressive sanitizers
  *
- * Visual: cream paper background, ink type, riso-pink accent stripe at
- * the top, ink-bordered CTA button with offset shadow — matches the
- * Riso Kantin in-app theme so the email feels like the same brand.
+ * Visual: warm paper background, ink type, a pink accent stripe at the
+ * top and an ink-bordered CTA button with offset shadow — all built from
+ * plain hex values so mail clients render it as drawn.
  */
 const buildPasswordResetHtml = ({ displayName, resetUrl, ttl }) => {
   const safeName = String(displayName || 'Oyuncu')

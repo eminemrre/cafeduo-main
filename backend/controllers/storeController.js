@@ -17,35 +17,35 @@ const generateCouponCode = () => {
 const STORE_ITEMS = [
   {
     id: 1,
-    title: 'Zehirli Neon Kılıç (Rütbe)',
-    code: 'RANK_NEON_SWORD',
+    title: 'Karamel Kaşık (Rütbe)',
+    code: 'RANK_CARAMEL_SPOON',
     price: 500,
     type: 'rank',
-    description: 'Profilinde sarkan fosforlu bir kılıç rütbesi.',
+    description: 'Profilinde sallanan parlak bir kaşık rütbesi.',
   },
   {
     id: 2,
-    title: 'Hacker Çerçevesi (Kırmızı)',
+    title: 'Lokum Çerçevesi (Pembe)',
     code: 'FRAME_HACKER_RED',
     price: 1000,
     type: 'frame',
-    description: 'Profil resminin etrafında dönen kırmızı glitch çerçevesi.',
+    description: 'Profil resminin etrafında dönen pembe bir lokum çerçevesi.',
   },
   {
     id: 3,
-    title: 'Siber Ajan Ünvanı',
-    code: 'TITLE_CYBER_AGENT',
+    title: 'Masa Ustası Unvanı',
+    code: 'TITLE_TABLE_MASTER',
     price: 250,
     type: 'title',
-    description: 'Adının altında beliren prestijli bir ünvan.',
+    description: 'Adının altında beliren prestijli bir unvan.',
   },
   {
     id: 4,
-    title: 'Enerji Nükleosu (Animasyon)',
+    title: 'Konfeti Patlaması (Animasyon)',
     code: 'ANIM_ENERGY_CORE',
     price: 1500,
     type: 'animation',
-    description: 'Profiline girenleri karşılayan patlayan bir enerji çekirdeği efekti.',
+    description: 'Profiline girenleri karşılayan bir konfeti efekti.',
   },
   {
     id: 5,
@@ -57,11 +57,11 @@ const STORE_ITEMS = [
   },
   {
     id: 6,
-    title: 'Bounty Hunter Rütbesi',
+    title: 'Ödül Avcısı Rütbesi',
     code: 'RANK_BOUNTY_HUNTER',
     price: 800,
     type: 'rank',
-    description: 'Acımasız avcılar için özel rütbe.',
+    description: 'Turnuvaların gediklisi için özel rütbe.',
   },
 ];
 
@@ -127,7 +127,7 @@ const storeController = {
       const userPoints = userResult.rows[0].points;
       if (userPoints < itemToBuy.price) {
         await rollbackQuietly(client);
-        return res.status(400).json({ success: false, message: 'Yetersiz bakiye (Cyber-Creds)' });
+        return res.status(400).json({ success: false, message: 'Yetersiz puan.' });
       }
 
       // 2. Kullanıcının bu eşyaya zaten sahip olup olmadığını kontrol et

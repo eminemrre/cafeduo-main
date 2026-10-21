@@ -5,19 +5,9 @@ const { executeDataMode, sendApiError, sendApiProblem } = require('../utils/rout
 // admin create/delete must flush or users see stale catalog for up to 10min.
 const { clearCache } = require('../middleware/cache');
 const { rollbackQuietly } = require('../utils/transaction');
+const { generateCouponCode } = require('../utils/couponCode');
 
 const FIVE_DAYS_MS = 5 * 24 * 60 * 60 * 1000;
-
-/**
- * Build a per-redemption unique coupon code. 12 hex chars in three groups
- * of 4 (CD-XXXX-XXXX-XXXX) — short enough to read aloud at the cashier if
- * the QR fails, long enough to make accidental collisions astronomically
- * unlikely (48 bits of entropy).
- */
-const generateCouponCode = () => {
-  const hex = crypto.randomBytes(6).toString('hex').toUpperCase();
-  return `CD-${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}`;
-};
 
 /**
  * Daily reward wheel — global, identical for every cafe (cafe admins can

@@ -25,27 +25,27 @@ const STORE_ITEMS = [
   },
   {
     id: 2,
-    title: 'Hacker Çerçevesi (Kırmızı)',
+    title: 'Lokum Çerçevesi (Pembe)',
     code: 'FRAME_HACKER_RED',
     price: 1000,
     type: 'frame',
-    description: 'Profil resminin etrafında dönen kırmızı glitch çerçevesi.',
+    description: 'Profil resminin etrafında dönen pembe bir lokum çerçevesi.',
   },
   {
     id: 3,
-    title: 'Masa Ustası Ünvanı',
+    title: 'Masa Ustası Unvanı',
     code: 'TITLE_TABLE_MASTER',
     price: 250,
     type: 'title',
-    description: 'Adının altında beliren prestijli bir ünvan.',
+    description: 'Adının altında beliren prestijli bir unvan.',
   },
   {
     id: 4,
-    title: 'Enerji Nükleosu (Animasyon)',
+    title: 'Konfeti Patlaması (Animasyon)',
     code: 'ANIM_ENERGY_CORE',
     price: 1500,
     type: 'animation',
-    description: 'Profiline girenleri karşılayan patlayan bir enerji çekirdeği efekti.',
+    description: 'Profiline girenleri karşılayan bir konfeti efekti.',
   },
   {
     id: 5,
@@ -57,11 +57,11 @@ const STORE_ITEMS = [
   },
   {
     id: 6,
-    title: 'Bounty Hunter Rütbesi',
+    title: 'Ödül Avcısı Rütbesi',
     code: 'RANK_BOUNTY_HUNTER',
     price: 800,
     type: 'rank',
-    description: 'Acımasız avcılar için özel rütbe.',
+    description: 'Turnuvaların gediklisi için özel rütbe.',
   },
 ];
 

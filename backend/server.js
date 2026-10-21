@@ -307,7 +307,7 @@ const canAccessGameRoom = async (socket, normalizedGameId) => {
 const isSocketInGameRoom = (socket, normalizedGameId) => socket.rooms.has(normalizedGameId);
 
 io.on('connection', (socket) => {
-  logger.info(`⚡ Client connected: ${socket.id} (User: ${socket.username})`);
+  logger.info(`Client connected: ${socket.id} (User: ${socket.username})`);
 
   // Genel oyun odasına katılım
   socket.on('join_game', async (gameId) => {
@@ -353,7 +353,7 @@ io.on('connection', (socket) => {
     logger.info(`Socket ${socket.id} (${socket.username}) left game: ${normalizedGameId}`);
   });
 
-  // 🔒 SECURITY: Allowed move action types for validation
+  // SECURITY: Allowed move action types for validation
   const ALLOWED_MOaE_ACTIONS = new Set([
     'shot_result',
     'turn_timeout',
@@ -374,11 +374,11 @@ io.on('connection', (socket) => {
     }
 
     const move = data?.move;
-    // aalidate move data size and structure
+    // validate move data size and structure
     if (move && typeof move === 'object') {
       const moveKeys = Object.keys(move);
       if (moveKeys.length > 20) return; // Prevent oversized payloads
-      // aalidate action type if present
+      // validate action type if present
       if (move.action && !ALLOWED_MOaE_ACTIONS.has(String(move.action))) {
         logger.warn(`Blocked game_move with invalid action: ${move.action}`, {
           socketId: socket.id,
@@ -433,14 +433,14 @@ io.on('connection', (socket) => {
 const JWT_SECRET = getRequiredJwtSecret();
 const BLACKLIST_FAIL_MODE = getBlacklistFailMode();
 
-// 4) START SERaER / INIT DB
-logger.info('🚀 Starting Server...');
+// 4) START SERVER / INIT DB
+logger.info('Starting Server...');
 logger.info(
-  '🔑 Google Client ID:',
-  process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID ? 'Loaded ✅' : 'MISSING ❌'
+  'Google Client ID:',
+  process.env.GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID ? 'Loaded' : 'MISSING'
 );
-logger.info('🗄️  Database URL:', process.env.DATABASE_URL ? 'Loaded ✅' : 'MISSING ❌');
-logger.info('🔐 Security defaults:', {
+logger.info('Database URL:', process.env.DATABASE_URL ? 'Loaded' : 'MISSING');
+logger.info('Security defaults:', {
   blacklistFailMode: BLACKLIST_FAIL_MODE,
   rateLimitPassOnStoreError: getPassOnStoreError(),
   jwtSecretLength: JWT_SECRET.length,
@@ -519,7 +519,7 @@ app.use(express.urlencoded({ extended: false, limit: '100kb', parameterLimit: 10
 const initDb = async () => {
   if (await isDbConnected()) {
     try {
-      logger.info('🔄 aeritabanı şeması kontrol ediliyor...');
+      logger.info('aeritabanı şeması kontrol ediliyor...');
 
       // 1. Users Table
       await pool.query(`
@@ -635,14 +635,14 @@ const initDb = async () => {
         try {
           await pool.query(`ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS ${column} ${type}`);
         } catch (e) {
-          logger.warn(`⚠️ Sütun eklenemedi: ${table}.${column} - ${e.message}`);
+          logger.warn(`Sütun eklenemedi: ${table}.${column} - ${e.message}`);
         }
       };
       const createIndex = async (indexName, query) => {
         try {
           await pool.query(query);
         } catch (e) {
-          logger.warn(`⚠️ Index oluşturulamadı: ${indexName} - ${e.message}`);
+          logger.warn(`Index oluşturulamadı: ${indexName} - ${e.message}`);
         }
       };
 
@@ -763,7 +763,7 @@ const initDb = async () => {
             ('Efsane', '100 galibiyet al.', 'crown', 1000, 'wins', 100),
             ('Milyoner', '50.000 puana ulaş.', 'coins', 1200, 'points', 50000)
           `);
-        logger.info('🏆 Başlangıç başarımları eklendi.');
+        logger.info('Başlangıç başarımları eklendi.');
         clearCache('achievements:*');
       } else {
         // Existing DBs (production) already have the 5 legacy rows. Upgrade
@@ -872,7 +872,7 @@ const initDb = async () => {
           await pool.query(`ALTER TABLE ${table} DROP CONSTRAINT IF EXISTS ${constraint}`);
           await pool.query(`ALTER TABLE ${table} ADD CONSTRAINT ${constraint} ${fkClause}`);
         } catch (e) {
-          logger.warn(`⚠️ FK upgrade skipped: ${table}.${constraint} - ${e.message}`);
+          logger.warn(`FK upgrade skipped: ${table}.${constraint} - ${e.message}`);
         }
       };
       await upgradeFkCascade(
@@ -896,13 +896,13 @@ const initDb = async () => {
             ('Cheesecake İkramı', 400, 'Tatlı bir mola ver.', 'dessert', true),
             ('Oyun Jetonu x5', 100, 'Ekstra oyun hakkı.', 'game', true)
           `);
-        logger.info('🎁 Başlangıç ödülleri eklendi.');
+        logger.info('Başlangıç ödülleri eklendi.');
         clearCache('rewards:*');
       }
 
-      logger.info('✅ Veritabanı şeması başarıyla güncellendi.');
+      logger.info('Veritabanı şeması başarıyla güncellendi.');
     } catch (err) {
-      logger.error('❌ Kritik Şema Hatası:', err);
+      logger.error('Kritik Şema Hatası:', err);
     }
   }
 };
@@ -1310,7 +1310,7 @@ initDb()
 
     const startServer = (portToUse) => {
       server.listen(portToUse, () => {
-        logger.info(`🚀 Server running on http://localhost:${portToUse}`);
+        logger.info(`Server running on http://localhost:${portToUse}`);
       });
     };
 

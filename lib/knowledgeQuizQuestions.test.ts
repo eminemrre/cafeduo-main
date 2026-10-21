@@ -6,6 +6,7 @@ import {
   quizSeed,
   scoreAnswer,
 } from './knowledgeQuizQuestions';
+import { GAME_REGISTRY, QUIZ_GAME_TYPE } from '../shared/gameRegistry';
 import { QUIZ_QUESTION_BANK, type QuizBankEntry } from './quizQuestionBank';
 
 const fakeBank: QuizBankEntry[] = ['A', 'B', 'C'].flatMap((category) =>
@@ -98,6 +99,27 @@ describe('scoreAnswer', () => {
     expect(
       scoreAnswer({ correct: true, secondsLeft: 5, streakBefore: 0, isFinal: true })
     ).toMatchObject({ doubled: true, points: (CORRECT_POINTS + 5) * 2 });
+  });
+
+  it('never beats the score cap in the game registry', () => {
+    const entry = GAME_REGISTRY[QUIZ_GAME_TYPE];
+    const rounds = entry.maxRounds ?? 0;
+    let total = 0;
+    let streak = 0;
+
+    for (let index = 0; index < rounds; index += 1) {
+      const answer = scoreAnswer({
+        correct: true,
+        secondsLeft: QUESTION_TIME_SECONDS,
+        streakBefore: streak,
+        isFinal: index === rounds - 1,
+      });
+      total += answer.points;
+      streak = answer.streak;
+    }
+
+    expect(total).toBe(320);
+    expect(entry.maxScore).toBe(total);
   });
 });
 

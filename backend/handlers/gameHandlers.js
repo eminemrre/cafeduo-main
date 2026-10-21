@@ -144,8 +144,12 @@ const createGameHandlers = ({
     getGameParticipants,
     pickWinnerFromResults,
     sanitizeScoreSubmission,
-    sanitizeLiveSubmission: (payload) =>
-      require('./game/utils/helperUtils').sanitizeLiveSubmission(payload, normalizeGameType),
+    sanitizeLiveSubmission: (payload, gameType) =>
+      require('./game/utils/helperUtils').sanitizeLiveSubmission(
+        payload,
+        gameType,
+        normalizeGameType
+      ),
     getMemoryGames,
     getMemoryUsers,
     io,

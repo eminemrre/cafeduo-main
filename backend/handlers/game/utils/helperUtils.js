@@ -3,6 +3,8 @@
  * Miscellaneous utility functions used across game handlers
  */
 
+const { getGameScoreBounds } = require('../../../../shared/gameRegistry');
+
 /**
  * Determine chess game result from chess.js instance
  * @param {Object} chess - chess.js instance
@@ -10,13 +12,13 @@
  */
 const nextChessResult = (chess) => {
   if (!chess) return null;
-  
+
   if (chess.isCheckmate()) return 'checkmate';
   if (chess.isStalemate()) return 'stalemate';
   if (chess.isInsufficientMaterial()) return 'insufficient-material';
   if (chess.isThreefoldRepetition()) return 'threefold-repetition';
   if (chess.isDraw()) return 'draw';
-  
+
   return null;
 };
 
@@ -31,15 +33,35 @@ const parseIsoTimestampMs = (value) => {
 };
 
 /**
+ * Safe integer conversion with bounds
+ * @param {*} value - Value to convert
+ * @param {number} min - Minimum value
+ * @param {number} max - Maximum value
+ * @param {number} defaultValue - Default if invalid
+ * @returns {number} Safe integer within bounds
+ */
+const safeInteger = (value, min = 0, max = Number.MAX_SAFE_INTEGER, defaultValue = 0) => {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return defaultValue;
+  return Math.max(min, Math.min(max, Math.floor(num)));
+};
+
+/**
  * Sanitize live game submission payload
+ * The score, rounds and round number are clamped to the bounds of the stored game type,
+ * so a client cannot win by submitting an impossible score.
  * @param {Object} payload - Raw submission payload
+ * @param {string} gameType - Stored game type of the match (authoritative)
  * @param {Function} normalizeGameType - Function to normalize game type
  * @returns {Object} Sanitized submission object
  */
-const sanitizeLiveSubmission = (payload, normalizeGameType) => {
-  const safeScore = Math.max(0, Math.floor(Number(payload?.score || 0)));
-  const safeRounds = Math.max(0, Math.floor(Number(payload?.roundsWon || safeScore)));
-  const safeRound = Math.max(0, Math.floor(Number(payload?.round || 0)));
+const sanitizeLiveSubmission = (payload, gameType, normalizeGameType) => {
+  const bounds = getGameScoreBounds(gameType);
+  const maxScore = bounds?.maxScore ?? Number.MAX_SAFE_INTEGER;
+  const maxRounds = bounds?.maxRounds ?? Number.MAX_SAFE_INTEGER;
+  const safeScore = safeInteger(payload?.score, 0, maxScore);
+  const safeRounds = safeInteger(payload?.roundsWon || safeScore, 0, maxScore);
+  const safeRound = safeInteger(payload?.round, 0, maxRounds);
   const done = Boolean(payload?.done);
   const mode = normalizeGameType ? normalizeGameType(payload?.mode) : null;
   const submissionKeyRaw = String(payload?.submissionKey || payload?.submission_key || '').trim();
@@ -54,20 +76,6 @@ const sanitizeLiveSubmission = (payload, normalizeGameType) => {
     ...(submissionKey ? { submissionKey } : {}),
     updatedAt: new Date().toISOString(),
   };
-};
-
-/**
- * Safe integer conversion with bounds
- * @param {*} value - Value to convert
- * @param {number} min - Minimum value
- * @param {number} max - Maximum value
- * @param {number} defaultValue - Default if invalid
- * @returns {number} Safe integer within bounds
- */
-const safeInteger = (value, min = 0, max = Number.MAX_SAFE_INTEGER, defaultValue = 0) => {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return defaultValue;
-  return Math.max(min, Math.min(max, Math.floor(num)));
 };
 
 /**

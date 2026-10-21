@@ -25,7 +25,7 @@ interface ArenaWindow extends Window {
 }
 
 export const AIM_GAME_TYPE = 'Nişancı Düellosu';
-const MAX_ROUNDS = 5;
+export const MAX_ROUNDS = 5;
 
 // Difficulty knobs. Original (desktop) values were 4 / 46. The user
 // reported the game is way too easy on mobile — touch devices have

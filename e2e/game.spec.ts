@@ -71,7 +71,7 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
     await expect(page.getByRole('button', { name: /Oyun Kur/i })).toBeEnabled();
   });
 
-  test('@advanced enforces join race safely and keeps consistent winner resolution', async ({ request, baseURL }) => {
+  test('@advanced enforces join race safely and rejects client-written results', async ({ request, baseURL }) => {
     const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     const apiRoot = resolveApiBaseUrl(root);
     await waitForApiReady(request, apiRoot);
@@ -87,9 +87,10 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
       headers: authHeader(host.token, host.csrfToken),
       data: {
         hostName: host.credentials.username,
-        gameType: 'Nişancı Düellosu',
+        gameType: 'Retro Satranç',
         points: 0,
         table: 'MASA05',
+        chessClock: { baseSeconds: 180, incrementSeconds: 2 },
       },
     });
     expect(createRes.ok()).toBeTruthy();
@@ -112,62 +113,42 @@ test.describe('Game Flow & Multiplayer Integrity', () => {
     expect(joinStatuses).toEqual([200, 409]);
 
     const joinedPlayer = joinGuestRes.status() === 200 ? guest : intruder;
-    const rejectedPlayer = joinGuestRes.status() === 200 ? intruder : guest;
 
-    const rejectedScoreRes = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
-      headers: authHeader(rejectedPlayer.token, rejectedPlayer.csrfToken),
-      data: {
+    // The legacy score/winner path is closed even for chess; a client cannot
+    // turn a join race into a balance change through /move or /finish.
+    for (const payload of [
+      {
         scoreSubmission: {
-          username: rejectedPlayer.user.username,
+          username: host.user.username,
           score: 9999,
           roundsWon: 9999,
           durationMs: 1,
         },
       },
-    });
-    expect(rejectedScoreRes.status()).toBe(403);
+      { move: 'e2e4' },
+    ]) {
+      const rejectedWrite = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
+        headers: authHeader(host.token, host.csrfToken),
+        data: payload,
+      });
+      expect(rejectedWrite.status()).toBe(410);
+      expect((await rejectedWrite.json()).code).toBe('LEGACY_PROTOCOL_DISABLED');
+    }
 
-    const hostScoreRes = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
-      headers: authHeader(host.token, host.csrfToken),
-      data: {
-        scoreSubmission: {
-          username: host.user.username,
-          score: 6,
-          roundsWon: 3,
-          durationMs: 9000,
-        },
-      },
-    });
-    expect(hostScoreRes.ok()).toBeTruthy();
-
-    const joinedScoreRes = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
-      headers: authHeader(joinedPlayer.token, joinedPlayer.csrfToken),
-      data: {
-        scoreSubmission: {
-          username: joinedPlayer.user.username,
-          score: 4,
-          roundsWon: 2,
-          durationMs: 8500,
-        },
-      },
-    });
-    expect(joinedScoreRes.ok()).toBeTruthy();
-
-    // winner param manipülasyonu yapılsa bile backend sonuç tablosundan doğru kazananı seçmeli
     const finishRes = await request.post(`${apiRoot}/api/games/${gameId}/finish`, {
       headers: authHeader(joinedPlayer.token, joinedPlayer.csrfToken),
-      data: { winner: rejectedPlayer.user.username },
+      data: { winner: joinedPlayer.user.username },
     });
-    const finishBody = await finishRes.json();
-    expect(finishRes.ok(), `finish failed: ${JSON.stringify(finishBody)}`).toBeTruthy();
-    expect(finishBody.winner).toBe(host.user.username);
+    expect(finishRes.status()).toBe(410);
+    expect((await finishRes.json()).code).toBe('LEGACY_PROTOCOL_DISABLED');
 
     const gameStateRes = await request.get(`${apiRoot}/api/games/${gameId}`, {
       headers: authHeader(host.token),
     });
     expect(gameStateRes.ok()).toBeTruthy();
     const gameState = await gameStateRes.json();
-    expect(gameState.status).toBe('finished');
-    expect(gameState.gameState?.resolvedWinner).toBe(host.user.username);
+    expect(gameState.status).toBe('active');
+    expect(gameState.winner).toBeNull();
+    expect(gameState.gameState?.resolvedWinner).toBeUndefined();
   });
 });

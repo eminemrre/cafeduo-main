@@ -63,7 +63,9 @@
     "migrate:status": "node scripts/migrations/status.js",
     "migrate:baseline:report": "node scripts/migrations/legacy-baseline.js report",
     "migrate:baseline:apply": "node scripts/migrations/legacy-baseline.js apply",
-    "migrate:adopt": "node scripts/migrations/adopt-bootstrap.js"
+    "migrate:adopt": "node scripts/migrations/adopt-bootstrap.js",
+    "test:e2e:v2": "node scripts/e2e/run-v2.cjs",
+    "game-engine:transition": "node scripts/ops/game-engine-v2-transition.mjs"
   },
   "dependencies": {
     "@fontsource/baloo-2": "^5.3.0",

@@ -90,6 +90,31 @@ describe('aimEngine', () => {
     expect(guest.state.phaseEndsAt).toBe(new Date(100 + AIM_REVEAL_MS).toISOString());
   });
 
+  it('derives 50/150/300 ms RTT scores from the server receive position', () => {
+    const cases = [
+      [0, 50, 3],
+      [50, 55, 2],
+      [150, 65, 1],
+      [300, 80, 0],
+    ];
+    for (const [delayMs, expectedPosition, expectedPoints] of cases) {
+      const { state, privateState } = makeGame();
+      const result = fire('r1', 'host', delayMs, state, privateState, {
+        position: 12,
+        points: 3,
+        gauge: 50,
+        hitTier: 'perfect',
+        clientTimestamp: Date.now() + 999_999,
+      });
+      expect(result.ok).toBe(true);
+      expect(result.privateState.shots.r1.host).toMatchObject({
+        position: expectedPosition,
+        points: expectedPoints,
+      });
+      expect(result.state.players.host.score).toBe(0);
+    }
+  });
+
   it('opens the next round after the reveal and finishes a 15-15 draw', () => {
     let { state, privateState } = makeGame();
     let fireAt = 0;

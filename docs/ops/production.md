@@ -17,6 +17,10 @@ matching the locked test version (currently 1.58.1), with browsers and operating
 system dependencies already installed. Keep that container version in sync when
 updating Playwright. Python 3.12 is explicitly provisioned; shell steps use Bash.
 
+Ranked quiz/aim matches use the server-authoritative protocol v2. The feature
+flag stays off until the owner approves activation; the dry-run, retirement,
+activation and rollback gates are in [game-engine-v2.md](game-engine-v2.md).
+
 Configure the `production` GitHub environment with `DEPLOY_HOST`, `DEPLOY_USER`,
 `DEPLOY_SSH_KEY`, optionally `DEPLOY_PORT` (22) and `DEPLOY_PATH`
 (`/opt/cafeduo-main`). `PRODUCTION_URL` is an environment variable, defaulting to

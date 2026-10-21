@@ -12,6 +12,10 @@ Stack: Node + Express (CommonJS), React + Vite + TypeScript, PostgreSQL, Redis, 
 - `npm run quality` — lint + typecheck
 - `npm run build` — Vite production build
 - `npm run test:e2e:smoke` — Playwright smoke suite (Chromium)
+- `npm run test:e2e:v2` — two-context ranked quiz/aim suite; starts the stack with
+  `GAME_ENGINE_V2_ENABLED=true`
+- `npm run game-engine:transition` — read-only dry run for retiring pre-v2 active games;
+  `--apply` requires explicit approval and an environment gate
 - `npm run migrate:create <name>` / `migrate:up` / `migrate:down` / `migrate:status`
 - `npm run smoke:live` — production health probe
 
@@ -31,6 +35,7 @@ npm run quality          # lint + typecheck
 npm test                 # unit tests
 npm run build            # Vite build must succeed
 npm run test:e2e:smoke   # when touching user flows
+npm run test:e2e:v2      # when touching ranked quiz/aim protocol
 npm run migrate:status   # when touching migrations
 ```
 
@@ -107,6 +112,8 @@ npm run migrate:status   # when touching migrations
 - `backend/gameEngine/quizEngine.js` is pure and time-driven: callers pass the server clock and
   persist the returned state. quiz question data lives in
   `backend/gameEngine/data/quizQuestions.json`; the client must not import the ranked bank.
+  The 396 questions were published in an older client bundle, so they are not secret history;
+  the server bank only prevents new matches from exposing answers and future questions.
 - `backend/gameEngine/aimEngine.js` is the same shape for Nişancı Düellosu: 5 rounds of 8 s plus
   750 ms feedback, one common server-seeded trajectory (`shared/aimTrajectory.js`, client and
   server share the position function), and score only from the server-time position. The

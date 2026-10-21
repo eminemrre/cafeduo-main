@@ -13,6 +13,8 @@ const {
   isGameEngineV2Enabled,
 } = require('../../../utils/gameEngineConfig');
 const { serializeGameForActor } = require('../../../gameEngine/gameView');
+const { createQuizPublicState, startQuizState } = require('../../../gameEngine/quizEngine');
+const { QUIZ_GAME_TYPE } = require('../../../../shared/gameRegistry');
 
 const maintenanceResponse = (res) =>
   res.status(503).json({
@@ -129,14 +131,50 @@ const createJoinGameHandler = (deps) => {
           return res.status(409).json({ error: 'Bu kullanıcı zaten aktif bir oyunda.' });
         }
 
+        if (game.game_type === QUIZ_GAME_TYPE) {
+          const privateState = game.game_private_state;
+          if (
+            !privateState ||
+            privateState.version !== 2 ||
+            !Array.isArray(privateState.questions) ||
+            privateState.questions.length === 0
+          ) {
+            await rollbackQuietly(client);
+            return res.status(409).json({
+              error: 'Bu oyun sunucu durumu olmadan başlatılamaz.',
+              code: 'ENGINE_STATE_MISSING',
+            });
+          }
+        }
+
         const nextGameState = (() => {
           const current =
             game.game_state && typeof game.game_state === 'object' ? { ...game.game_state } : {};
-          if (!isChessGameType(game.game_type)) return current;
-          return {
-            ...current,
-            chess: activateChessClockState(current.chess),
-          };
+          if (isChessGameType(game.game_type)) {
+            return {
+              ...current,
+              chess: activateChessClockState(current.chess),
+            };
+          }
+          if (game.game_type === QUIZ_GAME_TYPE) {
+            const privateState = game.game_private_state;
+            const base = createQuizPublicState({
+              hostName: game.host_name,
+              guestName,
+              totalRounds: privateState.questions.length,
+            });
+            return {
+              ...current,
+              engine: startQuizState({
+                state: base,
+                privateState,
+                hostName: game.host_name,
+                guestName,
+                nowMs: Date.now(),
+              }),
+            };
+          }
+          return current;
         })();
 
         const joinedGame = gameService?.activateGameWithGuest
@@ -231,6 +269,21 @@ const createJoinGameHandler = (deps) => {
       return res.status(409).json(mapTransitionError(memoryJoinTransition));
     }
 
+    if (game.gameType === QUIZ_GAME_TYPE) {
+      const privateState = game.gamePrivateState;
+      if (
+        !privateState ||
+        privateState.version !== 2 ||
+        !Array.isArray(privateState.questions) ||
+        privateState.questions.length === 0
+      ) {
+        return res.status(409).json({
+          error: 'Bu oyun sunucu durumu olmadan başlatılamaz.',
+          code: 'ENGINE_STATE_MISSING',
+        });
+      }
+    }
+
     game.status = 'active';
     game.guestName = guestName;
     if (isChessGameType(game.gameType)) {
@@ -239,6 +292,25 @@ const createJoinGameHandler = (deps) => {
       game.gameState = {
         ...current,
         chess: activateChessClockState(current.chess),
+      };
+    } else if (game.gameType === QUIZ_GAME_TYPE) {
+      const current =
+        game.gameState && typeof game.gameState === 'object' ? { ...game.gameState } : {};
+      const privateState = game.gamePrivateState;
+      const base = createQuizPublicState({
+        hostName: game.hostName,
+        guestName,
+        totalRounds: privateState.questions.length,
+      });
+      game.gameState = {
+        ...current,
+        engine: startQuizState({
+          state: base,
+          privateState,
+          hostName: game.hostName,
+          guestName,
+          nowMs: Date.now(),
+        }),
       };
     }
     const joinedMemoryView = serializeGameForActor(game);

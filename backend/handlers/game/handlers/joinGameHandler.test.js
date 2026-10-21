@@ -7,6 +7,8 @@
  */
 
 const { createJoinGameHandler } = require('./joinGameHandler');
+const { createQuizPrivateState } = require('../../../gameEngine/quizEngine');
+const { QUIZ_GAME_TYPE } = require('../../../../shared/gameRegistry');
 
 // Join tests below cover the handler, not the rollout gate; keep protocol v2 open.
 process.env.GAME_ENGINE_V2_ENABLED = 'true';
@@ -602,6 +604,44 @@ describe('joinGameHandler (memory path)', () => {
 
     expect(res.statusCode).toBe(400);
     expect(res.payload.error).toMatch(/puan gerekli/);
+  });
+
+  it('starts a v2 quiz match with the first round and no answer key', async () => {
+    const deps = makeDeps();
+    deps._memoryGamesRef.push({
+      id: 88,
+      hostName: 'u1',
+      guestName: null,
+      gameType: QUIZ_GAME_TYPE,
+      points: 0,
+      table: 'MASA05',
+      status: 'waiting',
+      gameState: {},
+      gamePrivateState: createQuizPrivateState(),
+      createdAt: '2026-10-21T10:00:00.000Z',
+    });
+    const handler = createJoinGameHandler(deps);
+    const res = createMockRes();
+
+    await handler(
+      {
+        params: { id: '88' },
+        user: { username: 'u2', cafe_id: 1, table_number: '5', points: 200 },
+        body: {},
+      },
+      res
+    );
+
+    expect(res.statusCode).toBe(200);
+    const engine = res.payload.game.gameState.engine;
+    expect(engine.version).toBe(2);
+    expect(engine.phase).toBe('open');
+    expect(engine.roundIndex).toBe(1);
+    expect(engine.round.options).toHaveLength(4);
+    expect(engine.round.answerIndex).toBeUndefined();
+    expect(res.payload.game.gamePrivateState).toBeUndefined();
+    expect(res.payload.game.gameState.engine.private).toBeUndefined();
+    expect(deps._memoryGamesRef[0].status).toBe('active');
   });
 });
 

@@ -451,6 +451,24 @@ describe('createGameHandler (memory path)', () => {
     );
   });
 
+  it('seeds a private quiz question set and never returns it', async () => {
+    const deps = makeDeps();
+    const handler = createCreateGameHandler(deps);
+    const req = {
+      user: { username: 'u1', cafe_id: 1, table_number: '5', points: 200 },
+      body: { gameType: 'Bilgi Yarışı', points: 10 },
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(201);
+    expect(deps._memoryGamesRef[0].gamePrivateState.questions).toHaveLength(10);
+    expect(res.payload.gameState).toEqual({});
+    expect(res.payload.gamePrivateState).toBeUndefined();
+    expect(res.payload.gameState.engine).toBeUndefined();
+  });
+
   it('falls back to MASA00 when neither user nor body provides a table code', async () => {
     const deps = makeDeps();
     const handler = createCreateGameHandler(deps);

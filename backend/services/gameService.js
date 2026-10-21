@@ -60,15 +60,25 @@ const createGameService = ({
       if (!supportedGameTypes.has(String(game.gameType || '').trim())) return false;
 
       if (!adminActor && scopeAllRequested) {
-        const hostName = String(game.hostName || '').trim().toLowerCase();
+        const hostName = String(game.hostName || '')
+          .trim()
+          .toLowerCase();
         const hostUser = memoryUsers.find(
-          (user) => String(user?.username || '').trim().toLowerCase() === hostName
+          (user) =>
+            String(user?.username || '')
+              .trim()
+              .toLowerCase() === hostName
         );
         const hostCafeId = Number(hostUser?.cafe_id ?? hostUser?.cafeId ?? 0);
         if (hostCafeId !== actorCafeId) return false;
       }
 
-      if (effectiveTableCode && String(game.table || '').trim().toUpperCase() !== effectiveTableCode) {
+      if (
+        effectiveTableCode &&
+        String(game.table || '')
+          .trim()
+          .toUpperCase() !== effectiveTableCode
+      ) {
         return false;
       }
 
@@ -106,11 +116,13 @@ const createGameService = ({
   const activateGameWithGuest = async (client, params) =>
     gameRepository.activateGameWithGuest(client, params);
 
-  const finishGameInDb = async (client, params) =>
-    gameRepository.finishGame(client, params);
+  const finishGameInDb = async (client, params) => gameRepository.finishGame(client, params);
 
   const updateGameStateInDb = async (client, params) =>
     gameRepository.updateGameState(client, params);
+
+  const updateEngineStateInDb = async (client, params) =>
+    gameRepository.updateEngineState(client, params);
 
   return {
     listWaitingGames,
@@ -121,6 +133,7 @@ const createGameService = ({
     findActivePlayerConflict,
     activateGameWithGuest,
     finishGameInDb,
+    updateEngineStateInDb,
     updateGameStateInDb,
   };
 };

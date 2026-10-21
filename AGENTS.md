@@ -98,6 +98,15 @@ npm run migrate:status   # when touching migrations
 - Every game HTTP/socket payload goes through `backend/gameEngine/gameView.js`. Never return a raw
   `games` row. `games.game_state` is the public engine view; answer keys, future questions and
   action receipts live in `games.game_private_state` and are never selected for a response.
+- Competitive actions go through `POST /api/games/:id/actions` (authenticated HTTP, never a
+  socket): `{ actionId, roundId, type, optionIndex? }`. DB rows are locked with
+  `SELECT ... FOR UPDATE`; memory games use `gameLock`. Retries with the same payload return the
+  stored receipt, a changed payload with the same `actionId` is `409 ACTION_ID_CONFLICT`, and
+  the client timestamp is ignored. Socket events only announce a revision; clients refetch the
+  snapshot.
+- `backend/gameEngine/quizEngine.js` is pure and time-driven: callers pass the server clock and
+  persist the returned state. quiz question data lives in
+  `backend/gameEngine/data/quizQuestions.json`; the client must not import the ranked bank.
 - Game state changes go through the game handlers; chess moves use `gameMoveService.js` with
   transaction locking.
 - Settlement (`backend/handlers/game/settlementUtils.js`): the winner receives

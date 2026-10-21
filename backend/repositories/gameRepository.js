@@ -114,7 +114,16 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
   };
 
   const insertWaitingGame = async (client, params) => {
-    const { hostName, gameType, points, table, gameState, cafeId, tournamentId = null } = params;
+    const {
+      hostName,
+      gameType,
+      points,
+      table,
+      gameState,
+      gamePrivateState = null,
+      cafeId,
+      tournamentId = null,
+    } = params;
     // PR #36 — `cafe_id` recorded on every new game so per-cafe daily limits
     // and isolation queries don't need an extra join through users.
     //
@@ -125,8 +134,8 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
     // keeps the outer tx alive when the wrapped query fails — without
     // this, the very next query in the transaction dies with 25P02.
     const fullInsert = `
-        INSERT INTO games (host_name, game_type, points, table_code, status, game_state, cafe_id, tournament_id)
-        VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb, $6, $7)
+        INSERT INTO games (host_name, game_type, points, table_code, status, game_state, cafe_id, tournament_id, game_private_state)
+        VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb, $6, $7, $8::jsonb)
         RETURNING
           id,
           host_name as "hostName",
@@ -141,8 +150,8 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
           tournament_id as "tournamentId"
       `;
     const fallbackInsert = `
-        INSERT INTO games (host_name, game_type, points, table_code, status, game_state, tournament_id)
-        VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb, $6)
+        INSERT INTO games (host_name, game_type, points, table_code, status, game_state, tournament_id, game_private_state)
+        VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb, $6, $7::jsonb)
         RETURNING
           id,
           host_name as "hostName",
@@ -166,6 +175,7 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
         JSON.stringify(gameState || {}),
         cafeId ?? null,
         tournamentId ?? null,
+        gamePrivateState ? JSON.stringify(gamePrivateState) : null,
       ]);
       await client.query('RELEASE SAVEPOINT game_insert_with_cafe');
       return result.rows[0] || null;
@@ -187,6 +197,7 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
         table,
         JSON.stringify(gameState || {}),
         tournamentId ?? null,
+        gamePrivateState ? JSON.stringify(gamePrivateState) : null,
       ]);
       return fallback.rows[0] || null;
     }
@@ -204,6 +215,7 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
           status,
           guest_name,
           game_state,
+          game_private_state,
           winner,
           created_at
         FROM games
@@ -240,7 +252,8 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
         UPDATE games
         SET status = 'active',
             guest_name = $1,
-            game_state = $3::jsonb
+            game_state = $3::jsonb,
+            game_private_state = COALESCE($4::jsonb, game_private_state)
         WHERE id = $2
           AND status = 'waiting'
         RETURNING
@@ -252,9 +265,15 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
           status,
           guest_name as "guestName",
           game_state as "gameState",
+          game_private_state as "gamePrivateState",
           created_at as "createdAt"
       `,
-      [guestName, gameId, JSON.stringify(gameState || {})]
+      [
+        guestName,
+        gameId,
+        JSON.stringify(gameState || {}),
+        params.gamePrivateState ? JSON.stringify(params.gamePrivateState) : null,
+      ]
     );
 
     return result.rows[0] || null;
@@ -272,6 +291,29 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
       `,
       [winner || null, JSON.stringify(gameState || {}), gameId]
     );
+  };
+
+  const updateEngineState = async (client, params) => {
+    const { gameId, gameState, gamePrivateState, status, winner } = params;
+    const result = await client.query(
+      `
+        UPDATE games
+        SET game_state = $1::jsonb,
+            game_private_state = $2::jsonb,
+            status = COALESCE($3::text, status),
+            winner = $4::text
+        WHERE id = $5
+        RETURNING id, status, winner
+      `,
+      [
+        JSON.stringify(gameState || {}),
+        gamePrivateState ? JSON.stringify(gamePrivateState) : null,
+        status || null,
+        winner || null,
+        gameId,
+      ]
+    );
+    return result.rows[0] || null;
   };
 
   const updateGameState = async (client, params) => {
@@ -297,6 +339,7 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
     findActivePlayerConflict,
     activateGameWithGuest,
     finishGame,
+    updateEngineState,
     updateGameState,
   };
 };

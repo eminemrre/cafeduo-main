@@ -33,6 +33,7 @@ const {
   createFinishGameHandler,
   createDrawOfferHandler,
   createMakeMoveHandler,
+  createGameActionHandler,
   createGetGamesHandler,
 } = require('./game/handlers');
 
@@ -126,6 +127,14 @@ const createGameHandlers = ({
     getMemoryGames,
   });
 
+  const gameAction = createGameActionHandler({
+    pool,
+    isDbConnected,
+    logger,
+    getMemoryGames,
+    emitRealtimeUpdate,
+  });
+
   const makeMove = createMakeMoveHandler({
     pool,
     isDbConnected,
@@ -204,6 +213,7 @@ const createGameHandlers = ({
     joinGame,
     getGameState,
     getUserGameHistory,
+    gameAction,
     makeMove,
     drawOffer,
     resignGame,

@@ -65,7 +65,16 @@ const CHESS_STATE_KEYS = [
   'lastMove',
 ];
 
-const PLAYER_KEYS = ['name', 'score', 'roundsWon', 'correct', 'answered', 'jokerUsed', 'left'];
+const PLAYER_KEYS = [
+  'name',
+  'score',
+  'roundsWon',
+  'correct',
+  'streak',
+  'answered',
+  'jokerUsed',
+  'left',
+];
 const PICK_KEYS = ['host', 'guest'];
 const SHOT_KEYS = ['distance', 'points'];
 const TRAJECTORY_KEYS = ['start', 'direction', 'speed', 'durationMs'];
@@ -107,6 +116,12 @@ const sanitizeRound = (round) => {
   }
   if (round.correctIndex !== undefined && round.correctIndex !== null) {
     out.correctIndex = Number(round.correctIndex);
+  }
+  if (Array.isArray(round.hiddenOptions)) {
+    out.hiddenOptions = round.hiddenOptions.map((index) => Number(index)).slice(0, 8);
+  }
+  if (round.scoreDelta && typeof round.scoreDelta === 'object') {
+    out.scoreDelta = pick(round.scoreDelta, PICK_KEYS);
   }
   if (round.picks && typeof round.picks === 'object') {
     out.picks = pick(round.picks, PICK_KEYS);

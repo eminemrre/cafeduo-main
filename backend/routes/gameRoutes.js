@@ -15,6 +15,12 @@ const createGameRoutes = ({ authenticateToken, gameHandlers, gameService }) => {
   router.post('/games', authenticateToken, validateCreateGamePayload, gameHandlers.createGame);
   router.post('/games/:id/join', authenticateToken, validateJoinGamePayload, gameHandlers.joinGame);
   router.get('/games/:id', authenticateToken, validateGameIdParam, gameHandlers.getGameState);
+  router.post(
+    '/games/:id/actions',
+    authenticateToken,
+    validateGameIdParam,
+    gameHandlers.gameAction
+  );
   router.post('/games/:id/move', authenticateToken, validateMovePayload, gameHandlers.makeMove);
   router.post(
     '/games/:id/draw-offer',

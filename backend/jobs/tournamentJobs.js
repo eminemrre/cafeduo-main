@@ -5,9 +5,8 @@
  *   1) flips `scheduled` → `active` for tournaments whose start_at has passed
  *   2) flips `active` → `finalizing` → `finished` for tournaments whose end_at has passed,
  *      ranks users by SUM(tournament_points.points) desc, walks prize_tiers,
- *      and INSERTs a user_items row per (winner, tier) using a unique coupon
- *      code (CD-XXXX-XXXX-XXXX, 3-attempt retry on collision — same pattern
- *      as commerceHandlers.buyShopItem).
+ *      and INSERTs the prize rows in one UNNEST batch (unique coupon code
+ *      CD-XXXX-XXXX-XXXX, up to 3 attempts for colliding codes).
  *
  * Mirrors the registerGameCleanupJobs pattern (setInterval + pool query +
  * structured logger) so it shares the same restart story.
@@ -84,40 +83,77 @@ const finalizeOneTournament = async ({ pool, logger, tournamentId, clearCache })
     }
     const rewardsById = new Map(rewardsByIdRaw.rows.map((r) => [r.id, r.title]));
 
-    const awarded = [];
+    const usedCodes = new Set();
+    const nextCode = () => {
+      let code = generateCouponCode();
+      while (usedCodes.has(code)) code = generateCouponCode();
+      usedCodes.add(code);
+      return code;
+    };
+
+    const awardRows = [];
     for (let i = 0; i < standings.length; i += 1) {
       const rank = i + 1;
       const rewardId = rankToReward.get(rank);
       if (!rewardId) continue;
-      const rewardTitle = rewardsById.get(rewardId) || 'Turnuva Ödülü';
-      const standing = standings[i];
-
-      let inserted = null;
-      for (let attempt = 0; attempt < 3 && !inserted; attempt += 1) {
-        const code = generateCouponCode();
-        try {
-          const r = await client.query(
-            `INSERT INTO user_items (user_id, item_id, item_title, code, cafe_id)
-             VALUES ($1, $2, $3, $4, $5)
-             RETURNING id`,
-            [standing.user_id, rewardId, rewardTitle, code, tournament.cafe_id]
-          );
-          inserted = r.rows[0];
-        } catch (err) {
-          if (err && err.code === '23505' && attempt < 2) continue;
-          throw err;
-        }
-      }
-      if (!inserted) {
-        logger.warn('Tournament prize coupon generation gave up after 3 attempts', {
-          tournamentId: tournament.id,
-          userId: standing.user_id,
-          rewardId,
-        });
-        continue;
-      }
-      awarded.push({ userId: standing.user_id, rank, rewardId, userItemId: inserted.id });
+      awardRows.push({
+        userId: standings[i].user_id,
+        rank,
+        rewardId,
+        rewardTitle: rewardsById.get(rewardId) || 'Turnuva Ödülü',
+        code: nextCode(),
+      });
     }
+
+    // One INSERT for the whole prize batch. A code collision (unique index on
+    // user_items.code) silently skips that row, so retry only the missing ones
+    // with fresh codes.
+    const awarded = [];
+    let pending = awardRows;
+    for (let attempt = 0; attempt < 3 && pending.length > 0; attempt += 1) {
+      const inserted = await client.query(
+        `INSERT INTO user_items (user_id, item_id, item_title, code, cafe_id)
+         SELECT reward.user_id, reward.item_id, reward.item_title, reward.code, reward.cafe_id
+         FROM UNNEST($1::int[], $2::int[], $3::text[], $4::text[], $5::int[])
+              AS reward(user_id, item_id, item_title, code, cafe_id)
+         ON CONFLICT (code) DO NOTHING
+         RETURNING id, code`,
+        [
+          pending.map((row) => row.userId),
+          pending.map((row) => row.rewardId),
+          pending.map((row) => row.rewardTitle),
+          pending.map((row) => row.code),
+          pending.map(() => tournament.cafe_id),
+        ]
+      );
+
+      const insertedByCode = new Map(inserted.rows.map((row) => [row.code, row.id]));
+      pending = pending.filter((row) => {
+        const userItemId = insertedByCode.get(row.code);
+        if (userItemId === undefined) return true;
+        awarded.push({
+          userId: row.userId,
+          rank: row.rank,
+          rewardId: row.rewardId,
+          userItemId,
+        });
+        return false;
+      });
+
+      if (pending.length > 0) {
+        pending = pending.map((row) => ({ ...row, code: nextCode() }));
+      }
+    }
+
+    for (const row of pending) {
+      logger.warn('Tournament prize coupon generation gave up after 3 attempts', {
+        tournamentId: tournament.id,
+        userId: row.userId,
+        rewardId: row.rewardId,
+      });
+    }
+
+    awarded.sort((a, b) => a.rank - b.rank);
 
     await client.query(
       `UPDATE tournaments SET status = 'finished', finalized_at = now() WHERE id = $1`,
@@ -193,4 +229,4 @@ const registerTournamentJobs = ({ pool, isDbConnected, logger, clearCache }) => 
   logger.info(`⏱  Tournament job registered (every ${TOURNAMENT_JOB_INTERVAL_MS}ms)`);
 };
 
-module.exports = { registerTournamentJobs };
+module.exports = { registerTournamentJobs, finalizeOneTournament };

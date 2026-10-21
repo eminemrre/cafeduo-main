@@ -1,0 +1,119 @@
+const {
+  ACTION_TYPES,
+  checkActionReceipt,
+  fingerprintAction,
+  normalizeActionEnvelope,
+  recordActionReceipt,
+} = require('./actionProtocol');
+
+const validBody = (overrides = {}) => ({
+  actionId: 'act_12345678',
+  roundId: 'r1',
+  type: 'answer',
+  optionIndex: 2,
+  ...overrides,
+});
+
+describe('normalizeActionEnvelope', () => {
+  it('accepts a well-formed answer and ignores a client timestamp', () => {
+    const result = normalizeActionEnvelope({
+      ...validBody(),
+      clientSentAt: '1999-01-01T00:00:00.000Z',
+      receivedAt: 0,
+    });
+    expect(result.ok).toBe(true);
+    expect(result.envelope).toEqual({
+      actionId: 'act_12345678',
+      roundId: 'r1',
+      type: 'answer',
+      optionIndex: 2,
+    });
+    expect(result.envelope.clientSentAt).toBeUndefined();
+    expect(result.envelope.receivedAt).toBeUndefined();
+  });
+
+  it.each([
+    ['actionId', { actionId: 'short' }, 'INVALID_ACTION_ID'],
+    ['actionId', { actionId: 'has space 1234' }, 'INVALID_ACTION_ID'],
+    ['roundId', { roundId: 'round-1' }, 'INVALID_ROUND_ID'],
+    ['type', { type: 'game_over' }, 'INVALID_ACTION_TYPE'],
+    ['optionIndex', { optionIndex: 9 }, 'INVALID_OPTION'],
+    ['optionIndex', { optionIndex: 1.5 }, 'INVALID_OPTION'],
+  ])('rejects a bad %s', (_label, overrides, code) => {
+    const result = normalizeActionEnvelope(validBody(overrides));
+    expect(result.ok).toBe(false);
+    expect(result.code).toBe(code);
+  });
+
+  it('does not require an option for fire/joker/resign', () => {
+    for (const type of [ACTION_TYPES.FIRE, ACTION_TYPES.JOKER, ACTION_TYPES.RESIGN]) {
+      const result = normalizeActionEnvelope(validBody({ type, optionIndex: undefined }));
+      expect(result.ok).toBe(true);
+      expect(result.envelope.optionIndex).toBeUndefined();
+    }
+  });
+});
+
+describe('action receipts', () => {
+  const envelope = normalizeActionEnvelope(validBody()).envelope;
+
+  it('treats an unseen action as new', () => {
+    expect(checkActionReceipt({ ledger: {}, actorKey: 'host', envelope }).status).toBe('new');
+  });
+
+  it('returns the receipt for an exact retry', () => {
+    const ledger = recordActionReceipt({
+      ledger: {},
+      actorKey: 'host',
+      envelope,
+      receipt: { status: 'applied', revision: 5, at: '2026-10-21T10:00:00.000Z' },
+    });
+
+    const check = checkActionReceipt({ ledger, actorKey: 'host', envelope });
+    expect(check.status).toBe('duplicate');
+    expect(check.receipt.revision).toBe(5);
+    expect(check.receipt.fingerprint).toBe(fingerprintAction(envelope));
+  });
+
+  it('reuses an actionId with a different payload as a conflict', () => {
+    const ledger = recordActionReceipt({
+      ledger: {},
+      actorKey: 'host',
+      envelope,
+      receipt: { status: 'applied', revision: 1 },
+    });
+
+    const changed = normalizeActionEnvelope(validBody({ optionIndex: 3 })).envelope;
+    expect(checkActionReceipt({ ledger, actorKey: 'host', envelope: changed }).status).toBe(
+      'conflict'
+    );
+  });
+
+  it('keeps players’ ledgers separate', () => {
+    const ledger = recordActionReceipt({
+      ledger: {},
+      actorKey: 'host',
+      envelope,
+      receipt: { status: 'applied', revision: 1 },
+    });
+    expect(checkActionReceipt({ ledger, actorKey: 'guest', envelope }).status).toBe('new');
+  });
+
+  it('bounds the ledger per player', () => {
+    let ledger = {};
+    for (let i = 0; i < 70; i += 1) {
+      const next = normalizeActionEnvelope(
+        validBody({ actionId: `act_${String(i).padStart(8, '0')}` })
+      ).envelope;
+      ledger = recordActionReceipt({
+        ledger,
+        actorKey: 'host',
+        envelope: next,
+        receipt: { status: 'applied', revision: i },
+      });
+    }
+    expect(Object.keys(ledger.host)).toHaveLength(64);
+    expect(ledger.host.act_00000000).toBeUndefined();
+    expect(ledger.host.act_00000069).toBeDefined();
+  });
+});

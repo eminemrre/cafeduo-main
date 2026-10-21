@@ -12,6 +12,7 @@ const {
   isCompetitiveEngineGameType,
   isGameEngineV2Enabled,
 } = require('../../../utils/gameEngineConfig');
+const { serializeGameForActor } = require('../../../gameEngine/gameView');
 
 const maintenanceResponse = (res) =>
   res.status(503).json({
@@ -102,20 +103,7 @@ const createJoinGameHandler = (deps) => {
             canonicalGuest.toLowerCase() === String(game.guest_name).toLowerCase()
           ) {
             await client.query('COMMIT');
-            return res.json({
-              success: true,
-              game: {
-                id: game.id,
-                hostName: game.host_name,
-                gameType: game.game_type,
-                points: game.points,
-                table: game.table_code,
-                status: game.status,
-                guestName: game.guest_name,
-                gameState: game.game_state,
-                createdAt: game.created_at,
-              },
-            });
+            return res.json({ success: true, game: serializeGameForActor(game) });
           }
 
           await rollbackQuietly(client);
@@ -175,12 +163,13 @@ const createJoinGameHandler = (deps) => {
             logger.warn(`Cache invalidation failed on game joined: ${err.message}`);
           });
 
+        const joinedView = serializeGameForActor(joinedGame);
         emitRealtimeUpdate(joinedGame.id, {
           type: 'game_joined',
           gameId: joinedGame.id,
-          status: joinedGame.status,
-          guestName: joinedGame.guestName,
-          gameState: joinedGame.gameState || {},
+          status: joinedView.status,
+          guestName: joinedView.guestName,
+          gameState: joinedView.gameState || {},
         });
         emitLobbyUpdate({
           action: 'game_joined',
@@ -188,7 +177,7 @@ const createJoinGameHandler = (deps) => {
           tableCode: joinedGame.table,
           status: joinedGame.status,
         });
-        return res.json({ success: true, game: joinedGame });
+        return res.json({ success: true, game: joinedView });
       } catch (err) {
         await rollbackQuietly(client);
         logger.error('Join game error', err);
@@ -228,7 +217,7 @@ const createJoinGameHandler = (deps) => {
     }
     if (game.status === 'active') {
       if (String(game.guestName || '').toLowerCase() === guestName.toLowerCase()) {
-        return res.json({ success: true, game });
+        return res.json({ success: true, game: serializeGameForActor(game) });
       }
       return res.status(409).json({ error: 'Oyun dolu.' });
     }
@@ -252,12 +241,13 @@ const createJoinGameHandler = (deps) => {
         chess: activateChessClockState(current.chess),
       };
     }
+    const joinedMemoryView = serializeGameForActor(game);
     emitRealtimeUpdate(game.id, {
       type: 'game_joined',
       gameId: game.id,
-      status: game.status,
-      guestName: game.guestName,
-      gameState: game.gameState || {},
+      status: joinedMemoryView.status,
+      guestName: joinedMemoryView.guestName,
+      gameState: joinedMemoryView.gameState || {},
     });
     emitLobbyUpdate({
       action: 'game_joined',
@@ -265,7 +255,7 @@ const createJoinGameHandler = (deps) => {
       tableCode: game.table,
       status: game.status,
     });
-    return res.json({ success: true, game });
+    return res.json({ success: true, game: serializeGameForActor(game) });
   };
 
   return joinGame;

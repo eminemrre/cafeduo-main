@@ -11,6 +11,7 @@ const {
   isCompetitiveEngineGameType,
   isGameEngineV2Enabled,
 } = require('../../../utils/gameEngineConfig');
+const { serializeGameForActor } = require('../../../gameEngine/gameView');
 
 const createCreateGameHandler = (deps) => {
   const {
@@ -256,7 +257,7 @@ const createCreateGameHandler = (deps) => {
           tableCode: createdGame.table,
           status: createdGame.status,
         });
-        return res.status(201).json(createdGame);
+        return res.status(201).json(serializeGameForActor(createdGame));
       } catch (err) {
         await rollbackQuietly(client);
         return sendApiError(res, logger, 'Create game error', err, 'Oyun kurulamadı.');
@@ -274,7 +275,7 @@ const createCreateGameHandler = (deps) => {
     if (existingMemoryGame) {
       return res.status(409).json({
         error: 'Önce mevcut oyunu tamamla veya lobiye dön.',
-        game: existingMemoryGame,
+        game: serializeGameForActor(existingMemoryGame),
       });
     }
 
@@ -299,7 +300,7 @@ const createCreateGameHandler = (deps) => {
       tableCode: newGame.table,
       status: newGame.status,
     });
-    return res.status(201).json(newGame);
+    return res.status(201).json(serializeGameForActor(newGame));
   };
 
   return createGame;

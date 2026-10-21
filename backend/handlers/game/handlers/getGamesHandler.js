@@ -4,6 +4,7 @@
  */
 
 const { isAdminActor } = require('../validation');
+const { serializeLobbyGame } = require('../../../gameEngine/gameView');
 
 const createGetGamesHandler = (deps) => {
   const {
@@ -20,10 +21,11 @@ const createGetGamesHandler = (deps) => {
     const actorTableCode = normalizeTableCode(req.user?.table_number);
     const actorCafeId = Number(req.user?.cafe_id || 0);
     const requestedTableCode = normalizeTableCode(req.query?.table);
-    const scopeAllRequested = String(req.query?.scope || '').trim().toLowerCase() === 'all';
-    const hasCheckIn =
-      actorCafeId > 0 &&
-      Boolean(actorTableCode);
+    const scopeAllRequested =
+      String(req.query?.scope || '')
+        .trim()
+        .toLowerCase() === 'all';
+    const hasCheckIn = actorCafeId > 0 && Boolean(actorTableCode);
 
     // Use gameService if available (with lobby cache)
     if (gameService && typeof gameService.listWaitingGames === 'function') {
@@ -68,7 +70,9 @@ const createGetGamesHandler = (deps) => {
 
     // Memory fallback
     return res.json(
-      getMemoryGames().filter((game) => String(game.status || '').toLowerCase() === 'waiting')
+      getMemoryGames()
+        .filter((game) => String(game.status || '').toLowerCase() === 'waiting')
+        .map(serializeLobbyGame)
     );
   };
 

@@ -1,6 +1,7 @@
 const { Chess } = require('chess.js');
 const { GAME_STATUS } = require('../utils/gameStateMachine');
 const { rollbackQuietly } = require('../utils/transaction');
+const { serializeGameState } = require('../gameEngine/gameView');
 
 const LEGACY_COMPETITIVE_FIELDS = ['liveSubmission', 'scoreSubmission', 'gameState', 'move'];
 
@@ -248,7 +249,7 @@ const createGameMoveService = ({
               success: true,
               status: 'finished',
               winner: timeoutWinner || null,
-              gameState: timeoutState,
+              gameState: serializeGameState('Retro Satranç', timeoutState),
               timeout: true,
             });
           }
@@ -380,7 +381,7 @@ const createGameMoveService = ({
           });
           return res.json({
             success: true,
-            gameState: nextState,
+            gameState: serializeGameState('Retro Satranç', nextState),
             status: nextStatus,
             winner: winner || null,
             move: {
@@ -512,7 +513,7 @@ const createGameMoveService = ({
         });
         return res.json({
           success: true,
-          gameState: game.gameState,
+          gameState: serializeGameState('Retro Satranç', game.gameState),
           status: game.status,
           winner: timeoutWinner || null,
           timeout: true,

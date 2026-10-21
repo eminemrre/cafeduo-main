@@ -242,7 +242,12 @@ describe('createGameHandler (DB path)', () => {
     await handler(req, res);
 
     expect(res.statusCode).toBe(201);
-    expect(res.payload).toEqual(created);
+    expect(res.payload).toEqual({
+      ...created,
+      winner: null,
+      gameState: {},
+      protocolVersion: 1,
+    });
     expect(gameService.insertWaitingGame).toHaveBeenCalledWith(
       client,
       expect.objectContaining({

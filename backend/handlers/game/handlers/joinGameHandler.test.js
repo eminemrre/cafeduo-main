@@ -242,7 +242,13 @@ describe('joinGameHandler (DB path)', () => {
       game_type: 'Nişancı Düellosu',
       points: 0,
       status: 'active',
-      game_state: { foo: 'bar' },
+      game_state: {
+        foo: 'bar',
+        results: { u1: 320 },
+        resolvedWinner: 'u1',
+        settlementApplied: true,
+        engine: { version: 2, private: { answerKey: [1] } },
+      },
       table_code: 'MASA05',
       created_at: '2026-05-11T10:00:00Z',
     };
@@ -261,6 +267,11 @@ describe('joinGameHandler (DB path)', () => {
     expect(res.statusCode).toBe(200);
     expect(res.payload.success).toBe(true);
     expect(res.payload.game.guestName).toBe('u2');
+    expect(res.payload.game.gameState.results).toBeUndefined();
+    expect(res.payload.game.gameState.resolvedWinner).toBeUndefined();
+    expect(res.payload.game.gameState.settlementApplied).toBeUndefined();
+    expect(res.payload.game.gameState.engine.private).toBeUndefined();
+    expect(res.payload.game.game_state).toBeUndefined();
     expect(client.calls.some((c) => /COMMIT/.test(c.sql))).toBe(true);
     expect(gameService.activateGameWithGuest).not.toHaveBeenCalled();
   });

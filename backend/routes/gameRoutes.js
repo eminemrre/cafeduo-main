@@ -6,6 +6,8 @@ const {
   validateMovePayload,
 } = require('../validators/gameValidators');
 
+const { serializeGameForActor } = require('../gameEngine/gameView');
+
 const createGameRoutes = ({ authenticateToken, gameHandlers, gameService }) => {
   const router = express.Router();
 
@@ -41,7 +43,7 @@ const createGameRoutes = ({ authenticateToken, gameHandlers, gameService }) => {
 
     try {
       const activeGame = await gameService.getActiveGameForUser(username);
-      return res.json(activeGame);
+      return res.json(serializeGameForActor(activeGame));
     } catch {
       return res.status(500).json({ error: 'Aktif oyun sorgulanamadı.' });
     }

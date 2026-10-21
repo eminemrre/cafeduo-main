@@ -5,6 +5,7 @@
 
 const { isAdminActor } = require('../validation');
 const { GAME_STATUS, assertGameStatusTransition } = require('../../../utils/gameStateMachine');
+const { serializeGameForActor } = require('../../../gameEngine/gameView');
 
 const createGetGameStateHandler = (deps) => {
   const {
@@ -100,7 +101,10 @@ const createGetGameStateHandler = (deps) => {
             winner: timeoutResolution.winner,
             reason: 'timeout',
             chess: timeoutResolution.nextChessState,
-            gameState: timeoutResolution.nextGameState,
+            gameState: serializeGameForActor({
+              gameType: row.gameType,
+              gameState: timeoutResolution.nextGameState,
+            }).gameState,
           });
         } else {
           const refreshed = await pool.query(baseSelectQuery, [id]);
@@ -110,7 +114,7 @@ const createGetGameStateHandler = (deps) => {
         }
       }
 
-      return res.json(row);
+      return res.json(serializeGameForActor(row));
     }
 
     const game = getMemoryGames().find((item) => String(item.id) === String(id));
@@ -152,12 +156,15 @@ const createGetGameStateHandler = (deps) => {
           winner: timeoutResolution.winner,
           reason: 'timeout',
           chess: timeoutResolution.nextChessState,
-          gameState: timeoutResolution.nextGameState,
+          gameState: serializeGameForActor({
+            gameType: game.gameType,
+            gameState: timeoutResolution.nextGameState,
+          }).gameState,
         });
       }
     }
 
-    return res.json(game);
+    return res.json(serializeGameForActor(game));
   };
 
   return getGameState;

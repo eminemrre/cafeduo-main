@@ -95,6 +95,9 @@ npm run migrate:status   # when touching migrations
 - Competitive games (Bilgi Yarışı, Nişancı Düellosu) run only the server-authoritative protocol.
   No new game is created or joined while `GAME_ENGINE_V2_ENABLED` is false, and legacy
   live/score/state/winner writes answer `410 LEGACY_PROTOCOL_DISABLED`.
+- Every game HTTP/socket payload goes through `backend/gameEngine/gameView.js`. Never return a raw
+  `games` row. `games.game_state` is the public engine view; answer keys, future questions and
+  action receipts live in `games.game_private_state` and are never selected for a response.
 - Game state changes go through the game handlers; chess moves use `gameMoveService.js` with
   transaction locking.
 - Settlement (`backend/handlers/game/settlementUtils.js`): the winner receives

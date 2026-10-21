@@ -78,7 +78,7 @@ const PLAYER_KEYS = [
 ];
 const PICK_KEYS = ['host', 'guest'];
 const SHOT_KEYS = ['distance', 'points', 'position'];
-const TRAJECTORY_KEYS = ['start', 'direction', 'speed', 'durationMs'];
+const TRAJECTORY_KEYS = ['start', 'direction', 'speed', 'durationMs', 'rhythm'];
 const ENGINE_STATE_KEYS = [
   'version',
   'kind',

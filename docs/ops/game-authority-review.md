@@ -65,6 +65,13 @@ Saat kalibrasyonu uplink gecikmesini ortadan kaldırmaz. Receipt-time ve mevcut
 hız/eşikler korunmuştur; oynanabilirlik tamam veya aktivasyon onaylı değildir.
 Ölçüm testinin yeşil olması ürün kabulü değil, ölçümün/puan hesabının doğruluğudur.
 
+**2026-10-21 zorluk kararı (kullanıcı):** bölgeler ±4/±10/±18 yerine ±2.5/±6/±12;
+trajectory sunucu tohumlu iki dalgalı ritimle ortalama hız etrafında hızlanıp
+yavaşlar (anlık hız ortalamanın 0.4–1.6 katı). Yukarıdaki tablo eski bölgelerle
+ölçüldü. Dar bölge ve tepe hızı aynı gecikmeyi daha çok puana çevirir: bu karar
+oynanabilirlik engelini büyütür, kapatmaz. Gecikme telafisi veya ürün kabulü
+olmadan aktivasyon önerilmez.
+
 ## 5. Dokploy / migration ÖNCE koşulu
 
 API Compose ortamı `GAME_ENGINE_V2_ENABLED=${GAME_ENGINE_V2_ENABLED:-false}`

@@ -53,6 +53,10 @@ describe('aimEngine', () => {
       start: 15,
       direction: 1,
       speed: 0.08695652173913043,
+      rhythm: [
+        { amplitude: 0.2, periodMs: 900, phase: 0 },
+        { amplitude: 0.1, periodMs: 380, phase: 0 },
+      ],
     });
     expect(privateState.shots).toEqual({});
 
@@ -78,23 +82,25 @@ describe('aimEngine', () => {
 
     const guest = fire('r1', 'guest', 100, host.state, host.privateState);
     expect(guest.state.phase).toBe('reveal');
-    expect(guest.privateState.shots.r1.guest).toMatchObject({ position: 60, points: 2 });
+    expect(guest.privateState.shots.r1.guest).toMatchObject({ position: 60, points: 1 });
     expect(guest.state.players.host.score).toBe(3);
-    expect(guest.state.players.guest.score).toBe(2);
+    expect(guest.state.players.guest.score).toBe(1);
     expect(guest.state.players.host.hits).toBe(1);
     expect(guest.state.round.shots).toEqual({
       host: { position: 50, points: 3 },
-      guest: { position: 60, points: 2 },
+      guest: { position: 60, points: 1 },
     });
-    expect(guest.state.round.scoreDelta).toEqual({ host: 3, guest: 2 });
+    expect(guest.state.round.scoreDelta).toEqual({ host: 3, guest: 1 });
     expect(guest.state.phaseEndsAt).toBe(new Date(100 + AIM_REVEAL_MS).toISOString());
   });
 
   it('derives 50/150/300 ms RTT scores from the server receive position', () => {
     const cases = [
       [0, 50, 3],
+      [20, 52, 3],
       [50, 55, 2],
-      [150, 65, 1],
+      [100, 60, 1],
+      [150, 65, 0],
       [300, 80, 0],
     ];
     for (const [delayMs, expectedPosition, expectedPoints] of cases) {
@@ -113,6 +119,35 @@ describe('aimEngine', () => {
       });
       expect(result.state.players.host.score).toBe(0);
     }
+  });
+
+  it('publishes the seeded rhythm and scores with the same varying speed', () => {
+    const { positionAt, pointsAt } = require('../../shared/aimTrajectory');
+    const rhythm = [
+      { amplitude: 0.3, periodMs: 1200, phase: 1 },
+      { amplitude: 0.2, periodMs: 500, phase: 0.25 },
+    ];
+    const rhythmic = { start: 30, direction: 1, speed: 0.087, rhythm };
+    const privateState = {
+      ...makePrivate(),
+      rounds: new Array(AIM_ROUND_COUNT).fill(null).map(() => ({ trajectory: { ...rhythmic } })),
+    };
+    const state = startAimState({
+      state: createAimPublicState({ hostName: 'Alice', guestName: 'Bob', totalRounds: 5 }),
+      privateState,
+      hostName: 'Alice',
+      guestName: 'Bob',
+      nowMs: 0,
+    });
+    expect(state.round.trajectory).toEqual(rhythmic);
+    const result = fire('r1', 'host', 333, state, privateState);
+    expect(result.ok).toBe(true);
+    expect(result.privateState.shots.r1.host.position).toBeCloseTo(positionAt(rhythmic, 333), 10);
+    expect(result.privateState.shots.r1.host.points).toBe(pointsAt(rhythmic, 333));
+    expect(positionAt(rhythmic, 333)).not.toBeCloseTo(
+      positionAt({ ...rhythmic, rhythm: [] }, 333),
+      0
+    );
   });
 
   it('opens the next round after the reveal and finishes a 15-15 draw', () => {

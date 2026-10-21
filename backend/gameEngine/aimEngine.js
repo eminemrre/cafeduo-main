@@ -16,6 +16,7 @@ const {
   AIM_SPEED,
   AIM_START_MAX,
   AIM_START_MIN,
+  createRhythm,
   pointsAt,
   positionAt,
 } = require('../../shared/aimTrajectory');
@@ -49,6 +50,7 @@ const createAimPrivateState = ({
         start: AIM_START_MIN + randomInt(AIM_START_MAX - AIM_START_MIN + 1),
         direction: randomInt(2) === 0 ? 1 : -1,
         speed: AIM_SPEED,
+        rhythm: createRhythm(randomInt),
       },
     });
   }

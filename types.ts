@@ -234,6 +234,7 @@ export interface CompetitiveEngineRound {
     start: number;
     direction: 1 | -1;
     speed?: number;
+    rhythm?: { amplitude: number; periodMs: number; phase: number }[];
   };
 }
 

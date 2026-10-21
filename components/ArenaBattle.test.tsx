@@ -139,9 +139,11 @@ describe('ArenaBattle scoring helpers', () => {
     expect(clampGauge(140)).toBe(100);
     expect(clampGauge(-10)).toBe(0);
     expect(pointsFromShot(50)).toBe(3);
-    expect(pointsFromShot(58)).toBe(2);
-    expect(pointsFromShot(65)).toBe(1);
-    expect(pointsFromShot(80)).toBe(0);
+    expect(pointsFromShot(52.5)).toBe(3);
+    expect(pointsFromShot(55)).toBe(2);
+    expect(pointsFromShot(58)).toBe(1);
+    expect(pointsFromShot(62)).toBe(1);
+    expect(pointsFromShot(65)).toBe(0);
     expect(shotLabel(50)).toBe('Mükemmel kilit');
   });
 

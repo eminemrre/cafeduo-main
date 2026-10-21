@@ -7,7 +7,7 @@ import { ConnectionOverlay } from './ConnectionOverlay';
 import { useLiveScoreGame, type LiveMatchStats } from '../hooks/useLiveScoreGame';
 import { AimBattleStageCanvas, type AimBattleStageHandle } from './games/AimBattleStageCanvas';
 import type { HitTier } from '../lib/pixi/aimBattleStage';
-import { positionAt, AIM_GAUGE_STEP, AIM_TICK_MS } from '../lib/aimTrajectory';
+import { positionAt, pointsFromDistance, AIM_GAUGE_STEP, AIM_TICK_MS } from '../lib/aimTrajectory';
 
 interface ArenaBattleProps {
   currentUser: User;
@@ -31,13 +31,8 @@ const BOT_WIN_REWARD = 10;
 
 export const clampGauge = (value: number) => Math.max(0, Math.min(100, value));
 
-export const pointsFromShot = (shot: number): number => {
-  const distance = Math.abs(50 - clampGauge(shot));
-  if (distance <= 4) return 3;
-  if (distance <= 10) return 2;
-  if (distance <= 18) return 1;
-  return 0;
-};
+/** The same zones the server scores with (`shared/aimTrajectory.js`). */
+export const pointsFromShot = (shot: number): number => pointsFromDistance(50 - clampGauge(shot));
 
 export const shotLabel = (shot: number): string => {
   const points = pointsFromShot(shot);

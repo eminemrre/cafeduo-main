@@ -174,7 +174,13 @@ describe('gameView serializers', () => {
           round: {
             id: 'r1',
             index: 0,
-            trajectory: { start: 50, direction: 1, speed: 0.1 },
+            trajectory: {
+              start: 50,
+              direction: 1,
+              speed: 0.1,
+              rhythm: [{ amplitude: 0.3, periodMs: 900, phase: 1 }],
+              seed: 'drop',
+            },
             shots: {
               host: { position: 50, points: 3, extra: 'drop' },
               guest: null,
@@ -190,7 +196,12 @@ describe('gameView serializers', () => {
 
     const view = serializeGameForActor(row);
     const engine = view.gameState.engine;
-    expect(engine.round.trajectory).toEqual({ start: 50, direction: 1, speed: 0.1 });
+    expect(engine.round.trajectory).toEqual({
+      start: 50,
+      direction: 1,
+      speed: 0.1,
+      rhythm: [{ amplitude: 0.3, periodMs: 900, phase: 1 }],
+    });
     expect(engine.round.shots).toEqual({ host: { position: 50, points: 3 }, guest: null });
     expect(engine.round.private).toBeUndefined();
     expect(engine.private).toBeUndefined();

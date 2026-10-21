@@ -223,6 +223,12 @@ const serializeGameForActor = (game) => {
   if (isCompetitiveEngineGameType(gameType)) {
     const engine = out.gameState.engine;
     out.protocolVersion = engine?.version === 2 ? 2 : 1;
+    if (engine) {
+      // Server clock for client-side countdown/trajectory rendering. The client
+      // never writes game time; this only lets it estimate where the server
+      // clock is before the next snapshot.
+      out.serverNow = new Date().toISOString();
+    }
   }
 
   return out;

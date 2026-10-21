@@ -102,7 +102,10 @@ describe('gameActionHandler (memory)', () => {
     );
     const emitted = JSON.stringify(deps.emitRealtimeUpdate.mock.calls);
     expect(emitted).not.toContain('optionIndex');
-    expect(emitted).not.toContain('score');
+    expect(emitted).not.toContain('answerIndex');
+    expect(emitted).not.toContain('questions');
+    expect(emitted).not.toContain('actions');
+    expect(emitted).toContain('gameState');
   });
 
   it('returns the same snapshot for a retry, with no second write or emit', async () => {

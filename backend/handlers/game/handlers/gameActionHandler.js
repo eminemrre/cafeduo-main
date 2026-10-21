@@ -10,7 +10,7 @@
 const { normalizeActionEnvelope } = require('../../../gameEngine/actionProtocol');
 const { processCompetitiveAction, resolveActorKey } = require('../../../gameEngine/engineActions');
 const { defaultRegistry } = require('../../../gameEngine/gameLock');
-const { serializeGameForActor } = require('../../../gameEngine/gameView');
+const { sanitizeEngineState, serializeGameForActor } = require('../../../gameEngine/gameView');
 const { finalizeMemoryEngineGame, settleDbEngineGame } = require('../../../gameEngine/settlement');
 
 const ENGINE_GAME_SELECT = `
@@ -52,6 +52,10 @@ const createGameActionHandler = (deps) => {
       revision: state.revision,
       phase: state.phase,
       winner: winner || null,
+      // Verified, allowlisted snapshot. A client with a newer revision ignores
+      // it; a client with a gap refetches instead of trusting peer data.
+      gameState: { engine: sanitizeEngineState(state) },
+      serverNow: new Date().toISOString(),
     });
   };
 

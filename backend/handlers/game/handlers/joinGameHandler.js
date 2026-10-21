@@ -229,6 +229,7 @@ const createJoinGameHandler = (deps) => {
           status: joinedView.status,
           guestName: joinedView.guestName,
           gameState: joinedView.gameState || {},
+          serverNow: joinedView.serverNow,
         });
         emitLobbyUpdate({
           action: 'game_joined',

@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
   AIM_GAME_TYPE,
   ArenaBattle,
@@ -8,11 +8,21 @@ import {
   pointsFromShot,
   shotLabel,
 } from './ArenaBattle';
+import { api } from '../lib/api';
 import { GAME_REGISTRY } from '../shared/gameRegistry';
-import { User } from '../types';
+import type { CompetitiveEngineState, CompetitiveGame, User } from '../types';
 
 jest.mock('../lib/gameAudio', () => ({
   playGameSfx: jest.fn(),
+}));
+
+jest.mock('../lib/api', () => ({
+  api: {
+    games: {
+      get: jest.fn(),
+      action: jest.fn(),
+    },
+  },
 }));
 
 jest.mock('../lib/socket', () => ({
@@ -21,6 +31,7 @@ jest.mock('../lib/socket', () => ({
     onConnectionChange: jest.fn(() => jest.fn()),
     getSocket: jest.fn(() => ({ on: jest.fn(), off: jest.fn() })),
     joinGame: jest.fn(),
+    leaveGame: jest.fn(),
   },
 }));
 
@@ -56,27 +67,74 @@ jest.mock('./games/AimBattleStageCanvas', () => ({
   }),
 }));
 
-describe('ArenaBattle', () => {
-  const mockUser: User = {
-    id: 1,
-    username: 'emin',
-    email: 'emin@example.com',
-    points: 100,
-    wins: 0,
-    gamesPlayed: 0,
+const mockApi = api as unknown as {
+  games: { get: jest.Mock; action: jest.Mock };
+};
+
+const mockUser: User = {
+  id: 1,
+  username: 'emin',
+  email: 'emin@example.com',
+  points: 100,
+  wins: 0,
+  gamesPlayed: 0,
+};
+
+const buildAimEngine = (
+  overrides: Partial<CompetitiveEngineState> = {}
+): CompetitiveEngineState => {
+  const now = Date.now();
+  return {
+    version: 2,
+    kind: 'aim',
+    revision: 1,
+    phase: 'open',
+    roundIndex: 1,
+    totalRounds: 5,
+    startedAt: new Date(now).toISOString(),
+    phaseEndsAt: new Date(now + 8000).toISOString(),
+    updatedAt: new Date(now).toISOString(),
+    players: {
+      host: { name: 'emin', score: 0, hits: 0, answered: false },
+      guest: { name: 'bob', score: 0, hits: 0, answered: false },
+    },
+    round: {
+      id: 'r1',
+      index: 1,
+      startedAt: new Date(now).toISOString(),
+      endsAt: new Date(now + 8000).toISOString(),
+      trajectory: { start: 40, direction: 1, speed: 4 / 46 },
+    },
+    result: null,
+    ...overrides,
   };
+};
 
-  beforeEach(() => {
-    jest.useFakeTimers();
-    mockStageComesUp = false;
-  });
+const buildAimSnapshot = (overrides: Partial<CompetitiveGame> = {}): CompetitiveGame => ({
+  id: 'game-1',
+  hostName: 'emin',
+  guestName: 'bob',
+  gameType: 'Nişancı Düellosu',
+  points: 10,
+  table: 'MASA01',
+  status: 'active',
+  protocolVersion: 2,
+  serverNow: new Date().toISOString(),
+  gameState: { engine: buildAimEngine() },
+  ...overrides,
+});
 
-  afterEach(() => {
-    jest.runOnlyPendingTimers();
-    jest.useRealTimers();
-    jest.restoreAllMocks();
-  });
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockApi.games.get.mockResolvedValue(buildAimSnapshot());
+  mockStageComesUp = false;
+});
 
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
+describe('ArenaBattle scoring helpers', () => {
   it('scores shots by distance from the center', () => {
     expect(clampGauge(140)).toBe(100);
     expect(clampGauge(-10)).toBe(0);
@@ -89,6 +147,17 @@ describe('ArenaBattle', () => {
 
   it('keeps the registry score cap in step with the rounds and the best shot', () => {
     expect(GAME_REGISTRY[AIM_GAME_TYPE].maxScore).toBe(MAX_ROUNDS * 3);
+  });
+});
+
+describe('ArenaBattle bot practice', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.runOnlyPendingTimers();
+    jest.useRealTimers();
   });
 
   it('renders the reticle game and debug snapshot', () => {
@@ -208,5 +277,76 @@ describe('ArenaBattle', () => {
       />
     );
     expect(screen.queryByTestId('arena-reticle')).not.toBeInTheDocument();
+  });
+});
+
+describe('ArenaBattle multiplayer', () => {
+  it('fires with an action envelope and applies the server reveal', async () => {
+    mockApi.games.action.mockResolvedValue({
+      success: true,
+      game: buildAimSnapshot({
+        gameState: {
+          engine: buildAimEngine({
+            revision: 2,
+            phase: 'reveal',
+            players: {
+              host: { name: 'emin', score: 3, answered: true },
+              guest: { name: 'bob', score: 0, answered: false },
+            },
+            round: {
+              ...buildAimEngine().round!,
+              shots: {
+                host: { position: 52, points: 3 },
+                guest: null,
+              },
+              scoreDelta: { host: 3, guest: 0 },
+            },
+          }),
+        },
+      }),
+    });
+
+    render(
+      <ArenaBattle
+        currentUser={mockUser}
+        gameId="game-1"
+        isBot={false}
+        onGameEnd={jest.fn()}
+        onLeave={jest.fn()}
+      />
+    );
+
+    const fireButton = screen.getByTestId('arena-fire-button');
+    await waitFor(() => expect(fireButton).not.toBeDisabled());
+    fireEvent.click(fireButton);
+
+    await waitFor(() => expect(mockApi.games.action).toHaveBeenCalledTimes(1));
+    const [gameId, payload] = mockApi.games.action.mock.calls[0];
+    expect(gameId).toBe('game-1');
+    expect(payload).toEqual(expect.objectContaining({ roundId: 'r1', type: 'fire' }));
+    expect(payload.position).toBeUndefined();
+    expect(payload.points).toBeUndefined();
+    expect(payload.score).toBeUndefined();
+
+    await screen.findByText('Atışın: Mükemmel kilit (3). Rakip ateş etmedi.');
+    expect(screen.getByTestId('arena-battle')).toHaveTextContent('3');
+    expect(screen.getByTestId('arena-fire-button')).toBeDisabled();
+  });
+
+  it('shows a refresh path for an active legacy snapshot', async () => {
+    mockApi.games.get.mockResolvedValue(buildAimSnapshot({ protocolVersion: 1, gameState: {} }));
+    render(
+      <ArenaBattle
+        currentUser={mockUser}
+        gameId="game-1"
+        isBot={false}
+        onGameEnd={jest.fn()}
+        onLeave={jest.fn()}
+      />
+    );
+
+    await screen.findByText('İstemci güncellemesi gerekiyor');
+    expect(screen.getByText('Sayfayı yenile')).toBeInTheDocument();
+    expect(screen.queryByTestId('arena-fire-button')).not.toBeInTheDocument();
   });
 });

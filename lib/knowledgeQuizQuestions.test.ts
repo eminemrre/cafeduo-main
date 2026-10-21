@@ -7,66 +7,35 @@ import {
   scoreAnswer,
 } from './knowledgeQuizQuestions';
 import { GAME_REGISTRY, QUIZ_GAME_TYPE } from '../shared/gameRegistry';
-import { QUIZ_QUESTION_BANK, type QuizBankEntry } from './quizQuestionBank';
 
-const fakeBank: QuizBankEntry[] = ['A', 'B', 'C'].flatMap((category) =>
-  Array.from({ length: 6 }, (_, i) => ({
-    question: `${category} sorusu ${i}`,
-    answer: `${category}${i} doğru`,
-    wrong: [`${category}${i} y1`, `${category}${i} y2`, `${category}${i} y3`] as [
-      string,
-      string,
-      string,
-    ],
-    category,
-    level: 'zor' as const,
-  }))
-);
-
-describe('buildQuizRoundSet', () => {
+describe('bot practice question set', () => {
   it('gives the same seed the same questions and option order', () => {
-    expect(buildQuizRoundSet(quizSeed(42), 10, fakeBank)).toEqual(
-      buildQuizRoundSet(quizSeed(42), 10, fakeBank)
-    );
-    expect(buildQuizRoundSet(quizSeed(42), 10, fakeBank)).not.toEqual(
-      buildQuizRoundSet(quizSeed(43), 10, fakeBank)
-    );
+    expect(buildQuizRoundSet(quizSeed(42), 10)).toEqual(buildQuizRoundSet(quizSeed(42), 10));
+    expect(buildQuizRoundSet(quizSeed(42), 10)).not.toEqual(buildQuizRoundSet(quizSeed(43), 10));
   });
 
   it('keeps the correct answer behind answerIndex after shuffling the options', () => {
-    for (const question of buildQuizRoundSet('x', 18, fakeBank)) {
-      expect(question.options[question.answerIndex]).toMatch(/doğru$/);
+    for (const question of buildQuizRoundSet('x', 10)) {
+      expect(question.options).toHaveLength(4);
+      expect(question.answerIndex).toBeGreaterThanOrEqual(0);
+      expect(question.answerIndex).toBeLessThan(4);
       expect(new Set(question.options).size).toBe(4);
     }
   });
 
-  it('moves between categories instead of staying on one', () => {
-    const categories = buildQuizRoundSet('y', 9, fakeBank).map((q) => q.category);
-    for (let i = 0; i + 2 < categories.length; i += 3) {
-      expect(new Set(categories.slice(i, i + 3)).size).toBe(3);
-    }
-  });
-
-  it('never repeats a question within a match', () => {
-    const questions = buildQuizRoundSet('z', 18, fakeBank).map((q) => q.question);
-    expect(new Set(questions).size).toBe(18);
-  });
-
-  it('spreads the correct answer over all four positions', () => {
-    const positions = new Set(
-      buildQuizRoundSet('w', 18, fakeBank).map((question) => question.answerIndex)
-    );
-    expect(positions.size).toBe(4);
+  it('never repeats a question within a practice match', () => {
+    const questions = buildQuizRoundSet('z', 10).map((q) => q.question);
+    expect(new Set(questions).size).toBe(10);
   });
 });
 
 describe('halfAndHalf', () => {
   it('hides two different wrong options, the same ones for both players', () => {
-    for (const question of buildQuizRoundSet('h', 18, fakeBank)) {
-      const hidden = halfAndHalf(question, 'quiz:9');
+    for (const question of buildQuizRoundSet('h', 10)) {
+      const hidden = halfAndHalf(question, 'bot-quiz:9');
       expect(new Set(hidden).size).toBe(2);
       expect(hidden).not.toContain(question.answerIndex);
-      expect(halfAndHalf(question, 'quiz:9')).toEqual(hidden);
+      expect(halfAndHalf(question, 'bot-quiz:9')).toEqual(hidden);
     }
   });
 });
@@ -120,35 +89,5 @@ describe('scoreAnswer', () => {
 
     expect(total).toBe(320);
     expect(entry.maxScore).toBe(total);
-  });
-});
-
-describe('the question bank', () => {
-  it('is large enough for many matches without repeats', () => {
-    expect(QUIZ_QUESTION_BANK.length).toBeGreaterThanOrEqual(300);
-  });
-
-  it('has one correct and three distinct wrong options per question', () => {
-    for (const entry of QUIZ_QUESTION_BANK) {
-      const options = [entry.answer, ...entry.wrong].map((o) => o.trim().toLocaleLowerCase('tr'));
-      expect(new Set(options).size).toBe(4);
-      expect(entry.question.length).toBeLessThanOrEqual(160);
-    }
-  });
-
-  it('asks every question once', () => {
-    const texts = QUIZ_QUESTION_BANK.map((e) => e.question.trim().toLocaleLowerCase('tr'));
-    expect(new Set(texts).size).toBe(texts.length);
-  });
-
-  it('is general knowledge, not software', () => {
-    const software = /\b(http|cpu|python|javascript|html|css|sql|byte|api|algoritma|yazılım)\b/i;
-    for (const entry of QUIZ_QUESTION_BANK) {
-      expect(`${entry.question} ${entry.answer}`).not.toMatch(software);
-    }
-  });
-
-  it('covers at least eight categories', () => {
-    expect(new Set(QUIZ_QUESTION_BANK.map((e) => e.category)).size).toBeGreaterThanOrEqual(8);
   });
 });

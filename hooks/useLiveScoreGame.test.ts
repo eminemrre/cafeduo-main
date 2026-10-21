@@ -1,407 +1,399 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { useLiveScoreGame, LiveGameSnapshot } from './useLiveScoreGame';
+import { useLiveScoreGame, type LiveActionResult } from './useLiveScoreGame';
 import { api } from '../lib/api';
-import { submitScoreAndWaitForWinner } from '../lib/multiplayer';
 import { socketService } from '../lib/socket';
-import type { User } from '../types';
+import type { CompetitiveEngineState, CompetitiveGame, User } from '../types';
 
 jest.mock('../lib/api', () => ({
   api: {
     games: {
       get: jest.fn(),
-      move: jest.fn(),
+      action: jest.fn(),
     },
   },
 }));
 
-jest.mock('../lib/multiplayer', () => ({
-  submitScoreAndWaitForWinner: jest.fn(),
-}));
-
 jest.mock('../lib/socket', () => {
   const listeners: Record<string, Array<(payload: unknown) => void>> = {};
+  const socket = {
+    on: jest.fn((event: string, callback: (payload: unknown) => void) => {
+      listeners[event] = listeners[event] || [];
+      listeners[event].push(callback);
+    }),
+    off: jest.fn((event: string, callback: (payload: unknown) => void) => {
+      listeners[event] = (listeners[event] || []).filter((entry) => entry !== callback);
+    }),
+    emit: (event: string, payload: unknown) => {
+      (listeners[event] || []).forEach((callback) => callback(payload));
+    },
+  };
   return {
     socketService: {
-      getSocket: jest.fn(() => ({
-        on: jest.fn((event: string, cb: (payload: unknown) => void) => {
-          listeners[event] = listeners[event] || [];
-          listeners[event].push(cb);
-        }),
-        off: jest.fn((event: string, cb: (payload: unknown) => void) => {
-          listeners[event] = (listeners[event] || []).filter((l) => l !== cb);
-        }),
-        emit: (event: string, payload: unknown) => {
-          (listeners[event] || []).forEach((cb) => cb(payload));
-        },
-      })),
+      getSocket: jest.fn(() => socket),
       joinGame: jest.fn(),
+      leaveGame: jest.fn(),
     },
   };
 });
 
 const mockApi = api as unknown as {
-  games: { get: jest.Mock; move: jest.Mock };
+  games: { get: jest.Mock; action: jest.Mock };
 };
-const mockSubmitScore = submitScoreAndWaitForWinner as jest.Mock;
-const mockGetSocket = socketService.getSocket as jest.Mock;
+const mockSocketService = socketService as unknown as {
+  getSocket: jest.Mock;
+  joinGame: jest.Mock;
+  leaveGame: jest.Mock;
+};
 
 const buildUser = (username = 'alice'): User =>
   ({ id: 1, username, email: 'a@b.c', points: 0 }) as unknown as User;
 
-const baseSnapshot: LiveGameSnapshot = {
+const now = Date.now();
+
+const buildEngine = (overrides: Partial<CompetitiveEngineState> = {}): CompetitiveEngineState => ({
+  version: 2,
+  kind: 'quiz',
+  revision: 1,
+  phase: 'open',
+  roundIndex: 1,
+  totalRounds: 10,
+  startedAt: new Date(now).toISOString(),
+  phaseEndsAt: new Date(now + 15_000).toISOString(),
+  updatedAt: new Date(now).toISOString(),
+  players: {
+    host: { name: 'alice', score: 0, correct: 0, streak: 0, answered: false, jokerUsed: false },
+    guest: { name: 'bob', score: 0, correct: 0, streak: 0, answered: false, jokerUsed: false },
+  },
+  round: {
+    id: 'r1',
+    index: 1,
+    startedAt: new Date(now).toISOString(),
+    endsAt: new Date(now + 15_000).toISOString(),
+    question: 'Soru?',
+    options: ['A', 'B', 'C', 'D'],
+    category: 'Genel',
+    level: 'orta',
+  },
+  result: null,
+  ...overrides,
+});
+
+const buildSnapshot = (overrides: Partial<CompetitiveGame> = {}): CompetitiveGame => ({
   id: 'game-1',
-  status: 'in_progress',
   hostName: 'alice',
   guestName: 'bob',
-  gameState: {
-    live: {
-      submissions: {
-        alice: { score: 0, round: 1 },
-        bob: { score: 0, round: 1 },
-      },
-    },
-  },
+  gameType: 'Bilgi Yarışı',
+  points: 10,
+  table: 'MASA01',
+  status: 'active',
+  protocolVersion: 2,
+  serverNow: new Date().toISOString(),
+  gameState: { engine: buildEngine() },
+  ...overrides,
+});
+
+const renderLearningHook = (overrides: Partial<Parameters<typeof useLiveScoreGame>[0]> = {}) => {
+  const onGameEnd = jest.fn();
+  const hook = renderHook(() =>
+    useLiveScoreGame({
+      currentUser: buildUser(),
+      gameId: 'game-1',
+      isBot: false,
+      mode: 'Bilgi Yarışı',
+      statsKind: 'quiz',
+      onGameEnd,
+      ...overrides,
+    })
+  );
+  return { ...hook, onGameEnd };
 };
 
 beforeEach(() => {
   jest.clearAllMocks();
-  jest.useFakeTimers();
+  mockApi.games.get.mockResolvedValue(buildSnapshot());
 });
 
-afterEach(() => {
-  jest.useRealTimers();
-});
-
-describe('useLiveScoreGame', () => {
-  it('initializes with zeroed scores and not done', () => {
-    const onGameEnd = jest.fn();
-    const { result } = renderHook(() =>
-      useLiveScoreGame({
-        currentUser: buildUser(),
-        gameId: 'game-1',
-        isBot: true,
-        mode: 'TestMode',
-        submissionKeyPrefix: 'test',
-        statsKind: 'arena',
-        onGameEnd,
-      })
-    );
+describe('useLiveScoreGame (protocol v2)', () => {
+  it('does not touch the network in bot mode', async () => {
+    const { result, onGameEnd } = renderLearningHook({ isBot: true, gameId: 'game-1' });
     expect(result.current.playerScore).toBe(0);
-    expect(result.current.opponentScore).toBe(0);
     expect(result.current.done).toBe(false);
-    expect(result.current.resolvingMatch).toBe(false);
-  });
-
-  it('skips fetchSnapshot when isBot=true', async () => {
-    const { result } = renderHook(() =>
-      useLiveScoreGame({
-        currentUser: buildUser(),
-        gameId: 'game-1',
-        isBot: true,
-        mode: 'TestMode',
-        submissionKeyPrefix: 'test',
-        statsKind: 'arena',
-        onGameEnd: jest.fn(),
-      })
-    );
-    const snapshot = await result.current.fetchSnapshot();
-    expect(snapshot).toBeNull();
+    await act(async () => {
+      expect(await result.current.fetchSnapshot()).toBeNull();
+      expect(await result.current.submitAction({ type: 'answer', optionIndex: 0 })).toEqual(
+        expect.objectContaining({ ok: false, code: 'NOT_MULTIPLAYER' })
+      );
+    });
     expect(mockApi.games.get).not.toHaveBeenCalled();
+    expect(mockApi.games.action).not.toHaveBeenCalled();
+    expect(onGameEnd).not.toHaveBeenCalled();
   });
 
-  it('skips syncLiveProgress when isBot=true', async () => {
-    const { result } = renderHook(() =>
-      useLiveScoreGame({
-        currentUser: buildUser(),
-        gameId: 'game-1',
-        isBot: true,
-        mode: 'TestMode',
-        submissionKeyPrefix: 'test',
-        statsKind: 'arena',
-        onGameEnd: jest.fn(),
-      })
-    );
-    await act(async () => {
-      await result.current.syncLiveProgress(5, 2, false);
-    });
-    expect(mockApi.games.move).not.toHaveBeenCalled();
-  });
-
-  it('sends idempotent submissionKey in syncLiveProgress', async () => {
-    mockApi.games.move.mockResolvedValue({});
-    const { result } = renderHook(() =>
-      useLiveScoreGame({
-        currentUser: buildUser('alice'),
-        gameId: 'game-1',
-        isBot: false,
-        mode: 'TestMode',
-        submissionKeyPrefix: 'arena',
-        statsKind: 'arena',
-        onGameEnd: jest.fn(),
-      })
-    );
-    await act(async () => {
-      await result.current.syncLiveProgress(3, 1, false);
-    });
-    expect(mockApi.games.move).toHaveBeenCalledWith(
-      'game-1',
-      expect.objectContaining({
-        liveSubmission: expect.objectContaining({
-          mode: 'TestMode',
-          score: 3,
-          round: 1,
-          done: false,
-          submissionKey: 'arena|game-1|alice|1|3|0',
-        }),
-      })
-    );
-  });
-
-  it('sanitizes negative/large score and round before submission', async () => {
-    mockApi.games.move.mockResolvedValue({});
-    const { result } = renderHook(() =>
-      useLiveScoreGame({
-        currentUser: buildUser('alice'),
-        gameId: 'game-1',
-        isBot: false,
-        mode: 'TestMode',
-        submissionKeyPrefix: 'arena',
-        statsKind: 'arena',
-        onGameEnd: jest.fn(),
-      })
-    );
-    await act(async () => {
-      await result.current.syncLiveProgress(-5, 9999, false);
-    });
-    const lastCall = mockApi.games.move.mock.calls.at(-1)![1];
-    expect(lastCall.liveSubmission.score).toBe(0);
-    expect(lastCall.liveSubmission.round).toBe(1000);
-  });
-
-  it('finalizeMatch resolves with server winner and uses snapshot stakeTransferred', async () => {
-    mockSubmitScore.mockResolvedValue({ winner: 'alice', finished: true });
-    // Hook now re-reads the snapshot after submitScoreAndWaitForWinner to pick up the
-    // real `stakeTransferred` value the backend wrote during settlement.
-    mockApi.games.get.mockResolvedValue({
-      ...baseSnapshot,
-      status: 'finished',
-      winner: 'alice',
-      gameState: {
-        ...baseSnapshot.gameState,
-        stakeTransferred: 25,
-      },
-    });
-    const onGameEnd = jest.fn();
-    const { result } = renderHook(() =>
-      useLiveScoreGame({
-        currentUser: buildUser('alice'),
-        gameId: 'game-1',
-        isBot: false,
-        mode: 'TestMode',
-        submissionKeyPrefix: 'arena',
-        statsKind: 'arena',
-        onGameEnd,
-      })
-    );
-    await act(async () => {
-      await result.current.finalizeMatch('alice', 7);
-    });
-    expect(mockSubmitScore).toHaveBeenCalledWith(
-      expect.objectContaining({
-        gameId: 'game-1',
-        username: 'alice',
-        score: 7,
-        roundsWon: 7,
-      })
-    );
-    act(() => {
-      jest.advanceTimersByTime(1000);
-    });
-    expect(onGameEnd).toHaveBeenCalledWith(
-      'alice',
-      25,
-      expect.objectContaining({ kind: 'arena', playerScore: expect.any(Number) })
-    );
-  });
-
-  it('finalizeMatch returns immediately for bot/local mode', async () => {
-    const onGameEnd = jest.fn();
-    const { result } = renderHook(() =>
-      useLiveScoreGame({
-        currentUser: buildUser('alice'),
-        gameId: null,
-        isBot: true,
-        mode: 'TestMode',
-        submissionKeyPrefix: 'arena',
-        statsKind: 'arena',
-        onGameEnd,
-      })
-    );
-    await act(async () => {
-      await result.current.finalizeMatch('alice', 4);
-    });
-    expect(mockSubmitScore).not.toHaveBeenCalled();
-    act(() => {
-      jest.advanceTimersByTime(1000);
-    });
-    expect(onGameEnd).toHaveBeenCalledWith(
-      'alice',
-      10,
-      expect.objectContaining({ kind: 'arena', playerScore: expect.any(Number) })
-    );
-  });
-
-  it('applies snapshot: sets host/guest, updates scores, surfaces winner on finished', async () => {
-    mockApi.games.get.mockResolvedValue({
-      ...baseSnapshot,
-      status: 'finished',
-      winner: 'bob',
-      gameState: {
-        ...baseSnapshot.gameState,
-        live: {
-          submissions: {
-            alice: { score: 4, round: 5 },
-            bob: { score: 6, round: 5 },
-          },
+  it('applies a verified snapshot and resolves the actor side', async () => {
+    mockApi.games.get.mockResolvedValue(
+      buildSnapshot({
+        gameState: {
+          engine: buildEngine({
+            players: {
+              host: {
+                name: 'alice',
+                score: 4,
+                correct: 2,
+                streak: 1,
+                answered: true,
+                jokerUsed: false,
+              },
+              guest: {
+                name: 'bob',
+                score: 6,
+                correct: 3,
+                streak: 2,
+                answered: true,
+                jokerUsed: true,
+              },
+            },
+          }),
         },
-      },
-    });
-    const onGameEnd = jest.fn();
-    const { result } = renderHook(() =>
-      useLiveScoreGame({
-        currentUser: buildUser('alice'),
-        gameId: 'game-1',
-        isBot: false,
-        mode: 'TestMode',
-        submissionKeyPrefix: 'arena',
-        statsKind: 'arena',
-        onGameEnd,
       })
     );
-    await waitFor(() => expect(mockApi.games.get).toHaveBeenCalled());
-    await waitFor(() => expect(result.current.playerScore).toBe(4));
+    const { result } = renderLearningHook();
+    await waitFor(() => expect(result.current.engine).not.toBeNull());
+    expect(result.current.actorKey).toBe('host');
+    expect(result.current.playerScore).toBe(4);
     expect(result.current.opponentScore).toBe(6);
-    expect(result.current.hostName).toBe('alice');
+    expect(result.current.player?.correct).toBe(2);
     expect(result.current.guestName).toBe('bob');
-    act(() => {
-      jest.advanceTimersByTime(1000);
-    });
-    expect(onGameEnd).toHaveBeenCalledWith(
-      'bob',
-      0,
-      expect.objectContaining({ kind: 'arena', playerScore: expect.any(Number) })
-    );
   });
 
-  it('idempotent finish: server confirmation prevents duplicate onGameEnd calls', async () => {
-    mockApi.games.get.mockResolvedValue({
-      ...baseSnapshot,
-      status: 'finished',
-      winner: 'alice',
-    });
-    const onGameEnd = jest.fn();
-    renderHook(() =>
-      useLiveScoreGame({
-        currentUser: buildUser('alice'),
-        gameId: 'game-1',
-        isBot: false,
-        mode: 'TestMode',
-        submissionKeyPrefix: 'arena',
-        statsKind: 'arena',
-        onGameEnd,
+  it('ignores an older revision from a poll and from a socket event', async () => {
+    mockApi.games.get.mockResolvedValue(
+      buildSnapshot({
+        gameState: {
+          engine: buildEngine({
+            revision: 5,
+            players: {
+              host: { name: 'alice', score: 3, answered: false },
+              guest: { name: 'bob', score: 1, answered: false },
+            },
+          }),
+        },
       })
     );
-    await waitFor(() => expect(mockApi.games.get).toHaveBeenCalled());
-    act(() => {
-      jest.advanceTimersByTime(1000);
-    });
-    expect(onGameEnd).toHaveBeenCalledTimes(1);
-    // Trigger another snapshot fetch - should be no-op for onGameEnd.
-    mockApi.games.get.mockClear();
-    await act(async () => {
-      // Force a poll tick.
-      jest.advanceTimersByTime(2500);
-    });
-    expect(onGameEnd).toHaveBeenCalledTimes(1);
-  });
+    const { result } = renderLearningHook();
+    await waitFor(() => expect(result.current.playerScore).toBe(3));
 
-  it('finalizationTimeoutMs is accepted (fallback timer plumbing is wired)', async () => {
-    // We assert the plumbing — finalizationTimeoutMs is set, syncLiveProgress with
-    // isDoneRound=true arms the fallback via setTimeout. Verifying that the timeout
-    // actually invokes finalizeMatch within fake timers + nested promises is brittle;
-    // we cover that integration path in the ArenaBattle/KnowledgeQuiz component tests.
-    mockApi.games.move.mockResolvedValue({});
-    const onGameEnd = jest.fn();
-    const setTimeoutSpy = jest.spyOn(window, 'setTimeout');
-    const { result } = renderHook(() =>
-      useLiveScoreGame({
-        currentUser: buildUser('alice'),
-        gameId: 'game-1',
-        isBot: false,
-        mode: 'TestMode',
-        submissionKeyPrefix: 'arena',
-        statsKind: 'arena',
-        finalizationTimeoutMs: 5000,
-        onGameEnd,
+    mockApi.games.get.mockResolvedValue(
+      buildSnapshot({
+        gameState: {
+          engine: buildEngine({
+            revision: 4,
+            players: {
+              host: { name: 'alice', score: 99, answered: false },
+              guest: { name: 'bob', score: 99, answered: false },
+            },
+          }),
+        },
       })
     );
     await act(async () => {
-      await result.current.syncLiveProgress(5, 10, true);
+      await result.current.fetchSnapshot();
     });
-    // The hook should have queued at least one 5000ms timer for the fallback.
-    const has5sTimer = setTimeoutSpy.mock.calls.some(([, delay]) => delay === 5000);
-    expect(has5sTimer).toBe(true);
-    setTimeoutSpy.mockRestore();
-  });
+    expect(result.current.playerScore).toBe(3);
+    expect(result.current.opponentScore).toBe(1);
 
-  it('socket subscription is established and cleaned up', async () => {
-    mockApi.games.get.mockResolvedValue(baseSnapshot);
-    const fakeSocket = {
-      on: jest.fn(),
-      off: jest.fn(),
-    };
-    mockGetSocket.mockReturnValue(fakeSocket);
-    const { unmount } = renderHook(() =>
-      useLiveScoreGame({
-        currentUser: buildUser('alice'),
-        gameId: 'game-1',
-        isBot: false,
-        mode: 'TestMode',
-        submissionKeyPrefix: 'arena',
-        statsKind: 'arena',
-        onGameEnd: jest.fn(),
-      })
-    );
-    await waitFor(() =>
-      expect(fakeSocket.on).toHaveBeenCalledWith('game_state_updated', expect.any(Function))
-    );
-    unmount();
-    expect(fakeSocket.off).toHaveBeenCalledWith('game_state_updated', expect.any(Function));
-  });
-
-  it('reset clears match state for a new gameId', async () => {
-    const onGameEnd = jest.fn();
-    const { result, rerender } = renderHook(
-      ({ gameId }: { gameId: string | null }) =>
-        useLiveScoreGame({
-          currentUser: buildUser('alice'),
-          gameId,
-          isBot: true,
-          mode: 'TestMode',
-          submissionKeyPrefix: 'arena',
-          statsKind: 'arena',
-          onGameEnd,
-        }),
-      { initialProps: { gameId: 'game-1' } }
-    );
+    const socket = mockSocketService.getSocket();
     act(() => {
-      result.current.setPlayerScore(7);
-      result.current.setDone(true);
+      socket.emit('game_state_updated', {
+        gameId: 'game-1',
+        status: 'active',
+        gameState: {
+          engine: buildEngine({
+            revision: 4,
+            players: {
+              host: { name: 'alice', score: 99, answered: false },
+              guest: { name: 'bob', score: 99, answered: false },
+            },
+          }),
+        },
+      });
+    });
+    expect(result.current.playerScore).toBe(3);
+  });
+
+  it('applies a newer socket snapshot without a refetch', async () => {
+    const { result } = renderLearningHook();
+    await waitFor(() => expect(result.current.engine).not.toBeNull());
+    const callsBefore = mockApi.games.get.mock.calls.length;
+    const socket = mockSocketService.getSocket();
+    act(() => {
+      socket.emit('game_state_updated', {
+        gameId: 'game-1',
+        status: 'active',
+        gameState: {
+          engine: buildEngine({
+            revision: 2,
+            players: {
+              host: { name: 'alice', score: 7, answered: true },
+              guest: { name: 'bob', score: 2, answered: false },
+            },
+          }),
+        },
+      });
     });
     expect(result.current.playerScore).toBe(7);
-    expect(result.current.done).toBe(true);
-    rerender({ gameId: 'game-2' });
-    await waitFor(() => expect(result.current.playerScore).toBe(0));
+    expect(result.current.opponentScore).toBe(2);
+    expect(mockApi.games.get.mock.calls.length).toBe(callsBefore);
+  });
+
+  it('reuses the same actionId after a network failure', async () => {
+    const { result } = renderLearningHook();
+    await waitFor(() => expect(result.current.engine?.round?.id).toBe('r1'));
+
+    mockApi.games.action.mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce({
+      success: true,
+      game: buildSnapshot({
+        gameState: {
+          engine: buildEngine({
+            revision: 2,
+            phase: 'reveal',
+            round: {
+              ...buildEngine().round!,
+              correctIndex: 1,
+              picks: { host: 1, guest: null },
+              scoreDelta: { host: 18, guest: 0 },
+            },
+            players: {
+              host: { name: 'alice', score: 18, answered: true },
+              guest: { name: 'bob', score: 0, answered: false },
+            },
+          }),
+        },
+      }),
+    });
+
+    let first: LiveActionResult | undefined;
+    await act(async () => {
+      first = await result.current.submitAction({ type: 'answer', optionIndex: 1 });
+    });
+    expect(first).toEqual(expect.objectContaining({ ok: false, code: 'NETWORK' }));
+    expect(result.current.error).toMatch(/ulaşmadı/);
+
+    let second: LiveActionResult | undefined;
+    await act(async () => {
+      second = await result.current.submitAction({ type: 'answer', optionIndex: 1 });
+    });
+    expect(second?.ok).toBe(true);
+
+    const firstPayload = mockApi.games.action.mock.calls[0][1];
+    const secondPayload = mockApi.games.action.mock.calls[1][1];
+    expect(secondPayload).toEqual(firstPayload);
+    expect(firstPayload).toEqual(
+      expect.objectContaining({ roundId: 'r1', type: 'answer', optionIndex: 1 })
+    );
+    expect(result.current.playerScore).toBe(18);
+    expect(result.current.pending).toBe(false);
+  });
+
+  it('returns the 409 code and refetches on a stale round', async () => {
+    const { result } = renderLearningHook();
+    await waitFor(() => expect(result.current.engine).not.toBeNull());
+    const callsBefore = mockApi.games.get.mock.calls.length;
+    mockApi.games.action.mockRejectedValueOnce(
+      Object.assign(new Error('Tur kapandı.'), { code: 'STALE_ROUND', status: 409 })
+    );
+    let outcome: LiveActionResult | undefined;
+    await act(async () => {
+      outcome = await result.current.submitAction({ type: 'answer', optionIndex: 2 });
+    });
+    expect(outcome).toEqual(expect.objectContaining({ ok: false, code: 'STALE_ROUND' }));
+    await waitFor(() => expect(mockApi.games.get.mock.calls.length).toBeGreaterThan(callsBefore));
+  });
+
+  it('ends on the server result exactly once and uses its transferred stake', async () => {
+    mockApi.games.get.mockResolvedValue(
+      buildSnapshot({
+        status: 'finished',
+        winner: 'alice',
+        gameState: {
+          engine: buildEngine({
+            phase: 'finished',
+            result: {
+              winner: 'alice',
+              scores: { host: 7, guest: 4 },
+              stakeTransferred: 25,
+              settled: true,
+            },
+          }),
+        },
+      })
+    );
+    const { result, onGameEnd } = renderLearningHook();
+    await waitFor(() => expect(result.current.done).toBe(true), { timeout: 2000 });
+    await waitFor(
+      () =>
+        expect(onGameEnd).toHaveBeenCalledWith(
+          'alice',
+          25,
+          expect.objectContaining({ kind: 'quiz', playerScore: 7, opponentScore: 4 })
+        ),
+      { timeout: 2000 }
+    );
+    mockApi.games.get.mockClear();
+    await act(async () => {
+      await result.current.fetchSnapshot();
+    });
+    expect(onGameEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it('reports an abandoned match without paying either side', async () => {
+    mockApi.games.get.mockResolvedValue(
+      buildSnapshot({
+        status: 'finished',
+        winner: null,
+        gameState: {
+          engine: buildEngine({
+            phase: 'finished',
+            result: { winner: null, cancelled: true, settled: true, scores: { host: 0, guest: 0 } },
+          }),
+        },
+      })
+    );
+    const { onGameEnd } = renderLearningHook();
+    await waitFor(
+      () => expect(onGameEnd).toHaveBeenCalledWith('Maç iptal edildi', 0, expect.any(Object)),
+      { timeout: 2000 }
+    );
+  });
+
+  it('refuses an active legacy snapshot instead of falling back', async () => {
+    mockApi.games.get.mockResolvedValue(buildSnapshot({ protocolVersion: 1, gameState: {} }));
+    const { result, onGameEnd } = renderLearningHook();
+    await waitFor(() => expect(result.current.protocolError).toBe(true));
+    expect(result.current.engine).toBeNull();
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(onGameEnd).not.toHaveBeenCalled();
+  });
+
+  it('subscribes to the socket, joins the room, and cleans both up', async () => {
+    const { unmount } = renderLearningHook();
+    await waitFor(() => expect(mockApi.games.get).toHaveBeenCalled());
+    const socket = mockSocketService.getSocket();
+    expect(mockSocketService.joinGame).toHaveBeenCalledWith('game-1');
+    expect(socket.on).toHaveBeenCalledWith('game_state_updated', expect.any(Function));
+    expect(socket.on).toHaveBeenCalledWith('connect', expect.any(Function));
+    unmount();
+    expect(socket.off).toHaveBeenCalledWith('game_state_updated', expect.any(Function));
+    expect(mockSocketService.leaveGame).toHaveBeenCalledWith('game-1');
+  });
+
+  it('reset clears a snapshot for a new match', async () => {
+    const { result } = renderLearningHook();
+    await waitFor(() => expect(result.current.engine).not.toBeNull());
+    act(() => {
+      result.current.reset();
+    });
+    expect(result.current.engine).toBeNull();
+    expect(result.current.playerScore).toBe(0);
     expect(result.current.done).toBe(false);
   });
 });

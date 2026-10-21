@@ -6,6 +6,7 @@ import type {
   User,
   UserProfileUpdates,
   GameRequest,
+  CompetitiveActionEnvelope,
   Reward,
   Cafe,
   Achievement,
@@ -149,7 +150,24 @@ interface ApiErrorResponse {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
-const parseApiError = async (response: ApiErrorResponse): Promise<string> => {
+export class ApiRequestError extends Error {
+  code?: string;
+  status?: number;
+
+  constructor(message: string, code?: string, status?: number) {
+    super(message);
+    this.name = 'ApiRequestError';
+    this.code = code;
+    this.status = status;
+  }
+}
+
+interface ParsedApiError {
+  message: string;
+  code?: string;
+}
+
+const parseApiError = async (response: ApiErrorResponse): Promise<ParsedApiError> => {
   const readJson = async (): Promise<unknown | null> => {
     try {
       const source = typeof response.clone === 'function' ? response.clone() : response;
@@ -190,24 +208,33 @@ const parseApiError = async (response: ApiErrorResponse): Promise<string> => {
       (typeof jsonPayload === 'string' && jsonPayload) ||
       (isRecord(jsonPayload) && (jsonPayload.error || jsonPayload.message || jsonPayload.detail));
     if (jsonMessage) {
-      return withRetryHint(String(jsonMessage));
+      const errorCode = isRecord(jsonPayload)
+        ? String(jsonPayload.code || jsonPayload.errorCode || '').trim()
+        : '';
+      return {
+        message: withRetryHint(String(jsonMessage)),
+        ...(errorCode ? { code: errorCode } : {}),
+      };
     }
   }
 
   // A gateway error (the API restarting or out of reach) carries the proxy's own
   // HTML page or nothing at all; neither means anything to a player.
   if (response.status >= 500) {
-    return response.status === 502 || response.status === 503 || response.status === 504
-      ? 'Sunucuya şu an ulaşılamıyor. Birkaç saniye sonra tekrar dene.'
-      : 'Sunucuda bir sorun oluştu. Birkaç saniye sonra tekrar dene.';
+    return {
+      message:
+        response.status === 502 || response.status === 503 || response.status === 504
+          ? 'Sunucuya şu an ulaşılamıyor. Birkaç saniye sonra tekrar dene.'
+          : 'Sunucuda bir sorun oluştu. Birkaç saniye sonra tekrar dene.',
+    };
   }
 
   const textPayload = await readText();
   if (textPayload && !/^\s*</.test(textPayload)) {
-    return withRetryHint(textPayload);
+    return { message: withRetryHint(textPayload) };
   }
 
-  return withRetryHint(`İstek tamamlanamadı (${response.status}).`);
+  return { message: withRetryHint(`İstek tamamlanamadı (${response.status}).`) };
 };
 
 /**
@@ -256,7 +283,8 @@ async function fetchAPI<TResponse = unknown>(
   }
 
   if (!response.ok) {
-    throw new Error(await parseApiError(response));
+    const parsed = await parseApiError(response);
+    throw new ApiRequestError(parsed.message, parsed.code, response.status);
   }
 
   return (await response.json()) as TResponse;
@@ -505,6 +533,16 @@ export const api = {
 
     get: async (gameId: number | string): Promise<GameRequest> => {
       return await fetchAPI(`/games/${gameId}`);
+    },
+
+    action: async (
+      gameId: number | string,
+      payload: CompetitiveActionEnvelope
+    ): Promise<{ success: boolean; duplicate?: boolean; game: GameRequest }> => {
+      return await fetchAPI(`/games/${gameId}/actions`, {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
     },
 
     create: async (data: Partial<GameRequest>): Promise<GameRequest> => {

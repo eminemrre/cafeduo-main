@@ -103,6 +103,8 @@ const createGetGameStateHandler = (deps) => {
             revision: engineSync.state.revision,
             phase: engineSync.state.phase,
             winner: engineSync.winner,
+            gameState: serializeGameForActor(row).gameState,
+            serverNow: new Date().toISOString(),
           });
         } else {
           // An action committed between our read and this optimistic update.
@@ -135,6 +137,7 @@ const createGetGameStateHandler = (deps) => {
               reason: row.gameState?.engine?.result?.reason || 'rounds_complete',
               cancelled: Boolean(row.gameState?.engine?.result?.cancelled),
               gameState: serializeGameForActor(row).gameState,
+              serverNow: new Date().toISOString(),
             });
           }
         }
@@ -233,6 +236,7 @@ const createGetGameStateHandler = (deps) => {
           reason: engine?.result?.reason || 'rounds_complete',
           cancelled: Boolean(engine?.result?.cancelled),
           gameState: serializeGameForActor(lockedGame).gameState,
+          serverNow: new Date().toISOString(),
         });
       } else if (engine) {
         emitRealtimeUpdate(id, {
@@ -242,6 +246,8 @@ const createGetGameStateHandler = (deps) => {
           revision: engine.revision,
           phase: engine.phase,
           winner: lockedGame.winner || null,
+          gameState: serializeGameForActor(lockedGame).gameState,
+          serverNow: new Date().toISOString(),
         });
       }
     });

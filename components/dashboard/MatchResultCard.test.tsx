@@ -74,6 +74,20 @@ describe('MatchResultCard', () => {
     expect(screen.getByText('SONUÇ BEKLENİYOR')).toBeInTheDocument();
   });
 
+  it('winner="Maç iptal edildi" → ödülsüz "MAÇ İPTAL EDİLDİ" gösterir', () => {
+    render(
+      <MatchResultCard
+        {...baseProps}
+        winner="Maç iptal edildi"
+        earnedPoints={0}
+        currentUsername="alice"
+      />
+    );
+    expect(screen.getByText('MAÇ İPTAL EDİLDİ')).toBeInTheDocument();
+    expect(screen.queryByText(/kazandı/i)).not.toBeInTheDocument();
+    expect(screen.queryByText('+0')).not.toBeInTheDocument();
+  });
+
   // ─── AnimatedPoints ─────────────────────────────────────────────────────────
 
   it('earnedPoints > 0 iken "+N" biçiminde puan render eder', () => {

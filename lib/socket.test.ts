@@ -98,23 +98,13 @@ describe('socketService', () => {
     warnSpy.mockRestore();
   });
 
-  it('emits room and state events', () => {
+  it('emits only room membership events', () => {
     socketService.connect();
 
     socketService.joinGame('42');
-    socketService.emitMove('11', { pick: 'rock' });
-    socketService.emitGameStateUpdate('11', { hp: 2 });
     socketService.leaveGame('42');
 
     expect(mockSocket.emit).toHaveBeenCalledWith('join_game', '42');
-    expect(mockSocket.emit).toHaveBeenCalledWith('game_move', {
-      gameId: '11',
-      move: { pick: 'rock' },
-    });
-    expect(mockSocket.emit).toHaveBeenCalledWith('update_game_state', {
-      gameId: '11',
-      state: { hp: 2 },
-    });
     expect(mockSocket.emit).toHaveBeenCalledWith('leave_game', '42');
   });
 

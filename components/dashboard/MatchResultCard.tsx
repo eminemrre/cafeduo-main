@@ -37,13 +37,15 @@ interface MatchResultCardProps {
 /** Oyunların gönderdiği gerçek-kullanıcı-adı-olmayan sonuç değerleri. */
 const SENTINEL_DRAW = 'berabere';
 const SENTINEL_PENDING = 'sonuç bekleniyor';
+const SENTINEL_CANCELLED = 'maç iptal edildi';
 
-type Outcome = 'win' | 'lose' | 'draw' | 'pending';
+type Outcome = 'win' | 'lose' | 'draw' | 'pending' | 'cancelled';
 
 const deriveOutcome = (winner: string, currentUsername: string): Outcome => {
   const w = winner.trim().toLowerCase();
   if (!w || w === SENTINEL_DRAW) return 'draw';
   if (w === SENTINEL_PENDING) return 'pending';
+  if (w === SENTINEL_CANCELLED) return 'cancelled';
   return w === currentUsername.trim().toLowerCase() ? 'win' : 'lose';
 };
 
@@ -53,6 +55,7 @@ const SURFACE: Record<Outcome, string> = {
   lose: 'bg-paper-deep',
   draw: 'bg-paper-deep',
   pending: 'bg-paper-deep',
+  cancelled: 'bg-paper-deep',
 };
 
 const formatDuration = (ms: number) => {
@@ -112,7 +115,9 @@ export const MatchResultCard: React.FC<MatchResultCardProps> = ({
         ? 'BERABERE'
         : outcome === 'pending'
           ? 'SONUÇ BEKLENİYOR'
-          : `${winner} kazandı`;
+          : outcome === 'cancelled'
+            ? 'MAÇ İPTAL EDİLDİ'
+            : `${winner} kazandı`;
 
   const chips: Array<{ label: string; value: string }> = [];
   if (stats) {
@@ -143,9 +148,7 @@ export const MatchResultCard: React.FC<MatchResultCardProps> = ({
       data-testid="match-result-card"
       aria-live="polite"
     >
-      <p className="text-[15px] font-medium">
-        Maç sonucu
-      </p>
+      <p className="text-[15px] font-medium">Maç sonucu</p>
       <p className="mt-1 font-candy-display text-[40px] leading-[0.98] tracking-[-0.01em]">
         {/* The sentinel titles keep their capitals in the source; a winner's name keeps its own case. */}
         {title}

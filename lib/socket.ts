@@ -163,20 +163,6 @@ class SocketService {
   }
 
   /**
-   * Emit a game move
-   */
-  emitMove(gameId: string, move: unknown) {
-    this.socket?.emit('game_move', { gameId, move });
-  }
-
-  /**
-   * Emit game state update
-   */
-  emitGameStateUpdate(gameId: string, state: unknown) {
-    this.socket?.emit('update_game_state', { gameId, state });
-  }
-
-  /**
    * Leave a game room
    */
   leaveGame(gameId: string) {

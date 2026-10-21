@@ -1,12 +1,13 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Crosshair } from 'lucide-react';
-import { User } from '../types';
+import type { User } from '../types';
 import { RetroButton } from './RetroButton';
 import { playGameSfx } from '../lib/gameAudio';
 import { ConnectionOverlay } from './ConnectionOverlay';
 import { useLiveScoreGame, type LiveMatchStats } from '../hooks/useLiveScoreGame';
 import { AimBattleStageCanvas, type AimBattleStageHandle } from './games/AimBattleStageCanvas';
 import type { HitTier } from '../lib/pixi/aimBattleStage';
+import { positionAt, AIM_GAUGE_STEP, AIM_TICK_MS } from '../lib/aimTrajectory';
 
 interface ArenaBattleProps {
   currentUser: User;
@@ -26,27 +27,7 @@ interface ArenaWindow extends Window {
 
 export const AIM_GAME_TYPE = 'Nişancı Düellosu';
 export const MAX_ROUNDS = 5;
-
-// Difficulty knobs. Original (desktop) values were 4 / 46. The user
-// reported the game is way too easy on mobile — touch devices have
-// less precise inputs but a smaller travel area, so a tap usually
-// lands within the perfect window almost by accident. To keep desktop
-// feel intact while raising the mobile bar, we detect touch hardware
-// at component mount and pick a harder pair of values.
-//
-// `pointer: coarse` covers phones + tablets (and most game-controller
-// touchpads); desktops with a mouse get `pointer: fine`. Falling back
-// to the desktop pair on the server / SSR / non-DOM environments.
-const detectTouchDifficulty = () => {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-    return { step: 4, tickMs: 46 };
-  }
-  const coarse = window.matchMedia('(pointer: coarse)').matches;
-  if (coarse) {
-    return { step: 7, tickMs: 32 };
-  }
-  return { step: 4, tickMs: 46 };
-};
+const BOT_WIN_REWARD = 10;
 
 export const clampGauge = (value: number) => Math.max(0, Math.min(100, value));
 
@@ -75,6 +56,30 @@ const tierFromPoints = (points: number): HitTier => {
 
 const randomGaugeStart = () => 15 + Math.random() * 70;
 
+interface BotState {
+  round: number;
+  phase: 'open' | 'reveal' | 'finished';
+  gauge: number;
+  direction: 1 | -1;
+  playerShot: number | null;
+  opponentShot: number | null;
+  playerScore: number;
+  opponentScore: number;
+  message: string;
+}
+
+const createBotState = (): BotState => ({
+  round: 1,
+  phase: 'open',
+  gauge: randomGaugeStart(),
+  direction: Math.random() > 0.5 ? 1 : -1,
+  playerShot: null,
+  opponentShot: null,
+  playerScore: 0,
+  opponentScore: 0,
+  message: 'Nişangah merkezden geçerken ateş et.',
+});
+
 export const ArenaBattle: React.FC<ArenaBattleProps> = ({
   currentUser,
   gameId,
@@ -90,114 +95,332 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
     isBot,
     mode: AIM_GAME_TYPE,
     submissionKeyPrefix: 'arena',
-    pollIntervalMs: 2200,
+    pollIntervalMs: 15_000,
     logName: 'ArenaBattle',
     statsKind: 'arena',
     onGameEnd,
   });
 
-  // Pick difficulty once at mount; React picks this up via useMemo so we
-  // don't re-detect on every render. Tests can still run in JSDOM where
-  // window.matchMedia is shim'd; detectTouchDifficulty returns the
-  // desktop pair there, keeping unit-test behaviour stable.
-  const difficulty = useMemo(() => detectTouchDifficulty(), []);
-  const GAUGE_STEP = difficulty.step;
-  const GAUGE_TICK_MS = difficulty.tickMs;
+  const liveEngine = live.engine;
+  const livePending = live.pending;
+  const liveServerNow = live.serverNow;
+  const submitLiveAction = live.submitAction;
 
-  const [round, setRound] = useState(1);
-  const [gauge, setGauge] = useState(50);
-  const [roundLocked, setRoundLocked] = useState(false);
-  const [playerShot, setPlayerShot] = useState<number | null>(null);
-  const [opponentShot, setOpponentShot] = useState<number | null>(null);
-  const [message, setMessage] = useState('Nişangah merkezden geçerken ateş et.');
-
-  const directionRef = useRef<1 | -1>(1);
-  const nextRoundTimeoutRef = useRef<number | null>(null);
+  const [bot, setBot] = useState<BotState>(() => createBotState());
+  const [serverGauge, setServerGauge] = useState(50);
+  const [optimisticShot, setOptimisticShot] = useState<number | null>(null);
+  const [feedbackKey, setFeedbackKey] = useState('');
   const pixiStageRef = useRef<AimBattleStageHandle | null>(null);
-  // The WebGL stage draws the reticle; until it is up (or when it never comes up) the CSS one
-  // does, so the game is never played blind.
+  const botDoneRef = useRef(false);
+  const botStartedAtRef = useRef(Date.now());
+  const onGameEndRef = useRef(onGameEnd);
+  const onMatchSettledRef = useRef(onMatchSettled);
   const [pixiReady, setPixiReady] = useState(false);
 
-  const target = useMemo(() => (isBot ? 'BOT' : opponentName || 'Rakip'), [isBot, opponentName]);
+  useEffect(() => {
+    onGameEndRef.current = onGameEnd;
+  }, [onGameEnd]);
 
   useEffect(() => {
-    setRound(1);
-    setRoundLocked(false);
-    setPlayerShot(null);
-    setOpponentShot(null);
-    setMessage('Nişangah merkezden geçerken ateş et.');
+    onMatchSettledRef.current = onMatchSettled;
+  }, [onMatchSettled]);
+
+  useEffect(() => {
+    setBot(createBotState());
+    setOptimisticShot(null);
+    setFeedbackKey('');
+    botDoneRef.current = false;
+    botStartedAtRef.current = Date.now();
   }, [gameId]);
 
-  useEffect(() => {
-    setRoundLocked(false);
-    setPlayerShot(null);
-    setOpponentShot(null);
-    directionRef.current = Math.random() > 0.5 ? 1 : -1;
-    setGauge(randomGaugeStart());
-  }, [round]);
+  const phase = isBot ? bot.phase : liveEngine?.phase || 'open';
+  const done = isBot ? bot.phase === 'finished' : live.done;
+  const loading = !isBot && !liveEngine && !live.protocolError;
+  const round = isBot ? bot.round : Math.max(1, liveEngine?.roundIndex || 1);
+  const maxRounds = isBot ? MAX_ROUNDS : liveEngine?.totalRounds || MAX_ROUNDS;
+  const serverRound = isBot ? null : liveEngine?.round || null;
+  const actorShot = !isBot && live.actorKey ? (serverRound?.shots?.[live.actorKey] ?? null) : null;
+  const opponentShotData =
+    !isBot && live.actorKey
+      ? (serverRound?.shots?.[live.actorKey === 'host' ? 'guest' : 'host'] ?? null)
+      : null;
+  const isReveal = phase === 'reveal' || (phase === 'finished' && Boolean(serverRound));
+  const gauge = isBot ? bot.gauge : isReveal ? (actorShot?.position ?? serverGauge) : serverGauge;
+  const playerShot = isBot
+    ? bot.playerShot
+    : isReveal
+      ? (actorShot?.position ?? null)
+      : optimisticShot;
+  const opponentShot = isBot
+    ? bot.opponentShot
+    : isReveal
+      ? (opponentShotData?.position ?? null)
+      : null;
+  const playerScore = isBot ? bot.playerScore : live.playerScore;
+  const opponentScore = isBot ? bot.opponentScore : live.opponentScore;
+  const target = isBot ? 'BOT' : live.opponent?.name || opponentName || 'Rakip';
+  const targetName = target;
+  const hasFired = isBot
+    ? bot.playerShot !== null
+    : Boolean(live.player?.answered) || optimisticShot !== null;
 
+  // Bot practice keeps the same 4 / 46 ms competitive speed on every device.
   useEffect(() => {
-    if (live.done || live.resolvingMatch) return undefined;
+    if (!isBot || bot.phase !== 'open') return undefined;
     const interval = window.setInterval(() => {
-      setGauge((prev) => {
-        let next = prev + directionRef.current * GAUGE_STEP;
+      setBot((prev) => {
+        if (prev.phase !== 'open') return prev;
+        let next = prev.gauge + prev.direction * AIM_GAUGE_STEP;
+        let direction = prev.direction;
         if (next >= 100) {
           next = 100;
-          directionRef.current = -1;
+          direction = -1;
         } else if (next <= 0) {
           next = 0;
-          directionRef.current = 1;
+          direction = 1;
         }
-        return next;
+        return { ...prev, gauge: next, direction };
       });
-    }, GAUGE_TICK_MS);
-
+    }, AIM_TICK_MS);
     return () => window.clearInterval(interval);
-  }, [live.done, live.resolvingMatch, round, GAUGE_STEP, GAUGE_TICK_MS]);
+  }, [bot.phase, isBot]);
 
-  // Push the bouncing gauge value into the PixiJS overlay each tick so the
-  // animated reticle stays in sync with the underlying state.
+  // Server reticle: the shared trajectory function and the server clock, never
+  // a locally invented gauge or a per-device difficulty.
+  useEffect(() => {
+    if (isBot || phase !== 'open' || !serverRound?.trajectory || !serverRound.startedAt) {
+      return undefined;
+    }
+    const startedAt = Date.parse(serverRound.startedAt);
+    const trajectory = serverRound.trajectory;
+    const tick = () => {
+      const elapsed = Math.max(0, liveServerNow() - startedAt);
+      setServerGauge(positionAt(trajectory, elapsed));
+    };
+    tick();
+    const interval = window.setInterval(tick, AIM_TICK_MS);
+    return () => window.clearInterval(interval);
+  }, [
+    isBot,
+    liveServerNow,
+    phase,
+    serverRound?.id,
+    serverRound?.startedAt,
+    serverRound?.trajectory,
+  ]);
+
+  useEffect(() => {
+    setOptimisticShot(null);
+  }, [isBot, serverRound?.id]);
+
   useEffect(() => {
     pixiStageRef.current?.setReticleX(gauge);
   }, [gauge]);
 
-  // Pause the PixiJS overlay's animation loop on match end so we're not
-  // burning frames on a finished battle waiting for the user to leave.
   useEffect(() => {
-    pixiStageRef.current?.setActive(!live.done);
-  }, [live.done]);
+    pixiStageRef.current?.setActive(!done);
+  }, [done]);
 
-  // Tell the parent the match is settled so the forfeit confirm gets
-  // suppressed before the delayed onGameEnd actually sets gameResult.
+  // Bot reveal pacing.
   useEffect(() => {
-    if (live.done) onMatchSettled?.();
-  }, [live.done, onMatchSettled]);
+    if (!isBot || bot.phase !== 'reveal') return undefined;
+    const timer = window.setTimeout(() => {
+      setBot((prev) =>
+        prev.round >= MAX_ROUNDS
+          ? {
+              ...prev,
+              phase: 'finished',
+              message: prev.playerScore >= prev.opponentScore ? 'Maçı kazandın.' : 'Maçı BOT aldı.',
+            }
+          : {
+              ...prev,
+              round: prev.round + 1,
+              phase: 'open',
+              gauge: randomGaugeStart(),
+              direction: Math.random() > 0.5 ? 1 : -1,
+              playerShot: null,
+              opponentShot: null,
+              message: 'Yeni tur başladı. Merkezi yakalamak için doğru anı bekle.',
+            }
+      );
+    }, 750);
+    return () => window.clearTimeout(timer);
+  }, [bot.phase, bot.round, isBot]);
 
-  // Surface a friendly status message when the snapshot tells us who joined.
+  // Bot feedback is local practice only; no wallet or stats are written here.
   useEffect(() => {
-    if (isBot || !gameId) return;
-    if (live.guestName || live.hostName) {
-      setMessage(`Canlı eşleşme aktif. Rakip: ${live.guestName || live.hostName || target}`);
+    if (!isBot || bot.phase !== 'reveal' || bot.playerShot === null) return;
+    const key = `bot:${bot.round}`;
+    if (feedbackKey === key) return;
+    setFeedbackKey(key);
+    const points = pointsFromShot(bot.playerShot);
+    const tier = tierFromPoints(points);
+    pixiStageRef.current?.flash(tier);
+    pixiStageRef.current?.showScorePopup(
+      points > 0 ? `+${points} ${shotLabel(bot.playerShot)}` : shotLabel(bot.playerShot),
+      tier
+    );
+    playGameSfx(points > 0 ? 'success' : 'fail', points > 0 ? 0.24 : 0.2);
+  }, [bot.phase, bot.playerShot, bot.round, feedbackKey, isBot]);
+
+  useEffect(() => {
+    if (!isBot || bot.phase !== 'finished' || botDoneRef.current) return undefined;
+    botDoneRef.current = true;
+    const won = bot.playerScore >= bot.opponentScore;
+    const stats: LiveMatchStats = {
+      kind: 'arena',
+      playerScore: bot.playerScore,
+      opponentScore: bot.opponentScore,
+      durationMs: Math.max(0, Date.now() - botStartedAtRef.current),
+      maxRounds: MAX_ROUNDS,
+    };
+    const timer = window.setTimeout(() => {
+      onGameEndRef.current(won ? currentUser.username : 'BOT', won ? BOT_WIN_REWARD : 0, stats);
+    }, 650);
+    return () => window.clearTimeout(timer);
+  }, [bot.opponentScore, bot.phase, bot.playerScore, currentUser.username, isBot]);
+
+  // Server feedback comes only from the revealed snapshot.
+  useEffect(() => {
+    if (isBot || phase !== 'reveal' || !serverRound || !live.actorKey) return;
+    const key = `server:${liveEngine?.revision}:${serverRound.id}`;
+    if (feedbackKey === key) return;
+    setFeedbackKey(key);
+    const shot = actorShot?.position;
+    if (shot === undefined || shot === null) {
+      playGameSfx('fail', 0.2);
+      return;
     }
-  }, [isBot, gameId, live.guestName, live.hostName, target]);
+    const points = Number(actorShot?.points || 0);
+    const tier = tierFromPoints(points);
+    pixiStageRef.current?.flash(tier);
+    pixiStageRef.current?.showScorePopup(
+      points > 0 ? `+${points} ${shotLabel(shot)}` : shotLabel(shot),
+      tier
+    );
+    playGameSfx(points > 0 ? 'success' : 'fail', points > 0 ? 0.24 : 0.2);
+  }, [
+    actorShot?.points,
+    actorShot?.position,
+    feedbackKey,
+    isBot,
+    live.actorKey,
+    liveEngine?.revision,
+    phase,
+    serverRound,
+  ]);
 
-  // Track server round to keep local UI in sync with multiplayer state.
   useEffect(() => {
-    if (live.serverRound !== null) {
-      setRound((prev) => Math.max(prev, Math.min(MAX_ROUNDS, live.serverRound!)));
+    const finished = isBot ? bot.phase === 'finished' : live.done;
+    if (finished) onMatchSettledRef.current?.();
+  }, [bot.phase, isBot, live.done]);
+
+  const fire = useCallback(() => {
+    if (phase !== 'open' || hasFired || done || livePending) return;
+    if (isBot) {
+      const shot = clampGauge(bot.gauge);
+      const gainedPoints = pointsFromShot(shot);
+      const botShot = clampGauge(50 + (Math.random() * 2 - 1) * 42);
+      const botPoints = pointsFromShot(botShot);
+      const nextPlayerScore = bot.playerScore + gainedPoints;
+      const nextOpponentScore = bot.opponentScore + botPoints;
+      setBot((prev) => ({
+        ...prev,
+        phase: 'reveal',
+        playerShot: shot,
+        opponentShot: botShot,
+        playerScore: nextPlayerScore,
+        opponentScore: nextOpponentScore,
+        message: `Atışın: ${shotLabel(shot)} (${gainedPoints}). BOT: ${shotLabel(botShot)} (${botPoints}).`,
+      }));
+      return;
     }
-  }, [live.serverRound]);
+    const shot = clampGauge(gauge);
+    setOptimisticShot(shot);
+    void submitLiveAction({ type: 'fire' }).then((result) => {
+      if (!result.ok && result.code !== 'BUSY') setOptimisticShot(null);
+    });
+  }, [
+    bot.gauge,
+    bot.opponentScore,
+    bot.playerScore,
+    done,
+    gauge,
+    hasFired,
+    isBot,
+    livePending,
+    submitLiveAction,
+    phase,
+  ]);
+
+  const accuracy = Math.max(0, 100 - Math.abs(50 - gauge) * 2);
+  const participants =
+    live.hostName || live.guestName
+      ? `${live.hostName || currentUser.username} / ${live.guestName || targetName}`
+      : `${currentUser.username} / ${targetName}`;
+
+  const message = useMemo(() => {
+    if (isBot) return bot.message;
+    if (live.protocolError) return live.error || 'İstemci güncel değil.';
+    if (loading) return 'Sunucu turu hazırlıyor...';
+    if (livePending) return 'Atışın sunucuya gönderiliyor...';
+    if (live.error) return live.error;
+    if (done) {
+      const result = liveEngine?.result;
+      if (result?.cancelled) return 'Maç ödülsüz iptal edildi.';
+      if (!result?.winner) return 'Maç berabere bitti.';
+      return result.winner === currentUser.username
+        ? 'Maçı kazandın.'
+        : `Maçı ${result.winner} aldı.`;
+    }
+    if (phase === 'open') {
+      return hasFired
+        ? 'Atışın kaydedildi. Rakip bekleniyor...'
+        : 'Nişangah merkezden geçerken ateş et.';
+    }
+    if (phase === 'reveal') {
+      const my = actorShot?.position;
+      const other = opponentShotData?.position;
+      const myPoints = Number(actorShot?.points || 0);
+      const otherPoints = Number(opponentShotData?.points || 0);
+      if (my === undefined || my === null) {
+        return other === undefined || other === null
+          ? 'İki taraf da ateş etmedi. Sunucu turu kapatıyor...'
+          : `Atış yapmadın. Rakip: ${shotLabel(other)} (${otherPoints}).`;
+      }
+      return other === undefined || other === null
+        ? `Atışın: ${shotLabel(my)} (${myPoints}). Rakip ateş etmedi.`
+        : `Atışın: ${shotLabel(my)} (${myPoints}). Rakip: ${shotLabel(other)} (${otherPoints}).`;
+    }
+    return 'Sunucu sonucu bekleniyor...';
+  }, [
+    actorShot?.points,
+    actorShot?.position,
+    bot.message,
+    currentUser.username,
+    done,
+    hasFired,
+    isBot,
+    liveEngine?.result,
+    live.error,
+    livePending,
+    live.protocolError,
+    loading,
+    opponentShotData?.points,
+    opponentShotData?.position,
+    phase,
+  ]);
 
   useEffect(() => {
     const arenaWindow = window as ArenaWindow;
     const renderGameToText = () =>
       JSON.stringify({
-        mode: live.done ? 'finished' : 'playing',
+        mode: done ? 'finished' : 'playing',
         gameType: AIM_GAME_TYPE,
         round,
-        maxRounds: MAX_ROUNDS,
-        player: { name: currentUser.username, score: live.playerScore, lastShot: playerShot },
-        opponent: { name: target, score: live.opponentScore, lastShot: opponentShot },
+        maxRounds,
+        player: { name: currentUser.username, score: playerScore, lastShot: playerShot },
+        opponent: { name: targetName, score: opponentScore, lastShot: opponentShot },
         gauge: Math.round(gauge),
         message,
       });
@@ -209,101 +432,56 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
     };
   }, [
     currentUser.username,
+    done,
     gauge,
-    live.done,
-    live.opponentScore,
-    live.playerScore,
+    maxRounds,
     message,
     opponentShot,
+    opponentScore,
+    playerScore,
     playerShot,
     round,
-    target,
+    targetName,
   ]);
 
-  useEffect(
-    () => () => {
-      if (nextRoundTimeoutRef.current) {
-        window.clearTimeout(nextRoundTimeoutRef.current);
-      }
-    },
-    []
-  );
+  const canFire = phase === 'open' && !hasFired && !livePending && !done && !loading;
 
-  const fire = () => {
-    if (live.done || live.resolvingMatch || roundLocked) return;
-    setRoundLocked(true);
-
-    const shot = clampGauge(gauge);
-    const gainedPoints = pointsFromShot(shot);
-    const nextPlayerScore = live.playerScore + gainedPoints;
-    let nextOpponentScore = live.opponentScore;
-
-    setPlayerShot(shot);
-    live.setPlayerScore(nextPlayerScore);
-    playGameSfx(gainedPoints > 0 ? 'success' : 'fail', gainedPoints > 0 ? 0.24 : 0.2);
-
-    // PixiJS visual feedback at the reticle position
-    const tier = tierFromPoints(gainedPoints);
-    pixiStageRef.current?.flash(tier);
-    pixiStageRef.current?.showScorePopup(
-      gainedPoints > 0 ? `+${gainedPoints} ${shotLabel(shot)}` : shotLabel(shot),
-      tier
+  if (live.protocolError) {
+    return (
+      <div className="mx-auto max-w-3xl text-carbon" data-testid="arena-battle">
+        <ConnectionOverlay gameId={gameId} />
+        <header className="duo-game-head mb-6">
+          <div className="min-w-0">
+            <span className="duo-game-chip bg-candy-lokum">{AIM_GAME_TYPE}</span>
+            <h2 className="duo-game-title">İstemci güncellemesi gerekiyor</h2>
+          </div>
+          <button type="button" onClick={onLeave} className="duo-quiet duo-focus shrink-0">
+            Oyundan çık
+          </button>
+        </header>
+        <p className="duo-game-status mb-4" aria-live="assertive">
+          {live.error}
+        </p>
+        <RetroButton onClick={() => window.location.reload()} className="w-full">
+          Sayfayı yenile
+        </RetroButton>
+      </div>
     );
-
-    if (isBot) {
-      const botShot = clampGauge(50 + (Math.random() * 2 - 1) * 42);
-      const botPoints = pointsFromShot(botShot);
-      nextOpponentScore += botPoints;
-      setOpponentShot(botShot);
-      live.setOpponentScore(nextOpponentScore);
-      setMessage(
-        `Atışın: ${shotLabel(shot)} (${gainedPoints}). BOT: ${shotLabel(botShot)} (${botPoints}).`
-      );
-    } else {
-      setMessage(`Atışın: ${shotLabel(shot)} (${gainedPoints}). Rakip güncellemesi bekleniyor...`);
-    }
-
-    const isLastRound = round >= MAX_ROUNDS;
-    void live.syncLiveProgress(nextPlayerScore, round, isLastRound);
-
-    if (isLastRound) {
-      live.setDone(true);
-      const localWinner = isBot
-        ? nextPlayerScore >= nextOpponentScore
-          ? currentUser.username
-          : 'BOT'
-        : currentUser.username;
-      setMessage(
-        isBot
-          ? nextPlayerScore >= nextOpponentScore
-            ? 'Maçı kazandın.'
-            : 'Maçı rakip aldı.'
-          : 'Skorun kaydedildi. Rakip sonucu bekleniyor...'
-      );
-      void live.finalizeMatch(localWinner, nextPlayerScore);
-      return;
-    }
-
-    nextRoundTimeoutRef.current = window.setTimeout(() => {
-      setRound((prev) => prev + 1);
-      setMessage('Yeni tur başladı. Merkezi yakalamak için doğru anı bekle.');
-      playGameSfx('select', 0.18);
-    }, 750);
-  };
-
-  const canFire = !live.done && !live.resolvingMatch && !roundLocked;
-  const accuracy = Math.max(0, 100 - Math.abs(50 - gauge) * 2);
-  const participants =
-    live.hostName || live.guestName
-      ? `${live.hostName || currentUser.username} / ${live.guestName || target}`
-      : `${currentUser.username} / ${target}`;
+  }
 
   return (
-    <div className="mx-auto max-w-3xl text-carbon" data-testid="arena-battle">
+    <div
+      className="mx-auto max-w-3xl text-carbon"
+      data-testid="arena-battle"
+      aria-busy={loading || livePending}
+    >
       <ConnectionOverlay gameId={gameId} />
       <header className="duo-game-head mb-6">
         <div className="min-w-0">
-          <span className="duo-game-chip bg-candy-lokum">{MAX_ROUNDS} tur</span>
+          <span className="duo-game-chip bg-candy-lokum">{maxRounds} tur</span>
+          {!isBot && phase === 'open' && (
+            <span className="duo-game-chip ml-2 bg-paper-deep">{live.secondsLeft} sn</span>
+          )}
           <h2 className="duo-game-title">{AIM_GAME_TYPE}</h2>
           <p className="duo-game-sub truncate">{participants}</p>
         </div>
@@ -316,16 +494,16 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
         <div className="duo-stat">
           <span className="duo-stat-label">Tur</span>
           <span className="duo-stat-value">
-            {Math.min(round, MAX_ROUNDS)} / {MAX_ROUNDS}
+            {Math.min(round, maxRounds)} / {maxRounds}
           </span>
         </div>
         <div className="duo-stat duo-stat--lokum">
           <span className="duo-stat-label">Sen</span>
-          <span className="duo-stat-value duo-stat-value--score">{live.playerScore}</span>
+          <span className="duo-stat-value duo-stat-value--score">{playerScore}</span>
         </div>
         <div className="duo-stat">
           <span className="duo-stat-label">Rakip</span>
-          <span className="duo-stat-value duo-stat-value--score">{live.opponentScore}</span>
+          <span className="duo-stat-value duo-stat-value--score">{opponentScore}</span>
         </div>
       </div>
 
@@ -402,9 +580,13 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
           size="lg"
           className="flex-1"
         >
-          Ateş et
+          {livePending
+            ? 'Gönderiliyor...'
+            : hasFired && phase === 'open'
+              ? 'Rakip bekleniyor'
+              : 'Ateş et'}
         </RetroButton>
-        {live.done && (
+        {done && (
           <RetroButton onClick={onLeave} variant="secondary" size="lg" className="flex-1">
             Lobiye dön
           </RetroButton>

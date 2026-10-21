@@ -1,53 +1,48 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { User } from '../types';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { User, CompetitiveEngineState, CompetitiveGame } from '../types';
 import { api } from '../lib/api';
-import { submitScoreAndWaitForWinner } from '../lib/multiplayer';
+import {
+  actorKeyFor,
+  createActionId,
+  engineOf,
+  isCompetitiveGameType,
+  isProtocolV2,
+  secondsLeftAt,
+  serverClockOffset,
+  type ActorKey,
+} from '../lib/competitiveGame';
 import { socketService } from '../lib/socket';
 
 /**
- * Shared "live score" multiplayer game lifecycle hook.
+ * Server-authoritative lifecycle for the two ranked multiplayer games.
  *
- * Encapsulates the parts of ArenaBattle and KnowledgeQuiz that were ~70% duplicate:
- * snapshot fetching, opponent resolution, live progress submission, socket subscription,
- * fallback polling, idempotent finish handling, and the final score reconciliation
- * round (`submitScoreAndWaitForWinner`).
- *
- * The host component still owns game-specific UI, round indexing, and the per-tick
- * mechanic — this hook only handles state that is identical across live-score games.
+ * The client never computes a score, a winner or a deadline. It sends an
+ * `actionId` + `roundId` envelope, applies the returned public snapshot and
+ * ignores stale revisions. Reconnects refetch the snapshot; a 15 s fallback
+ * poll only fills gaps when Socket.IO is unavailable.
  */
 
-export interface LiveSubmissionState {
-  score?: number;
-  roundsWon?: number;
-  round?: number;
-  done?: boolean;
+export interface LiveMatchStats {
+  kind: 'quiz' | 'arena';
+  playerScore: number;
+  opponentScore: number;
+  durationMs: number;
+  maxRounds?: number;
+  correctAnswers?: number;
 }
 
-export interface LiveGameSnapshot {
-  id: string | number;
-  status?: string;
-  winner?: string | null;
-  hostName?: string;
-  guestName?: string | null;
-  gameState?: {
-    resolvedWinner?: string;
-    /** Set by the backend after settlement runs; the actual points moved to the winner. */
-    stakeTransferred?: number;
-    settlementApplied?: boolean;
-    live?: {
-      submissions?: Record<string, LiveSubmissionState>;
-      resolvedWinner?: string;
-    };
-  };
+export type LiveActionType = 'answer' | 'joker' | 'fire' | 'resign';
+
+export interface LiveActionInput {
+  type: LiveActionType;
+  optionIndex?: number;
 }
 
-/** Bot/local games never run server settlement; we keep a cosmetic reward so the user
- * still sees a "won X points" toast. Production stats and wallet are unaffected. */
-const BOT_WIN_REWARD = 10;
-
-interface GameStateUpdatedPayload {
-  type?: string;
-  gameId?: string | number;
+export interface LiveActionResult {
+  ok: boolean;
+  code?: string;
+  message?: string;
+  duplicate?: boolean;
 }
 
 export interface UseLiveScoreGameOptions {
@@ -56,389 +51,504 @@ export interface UseLiveScoreGameOptions {
   isBot: boolean;
   /** Game type sent to the server (e.g. 'Nişancı Düellosu', 'Bilgi Yarışı'). */
   mode: string;
-  /** Prefix for the idempotent submissionKey (e.g. 'arena', 'quiz'). */
-  submissionKeyPrefix: string;
-  /** Fallback polling interval in milliseconds. */
+  /** Kept for callers that still pass it; the v2 action id replaces it. */
+  submissionKeyPrefix?: string;
+  /** Fallback polling interval; never below 15 s for competitive games. */
   pollIntervalMs?: number;
-  /**
-   * If set, when the player triggers final-round completion (`isDoneRound=true` in
-   * syncLiveProgress) the hook arms a fallback timer; if the server has not yet
-   * resolved the winner by then, the host's `finalizeMatch` is invoked locally.
-   */
-  finalizationTimeoutMs?: number;
-  /** Used in error logs to disambiguate concurrent games. Defaults to 'LiveScoreGame'. */
   logName?: string;
-  /** Stats `kind` reported to onGameEnd (MatchResultCard chip'leri için). */
   statsKind: 'quiz' | 'arena';
   onGameEnd: (winner: string, points: number, stats?: LiveMatchStats) => void;
 }
 
-/** Maç bitiminde hook'un elindeki, sonuç kartında gösterilen istatistikler. */
-export interface LiveMatchStats {
-  kind: 'quiz' | 'arena';
-  playerScore: number;
-  opponentScore: number;
-  durationMs: number;
-}
-
 export interface UseLiveScoreGameResult {
+  snapshot: CompetitiveGame | null;
+  engine: CompetitiveEngineState | null;
+  actorKey: ActorKey | null;
+  player: CompetitiveEngineState['players']['host'] | null;
+  opponent: CompetitiveEngineState['players']['guest'] | null;
   playerScore: number;
-  setPlayerScore: React.Dispatch<React.SetStateAction<number>>;
   opponentScore: number;
-  setOpponentScore: React.Dispatch<React.SetStateAction<number>>;
-  done: boolean;
-  setDone: React.Dispatch<React.SetStateAction<boolean>>;
-  resolvingMatch: boolean;
-  setResolvingMatch: React.Dispatch<React.SetStateAction<boolean>>;
   hostName: string;
   guestName: string;
-  /** Latest live submission `round` value reported by the actor in the snapshot. */
-  serverRound: number | null;
-  /** Idempotent ref guard so finishFromServer + finalizeMatch can't both fire. */
-  finishHandledRef: React.MutableRefObject<boolean>;
-  matchStartedAtRef: React.MutableRefObject<number>;
-  /** Force a fresh snapshot fetch (no-op for bot/local games). */
-  fetchSnapshot: (silent?: boolean) => Promise<LiveGameSnapshot | null>;
-  /** Send a live submission to the server. No-op for bot/local games. */
-  syncLiveProgress: (score: number, round: number, isDoneRound: boolean) => Promise<void>;
-  /** Final reconciliation step — sends total score, waits for server winner. */
-  finalizeMatch: (localWinner: string, playerScoreValue: number) => Promise<void>;
-  /** Resets all hook-managed state for a fresh match (call when gameId changes). */
+  done: boolean;
+  pending: boolean;
+  pendingType: LiveActionType | null;
+  resolvingMatch: boolean;
+  error: string | null;
+  protocolError: boolean;
+  secondsLeft: number;
+  fetchSnapshot: (silent?: boolean) => Promise<CompetitiveGame | null>;
+  submitAction: (input: LiveActionInput) => Promise<LiveActionResult>;
+  resign: () => Promise<LiveActionResult>;
+  serverNow: () => number;
   reset: () => void;
 }
 
 const normalizeName = (value: unknown) => String(value || '').trim();
+const FINISH_DELAY_MS = 650;
+const PROTOCOL_ERROR_MESSAGE =
+  'Oyun istemcisi güncel değil. Sayfayı yenileyip maça tekrar gir; eski oyun protokolüne geçiş yapılmaz.';
+
+type ActionRetry = {
+  key: string;
+  payload: {
+    actionId: string;
+    roundId: string;
+    type: LiveActionType;
+    optionIndex?: number;
+  };
+};
 
 export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScoreGameResult {
   const {
     currentUser,
     gameId,
     isBot,
-    mode,
-    submissionKeyPrefix,
-    pollIntervalMs = 2200,
-    finalizationTimeoutMs,
+    pollIntervalMs = 15_000,
     logName = 'LiveScoreGame',
     statsKind,
     onGameEnd,
   } = options;
 
-  const [playerScore, setPlayerScore] = useState(0);
-  const [opponentScore, setOpponentScore] = useState(0);
-  const [done, setDone] = useState(false);
-  const [resolvingMatch, setResolvingMatch] = useState(false);
+  const [snapshot, setSnapshot] = useState<CompetitiveGame | null>(null);
+  const [engine, setEngine] = useState<CompetitiveEngineState | null>(null);
   const [hostName, setHostName] = useState('');
   const [guestName, setGuestName] = useState('');
-  const [serverRound, setServerRound] = useState<number | null>(null);
+  const [done, setDone] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [pendingType, setPendingType] = useState<LiveActionType | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [protocolError, setProtocolError] = useState(false);
+  const [, setClockTick] = useState(0);
 
+  const mountedRef = useRef(true);
+  const engineRef = useRef<CompetitiveEngineState | null>(null);
+  const snapshotRef = useRef<CompetitiveGame | null>(null);
+  const clockOffsetRef = useRef(0);
   const finishHandledRef = useRef(false);
-  const matchStartedAtRef = useRef<number>(Date.now());
+  const protocolErrorRef = useRef(false);
+  const pendingRef = useRef(false);
+  const retryRef = useRef<ActionRetry | null>(null);
   const pollRef = useRef<number | null>(null);
-  const finalizationTimeoutRef = useRef<number | null>(null);
-  // finishFromServer/finalizeMatch'in deps'inde skor state'leri yok (kasıtlı —
-  // effect zinciri bozulmasın); güncel skorlar bu ref üzerinden okunur.
-  const scoresRef = useRef({ player: 0, opponent: 0 });
+  const phaseTimerRef = useRef<number | null>(null);
+  const finishTimerRef = useRef<number | null>(null);
+  const fetchInFlightRef = useRef(false);
+  const gameIdRef = useRef(gameId);
+  const onGameEndRef = useRef(onGameEnd);
 
   useEffect(() => {
-    scoresRef.current = { player: playerScore, opponent: opponentScore };
-  }, [playerScore, opponentScore]);
+    gameIdRef.current = gameId;
+  }, [gameId]);
+
+  useEffect(() => {
+    onGameEndRef.current = onGameEnd;
+  }, [onGameEnd]);
 
   const buildStats = useCallback(
-    (): LiveMatchStats => ({
-      kind: statsKind,
-      playerScore: scoresRef.current.player,
-      opponentScore: scoresRef.current.opponent,
-      durationMs: Math.max(0, Date.now() - matchStartedAtRef.current),
-    }),
-    [statsKind]
-  );
-
-  const reset = useCallback(() => {
-    finishHandledRef.current = false;
-    matchStartedAtRef.current = Date.now();
-    setPlayerScore(0);
-    setOpponentScore(0);
-    setDone(false);
-    setResolvingMatch(false);
-    setServerRound(null);
-    if (finalizationTimeoutRef.current) {
-      window.clearTimeout(finalizationTimeoutRef.current);
-      finalizationTimeoutRef.current = null;
-    }
-  }, []);
-
-  const resolveActorAndOpponent = useCallback(
-    (snapshot: LiveGameSnapshot) => {
-      const actor = normalizeName(currentUser.username).toLowerCase();
-      const host = normalizeName(snapshot.hostName);
-      const guest = normalizeName(snapshot.guestName);
-      if (host && actor === host.toLowerCase()) {
-        return { actorName: host, opponentKey: guest };
-      }
-      if (guest && actor === guest.toLowerCase()) {
-        return { actorName: guest, opponentKey: host };
-      }
-      return { actorName: '', opponentKey: '' };
+    (source?: CompetitiveEngineState | null): LiveMatchStats => {
+      const current = source || engineRef.current;
+      const actorKey = actorKeyFor(snapshotRef.current, currentUser.username);
+      const fallbackKey: ActorKey = actorKey || 'host';
+      const otherKey: ActorKey = fallbackKey === 'host' ? 'guest' : 'host';
+      const resultScores = current?.result?.scores;
+      const playerScore = Number(
+        resultScores?.[fallbackKey] ?? current?.players?.[fallbackKey]?.score ?? 0
+      );
+      const opponentScore = Number(
+        resultScores?.[otherKey] ?? current?.players?.[otherKey]?.score ?? 0
+      );
+      const startedAt = Date.parse(String(current?.startedAt || ''));
+      return {
+        kind: statsKind,
+        playerScore: Math.max(0, playerScore),
+        opponentScore: Math.max(0, opponentScore),
+        durationMs: Number.isFinite(startedAt) ? Math.max(0, Date.now() - startedAt) : 0,
+        ...(typeof current?.totalRounds === 'number' ? { maxRounds: current.totalRounds } : {}),
+        ...(typeof current?.players?.[fallbackKey]?.correct === 'number'
+          ? { correctAnswers: current.players[fallbackKey].correct }
+          : {}),
+      };
     },
-    [currentUser.username]
+    [currentUser.username, statsKind]
   );
 
   const finishFromServer = useCallback(
-    (winnerRaw: string | null, stakeTransferred: number) => {
+    (nextEngine: CompetitiveEngineState) => {
       if (finishHandledRef.current) return;
+      const result = nextEngine.result;
+      if (!result) return;
       finishHandledRef.current = true;
-      if (finalizationTimeoutRef.current) {
-        window.clearTimeout(finalizationTimeoutRef.current);
-        finalizationTimeoutRef.current = null;
+      if (finishTimerRef.current) {
+        window.clearTimeout(finishTimerRef.current);
+        finishTimerRef.current = null;
       }
-      const winner = normalizeName(winnerRaw) || 'Berabere';
-      const isWinner = winner.toLowerCase() === normalizeName(currentUser.username).toLowerCase();
-      const safeStake = Math.max(0, Math.floor(Number(stakeTransferred) || 0));
-      const points = isWinner ? safeStake : 0;
+
+      const cancelled = Boolean(result.cancelled);
+      const draw = Boolean(result.draw) || (!result.winner && !cancelled);
+      const winner = cancelled
+        ? 'Maç iptal edildi'
+        : draw || !result.winner
+          ? 'Berabere'
+          : String(result.winner);
+      const isWinner =
+        !cancelled &&
+        !draw &&
+        normalizeName(winner).toLowerCase() === normalizeName(currentUser.username).toLowerCase();
+      const transferred = Math.max(
+        0,
+        Math.floor(Number(result.stakeTransferred ?? result.transferredPoints ?? 0) || 0)
+      );
+      const stats = buildStats(nextEngine);
+
       setDone(true);
-      const stats = buildStats();
-      window.setTimeout(() => onGameEnd(winner, points, stats), 700);
+      finishTimerRef.current = window.setTimeout(() => {
+        if (!mountedRef.current) return;
+        onGameEndRef.current(winner, isWinner ? transferred : 0, stats);
+      }, FINISH_DELAY_MS);
     },
-    [buildStats, currentUser.username, onGameEnd]
+    [buildStats, currentUser.username]
   );
 
   const applySnapshot = useCallback(
-    (snapshot: LiveGameSnapshot) => {
-      if (snapshot.hostName) setHostName(String(snapshot.hostName));
-      if (snapshot.guestName) setGuestName(String(snapshot.guestName));
-      const { actorName, opponentKey } = resolveActorAndOpponent(snapshot);
-      const submissions = snapshot.gameState?.live?.submissions || {};
-      const actorLive = actorName ? submissions[actorName] : undefined;
-      const opponentLive = opponentKey ? submissions[opponentKey] : undefined;
+    (next: CompetitiveGame, receivedAt = Date.now()) => {
+      if (isBot) return;
 
-      if (typeof actorLive?.score === 'number') {
-        setPlayerScore((prev) => Math.max(prev, Number(actorLive.score)));
+      const nextEngine = engineOf(next);
+      if (!nextEngine) {
+        // A waiting lobby has no engine yet. An active rank game without one is
+        // an old cached row/protocol and must never fall back to local scoring.
+        if (String(next.status || '').toLowerCase() !== 'waiting') {
+          protocolErrorRef.current = true;
+          setProtocolError(true);
+          setError(PROTOCOL_ERROR_MESSAGE);
+        }
+        return;
       }
-      if (typeof opponentLive?.score === 'number') {
-        setOpponentScore((prev) => Math.max(prev, Number(opponentLive.score)));
-      }
-      if (typeof actorLive?.round === 'number') {
-        const safeRound = Math.max(1, Math.floor(Number(actorLive.round)));
-        setServerRound((prev) => (prev === null ? safeRound : Math.max(prev, safeRound)));
+      if (!isCompetitiveGameType(next.gameType) || !isProtocolV2(next)) {
+        protocolErrorRef.current = true;
+        setProtocolError(true);
+        setError(PROTOCOL_ERROR_MESSAGE);
+        return;
       }
 
-      const winner =
-        normalizeName(
-          snapshot.gameState?.resolvedWinner ||
-            snapshot.gameState?.live?.resolvedWinner ||
-            snapshot.winner
-        ) || null;
-      if (String(snapshot.status || '').toLowerCase() === 'finished') {
-        const serverStake = Number(snapshot.gameState?.stakeTransferred) || 0;
-        finishFromServer(winner, serverStake);
+      const current = engineRef.current;
+      if (
+        current &&
+        Number(nextEngine.revision) < Number(current.revision) &&
+        next.status !== 'finished'
+      ) {
+        // A delayed socket event or poll response. Never roll the UI back.
+        return;
+      }
+
+      clockOffsetRef.current = serverClockOffset(next, receivedAt);
+      engineRef.current = nextEngine;
+      snapshotRef.current = next;
+      setSnapshot(next);
+      setEngine(nextEngine);
+      setHostName(normalizeName(next.hostName));
+      setGuestName(normalizeName(next.guestName));
+      setError(null);
+      setClockTick((value) => value + 1);
+
+      if (String(next.status || '').toLowerCase() === 'finished') {
+        finishFromServer(nextEngine);
       }
     },
-    [finishFromServer, resolveActorAndOpponent]
+    [finishFromServer, isBot]
   );
 
   const fetchSnapshot = useCallback(
-    async (silent = false): Promise<LiveGameSnapshot | null> => {
-      if (isBot || !gameId) return null;
+    async (silent = false): Promise<CompetitiveGame | null> => {
+      if (isBot || !gameId || protocolErrorRef.current) return null;
+      if (fetchInFlightRef.current) return null;
+      fetchInFlightRef.current = true;
+      const requestedGameId = String(gameId);
       try {
-        const snapshot = (await api.games.get(gameId)) as LiveGameSnapshot;
-        applySnapshot(snapshot);
-        return snapshot;
+        const next = (await api.games.get(gameId)) as CompetitiveGame;
+        if (!mountedRef.current || String(gameIdRef.current) !== requestedGameId) return null;
+        applySnapshot(next);
+        return next;
       } catch (err) {
         if (!silent) {
           console.error(`${logName} snapshot error`, err);
+          if (mountedRef.current) {
+            setError('Oyun durumu alınamadı. Bağlantını kontrol edip tekrar dene.');
+          }
         }
         return null;
+      } finally {
+        fetchInFlightRef.current = false;
       }
     },
     [applySnapshot, gameId, isBot, logName]
   );
 
-  const syncLiveProgress = useCallback(
-    async (score: number, round: number, isDoneRound: boolean) => {
-      if (isBot || !gameId) return;
+  const submitAction = useCallback(
+    async (input: LiveActionInput): Promise<LiveActionResult> => {
+      if (isBot || !gameId) return { ok: false, code: 'NOT_MULTIPLAYER' };
+      if (pendingRef.current) return { ok: false, code: 'BUSY' };
+      if (protocolErrorRef.current) {
+        return { ok: false, code: 'CLIENT_UPDATE_REQUIRED', message: PROTOCOL_ERROR_MESSAGE };
+      }
+
+      const currentEngine = engineRef.current;
+      const roundId = currentEngine?.round?.id;
+      if (!roundId) {
+        return { ok: false, code: 'NO_ROUND', message: 'Tur henüz hazır değil.' };
+      }
+
+      const actionKey = `${roundId}|${input.type}|${input.optionIndex ?? ''}`;
+      const previous = retryRef.current;
+      const payload =
+        previous && previous.key === actionKey
+          ? previous.payload
+          : {
+              actionId: createActionId(input.type),
+              roundId,
+              type: input.type,
+              ...(input.optionIndex !== undefined ? { optionIndex: input.optionIndex } : {}),
+            };
+      retryRef.current = { key: actionKey, payload };
+
+      pendingRef.current = true;
+      setPending(true);
+      setPendingType(input.type);
+      setError(null);
+
+      const requestedGameId = String(gameId);
       try {
-        const safeScore = Math.max(0, Math.min(1000, Math.floor(score)));
-        const safeRound = Math.max(0, Math.min(1000, Math.floor(round)));
-        await api.games.move(gameId, {
-          liveSubmission: {
-            mode,
-            score: safeScore,
-            roundsWon: safeScore,
-            round: safeRound,
-            done: Boolean(isDoneRound),
-            submissionKey: `${submissionKeyPrefix}|${String(gameId)}|${currentUser.username}|${safeRound}|${safeScore}|${isDoneRound ? 1 : 0}`,
-          },
-        });
+        const response = await api.games.action(gameId, payload);
+        if (!mountedRef.current || String(gameIdRef.current) !== requestedGameId) {
+          return { ok: false, code: 'GAME_CHANGED' };
+        }
+        retryRef.current = null;
+        if (response?.game) {
+          applySnapshot(response.game as CompetitiveGame);
+        } else {
+          await fetchSnapshot(true);
+        }
+        return { ok: true, duplicate: Boolean(response?.duplicate) };
       } catch (err) {
-        console.error(`${logName} live submission failed`, err);
-      }
-    },
-    [currentUser.username, gameId, isBot, logName, mode, submissionKeyPrefix]
-  );
+        const apiError = err as { code?: string; status?: number; message?: string } | null;
+        const code = typeof apiError?.code === 'string' ? apiError.code : undefined;
+        const status = typeof apiError?.status === 'number' ? apiError.status : undefined;
+        const message =
+          typeof apiError?.message === 'string' && apiError.message
+            ? apiError.message
+            : 'Hamle gönderilemedi. Tekrar dene.';
 
-  const finalizeMatch = useCallback(
-    async (localWinner: string, playerScoreValue: number) => {
-      if (finishHandledRef.current) return;
-      if (isBot || !gameId) {
-        // Bot/local: no server settlement, show cosmetic reward only.
-        const points = localWinner === currentUser.username ? BOT_WIN_REWARD : 0;
-        finishHandledRef.current = true;
-        // Read the stats when the delay is over: the last answer's score lands in the same
-        // tick as this call, so reading it now would leave that answer out.
-        window.setTimeout(() => onGameEnd(localWinner, points, buildStats()), 900);
-        return;
-      }
-
-      setResolvingMatch(true);
-
-      try {
-        const durationMs = Math.max(1, Date.now() - matchStartedAtRef.current);
-        const { winner, finished } = await submitScoreAndWaitForWinner({
-          gameId,
-          username: currentUser.username,
-          score: playerScoreValue,
-          roundsWon: playerScoreValue,
-          durationMs,
-        });
-
-        if (!finished) {
-          finishHandledRef.current = true;
-          const pendingStats = buildStats();
-          window.setTimeout(() => onGameEnd('Sonuç Bekleniyor', 0, pendingStats), 900);
-          return;
+        // A 4xx answer is definitive (stale round, already answered, conflict).
+        // A network error or 5xx may have committed, so keep the same actionId
+        // and let the retry return the stored receipt.
+        if (status && status >= 400 && status < 500) {
+          retryRef.current = null;
+          if (code === 'LEGACY_PROTOCOL_DISABLED' || code === 'CLIENT_UPDATE_REQUIRED') {
+            protocolErrorRef.current = true;
+            setProtocolError(true);
+            setError(PROTOCOL_ERROR_MESSAGE);
+          } else {
+            setError(message);
+          }
+          void fetchSnapshot(true);
+          return { ok: false, code, message };
         }
 
-        // Re-read snapshot to get the actual `stakeTransferred` the backend wrote
-        // during settlement. Without this we'd be guessing the reward amount.
-        let serverStake = 0;
-        try {
-          const finalSnapshot = (await api.games.get(gameId)) as LiveGameSnapshot;
-          serverStake = Number(finalSnapshot?.gameState?.stakeTransferred) || 0;
-        } catch {
-          // Snapshot fetch failed — fall back to zero so we don't fabricate a reward.
+        if (mountedRef.current) {
+          setError('Hamle sunucuya ulaşmadı. Aynı hamleyi tekrar deneyebilirsin.');
         }
-
-        const resolvedWinner = winner || 'Berabere';
-        const isWinner = Boolean(winner) && winner === currentUser.username;
-        const points = isWinner ? Math.max(0, Math.floor(serverStake)) : 0;
-        finishHandledRef.current = true;
-        const finalStats = buildStats();
-        window.setTimeout(() => onGameEnd(resolvedWinner, points, finalStats), 900);
-      } catch {
-        finishHandledRef.current = true;
-        const errorStats = buildStats();
-        window.setTimeout(() => onGameEnd('Sonuç Bekleniyor', 0, errorStats), 900);
+        return { ok: false, code: 'NETWORK', message: 'Hamle sunucuya ulaşmadı.' };
       } finally {
-        setResolvingMatch(false);
+        pendingRef.current = false;
+        setPending(false);
+        setPendingType(null);
       }
     },
-    [buildStats, currentUser.username, gameId, isBot, onGameEnd]
+    [applySnapshot, fetchSnapshot, gameId, isBot]
   );
 
-  // Reset state when gameId changes (new match).
+  const resign = useCallback(async (): Promise<LiveActionResult> => {
+    if (!engineRef.current?.round?.id) {
+      return { ok: false, code: 'NO_ROUND', message: 'Tur henüz hazır değil.' };
+    }
+    return submitAction({ type: 'resign' });
+  }, [submitAction]);
+
+  const serverNow = useCallback(() => Date.now() + clockOffsetRef.current, []);
+
+  const reset = useCallback(() => {
+    if (finishTimerRef.current) {
+      window.clearTimeout(finishTimerRef.current);
+      finishTimerRef.current = null;
+    }
+    if (phaseTimerRef.current) {
+      window.clearTimeout(phaseTimerRef.current);
+      phaseTimerRef.current = null;
+    }
+    engineRef.current = null;
+    snapshotRef.current = null;
+    clockOffsetRef.current = 0;
+    finishHandledRef.current = false;
+    protocolErrorRef.current = false;
+    pendingRef.current = false;
+    retryRef.current = null;
+    setSnapshot(null);
+    setEngine(null);
+    setHostName('');
+    setGuestName('');
+    setDone(false);
+    setPending(false);
+    setPendingType(null);
+    setError(null);
+    setProtocolError(false);
+  }, []);
+
+  // A new game starts from a clean snapshot; nothing local carries into it.
   useEffect(() => {
     reset();
-  }, [gameId, reset]);
+  }, [gameId, isBot, reset]);
 
-  // Socket subscription + fallback polling for multiplayer games.
+  // Socket.IO first, polling as a deliberate 15 s safety net.
   useEffect(() => {
     if (isBot || !gameId) return undefined;
-
-    void fetchSnapshot();
+    const room = String(gameId);
     const socket = socketService.getSocket();
-    socketService.joinGame(String(gameId));
 
-    const onRealtime = (payload: GameStateUpdatedPayload) => {
-      if (String(payload?.gameId || '') !== String(gameId)) return;
-      const type = payload?.type;
-      if (
-        type === 'live_submission' ||
-        type === 'score_submission' ||
-        type === 'game_finished' ||
-        type === 'game_state'
-      ) {
-        void fetchSnapshot(true);
-      }
-    };
-    socket.on('game_state_updated', onRealtime);
-
-    pollRef.current = window.setInterval(() => {
-      if (document.visibilityState === 'hidden' || done) return;
+    const joinAndRefresh = () => {
+      socketService.joinGame(room);
       void fetchSnapshot(true);
-    }, pollIntervalMs);
+    };
+
+    const onRealtime = (payload: {
+      gameId?: string | number;
+      status?: string;
+      gameState?: { engine?: CompetitiveEngineState };
+      serverNow?: string;
+    }) => {
+      if (String(payload?.gameId || '') !== room) return;
+      const base = snapshotRef.current;
+      const incoming = payload?.gameState?.engine;
+      if (base && incoming && Number(incoming.version) === 2) {
+        applySnapshot(
+          {
+            ...base,
+            status: (payload.status as CompetitiveGame['status']) || base.status,
+            gameState: { engine: incoming },
+            serverNow: payload.serverNow || new Date().toISOString(),
+          },
+          Date.now()
+        );
+        return;
+      }
+      void fetchSnapshot(true);
+    };
+
+    joinAndRefresh();
+    socket.on('connect', joinAndRefresh);
+    socket.on('game_state_updated', onRealtime);
+    socket.on('game_finished', onRealtime);
+    socket.on('game_joined', onRealtime);
+
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') void fetchSnapshot(true);
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    pollRef.current = window.setInterval(
+      () => {
+        if (document.visibilityState === 'hidden' || finishHandledRef.current) return;
+        void fetchSnapshot(true);
+      },
+      Math.max(15_000, pollIntervalMs)
+    );
 
     return () => {
+      socket.off('connect', joinAndRefresh);
       socket.off('game_state_updated', onRealtime);
+      socket.off('game_finished', onRealtime);
+      socket.off('game_joined', onRealtime);
+      document.removeEventListener('visibilitychange', onVisibility);
+      socketService.leaveGame(room);
       if (pollRef.current) {
         window.clearInterval(pollRef.current);
         pollRef.current = null;
       }
     };
-  }, [done, fetchSnapshot, gameId, isBot, pollIntervalMs]);
+  }, [applySnapshot, fetchSnapshot, gameId, isBot, pollIntervalMs]);
 
-  // Component unmount: clear timers.
-  useEffect(
-    () => () => {
-      if (finalizationTimeoutRef.current) {
-        window.clearTimeout(finalizationTimeoutRef.current);
+  // Refresh just after a server deadline: this only asks the server to advance
+  // its clock, it never submits a score or picks a winner.
+  useEffect(() => {
+    if (isBot || !engine?.phaseEndsAt || done) return undefined;
+    if (phaseTimerRef.current) {
+      window.clearTimeout(phaseTimerRef.current);
+      phaseTimerRef.current = null;
+    }
+    const endsAt = Date.parse(engine.phaseEndsAt);
+    if (!Number.isFinite(endsAt)) return undefined;
+    const delay = Math.max(80, Math.min(20_000, endsAt - serverNow() + 220));
+    phaseTimerRef.current = window.setTimeout(() => {
+      void fetchSnapshot(true);
+    }, delay);
+    return () => {
+      if (phaseTimerRef.current) {
+        window.clearTimeout(phaseTimerRef.current);
+        phaseTimerRef.current = null;
       }
-    },
-    []
-  );
+    };
+  }, [done, engine?.phaseEndsAt, engine?.revision, fetchSnapshot, isBot, serverNow]);
 
-  // When the host signals the final round, arm a fallback finalize timer (opt-in).
-  const armFinalizationFallback = useCallback(
-    (fallbackLocalWinner: string, playerScoreValue: number) => {
-      if (!finalizationTimeoutMs || isBot || !gameId) return;
-      if (finalizationTimeoutRef.current) {
-        window.clearTimeout(finalizationTimeoutRef.current);
-      }
-      finalizationTimeoutRef.current = window.setTimeout(() => {
-        if (!finishHandledRef.current) {
-          void finalizeMatch(fallbackLocalWinner, playerScoreValue);
-        }
-      }, finalizationTimeoutMs);
-    },
-    [finalizationTimeoutMs, finalizeMatch, gameId, isBot]
-  );
+  // Local heartbeat for the countdown/reticle. The server snapshot still owns
+  // the actual deadline and position.
+  useEffect(() => {
+    if (isBot || done) return undefined;
+    const interval = window.setInterval(() => {
+      if (document.visibilityState !== 'hidden') setClockTick((value) => value + 1);
+    }, 250);
+    return () => window.clearInterval(interval);
+  }, [done, isBot]);
 
-  // Wrap syncLiveProgress so that calling it with isDoneRound=true arms the fallback.
-  const syncLiveProgressWithFallback = useCallback(
-    async (score: number, round: number, isDoneRound: boolean) => {
-      await syncLiveProgress(score, round, isDoneRound);
-      if (isDoneRound) {
-        const fallbackWinner =
-          score >= opponentScore ? currentUser.username : guestName || hostName || 'Rakip';
-        armFinalizationFallback(fallbackWinner, score);
-      }
-    },
-    [
-      armFinalizationFallback,
-      currentUser.username,
-      guestName,
-      hostName,
-      opponentScore,
-      syncLiveProgress,
-    ]
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      if (pollRef.current) window.clearInterval(pollRef.current);
+      if (phaseTimerRef.current) window.clearTimeout(phaseTimerRef.current);
+      if (finishTimerRef.current) window.clearTimeout(finishTimerRef.current);
+    };
+  }, []);
+
+  const actorKey = useMemo(
+    () => actorKeyFor(snapshot, currentUser.username),
+    [currentUser.username, snapshot]
   );
+  const player = actorKey ? engine?.players?.[actorKey] || null : null;
+  const opponent = actorKey
+    ? engine?.players?.[actorKey === 'host' ? 'guest' : 'host'] || null
+    : null;
+  const secondsLeft = engine?.phaseEndsAt ? secondsLeftAt(engine.phaseEndsAt, serverNow()) : 0;
 
   return {
-    playerScore,
-    setPlayerScore,
-    opponentScore,
-    setOpponentScore,
-    done,
-    setDone,
-    resolvingMatch,
-    setResolvingMatch,
+    snapshot,
+    engine,
+    actorKey,
+    player,
+    opponent,
+    playerScore: Math.max(0, Number(player?.score) || 0),
+    opponentScore: Math.max(0, Number(opponent?.score) || 0),
     hostName,
     guestName,
-    serverRound,
-    finishHandledRef,
-    matchStartedAtRef,
+    done,
+    pending,
+    pendingType,
+    resolvingMatch: pending,
+    error,
+    protocolError,
+    secondsLeft,
     fetchSnapshot,
-    syncLiveProgress: syncLiveProgressWithFallback,
-    finalizeMatch,
+    submitAction,
+    resign,
+    serverNow,
     reset,
   };
 }

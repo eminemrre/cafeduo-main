@@ -735,3 +735,218 @@ html::-webkit-scrollbar-thumb {
 .duo-input.duo-input--sm {
   min-height: 44px;
 }
+
+/* =====================================================================
+ * Nişancı Düellosu — the lokum field, the target toy and the darts.
+ * The board spans 40 of the stage's 100 gauge units, so its rings are the
+ * real scoring zones. DOM and SVG only: it reads the same without WebGL.
+ * ===================================================================== */
+
+.duo-aim-board {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.duo-aim-side {
+  min-width: 0;
+  padding: 12px 14px 14px;
+  background: #eef6f8;
+  color: #17140f;
+}
+.duo-aim-side--me {
+  background: #17140f;
+  color: #ffffff;
+}
+.duo-aim-side-name {
+  display: block;
+  overflow: hidden;
+  font-size: 15px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.duo-aim-side-score {
+  display: block;
+  margin-top: 4px;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-size: 40px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.duo-aim-pips {
+  display: flex;
+  gap: 4px;
+  margin-top: 10px;
+}
+.duo-aim-pip {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  background: #d9eaef;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.duo-aim-side--me .duo-aim-pip {
+  background: #2a251c;
+  color: #ffffff;
+}
+.duo-aim-pip--hit {
+  background: #ffffff;
+}
+.duo-aim-side--me .duo-aim-pip--hit {
+  background: #ff5c8a;
+  color: #17140f;
+}
+
+.duo-aim-stage {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 4 / 3;
+  background: #ff5c8a;
+  touch-action: manipulation;
+  user-select: none;
+}
+@media (min-width: 640px) {
+  .duo-aim-stage {
+    aspect-ratio: 2 / 1;
+  }
+}
+.duo-aim-timer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  background: #17140f;
+  transform-origin: left center;
+}
+.duo-aim-round {
+  position: absolute;
+  top: 20px;
+  left: 16px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #17140f;
+  font-variant-numeric: tabular-nums;
+}
+.duo-aim-target {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 40%;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+}
+.duo-aim-target--hit {
+  animation: duo-aim-wobble 460ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes duo-aim-wobble {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  28% {
+    transform: translate(-50%, -50%) scale(0.93) rotate(-3deg);
+  }
+  64% {
+    transform: translate(-50%, -50%) scale(1.03) rotate(1.5deg);
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+.duo-aim-ring-label {
+  font-family: Onest, system-ui, sans-serif;
+  font-size: 3.4px;
+  font-weight: 700;
+  fill: #17140f;
+}
+.duo-aim-reticle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 52px;
+  height: 52px;
+  margin: -26px 0 0 -26px;
+  pointer-events: none;
+}
+.duo-aim-dart {
+  position: absolute;
+  top: 50%;
+  width: 22px;
+  height: 46px;
+  margin-left: -11px;
+  pointer-events: none;
+  animation: duo-aim-land 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.duo-aim-dart--me {
+  margin-top: -46px;
+  --duo-aim-from: -28px;
+}
+.duo-aim-dart--op {
+  --duo-aim-from: 28px;
+}
+.duo-aim-dart--ghost {
+  opacity: 0.5;
+  animation: none;
+}
+@keyframes duo-aim-land {
+  from {
+    opacity: 0;
+    transform: translateY(var(--duo-aim-from));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.duo-aim-dart-label {
+  font-family: Onest, system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.duo-aim-pop {
+  position: absolute;
+  top: 12%;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1;
+  color: #17140f;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateX(-50%);
+  animation: duo-aim-pop 1100ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes duo-aim-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 12px) scale(0.8);
+  }
+  16% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1.06);
+  }
+  72% {
+    opacity: 1;
+    transform: translate(-50%, -4px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -16px) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .duo-aim-target--hit,
+  .duo-aim-dart {
+    animation: none;
+  }
+  .duo-aim-pop {
+    animation: none;
+    transform: translateX(-50%);
+  }
+}

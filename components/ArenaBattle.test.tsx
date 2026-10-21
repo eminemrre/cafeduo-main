@@ -50,23 +50,6 @@ jest.mock('./RetroButton', () => ({
   ),
 }));
 
-// PixiJS overlay requires WebGL; mock as inert canvas in tests so the
-// dynamic import + app.init() don't fire in jsdom.
-// `mockStageComesUp` decides whether the fake stage reports itself ready.
-let mockStageComesUp = false;
-jest.mock('./games/AimBattleStageCanvas', () => ({
-  AimBattleStageCanvas: React.forwardRef(function MockAimBattleStageCanvas(
-    props: { className?: string; onReadyChange?: (ready: boolean) => void },
-    _ref: React.Ref<unknown>
-  ) {
-    const { onReadyChange } = props;
-    React.useEffect(() => {
-      if (mockStageComesUp) onReadyChange?.(true);
-    }, [onReadyChange]);
-    return <canvas data-testid="aim-battle-pixi-canvas" />;
-  }),
-}));
-
 const mockApi = api as unknown as {
   games: { get: jest.Mock; action: jest.Mock };
 };
@@ -127,7 +110,6 @@ const buildAimSnapshot = (overrides: Partial<CompetitiveGame> = {}): Competitive
 beforeEach(() => {
   jest.clearAllMocks();
   mockApi.games.get.mockResolvedValue(buildAimSnapshot());
-  mockStageComesUp = false;
 });
 
 afterEach(() => {
@@ -254,7 +236,8 @@ describe('ArenaBattle bot practice', () => {
     expect(onLeave).toHaveBeenCalledTimes(1);
   });
 
-  it('draws the reticle in CSS while the WebGL stage is not up', () => {
+  it('draws the reticle and a target at the real zone scale without WebGL', () => {
+    jest.spyOn(Math, 'random').mockReturnValue(0.5);
     render(
       <ArenaBattle
         currentUser={mockUser}
@@ -264,11 +247,17 @@ describe('ArenaBattle bot practice', () => {
         onLeave={jest.fn()}
       />
     );
-    expect(screen.getByTestId('arena-reticle')).toBeInTheDocument();
+    expect(screen.queryByTestId('aim-battle-pixi-canvas')).not.toBeInTheDocument();
+    const reticle = screen.getByTestId('arena-reticle');
+    expect(reticle.style.visibility).toBe('visible');
+    expect(parseFloat(reticle.style.left)).toBeCloseTo(50, 5);
+    expect(screen.getByTestId('arena-stage')).toHaveAccessibleName(
+      'Hedef tahtası: merkezden 2,5 birim 3 puan, merkezden 6 birim 2 puan, merkezden 12 birim 1 puan, daha uzak atış 0 puan.'
+    );
   });
 
-  it('leaves the reticle to the WebGL stage once it draws', () => {
-    mockStageComesUp = true;
+  it('moves the practice reticle with a varying rhythm, not a fixed step', () => {
+    jest.spyOn(Math, 'random').mockReturnValue(0.5);
     render(
       <ArenaBattle
         currentUser={mockUser}
@@ -278,7 +267,46 @@ describe('ArenaBattle bot practice', () => {
         onLeave={jest.fn()}
       />
     );
-    expect(screen.queryByTestId('arena-reticle')).not.toBeInTheDocument();
+    const reticle = screen.getByTestId('arena-reticle');
+    const samples: number[] = [];
+    for (let i = 0; i < 6; i += 1) {
+      act(() => {
+        jest.advanceTimersByTime(100);
+      });
+      samples.push(parseFloat(reticle.style.left));
+    }
+    const steps = samples.slice(1).map((value, i) => Math.abs(value - samples[i]));
+    expect(Math.max(...steps) - Math.min(...steps)).toBeGreaterThan(0.5);
+  });
+
+  it('sticks darts, fills the round pips and pops the points after a shot', () => {
+    jest.spyOn(Math, 'random').mockReturnValue(0.5);
+    render(
+      <ArenaBattle
+        currentUser={mockUser}
+        gameId={1}
+        isBot
+        onGameEnd={jest.fn()}
+        onLeave={jest.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('arena-fire-button'));
+
+    expect(screen.getByTestId('arena-dart-me-1').style.left).toBe('50%');
+    expect(screen.getByTestId('arena-dart-op-1')).toBeInTheDocument();
+    expect(screen.getByTestId('arena-score-me')).toHaveTextContent('3');
+    expect(screen.getByTestId('arena-scoreboard')).toHaveTextContent('3');
+    expect(screen.getByTestId('arena-stage')).toHaveTextContent('+3');
+    expect(screen.getByTestId('arena-reticle').style.visibility).toBe('hidden');
+
+    act(() => {
+      jest.advanceTimersByTime(800);
+    });
+    // Round 2: the popup is gone, round 1's darts stay on the board.
+    expect(screen.getByTestId('arena-stage')).not.toHaveTextContent('+3');
+    expect(screen.getByTestId('arena-dart-me-1')).toBeInTheDocument();
+    expect(screen.getByTestId('arena-reticle').style.visibility).toBe('visible');
   });
 });
 
@@ -333,6 +361,10 @@ describe('ArenaBattle multiplayer', () => {
     await screen.findByText('Atışın: Mükemmel kilit (3). Rakip ateş etmedi.');
     expect(screen.getByTestId('arena-battle')).toHaveTextContent('3');
     expect(screen.getByTestId('arena-fire-button')).toBeDisabled();
+    // The official position replaces the faint local estimate.
+    expect(screen.getByTestId('arena-dart-me-1').style.left).toBe('52%');
+    expect(screen.getByTestId('arena-dart-me-1')).not.toHaveClass('duo-aim-dart--ghost');
+    expect(screen.queryByTestId('arena-dart-op-1')).not.toBeInTheDocument();
   });
 
   it('shows a refresh path for an active legacy snapshot', async () => {

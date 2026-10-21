@@ -1,13 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Crosshair } from 'lucide-react';
 import type { User } from '../types';
 import { RetroButton } from './RetroButton';
 import { playGameSfx } from '../lib/gameAudio';
 import { ConnectionOverlay } from './ConnectionOverlay';
 import { useLiveScoreGame, type LiveMatchStats } from '../hooks/useLiveScoreGame';
-import { AimBattleStageCanvas, type AimBattleStageHandle } from './games/AimBattleStageCanvas';
-import type { HitTier } from '../lib/pixi/aimBattleStage';
-import { positionAt, pointsFromDistance, AIM_GAUGE_STEP, AIM_TICK_MS } from '../lib/aimTrajectory';
+import { AimStage, type AimDart, type AimFeedback } from './games/AimStage';
+import {
+  AIM_SPEED,
+  createRhythm,
+  positionAt,
+  pointsFromDistance,
+  type AimTrajectory,
+} from '../lib/aimTrajectory';
 
 interface ArenaBattleProps {
   currentUser: User;
@@ -42,20 +46,30 @@ export const shotLabel = (shot: number): string => {
   return 'Iska';
 };
 
-const tierFromPoints = (points: number): HitTier => {
-  if (points >= 3) return 'hit3';
-  if (points === 2) return 'hit2';
-  if (points === 1) return 'hit1';
-  return 'miss';
-};
-
 const randomGaugeStart = () => 15 + Math.random() * 70;
+const localRandomInt = (max: number) => Math.floor(Math.random() * max);
+
+/** Practice uses the competitive speed and a rhythm of its own, never an easier curve. */
+const createBotTrajectory = (): AimTrajectory => ({
+  start: randomGaugeStart(),
+  direction: Math.random() > 0.5 ? 1 : -1,
+  speed: AIM_SPEED,
+  rhythm: createRhythm(localRandomInt),
+});
+
+interface ShotRecord {
+  position: number;
+  points: number;
+}
+
+/** What each side shot in a round, as the reveals arrive (the server keeps no history view). */
+type RoundHistory = Record<number, { me: ShotRecord | null; op: ShotRecord | null }>;
 
 interface BotState {
   round: number;
   phase: 'open' | 'reveal' | 'finished';
-  gauge: number;
-  direction: 1 | -1;
+  trajectory: AimTrajectory;
+  roundStartedAt: number;
   playerShot: number | null;
   opponentShot: number | null;
   playerScore: number;
@@ -66,13 +80,13 @@ interface BotState {
 const createBotState = (): BotState => ({
   round: 1,
   phase: 'open',
-  gauge: randomGaugeStart(),
-  direction: Math.random() > 0.5 ? 1 : -1,
+  trajectory: createBotTrajectory(),
+  roundStartedAt: Date.now(),
   playerShot: null,
   opponentShot: null,
   playerScore: 0,
   opponentScore: 0,
-  message: 'Nişangah merkezden geçerken ateş et.',
+  message: 'Nişangah hedefin ortasından geçerken ateş et.',
 });
 
 export const ArenaBattle: React.FC<ArenaBattleProps> = ({
@@ -102,15 +116,14 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
   const submitLiveAction = live.submitAction;
 
   const [bot, setBot] = useState<BotState>(() => createBotState());
-  const [serverGauge, setServerGauge] = useState(50);
   const [optimisticShot, setOptimisticShot] = useState<number | null>(null);
   const [feedbackKey, setFeedbackKey] = useState('');
-  const pixiStageRef = useRef<AimBattleStageHandle | null>(null);
+  const [feedback, setFeedback] = useState<AimFeedback | null>(null);
+  const [history, setHistory] = useState<RoundHistory>({});
   const botDoneRef = useRef(false);
   const botStartedAtRef = useRef(Date.now());
   const onGameEndRef = useRef(onGameEnd);
   const onMatchSettledRef = useRef(onMatchSettled);
-  const [pixiReady, setPixiReady] = useState(false);
 
   useEffect(() => {
     onGameEndRef.current = onGameEnd;
@@ -124,6 +137,8 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
     setBot(createBotState());
     setOptimisticShot(null);
     setFeedbackKey('');
+    setFeedback(null);
+    setHistory({});
     botDoneRef.current = false;
     botStartedAtRef.current = Date.now();
   }, [gameId]);
@@ -140,7 +155,6 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
       ? (serverRound?.shots?.[live.actorKey === 'host' ? 'guest' : 'host'] ?? null)
       : null;
   const isReveal = phase === 'reveal' || (phase === 'finished' && Boolean(serverRound));
-  const gauge = isBot ? bot.gauge : isReveal ? (actorShot?.position ?? serverGauge) : serverGauge;
   const playerShot = isBot
     ? bot.playerShot
     : isReveal
@@ -159,62 +173,75 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
     ? bot.playerShot !== null
     : Boolean(live.player?.answered) || optimisticShot !== null;
 
-  // Bot practice keeps the same 4 / 46 ms competitive speed on every device.
-  useEffect(() => {
-    if (!isBot || bot.phase !== 'open') return undefined;
-    const interval = window.setInterval(() => {
-      setBot((prev) => {
-        if (prev.phase !== 'open') return prev;
-        let next = prev.gauge + prev.direction * AIM_GAUGE_STEP;
-        let direction = prev.direction;
-        if (next >= 100) {
-          next = 100;
-          direction = -1;
-        } else if (next <= 0) {
-          next = 0;
-          direction = 1;
-        }
-        return { ...prev, gauge: next, direction };
-      });
-    }, AIM_TICK_MS);
-    return () => window.clearInterval(interval);
-  }, [bot.phase, isBot]);
+  const serverTrajectory = serverRound?.trajectory;
+  const serverStartedAt = serverRound?.startedAt;
+  const serverEndsAt = serverRound?.endsAt;
 
-  // Server reticle: the shared trajectory function and the server clock, never
-  // a locally invented gauge or a per-device difficulty.
-  useEffect(() => {
-    if (isBot || phase !== 'open' || !serverRound?.trajectory || !serverRound.startedAt) {
-      return undefined;
-    }
-    const startedAt = Date.parse(serverRound.startedAt);
-    const trajectory = serverRound.trajectory;
-    const tick = () => {
-      const elapsed = Math.max(0, liveServerNow() - startedAt);
-      setServerGauge(positionAt(trajectory, elapsed));
-    };
-    tick();
-    const interval = window.setInterval(tick, AIM_TICK_MS);
-    return () => window.clearInterval(interval);
+  // The reticle: the shared trajectory function at the (estimated) server
+  // clock, never a locally invented gauge or a per-device difficulty. Hidden
+  // once the player has fired, so the faint dart shows where the shot went.
+  const readPosition = useCallback((): number | null => {
+    if (phase !== 'open' || done || hasFired) return null;
+    if (isBot) return positionAt(bot.trajectory, Date.now() - bot.roundStartedAt);
+    if (!serverTrajectory || !serverStartedAt) return null;
+    const elapsed = Math.max(0, liveServerNow() - Date.parse(serverStartedAt));
+    return positionAt(serverTrajectory as AimTrajectory, elapsed);
   }, [
+    bot.roundStartedAt,
+    bot.trajectory,
+    done,
+    hasFired,
     isBot,
     liveServerNow,
     phase,
-    serverRound?.id,
-    serverRound?.startedAt,
-    serverRound?.trajectory,
+    serverStartedAt,
+    serverTrajectory,
   ]);
+
+  const readTimeLeft = useCallback((): number | null => {
+    if (isBot || phase !== 'open' || done || !serverStartedAt || !serverEndsAt) return null;
+    const start = Date.parse(serverStartedAt);
+    const end = Date.parse(serverEndsAt);
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return null;
+    return (end - liveServerNow()) / (end - start);
+  }, [done, isBot, liveServerNow, phase, serverEndsAt, serverStartedAt]);
 
   useEffect(() => {
     setOptimisticShot(null);
   }, [isBot, serverRound?.id]);
 
+  // A new round clears the last round's score popup.
   useEffect(() => {
-    pixiStageRef.current?.setReticleX(gauge);
-  }, [gauge]);
+    setFeedback(null);
+  }, [round]);
 
+  // Server reveals feed the round history (pips and darts of past rounds).
   useEffect(() => {
-    pixiStageRef.current?.setActive(!done);
-  }, [done]);
+    if (isBot || !isReveal || !serverRound || !live.actorKey) return;
+    const index = round;
+    const me = actorShot
+      ? { position: Number(actorShot.position), points: Number(actorShot.points || 0) }
+      : null;
+    const op = opponentShotData
+      ? {
+          position: Number(opponentShotData.position),
+          points: Number(opponentShotData.points || 0),
+        }
+      : null;
+    setHistory((prev) => {
+      const current = prev[index];
+      if (
+        current &&
+        current.me?.position === me?.position &&
+        current.me?.points === me?.points &&
+        current.op?.position === op?.position &&
+        current.op?.points === op?.points
+      ) {
+        return prev;
+      }
+      return { ...prev, [index]: { me, op } };
+    });
+  }, [actorShot, isBot, isReveal, live.actorKey, opponentShotData, round, serverRound]);
 
   // Bot reveal pacing.
   useEffect(() => {
@@ -231,11 +258,11 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
               ...prev,
               round: prev.round + 1,
               phase: 'open',
-              gauge: randomGaugeStart(),
-              direction: Math.random() > 0.5 ? 1 : -1,
+              trajectory: createBotTrajectory(),
+              roundStartedAt: Date.now(),
               playerShot: null,
               opponentShot: null,
-              message: 'Yeni tur başladı. Merkezi yakalamak için doğru anı bekle.',
+              message: 'Yeni tur başladı. Ritim değişti, doğru anı bekle.',
             }
       );
     }, 750);
@@ -249,12 +276,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
     if (feedbackKey === key) return;
     setFeedbackKey(key);
     const points = pointsFromShot(bot.playerShot);
-    const tier = tierFromPoints(points);
-    pixiStageRef.current?.flash(tier);
-    pixiStageRef.current?.showScorePopup(
-      points > 0 ? `+${points} ${shotLabel(bot.playerShot)}` : shotLabel(bot.playerShot),
-      tier
-    );
+    setFeedback({ key, points, position: bot.playerShot });
     playGameSfx(points > 0 ? 'success' : 'fail', points > 0 ? 0.24 : 0.2);
   }, [bot.phase, bot.playerShot, bot.round, feedbackKey, isBot]);
 
@@ -287,12 +309,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
       return;
     }
     const points = Number(actorShot?.points || 0);
-    const tier = tierFromPoints(points);
-    pixiStageRef.current?.flash(tier);
-    pixiStageRef.current?.showScorePopup(
-      points > 0 ? `+${points} ${shotLabel(shot)}` : shotLabel(shot),
-      tier
-    );
+    setFeedback({ key, points, position: shot });
     playGameSfx(points > 0 ? 'success' : 'fail', points > 0 ? 0.24 : 0.2);
   }, [
     actorShot?.points,
@@ -312,8 +329,10 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
 
   const fire = useCallback(() => {
     if (phase !== 'open' || hasFired || done || livePending) return;
+    const position = readPosition();
+    if (position === null) return;
     if (isBot) {
-      const shot = clampGauge(bot.gauge);
+      const shot = clampGauge(position);
       const gainedPoints = pointsFromShot(shot);
       const botShot = clampGauge(50 + (Math.random() * 2 - 1) * 42);
       const botPoints = pointsFromShot(botShot);
@@ -328,27 +347,61 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
         opponentScore: nextOpponentScore,
         message: `Atışın: ${shotLabel(shot)} (${gainedPoints}). BOT: ${shotLabel(botShot)} (${botPoints}).`,
       }));
+      setHistory((prev) => ({
+        ...prev,
+        [bot.round]: {
+          me: { position: shot, points: gainedPoints },
+          op: { position: botShot, points: botPoints },
+        },
+      }));
       return;
     }
-    const shot = clampGauge(gauge);
+    const shot = clampGauge(position);
     setOptimisticShot(shot);
     void submitLiveAction({ type: 'fire' }).then((result) => {
       if (!result.ok && result.code !== 'BUSY') setOptimisticShot(null);
     });
   }, [
-    bot.gauge,
     bot.opponentScore,
     bot.playerScore,
+    bot.round,
     done,
-    gauge,
     hasFired,
     isBot,
     livePending,
+    readPosition,
     submitLiveAction,
     phase,
   ]);
 
-  const accuracy = Math.max(0, 100 - Math.abs(50 - gauge) * 2);
+  const darts = useMemo<AimDart[]>(() => {
+    const list: AimDart[] = [];
+    for (const [key, entry] of Object.entries(history)) {
+      const roundNumber = Number(key);
+      if (entry.me) list.push({ round: roundNumber, side: 'me', position: entry.me.position });
+      if (entry.op) list.push({ round: roundNumber, side: 'op', position: entry.op.position });
+    }
+    if (!history[round] && optimisticShot !== null && phase === 'open') {
+      list.push({ round, side: 'me', position: optimisticShot, ghost: true });
+    }
+    return list;
+  }, [history, optimisticShot, phase, round]);
+
+  const pips = (side: 'me' | 'op') =>
+    Array.from({ length: maxRounds }, (_, i) => {
+      const roundNumber = i + 1;
+      const record = history[roundNumber]?.[side];
+      const missing = !record && roundNumber < round;
+      return (
+        <span
+          key={roundNumber}
+          className={`duo-aim-pip${record && record.points > 0 ? ' duo-aim-pip--hit' : ''}`}
+          title={`${roundNumber}. tur`}
+        >
+          {record ? record.points : missing ? '–' : ''}
+        </span>
+      );
+    });
   const participants =
     live.hostName || live.guestName
       ? `${live.hostName || currentUser.username} / ${live.guestName || targetName}`
@@ -371,7 +424,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
     if (phase === 'open') {
       return hasFired
         ? 'Atışın kaydedildi. Rakip bekleniyor...'
-        : 'Nişangah merkezden geçerken ateş et.';
+        : 'Nişangah hedefin ortasından geçerken ateş et.';
     }
     if (phase === 'reveal') {
       const my = actorShot?.position;
@@ -416,7 +469,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
         maxRounds,
         player: { name: currentUser.username, score: playerScore, lastShot: playerShot },
         opponent: { name: targetName, score: opponentScore, lastShot: opponentShot },
-        gauge: Math.round(gauge),
+        gauge: Math.round(readPosition() ?? playerShot ?? 50),
         message,
       });
     arenaWindow.render_game_to_text = renderGameToText;
@@ -428,13 +481,13 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
   }, [
     currentUser.username,
     done,
-    gauge,
     maxRounds,
     message,
     opponentShot,
     opponentScore,
     playerScore,
     playerShot,
+    readPosition,
     round,
     targetName,
   ]);
@@ -485,95 +538,48 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
         </button>
       </header>
 
-      <div className="mb-5 grid grid-cols-3 gap-2">
-        <div className="duo-stat">
-          <span className="duo-stat-label">Tur</span>
-          <span className="duo-stat-value">
-            {Math.min(round, maxRounds)} / {maxRounds}
+      <div className="duo-aim-board mb-4" data-testid="arena-scoreboard">
+        <div className="duo-aim-side duo-aim-side--me">
+          <span className="duo-aim-side-name">Sen</span>
+          <span className="duo-aim-side-score" data-testid="arena-score-me">
+            {playerScore}
+          </span>
+          <span className="duo-aim-pips" aria-label="Tur puanların">
+            {pips('me')}
           </span>
         </div>
-        <div className="duo-stat duo-stat--lokum">
-          <span className="duo-stat-label">Sen</span>
-          <span className="duo-stat-value duo-stat-value--score">{playerScore}</span>
-        </div>
-        <div className="duo-stat">
-          <span className="duo-stat-label">Rakip</span>
-          <span className="duo-stat-value duo-stat-value--score">{opponentScore}</span>
+        <div className="duo-aim-side duo-aim-side--op">
+          <span className="duo-aim-side-name">{targetName}</span>
+          <span className="duo-aim-side-score" data-testid="arena-score-op">
+            {opponentScore}
+          </span>
+          <span className="duo-aim-pips" aria-label="Rakibin tur puanları">
+            {pips('op')}
+          </span>
         </div>
       </div>
 
-      <div className="relative mb-5 aspect-[2/1] overflow-hidden bg-paper-deep">
-        {/* PixiJS WebGL overlay — fills the stage, renders animated reticle + hit effects */}
-        <AimBattleStageCanvas
-          ref={pixiStageRef}
-          onReadyChange={setPixiReady}
-          className="absolute inset-0 h-full w-full"
-        />
-        {!pixiReady && (
-          <>
-            {/* Without the WebGL stage: the centre line and the reticle, drawn in CSS. */}
-            <span
-              className="pointer-events-none absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-carbon/30"
-              aria-hidden="true"
-            />
-            <div
-              className="pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 text-carbon"
-              style={{ left: `${gauge}%` }}
-              data-testid="arena-reticle"
-              aria-hidden="true"
-            >
-              <Crosshair size={56} strokeWidth={2.5} />
-            </div>
-          </>
-        )}
-        <div className="pointer-events-none absolute bottom-3 left-3 right-3 flex items-center justify-between font-candy-mono text-xs text-carbon-muted">
-          <span>0</span>
-          <span className="bg-paper px-2 py-0.5 font-semibold text-carbon">Merkez 50</span>
-          <span>100</span>
-        </div>
-      </div>
+      <AimStage
+        round={round}
+        maxRounds={maxRounds}
+        readPosition={readPosition}
+        readTimeLeft={readTimeLeft}
+        darts={darts}
+        feedback={feedback}
+      />
 
-      <div className="mb-5">
-        <div className="mb-2 flex items-baseline justify-between gap-3">
-          <span className="text-[15px] font-semibold text-carbon">Nişan kilidi</span>
-          <span className="font-candy-mono text-sm font-semibold text-carbon">
-            {Math.round(gauge)}% · isabet {Math.round(accuracy)}%
-          </span>
-        </div>
-        <div className="duo-meter">
-          <span className="bg-candy-lokum transition-[width]" style={{ width: `${accuracy}%` }} />
-        </div>
-        <p className="duo-game-status mt-3" aria-live="polite">
-          {message}
-        </p>
-      </div>
-
-      <ul className="duo-tear mb-6 pt-3 text-[15px]">
-        <li className="duo-leader-row">
-          <span className="text-carbon-muted">Son atışın</span>
-          <span className="duo-leader-dots" aria-hidden="true" />
-          <span className="duo-leader-value text-carbon">
-            {playerShot === null ? '–' : `${Math.round(playerShot)}% · ${shotLabel(playerShot)}`}
-          </span>
-        </li>
-        <li className="duo-leader-row">
-          <span className="text-carbon-muted">Rakip atışı</span>
-          <span className="duo-leader-dots" aria-hidden="true" />
-          <span className="duo-leader-value text-carbon">
-            {opponentShot === null
-              ? '–'
-              : `${Math.round(opponentShot)}% · ${shotLabel(opponentShot)}`}
-          </span>
-        </li>
-      </ul>
+      <p className="duo-game-status mb-5 mt-3 min-h-[44px]" aria-live="polite">
+        {message}
+      </p>
 
       <div className="duo-game-actions flex flex-col gap-3 sm:flex-row">
         <RetroButton
           onClick={fire}
           disabled={!canFire}
           data-testid="arena-fire-button"
+          variant="ink"
           size="lg"
-          className="flex-1"
+          className="min-h-[64px] flex-1"
         >
           {livePending
             ? 'Gönderiliyor...'

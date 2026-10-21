@@ -14,7 +14,7 @@
  * pixel centers based on the current orientation.
  *
  * Not unit-tested (WebGL unavailable in jsdom); the RetroChess.tsx test
- * file mocks the React wrapper out, same pattern as AimBattleStageCanvas.
+ * file mocks the React wrapper out, same pattern as QuizStageCanvas.
  */
 
 import { Application, Container, Graphics, Ticker } from 'pixi.js';

@@ -72,6 +72,19 @@ yavaşlar (anlık hız ortalamanın 0.4–1.6 katı). Yukarıdaki tablo eski bö
 oynanabilirlik engelini büyütür, kapatmaz. Gecikme telafisi veya ürün kabulü
 olmadan aktivasyon önerilmez.
 
+Yeni bölge + ritim ve requestAnimationFrame ile çizilen nişangahla aynı `@rtt`
+harness (yerel Chromium, bir örnek/RTT, 2026-10-21):
+
+| Yapay RTT | Ölçülen GET / action RTT | Görünen puan | Resmi puan | Ingress - click |
+| --------- | ------------------------ | ------------ | ---------- | --------------- |
+| 50 ms     | 58–65 / 65 ms            | 3            | 2          | 59 ms           |
+| 150 ms    | 161 / 162 ms             | 3            | 1          | 105 ms          |
+| 300 ms    | 309 / 313 ms             | 3            | 1          | 179 ms          |
+
+Görünen/gerçek click konumu farkı +1.36, +0.80, -0.87 birim (rAF çizimi eski
+46 ms adımlı çizimden daha yakın). Resmi konum ise 50 ms'de bile 3 puan
+bölgesinin (±2.5) dışına düşüyor: engel açık.
+
 ## 5. Dokploy / migration ÖNCE koşulu
 
 API Compose ortamı `GAME_ENGINE_V2_ENABLED=${GAME_ENGINE_V2_ENABLED:-false}`

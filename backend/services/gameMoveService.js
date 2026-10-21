@@ -387,7 +387,10 @@ const createGameMoveService = ({
             return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
           }
 
-          const safeLive = sanitizeLiveSubmission(liveSubmission);
+          const safeLive = sanitizeLiveSubmission(
+            liveSubmission,
+            String(game.game_type || '').trim()
+          );
           if (safeLive.mode && safeLive.mode !== String(game.game_type || '').trim()) {
             await rollbackQuietly(client);
             return res.status(400).json({ error: 'Canlı ilerleme oyun türü eşleşmiyor.' });
@@ -506,10 +509,13 @@ const createGameMoveService = ({
             currentResults[actorParticipant] && typeof currentResults[actorParticipant] === 'object'
               ? currentResults[actorParticipant]
               : {};
-          const incomingScoreSubmission = sanitizeScoreSubmission({
-            ...scorePayload,
-            username: actorName,
-          });
+          const incomingScoreSubmission = sanitizeScoreSubmission(
+            {
+              ...scorePayload,
+              username: actorName,
+            },
+            String(game.game_type || '').trim()
+          );
           const incomingScoreKey = normalizeSubmissionKey(incomingScoreSubmission?.submissionKey);
           const existingScoreKey = normalizeSubmissionKey(currentActorScore?.submissionKey);
           if (incomingScoreKey && existingScoreKey && incomingScoreKey === existingScoreKey) {
@@ -896,7 +902,7 @@ const createGameMoveService = ({
         return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
       }
 
-      const safeLive = sanitizeLiveSubmission(liveSubmission);
+      const safeLive = sanitizeLiveSubmission(liveSubmission, String(game.gameType || '').trim());
       if (safeLive.mode && safeLive.mode !== String(game.gameType || '').trim()) {
         return res.status(400).json({ error: 'Canlı ilerleme oyun türü eşleşmiyor.' });
       }
@@ -1001,10 +1007,13 @@ const createGameMoveService = ({
       }
       game.gameState = game.gameState || {};
       game.gameState.results = game.gameState.results || {};
-      const incomingScoreSubmission = sanitizeScoreSubmission({
-        ...(typeof scoreSubmission === 'object' ? scoreSubmission : {}),
-        username: actorName,
-      });
+      const incomingScoreSubmission = sanitizeScoreSubmission(
+        {
+          ...(typeof scoreSubmission === 'object' ? scoreSubmission : {}),
+          username: actorName,
+        },
+        String(game.gameType || '').trim()
+      );
       const existingScoreSubmission =
         game.gameState.results[canonicalParticipant] &&
         typeof game.gameState.results[canonicalParticipant] === 'object'

@@ -7,12 +7,14 @@ const {
 
 describe('gameResults utilities', () => {
   it('extracts unique participants from host and guest', () => {
-    expect(
-      getGameParticipants({ host_name: 'HostUser', guest_name: 'GuestUser' })
-    ).toEqual(['HostUser', 'GuestUser']);
-    expect(
-      getGameParticipants({ host_name: 'HostUser', guest_name: 'hostuser' })
-    ).toEqual(['HostUser', 'hostuser']);
+    expect(getGameParticipants({ host_name: 'HostUser', guest_name: 'GuestUser' })).toEqual([
+      'HostUser',
+      'GuestUser',
+    ]);
+    expect(getGameParticipants({ host_name: 'HostUser', guest_name: 'hostuser' })).toEqual([
+      'HostUser',
+      'hostuser',
+    ]);
   });
 
   it('normalizes participant names case-insensitively', () => {
@@ -36,14 +38,35 @@ describe('gameResults utilities', () => {
     expect(new Date(payload.submittedAt).toString()).not.toBe('Invalid Date');
   });
 
+  it('caps score and rounds at the limit of the stored game type', () => {
+    expect(
+      sanitizeScoreSubmission({ score: 99999, roundsWon: 99999 }, 'Nişancı Düellosu')
+    ).toMatchObject({ score: 15, roundsWon: 15 });
+
+    expect(sanitizeScoreSubmission({ score: 9999 }, 'Bilgi Yarışı').score).toBe(320);
+
+    expect(sanitizeScoreSubmission({ score: 9999 }, 'Retro Satranç').score).toBe(9999);
+    expect(sanitizeScoreSubmission({ score: 9999 }, 'Bilinmeyen Oyun').score).toBe(9999);
+  });
+
   it('picks winner by score, rounds, duration and submitted time', () => {
     const participants = ['emre', 'emin'];
 
     expect(
       pickWinnerFromResults(
         {
-          emre: { score: 2, roundsWon: 2, durationMs: 9000, submittedAt: '2026-02-07T10:00:00.000Z' },
-          emin: { score: 3, roundsWon: 2, durationMs: 9500, submittedAt: '2026-02-07T10:00:02.000Z' },
+          emre: {
+            score: 2,
+            roundsWon: 2,
+            durationMs: 9000,
+            submittedAt: '2026-02-07T10:00:00.000Z',
+          },
+          emin: {
+            score: 3,
+            roundsWon: 2,
+            durationMs: 9500,
+            submittedAt: '2026-02-07T10:00:02.000Z',
+          },
         },
         participants
       )
@@ -52,8 +75,18 @@ describe('gameResults utilities', () => {
     expect(
       pickWinnerFromResults(
         {
-          emre: { score: 3, roundsWon: 4, durationMs: 9500, submittedAt: '2026-02-07T10:00:00.000Z' },
-          emin: { score: 3, roundsWon: 2, durationMs: 1000, submittedAt: '2026-02-07T10:00:01.000Z' },
+          emre: {
+            score: 3,
+            roundsWon: 4,
+            durationMs: 9500,
+            submittedAt: '2026-02-07T10:00:00.000Z',
+          },
+          emin: {
+            score: 3,
+            roundsWon: 2,
+            durationMs: 1000,
+            submittedAt: '2026-02-07T10:00:01.000Z',
+          },
         },
         participants
       )
@@ -62,8 +95,18 @@ describe('gameResults utilities', () => {
     expect(
       pickWinnerFromResults(
         {
-          emre: { score: 3, roundsWon: 3, durationMs: 7000, submittedAt: '2026-02-07T10:00:02.000Z' },
-          emin: { score: 3, roundsWon: 3, durationMs: 5000, submittedAt: '2026-02-07T10:00:01.000Z' },
+          emre: {
+            score: 3,
+            roundsWon: 3,
+            durationMs: 7000,
+            submittedAt: '2026-02-07T10:00:02.000Z',
+          },
+          emin: {
+            score: 3,
+            roundsWon: 3,
+            durationMs: 5000,
+            submittedAt: '2026-02-07T10:00:01.000Z',
+          },
         },
         participants
       )

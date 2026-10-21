@@ -1,3 +1,5 @@
+const { getGameScoreBounds } = require('../../shared/gameRegistry');
+
 const toSafeNumber = (value, fallback = 0) => {
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
@@ -10,7 +12,9 @@ const sanitizeSubmissionKey = (value) => {
 };
 
 const getGameParticipants = (game) => {
-  const participants = [normalizeName(game?.host_name), normalizeName(game?.guest_name)].filter(Boolean);
+  const participants = [normalizeName(game?.host_name), normalizeName(game?.guest_name)].filter(
+    Boolean
+  );
   return Array.from(new Set(participants));
 };
 
@@ -26,9 +30,14 @@ const normalizeParticipantName = (candidate, game) => {
   return canonical || null;
 };
 
-const sanitizeScoreSubmission = (scoreSubmission) => {
-  const score = Math.max(0, Math.floor(toSafeNumber(scoreSubmission?.score)));
-  const roundsWon = Math.max(0, Math.floor(toSafeNumber(scoreSubmission?.roundsWon)));
+const sanitizeScoreSubmission = (scoreSubmission, gameType) => {
+  const bounds = getGameScoreBounds(gameType);
+  const maxScore = bounds?.maxScore ?? Number.MAX_SAFE_INTEGER;
+  const score = Math.max(0, Math.min(maxScore, Math.floor(toSafeNumber(scoreSubmission?.score))));
+  const roundsWon = Math.max(
+    0,
+    Math.min(maxScore, Math.floor(toSafeNumber(scoreSubmission?.roundsWon)))
+  );
   const durationMs = Math.max(0, Math.floor(toSafeNumber(scoreSubmission?.durationMs)));
   const submittedAt =
     typeof scoreSubmission?.submittedAt === 'string' && scoreSubmission.submittedAt
@@ -48,7 +57,9 @@ const sanitizeScoreSubmission = (scoreSubmission) => {
 };
 
 const pickWinnerFromResults = (results, participants) => {
-  const normalizedParticipants = (participants || []).map((name) => normalizeName(name)).filter(Boolean);
+  const normalizedParticipants = (participants || [])
+    .map((name) => normalizeName(name))
+    .filter(Boolean);
   if (normalizedParticipants.length < 2) return null;
 
   const participantByLower = new Map(

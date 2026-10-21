@@ -19,6 +19,7 @@ const GAME_REGISTRY = {
     type: AIM_GAME_TYPE,
     mode: 'aim',
     maxRounds: 5,
+    maxScore: 15,
     minPoints: 40,
     submissionKeyPrefix: 'arena',
     category: 'Refleks',
@@ -28,6 +29,7 @@ const GAME_REGISTRY = {
     type: QUIZ_GAME_TYPE,
     mode: 'quiz',
     maxRounds: 10,
+    maxScore: 320,
     minPoints: 120,
     submissionKeyPrefix: 'quiz',
     category: 'Bilgi',
@@ -37,6 +39,7 @@ const GAME_REGISTRY = {
     type: CHESS_GAME_TYPE,
     mode: 'chess',
     maxRounds: null,
+    maxScore: null,
     minPoints: 90,
     submissionKeyPrefix: 'chess',
     category: 'Strateji',
@@ -46,6 +49,20 @@ const GAME_REGISTRY = {
 
 const SUPPORTED_GAME_TYPES = new Set(Object.keys(GAME_REGISTRY));
 const GAME_TYPE_LIST = Object.values(GAME_REGISTRY);
+
+/**
+ * Authoritative score bounds of a game type, or null for an unknown type.
+ * Submissions are clamped to these values instead of trusting the client.
+ */
+const getGameScoreBounds = (gameType) => {
+  const entry = GAME_REGISTRY[String(gameType || '').trim()];
+  if (!entry) return null;
+
+  return {
+    maxScore: typeof entry.maxScore === 'number' ? entry.maxScore : null,
+    maxRounds: typeof entry.maxRounds === 'number' ? entry.maxRounds : null,
+  };
+};
 
 /** Map of normalized slug → canonical game type. Used by serverConfig.normalizeGameType. */
 const GAME_TYPE_ALIASES = {
@@ -81,4 +98,5 @@ module.exports = {
   SUPPORTED_GAME_TYPES,
   GAME_TYPE_LIST,
   GAME_TYPE_ALIASES,
+  getGameScoreBounds,
 };

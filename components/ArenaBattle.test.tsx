@@ -1,6 +1,14 @@
 import React from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { ArenaBattle, clampGauge, pointsFromShot, shotLabel } from './ArenaBattle';
+import {
+  AIM_GAME_TYPE,
+  ArenaBattle,
+  MAX_ROUNDS,
+  clampGauge,
+  pointsFromShot,
+  shotLabel,
+} from './ArenaBattle';
+import { GAME_REGISTRY } from '../shared/gameRegistry';
 import { User } from '../types';
 
 jest.mock('../lib/gameAudio', () => ({
@@ -77,6 +85,10 @@ describe('ArenaBattle', () => {
     expect(pointsFromShot(65)).toBe(1);
     expect(pointsFromShot(80)).toBe(0);
     expect(shotLabel(50)).toBe('Mükemmel kilit');
+  });
+
+  it('keeps the registry score cap in step with the rounds and the best shot', () => {
+    expect(GAME_REGISTRY[AIM_GAME_TYPE].maxScore).toBe(MAX_ROUNDS * 3);
   });
 
   it('renders the reticle game and debug snapshot', () => {

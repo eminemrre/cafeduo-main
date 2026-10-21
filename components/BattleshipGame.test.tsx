@@ -189,6 +189,35 @@ describe('BattleshipGame practice', () => {
     expect(ownMarks).toHaveLength(1);
   });
 
+  it('keeps a keyboard entry point after A1 has already been fired on', () => {
+    renderPractice();
+    fireEvent.click(screen.getByTestId('battleship-shuffle'));
+    fireEvent.click(screen.getByTestId('battleship-confirm'));
+    fireEvent.click(cell('battleship-target-grid', 0));
+    fireEvent.click(screen.getByTestId('battleship-fire'));
+    act(() => {
+      jest.advanceTimersByTime(800);
+    });
+    const entry = cell('battleship-target-grid', 0);
+    expect(entry).not.toBeDisabled();
+    expect(entry).toHaveAttribute('aria-disabled', 'true');
+    entry.focus();
+    fireEvent.keyDown(entry, { key: 'ArrowRight' });
+    expect(cell('battleship-target-grid', 1)).toHaveFocus();
+  });
+
+  it('expands the own fleet into a keyboard-readable grid', () => {
+    renderPractice();
+    fireEvent.click(screen.getByTestId('battleship-shuffle'));
+    fireEvent.click(screen.getByTestId('battleship-confirm'));
+    fireEvent.click(screen.getByRole('tab', { name: 'Senin suların' }));
+    const own = screen.getByTestId('battleship-own-grid');
+    expect(within(own).getAllByRole('button')).toHaveLength(64);
+    const first = within(own).getAllByRole('button')[0];
+    expect(first).toHaveAttribute('aria-disabled', 'true');
+    expect(first).not.toBeDisabled();
+  });
+
   it('ends a practice match with zero points', () => {
     const onGameEnd = jest.fn();
     renderPractice(onGameEnd);

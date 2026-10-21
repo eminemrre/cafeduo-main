@@ -28,15 +28,17 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
 }) => {
   if (variant === 'compact') {
     return (
-      <div
-        className="text-center py-8 px-4 bg-paper-deep"
-        data-testid="empty-state-compact"
-      >
-        <Icon size={28} strokeWidth={2} className="mx-auto mb-3 text-carbon-muted" aria-hidden="true" />
-        <h4 className="mb-1 font-candy-body text-[15px] font-semibold text-carbon">
-          {title}
-        </h4>
-        <p className="mx-auto mb-4 max-w-xs font-candy-body text-sm leading-6 text-carbon-soft">{description}</p>
+      <div className="text-center py-8 px-4 bg-paper-deep" data-testid="empty-state-compact">
+        <Icon
+          size={28}
+          strokeWidth={2}
+          className="mx-auto mb-3 text-carbon-muted"
+          aria-hidden="true"
+        />
+        <h4 className="mb-1 font-candy-body text-[15px] font-semibold text-carbon">{title}</h4>
+        <p className="mx-auto mb-4 max-w-xs font-candy-body text-sm leading-6 text-carbon-soft">
+          {description}
+        </p>
         {action && (
           <RetroButton onClick={action.onClick} variant="primary" size="sm">
             {action.label}
@@ -47,11 +49,13 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   }
 
   return (
-    <div
-      className="text-center py-16 px-4 bg-paper-deep"
-      data-testid="empty-state"
-    >
-      <Icon size={36} strokeWidth={2} className="mx-auto mb-5 text-carbon-muted" aria-hidden="true" />
+    <div className="text-center py-16 px-4 bg-paper-deep" data-testid="empty-state">
+      <Icon
+        size={36}
+        strokeWidth={2}
+        className="mx-auto mb-5 text-carbon-muted"
+        aria-hidden="true"
+      />
 
       {/* Title */}
       <h3
@@ -79,10 +83,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         )}
 
         {secondaryAction && (
-          <button
-            onClick={secondaryAction.onClick}
-            className="duo-quiet duo-focus"
-          >
+          <button type="button" onClick={secondaryAction.onClick} className="duo-quiet duo-focus">
             {secondaryAction.label}
           </button>
         )}

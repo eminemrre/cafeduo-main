@@ -39,7 +39,12 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="duo-scope min-h-screen bg-paper text-carbon flex flex-col items-center justify-center px-5 py-10">
           <div className="w-full max-w-xl bg-paper-deep p-6 sm:p-8">
-            <AlertTriangle size={28} strokeWidth={2.2} className="text-candy-danger" aria-hidden="true" />
+            <AlertTriangle
+              size={28}
+              strokeWidth={2.2}
+              className="text-candy-danger"
+              aria-hidden="true"
+            />
             <h1 className="mt-4 font-candy-display text-[2rem] leading-[0.98] text-carbon">
               Uygulama Hatası
             </h1>
@@ -61,6 +66,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </details>
 
             <button
+              type="button"
               onClick={() => {
                 if (isChunkError) {
                   safeReload();

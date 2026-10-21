@@ -390,7 +390,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             exit={{ y: 24, opacity: 0.5 }}
             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
           >
-
             {/* Header */}
             <div className="duo-auth-header px-5 md:px-7 pt-5 md:pt-6 pb-3 flex justify-between items-start border-b-[3px] border-dotted border-carbon/35 shrink-0 bg-paper">
               <div className="min-w-0">
@@ -403,6 +402,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <p className="font-candy-body text-sm text-carbon-soft mt-1">{subtitle}</p>
               </div>
               <button
+                type="button"
                 onClick={onClose}
                 aria-label="Kapat"
                 className="duo-auth-close duo-focus shrink-0 w-9 h-9 bg-paper-deep text-carbon hover:bg-carbon hover:text-paper flex items-center justify-center transition-colors"

@@ -36,6 +36,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 export const Button: React.FC<ButtonProps> = ({
   variant = 'primary',
   size = 'md',
+  type = 'button',
   leftIcon,
   rightIcon,
   className = '',
@@ -44,6 +45,7 @@ export const Button: React.FC<ButtonProps> = ({
 }) => (
   <button
     {...rest}
+    type={type === 'submit' ? 'submit' : type === 'reset' ? 'reset' : 'button'}
     className={
       'duo-button inline-flex items-center justify-center font-candy-body font-semibold ' +
       'transition-[transform,background-color,color,text-decoration-color] duration-150 ' +

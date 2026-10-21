@@ -110,6 +110,14 @@ export default [
       'no-script-url': 'error',
     },
   },
+  // Buttons must declare their type. Tests render throwaway markup and are exempt.
+  {
+    files: ['**/*.tsx'],
+    ignores: ['**/*.{test,spec}.tsx'],
+    rules: {
+      'react/button-has-type': 'error',
+    },
+  },
   // Backend & migrations (CommonJS / Node)
   {
     files: ['backend/**/*.js', 'migrations/**/*.js', 'shared/**/*.js', 'jest.transform.js'],

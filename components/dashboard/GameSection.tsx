@@ -206,6 +206,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
             </p>
           </div>
           <button
+            type="button"
             onClick={onRejoinGame}
             className="duo-button duo-focus shrink-0 min-h-12 px-5 bg-carbon text-paper font-candy-body text-base font-semibold transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
           >

@@ -57,7 +57,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   return (
     <button
       ref={ref}
-      type={type}
+      type={type === 'submit' ? 'submit' : type === 'reset' ? 'reset' : 'button'}
       disabled={disabled}
       className={[
         // Base

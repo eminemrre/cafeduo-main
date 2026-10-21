@@ -8,6 +8,7 @@
 
 const { createJoinGameHandler } = require('./joinGameHandler');
 const { createQuizPrivateState } = require('../../../gameEngine/quizEngine');
+const { createAimPrivateState } = require('../../../gameEngine/aimEngine');
 const { QUIZ_GAME_TYPE } = require('../../../../shared/gameRegistry');
 
 // Join tests below cover the handler, not the rollout gate; keep protocol v2 open.
@@ -352,6 +353,7 @@ describe('joinGameHandler (DB path)', () => {
         points: 30,
         status: 'waiting',
         game_state: {},
+        game_private_state: createAimPrivateState(),
       }),
       activateGameWithGuest: jest.fn().mockResolvedValue(joinedGame),
       findActivePlayerConflict: jest.fn().mockResolvedValue(null),
@@ -506,6 +508,7 @@ describe('joinGameHandler (memory path)', () => {
           points: 0,
           table: 'MASA05',
           status: 'waiting',
+          gamePrivateState: createAimPrivateState(),
         },
       ],
       emitRealtimeUpdate,
@@ -604,6 +607,47 @@ describe('joinGameHandler (memory path)', () => {
 
     expect(res.statusCode).toBe(400);
     expect(res.payload.error).toMatch(/puan gerekli/);
+  });
+
+  it('starts a v2 aim match with a server trajectory', async () => {
+    const deps = makeDeps();
+    deps._memoryGamesRef.push({
+      id: 89,
+      hostName: 'u1',
+      guestName: null,
+      gameType: 'Nişancı Düellosu',
+      points: 0,
+      table: 'MASA05',
+      status: 'waiting',
+      gameState: {},
+      gamePrivateState: createAimPrivateState(),
+      createdAt: '2026-10-21T10:00:00.000Z',
+    });
+    const handler = createJoinGameHandler(deps);
+    const res = createMockRes();
+
+    await handler(
+      {
+        params: { id: '89' },
+        user: { username: 'u2', cafe_id: 1, table_number: '5', points: 200 },
+        body: {},
+      },
+      res
+    );
+
+    expect(res.statusCode).toBe(200);
+    const engine = res.payload.game.gameState.engine;
+    expect(engine.version).toBe(2);
+    expect(engine.kind).toBe('aim');
+    expect(engine.phase).toBe('open');
+    expect(engine.roundIndex).toBe(1);
+    expect(engine.round.trajectory).toMatchObject({
+      start: expect.any(Number),
+      direction: expect.any(Number),
+      speed: expect.any(Number),
+    });
+    expect(engine.round.shots).toBeUndefined();
+    expect(res.payload.game.gamePrivateState).toBeUndefined();
   });
 
   it('starts a v2 quiz match with the first round and no answer key', async () => {

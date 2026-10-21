@@ -4,6 +4,11 @@ const {
   createQuizPublicState,
   startQuizState,
 } = require('../../../gameEngine/quizEngine');
+const {
+  createAimPrivateState,
+  createAimPublicState,
+  startAimState,
+} = require('../../../gameEngine/aimEngine');
 const { QUIZ_GAME_TYPE } = require('../../../../shared/gameRegistry');
 
 const createMockRes = () => {
@@ -115,6 +120,50 @@ describe('getGameStateHandler – competitive engine', () => {
     );
     expect(res.payload.gameState.engine.phase).toBe('reveal');
     expect(res.payload.gameState.engine.round.correctIndex).toBeDefined();
+    expect(res.payload.gamePrivateState).toBeUndefined();
+  });
+
+  it('advances an expired aim round and exposes only the trajectory/shots', async () => {
+    const nowMs = Date.now();
+    const privateState = createAimPrivateState();
+    const state = startAimState({
+      state: createAimPublicState({
+        hostName: 'Alice',
+        guestName: 'Bob',
+        totalRounds: privateState.rounds.length,
+      }),
+      privateState,
+      hostName: 'Alice',
+      guestName: 'Bob',
+      nowMs: nowMs - 8_500,
+    });
+    const game = {
+      id: 6,
+      hostName: 'Alice',
+      guestName: 'Bob',
+      gameType: 'Nişancı Düellosu',
+      points: 10,
+      table: 'MASA01',
+      status: 'active',
+      winner: null,
+      gameState: { engine: state },
+      gamePrivateState: privateState,
+      createdAt: new Date().toISOString(),
+    };
+    const deps = makeDeps({ games: [game] });
+    const handler = createGetGameStateHandler(deps);
+    const res = createMockRes();
+
+    await handler({ params: { id: '6' }, user: { username: 'Alice' } }, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.gameState.engine.kind).toBe('aim');
+    expect(res.payload.gameState.engine.phase).toBe('reveal');
+    expect(res.payload.gameState.engine.round.shots).toEqual({ host: null, guest: null });
+    expect(res.payload.gameState.engine.round.trajectory).toMatchObject({
+      start: expect.any(Number),
+      direction: expect.any(Number),
+    });
     expect(res.payload.gamePrivateState).toBeUndefined();
   });
 

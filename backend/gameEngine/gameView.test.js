@@ -149,6 +149,56 @@ describe('gameView serializers', () => {
     expect(view.protocolVersion).toBeUndefined();
   });
 
+  it('serializes an aim trajectory and revealed shots but no private data', () => {
+    const row = {
+      id: 12,
+      host_name: 'Alice',
+      game_type: 'Nişancı Düellosu',
+      points: 10,
+      table_code: 'MASA01',
+      status: 'active',
+      guest_name: 'Bob',
+      winner: null,
+      game_state: {
+        engine: {
+          version: 2,
+          kind: 'aim',
+          revision: 3,
+          phase: 'reveal',
+          roundIndex: 1,
+          totalRounds: 5,
+          players: {
+            host: { name: 'Alice', score: 3, hits: 1 },
+            guest: { name: 'Bob', score: 0, hits: 0 },
+          },
+          round: {
+            id: 'r1',
+            index: 0,
+            trajectory: { start: 50, direction: 1, speed: 0.1 },
+            shots: {
+              host: { position: 50, points: 3, extra: 'drop' },
+              guest: null,
+            },
+            scoreDelta: { host: 3, guest: 0 },
+            private: { shots: ['secret'] },
+          },
+          private: { rounds: [{ trajectory: { start: 1 } }] },
+        },
+      },
+      game_private_state: { version: 2, shots: { r1: { host: { position: 50 } } } },
+    };
+
+    const view = serializeGameForActor(row);
+    const engine = view.gameState.engine;
+    expect(engine.round.trajectory).toEqual({ start: 50, direction: 1, speed: 0.1 });
+    expect(engine.round.shots).toEqual({ host: { position: 50, points: 3 }, guest: null });
+    expect(engine.round.private).toBeUndefined();
+    expect(engine.private).toBeUndefined();
+    expect(view.gamePrivateState).toBeUndefined();
+    expect(view.game_private_state).toBeUndefined();
+    expect(view.player1Move).toBeUndefined();
+  });
+
   it('returns an empty state for unknown game types', () => {
     expect(serializeGameState('Bilinmeyen', { engine: {}, result: 'x' })).toEqual({});
     expect(isChessType('Retro Satranç')).toBe(true);

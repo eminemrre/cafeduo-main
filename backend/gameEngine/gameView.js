@@ -71,12 +71,13 @@ const PLAYER_KEYS = [
   'roundsWon',
   'correct',
   'streak',
+  'hits',
   'answered',
   'jokerUsed',
   'left',
 ];
 const PICK_KEYS = ['host', 'guest'];
-const SHOT_KEYS = ['distance', 'points'];
+const SHOT_KEYS = ['distance', 'points', 'position'];
 const TRAJECTORY_KEYS = ['start', 'direction', 'speed', 'durationMs'];
 const ENGINE_STATE_KEYS = [
   'version',
@@ -92,7 +93,15 @@ const ENGINE_STATE_KEYS = [
   'round',
   'result',
 ];
-const RESULT_KEYS = ['winner', 'draw', 'reason', 'scores', 'transferredPoints', 'cancelled'];
+const RESULT_KEYS = [
+  'winner',
+  'draw',
+  'reason',
+  'scores',
+  'transferredPoints',
+  'cancelled',
+  'maxScore',
+];
 
 const sanitizePlayer = (player) => pick(player, PLAYER_KEYS);
 

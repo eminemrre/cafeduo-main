@@ -107,6 +107,11 @@ npm run migrate:status   # when touching migrations
 - `backend/gameEngine/quizEngine.js` is pure and time-driven: callers pass the server clock and
   persist the returned state. quiz question data lives in
   `backend/gameEngine/data/quizQuestions.json`; the client must not import the ranked bank.
+- `backend/gameEngine/aimEngine.js` is the same shape for Nişancı Düellosu: 5 rounds of 8 s plus
+  750 ms feedback, one common server-seeded trajectory (`shared/aimTrajectory.js`, client and
+  server share the position function), and score only from the server-time position. The
+  competitive gauge speed is the same on touch and desktop; `pointer: coarse` may change
+  practice presentation only.
 - Game state changes go through the game handlers; chess moves use `gameMoveService.js` with
   transaction locking.
 - Settlement (`backend/handlers/game/settlementUtils.js`): the winner receives

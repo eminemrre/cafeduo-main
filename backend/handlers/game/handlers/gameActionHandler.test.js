@@ -4,6 +4,11 @@ const {
   createQuizPublicState,
   startQuizState,
 } = require('../../../gameEngine/quizEngine');
+const {
+  createAimPrivateState,
+  createAimPublicState,
+  startAimState,
+} = require('../../../gameEngine/aimEngine');
 const { AIM_GAME_TYPE, QUIZ_GAME_TYPE } = require('../../../../shared/gameRegistry');
 
 const createMockRes = () => {
@@ -326,20 +331,56 @@ describe('gameActionHandler (database)', () => {
   });
 });
 
-describe('gameActionHandler – unsupported game types', () => {
-  it('refuses an aim action until that engine lands', async () => {
-    const game = buildMemoryGame();
-    game.gameType = AIM_GAME_TYPE;
-    const handler = createGameActionHandler(makeDeps({ games: [game] }));
+describe('gameActionHandler – aim', () => {
+  it('scores a fire on the server and stores only the public shot', async () => {
+    const nowMs = Date.now();
+    const privateState = createAimPrivateState();
+    const state = startAimState({
+      state: createAimPublicState({
+        hostName: 'Alice',
+        guestName: 'Bob',
+        totalRounds: privateState.rounds.length,
+      }),
+      privateState,
+      hostName: 'Alice',
+      guestName: 'Bob',
+      nowMs,
+    });
+    const game = {
+      id: 42,
+      hostName: 'Alice',
+      guestName: 'Bob',
+      gameType: AIM_GAME_TYPE,
+      points: 10,
+      table: 'MASA01',
+      status: 'active',
+      winner: null,
+      gameState: { engine: state },
+      gamePrivateState: privateState,
+      createdAt: new Date().toISOString(),
+    };
+    const deps = makeDeps({ games: [game] });
+    const handler = createGameActionHandler(deps);
     const res = createMockRes();
+
     await handler(
       request('Alice', {
         actionId: 'act_aim_1',
         roundId: 'r1',
         type: 'fire',
+        position: 12,
+        points: 3,
       }),
       res
     );
-    expect(res.statusCode).toBe(400);
+
+    expect(res.statusCode).toBe(200);
+    expect(game.gamePrivateState.shots.r1.host).toMatchObject({
+      position: expect.any(Number),
+      points: expect.any(Number),
+    });
+    expect(res.payload.game.gameState.engine.round.shots).toBeUndefined();
+    expect(res.payload.game.gameState.engine.players.host.score).toBe(0);
+    expect(deps.emitRealtimeUpdate).toHaveBeenCalled();
   });
 });

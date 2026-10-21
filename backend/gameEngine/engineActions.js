@@ -8,6 +8,7 @@
 
 const { ACTION_TYPES, checkActionReceipt, recordActionReceipt } = require('./actionProtocol');
 const { advanceQuiz, applyQuizAction } = require('./quizEngine');
+const { advanceAim, applyAimAction } = require('./aimEngine');
 const { AIM_GAME_TYPE, QUIZ_GAME_TYPE } = require('../../shared/gameRegistry');
 
 const read = (game, camel, snake) => (game?.[camel] !== undefined ? game[camel] : game?.[snake]);
@@ -131,7 +132,35 @@ const processCompetitiveAction = ({ game, actorName, envelope, nowMs = Date.now(
     };
   }
 
-  // Aim is added by the next step; the action protocol is shared.
+  if (gameType === AIM_GAME_TYPE) {
+    const applied = applyAimAction({
+      state,
+      privateState,
+      actorKey,
+      envelope,
+      nowMs,
+    });
+    if (!applied.ok) return applied;
+
+    const ledger = recordActionReceipt({
+      ledger: privateState.actions,
+      actorKey,
+      envelope,
+      receipt: {
+        status: 'applied',
+        revision: applied.state.revision,
+        at: new Date(nowMs).toISOString(),
+      },
+    });
+    return {
+      ok: true,
+      actorKey,
+      state: applied.state,
+      privateState: { ...applied.privateState, actions: ledger },
+      ...resultOf(applied.state),
+    };
+  }
+
   return {
     ok: false,
     status: 400,
@@ -163,6 +192,8 @@ const syncCompetitiveGame = ({ game, nowMs = Date.now() }) => {
   let advanced = { state, changed: false };
   if (gameType === QUIZ_GAME_TYPE) {
     advanced = advanceQuiz(state, privateState, nowMs);
+  } else if (gameType === AIM_GAME_TYPE) {
+    advanced = advanceAim(state, privateState, nowMs);
   }
 
   if (!advanced.changed) {

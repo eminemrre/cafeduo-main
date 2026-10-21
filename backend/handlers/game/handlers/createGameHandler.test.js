@@ -451,6 +451,28 @@ describe('createGameHandler (memory path)', () => {
     );
   });
 
+  it('seeds five aim trajectories and never returns the private copy', async () => {
+    const deps = makeDeps();
+    const handler = createCreateGameHandler(deps);
+    const req = {
+      user: { username: 'u1', cafe_id: 1, table_number: '5', points: 200 },
+      body: { gameType: 'Nişancı Düellosu', points: 10 },
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(201);
+    expect(deps._memoryGamesRef[0].gamePrivateState.rounds).toHaveLength(5);
+    expect(deps._memoryGamesRef[0].gamePrivateState.rounds[0].trajectory).toMatchObject({
+      start: expect.any(Number),
+      direction: expect.any(Number),
+      speed: expect.any(Number),
+    });
+    expect(res.payload.gameState).toEqual({});
+    expect(res.payload.gamePrivateState).toBeUndefined();
+  });
+
   it('seeds a private quiz question set and never returns it', async () => {
     const deps = makeDeps();
     const handler = createCreateGameHandler(deps);

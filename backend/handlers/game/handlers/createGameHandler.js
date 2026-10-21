@@ -13,7 +13,8 @@ const {
 } = require('../../../utils/gameEngineConfig');
 const { serializeGameForActor } = require('../../../gameEngine/gameView');
 const { createQuizPrivateState } = require('../../../gameEngine/quizEngine');
-const { QUIZ_GAME_TYPE } = require('../../../../shared/gameRegistry');
+const { createAimPrivateState } = require('../../../gameEngine/aimEngine');
+const { AIM_GAME_TYPE, QUIZ_GAME_TYPE } = require('../../../../shared/gameRegistry');
 
 const createCreateGameHandler = (deps) => {
   const {
@@ -225,7 +226,12 @@ const createCreateGameHandler = (deps) => {
         const initialGameState = isChessGameType(gameType)
           ? { chess: createInitialChessState(req.body?.chessClock) }
           : {};
-        const initialPrivateState = gameType === QUIZ_GAME_TYPE ? createQuizPrivateState() : null;
+        const initialPrivateState =
+          gameType === QUIZ_GAME_TYPE
+            ? createQuizPrivateState()
+            : gameType === AIM_GAME_TYPE
+              ? createAimPrivateState()
+              : null;
 
         const createdGame = gameService?.insertWaitingGame
           ? await gameService.insertWaitingGame(client, {
@@ -294,7 +300,12 @@ const createCreateGameHandler = (deps) => {
       gameState: isChessGameType(gameType)
         ? { chess: createInitialChessState(req.body?.chessClock) }
         : {},
-      gamePrivateState: gameType === QUIZ_GAME_TYPE ? createQuizPrivateState() : null,
+      gamePrivateState:
+        gameType === QUIZ_GAME_TYPE
+          ? createQuizPrivateState()
+          : gameType === AIM_GAME_TYPE
+            ? createAimPrivateState()
+            : null,
       createdAt: new Date().toISOString(),
     };
     const nextGames = [newGame, ...memoryGames];

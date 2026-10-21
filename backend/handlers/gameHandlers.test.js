@@ -1,4 +1,5 @@
 ﻿const { createGameHandlers } = require('./gameHandlers');
+const { createAimPrivateState } = require('../gameEngine/aimEngine');
 
 // These tests cover the handlers, not the rollout gate; keep protocol v2 open.
 process.env.GAME_ENGINE_V2_ENABLED = 'true';
@@ -303,6 +304,7 @@ describe('gameHandlers (memory mode)', () => {
         points: 20,
         table: 'MASA05',
         status: 'waiting',
+        gamePrivateState: createAimPrivateState(),
       },
     ];
 
@@ -408,6 +410,7 @@ describe('gameHandlers (memory mode)', () => {
         points: 120,
         table: 'MASA05',
         status: 'waiting',
+        gamePrivateState: createAimPrivateState(),
       },
     ];
 

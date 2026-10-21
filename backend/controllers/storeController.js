@@ -1,5 +1,6 @@
 const db = require('../db');
 const logger = require('../utils/logger');
+const { sendApiError, sendApiProblem } = require('../utils/routeHelpers');
 const { rollbackQuietly } = require('../utils/transaction');
 const { generateCouponCode } = require('../utils/couponCode');
 
@@ -61,8 +62,7 @@ const storeController = {
     try {
       res.json({ success: true, items: STORE_ITEMS });
     } catch (error) {
-      logger.error('getItems error', error);
-      res.status(500).json({ success: false, message: 'Sunucu hatası' });
+      return sendApiError(res, logger, 'store.getItems', error, 'Sunucu hatası');
     }
   },
 
@@ -82,8 +82,13 @@ const storeController = {
 
       res.json({ success: true, inventory: result.rows });
     } catch (error) {
-      logger.error('getInventory error', error);
-      res.status(500).json({ success: false, message: 'Envanter alınırken hata oluştu' });
+      return sendApiError(
+        res,
+        logger,
+        'store.getInventory',
+        error,
+        'Envanter alınırken hata oluştu'
+      );
     }
   },
 
@@ -95,12 +100,20 @@ const storeController = {
       const { itemId } = req.body;
 
       if (!itemId) {
-        return res.status(400).json({ success: false, message: 'Eşya ID gerekli' });
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'INVALID_ITEM_ID',
+          message: 'Eşya ID gerekli',
+        });
       }
 
       const itemToBuy = STORE_ITEMS.find((item) => item.id === parseInt(itemId));
       if (!itemToBuy) {
-        return res.status(404).json({ success: false, message: 'Eşya bulunamadı' });
+        return sendApiProblem(res, {
+          status: 404,
+          code: 'ITEM_NOT_FOUND',
+          message: 'Eşya bulunamadı',
+        });
       }
 
       await client.query('BEGIN');
@@ -111,13 +124,21 @@ const storeController = {
       ]);
       if (userResult.rows.length === 0) {
         await rollbackQuietly(client);
-        return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı' });
+        return sendApiProblem(res, {
+          status: 404,
+          code: 'USER_NOT_FOUND',
+          message: 'Kullanıcı bulunamadı',
+        });
       }
 
       const userPoints = userResult.rows[0].points;
       if (userPoints < itemToBuy.price) {
         await rollbackQuietly(client);
-        return res.status(400).json({ success: false, message: 'Yetersiz puan.' });
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'INSUFFICIENT_POINTS',
+          message: 'Yetersiz puan.',
+        });
       }
 
       // 2. Kullanıcının bu eşyaya zaten sahip olup olmadığını kontrol et
@@ -129,7 +150,11 @@ const storeController = {
       );
       if (existingItem.rows.length > 0) {
         await rollbackQuietly(client);
-        return res.status(400).json({ success: false, message: 'Bu eşyaya zaten sahipsiniz' });
+        return sendApiProblem(res, {
+          status: 400,
+          code: 'ITEM_ALREADY_OWNED',
+          message: 'Bu eşyaya zaten sahipsin',
+        });
       }
 
       // 3. Puanı düş
@@ -161,9 +186,13 @@ const storeController = {
       }
       if (!insertResult) {
         await rollbackQuietly(client);
-        return res
-          .status(500)
-          .json({ success: false, message: 'Kupon oluşturulamadı, lütfen tekrar deneyin.' });
+        return sendApiError(
+          res,
+          logger,
+          'store.buyItem',
+          new Error('Coupon code generation failed'),
+          'Kupon oluşturulamadı, lütfen tekrar deneyin.'
+        );
       }
 
       await client.query('COMMIT');
@@ -176,8 +205,13 @@ const storeController = {
       });
     } catch (error) {
       await rollbackQuietly(client);
-      logger.error('buyItem error', error);
-      res.status(500).json({ success: false, message: 'Satın alma işlemi sırasında hata oluştu' });
+      return sendApiError(
+        res,
+        logger,
+        'store.buyItem',
+        error,
+        'Satın alma işlemi sırasında hata oluştu'
+      );
     } finally {
       client.release();
     }

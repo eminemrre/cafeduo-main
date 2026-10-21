@@ -45,7 +45,7 @@ openssl rand -hex 64
 
 | Servis          | URL                              |
 | --------------- | -------------------------------- |
-| Frontend (Vite) | http://localhost:5173            |
+| Frontend (Vite) | http://localhost:3000            |
 | API             | http://localhost:3001            |
 | Swagger         | http://localhost:3001/api-docs   |
 | Sağlık kontrolü | http://localhost:3001/api/health |

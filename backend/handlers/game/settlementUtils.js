@@ -8,7 +8,10 @@ const NON_COMPETITIVE_GAME_TYPES = new Set([]);
 /**
  * Normalize participant name to lowercase key
  */
-const normalizeParticipantKey = (value) => String(value || '').trim().toLowerCase();
+const normalizeParticipantKey = (value) =>
+  String(value || '')
+    .trim()
+    .toLowerCase();
 
 /**
  * Check if a game type is non-competitive (no point transfers)
@@ -29,7 +32,14 @@ const isNonCompetitiveGameType = (gameType) =>
  * NOTHING). Failure is logged but never thrown — a tournament-credit hiccup
  * must not roll back the parent game-finish.
  */
-const creditTournamentPoints = async ({ client, game, participants, winnerName, isDraw, logger }) => {
+const creditTournamentPoints = async ({
+  client,
+  game,
+  participants,
+  winnerName,
+  isDraw,
+  logger,
+}) => {
   try {
     const tournamentId = Number(game?.tournament_id || game?.tournamentId || 0);
     if (!Number.isInteger(tournamentId) || tournamentId <= 0) return;
@@ -68,14 +78,25 @@ const creditTournamentPoints = async ({ client, game, participants, winnerName, 
       userRes.rows.map((user) => [normalizeParticipantKey(user.username), user.id])
     );
 
-    for (const { username, points } of credits) {
-      const userId = userIds.get(normalizeParticipantKey(username));
-      if (userId === undefined) continue;
+    const creditRows = credits
+      .map(({ username, points }) => ({
+        userId: userIds.get(normalizeParticipantKey(username)),
+        points,
+      }))
+      .filter(({ userId }) => userId !== undefined);
+
+    if (creditRows.length > 0) {
       await client.query(
         `INSERT INTO tournament_points (tournament_id, user_id, game_id, points)
-         VALUES ($1, $2, $3, $4)
+         SELECT $1, credit.user_id, $2, credit.points
+         FROM UNNEST($3::int[], $4::numeric[]) AS credit(user_id, points)
          ON CONFLICT (tournament_id, game_id, user_id) DO NOTHING`,
-        [tournamentId, userId, game.id, points]
+        [
+          tournamentId,
+          game.id,
+          creditRows.map(({ userId }) => userId),
+          creditRows.map(({ points }) => points),
+        ]
       );
     }
   } catch (err) {
@@ -92,14 +113,7 @@ const creditTournamentPoints = async ({ client, game, participants, winnerName, 
  * Apply database settlement for a finished game
  * Updates user points, wins, and games_played in the database
  */
-const applyDbSettlement = async ({
-  client,
-  game,
-  winnerName,
-  isDraw,
-  gameType,
-  logger,
-}) => {
+const applyDbSettlement = async ({ client, game, winnerName, isDraw, gameType, logger }) => {
   const hostName = String(game.host_name || '').trim();
   const guestName = String(game.guest_name || '').trim();
   const participants = [hostName, guestName].filter(Boolean);
@@ -147,9 +161,7 @@ const applyDbSettlement = async ({
   }
 
   if (!isDraw && canonicalWinner && participants.length === 2) {
-    const loserName = participants.find(
-      (name) => normalizeParticipantKey(name) !== winnerKey
-    );
+    const loserName = participants.find((name) => normalizeParticipantKey(name) !== winnerKey);
     const winnerUser = byUsername.get(winnerKey);
     const loserUser = loserName ? byUsername.get(normalizeParticipantKey(loserName)) : null;
 
@@ -211,9 +223,7 @@ const applyDbSettlement = async ({
     const user = byUsername.get(normalizeParticipantKey(participantName));
     if (!user) continue;
     const isWinner =
-      !isDraw &&
-      canonicalWinner &&
-      normalizeParticipantKey(participantName) === winnerKey;
+      !isDraw && canonicalWinner && normalizeParticipantKey(participantName) === winnerKey;
     await client.query(
       `
         UPDATE users
@@ -232,13 +242,7 @@ const applyDbSettlement = async ({
  * Apply in-memory settlement for a finished game
  * Updates user points, wins, and games_played in memory
  */
-const applyMemorySettlement = ({
-  game,
-  winnerName,
-  isDraw,
-  gameType,
-  getMemoryUsers,
-}) => {
+const applyMemorySettlement = ({ game, winnerName, isDraw, gameType, getMemoryUsers }) => {
   const users = Array.isArray(getMemoryUsers?.()) ? getMemoryUsers() : [];
   const hostName = String(game.hostName || '').trim();
   const guestName = String(game.guestName || '').trim();
@@ -248,7 +252,9 @@ const applyMemorySettlement = ({
   }
 
   const findUser = (username) =>
-    users.find((user) => normalizeParticipantKey(user?.username) === normalizeParticipantKey(username));
+    users.find(
+      (user) => normalizeParticipantKey(user?.username) === normalizeParticipantKey(username)
+    );
 
   const canonicalWinner = String(winnerName || '').trim();
   const winnerKey = normalizeParticipantKey(canonicalWinner);
@@ -288,11 +294,7 @@ const applyMemorySettlement = ({
     const user = findUser(participantName);
     if (!user) continue;
     user.gamesPlayed = Math.max(0, Math.floor(Number(user.gamesPlayed || 0))) + 1;
-    if (
-      !isDraw &&
-      canonicalWinner &&
-      normalizeParticipantKey(participantName) === winnerKey
-    ) {
+    if (!isDraw && canonicalWinner && normalizeParticipantKey(participantName) === winnerKey) {
       user.wins = Math.max(0, Math.floor(Number(user.wins || 0))) + 1;
     }
   }

@@ -27,9 +27,16 @@ const makeDbClient = (userRows, tournament = null) => {
         return { rows: tournament && tournament.id === params[0] ? [tournament] : [] };
       }
       if (/INSERT INTO\s+tournament_points/i.test(sql)) {
-        const [tournamentId, userId, gameId, points] = params;
-        tournamentPoints.push({ tournamentId, userId, gameId, points });
-        return { rowCount: 1 };
+        const [tournamentId, gameId, userIds, pointsList] = params;
+        userIds.forEach((userId, index) => {
+          tournamentPoints.push({
+            tournamentId,
+            userId,
+            gameId,
+            points: pointsList[index],
+          });
+        });
+        return { rowCount: userIds.length };
       }
       // User lookup order is database-defined, not participant order.
       if (/FROM\s+users/i.test(sql) && /LOWER\(username\)\s*=\s*ANY/i.test(sql)) {
@@ -312,6 +319,10 @@ describe('applyDbSettlement', () => {
     ]);
     // One locked balance read plus one tournament identity read, not one per credit.
     expect(client.calls.filter(({ sql }) => /FROM\s+users/i.test(sql))).toHaveLength(2);
+    // Both credits go in with a single INSERT ... SELECT FROM UNNEST.
+    expect(
+      client.calls.filter(({ sql }) => /INSERT INTO\s+tournament_points/i.test(sql))
+    ).toHaveLength(1);
   });
 
   it('skips a missing tournament participant without shifting another user credit', async () => {
@@ -336,7 +347,11 @@ describe('applyDbSettlement', () => {
       { tournamentId: 7, userId: 2, gameId: 42, points: 0.5 },
     ]);
     expect(users[0]).toEqual({
-      id: 2, username: 'Bob', points: 100, wins: 0, games_played: 1,
+      id: 2,
+      username: 'Bob',
+      points: 100,
+      wins: 0,
+      games_played: 1,
     });
   });
 

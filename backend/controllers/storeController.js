@@ -17,11 +17,11 @@ const generateCouponCode = () => {
 const STORE_ITEMS = [
   {
     id: 1,
-    title: 'Zehirli Neon Kılıç (Rütbe)',
-    code: 'RANK_NEON_SWORD',
+    title: 'Karamel Kaşık (Rütbe)',
+    code: 'RANK_CARAMEL_SPOON',
     price: 500,
     type: 'rank',
-    description: 'Profilinde sarkan fosforlu bir kılıç rütbesi.',
+    description: 'Profilinde sallanan parlak bir kaşık rütbesi.',
   },
   {
     id: 2,
@@ -33,8 +33,8 @@ const STORE_ITEMS = [
   },
   {
     id: 3,
-    title: 'Siber Ajan Ünvanı',
-    code: 'TITLE_CYBER_AGENT',
+    title: 'Masa Ustası Ünvanı',
+    code: 'TITLE_TABLE_MASTER',
     price: 250,
     type: 'title',
     description: 'Adının altında beliren prestijli bir ünvan.',
@@ -127,7 +127,7 @@ const storeController = {
       const userPoints = userResult.rows[0].points;
       if (userPoints < itemToBuy.price) {
         await rollbackQuietly(client);
-        return res.status(400).json({ success: false, message: 'Yetersiz bakiye (Cyber-Creds)' });
+        return res.status(400).json({ success: false, message: 'Yetersiz puan.' });
       }
 
       // 2. Kullanıcının bu eşyaya zaten sahip olup olmadığını kontrol et

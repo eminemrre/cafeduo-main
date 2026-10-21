@@ -5,7 +5,7 @@ import { TournamentBanner } from './TournamentBanner';
 describe('TournamentBanner', () => {
   const baseTournament = {
     id: 1,
-    name: 'Riso Cup',
+    name: 'Kafe Kupası',
     end_at: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(), // 2 saat
     status: 'active',
     prize_tiers: [] as never[],
@@ -14,7 +14,7 @@ describe('TournamentBanner', () => {
 
   it('renders tournament name and countdown', () => {
     render(<TournamentBanner tournament={tournament} onOpenLeaderboard={() => {}} />);
-    expect(screen.getByText('Riso Cup')).toBeInTheDocument();
+    expect(screen.getByText('Kafe Kupası')).toBeInTheDocument();
     expect(screen.getByText(/02:00:00|01:59:/)).toBeInTheDocument();
   });
 

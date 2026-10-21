@@ -14,7 +14,7 @@ import { api } from '../lib/api';
 
 const tournament = {
   id: 7,
-  name: 'Riso Cup',
+  name: 'Kafe Kupası',
   end_at: '2026-12-31T00:00:00Z',
   status: 'active',
   prize_tiers: [],
@@ -42,7 +42,7 @@ describe('TournamentLeaderboardModal', () => {
     render(
       <TournamentLeaderboardModal isOpen={false} onClose={() => {}} tournament={tournament} />
     );
-    expect(screen.queryByText('Riso Cup')).not.toBeInTheDocument();
+    expect(screen.queryByText('Kafe Kupası')).not.toBeInTheDocument();
   });
 
   it('fetches and renders leaderboard rows with formatted points', async () => {

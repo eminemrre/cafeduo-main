@@ -42,7 +42,7 @@ describe('storeController', () => {
 
   it('getInventory returns user inventory from db', async () => {
     db.query.mockResolvedValueOnce({
-      rows: [{ id: 9, code: 'RANK_NEON_SWORD' }],
+      rows: [{ id: 9, code: 'RANK_CARAMEL_SPOON' }],
     });
 
     const req = { user: { id: 42 } };
@@ -59,7 +59,7 @@ describe('storeController', () => {
     expect(queryParams).toEqual([42]);
     expect(res.json).toHaveBeenCalledWith({
       success: true,
-      inventory: [{ id: 9, code: 'RANK_NEON_SWORD' }],
+      inventory: [{ id: 9, code: 'RANK_CARAMEL_SPOON' }],
     });
   });
 
@@ -136,7 +136,7 @@ describe('storeController', () => {
     expect(res.status).toHaveBeenCalledWith(400);
     expect(res.json).toHaveBeenCalledWith({
       success: false,
-      message: 'Yetersiz bakiye (Cyber-Creds)',
+      message: 'Yetersiz puan.',
     });
     expect(client.release).toHaveBeenCalledTimes(1);
   });
@@ -185,8 +185,8 @@ describe('storeController', () => {
             id: 555,
             user_id: 8,
             item_id: 1,
-            item_title: 'Zehirli Neon Kılıç (Rütbe)',
-            code: 'RANK_NEON_SWORD',
+            item_title: 'Karamel Kaşık (Rütbe)',
+            code: 'RANK_CARAMEL_SPOON',
           },
         ],
       }) // insert inventory

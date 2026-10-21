@@ -55,16 +55,18 @@ export const getAvatarUrl = (seed: string | null | undefined): string => {
   return `https://api.dicebear.com/9.x/${AVATAR_STYLE}/svg?seed=${safe}`;
 };
 
+/** Both the curated style and the legacy one the backend still accepts. */
+const AVATAR_URL_PATTERN = new RegExp(
+  `^https://api\\.dicebear\\.com/9\\.x/(?:${AVATAR_STYLE}|${LEGACY_AVATAR_STYLE})/svg\\?seed=([A-Za-z0-9_-]{1,32})$`
+);
+
 /**
  * Extract the seed from a stored avatar_url. Returns `null` when the URL is
  * empty / unrecognised — callers fall back to initials or username.
  */
 export const seedFromAvatarUrl = (url: string | null | undefined): string | null => {
   if (!url) return null;
-  const match =
-    /^https:\/\/api\.dicebear\.com\/9\.x\/(?:bottts|pixel-art)\/svg\?seed=([A-Za-z0-9_-]{1,32})$/.exec(
-      url
-    );
+  const match = AVATAR_URL_PATTERN.exec(url);
   return match ? match[1] : null;
 };
 

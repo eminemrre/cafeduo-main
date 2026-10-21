@@ -7,6 +7,7 @@
  *
  * Variants:
  *   - primary: lokum fill (the one primary action of an area)
+ *   - ink: ink fill, paper text (the primary next to a lokum field)
  *   - secondary: ice fill (a neutral second action)
  *   - danger: danger fill (destructive actions)
  *   - ghost: no box, an ink underline on hover (tertiary)
@@ -16,7 +17,7 @@ import React from 'react';
 import { HTMLMotionProps, motion } from 'framer-motion';
 
 interface RetroButtonProps extends Omit<HTMLMotionProps<'button'>, 'children'> {
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  variant?: 'primary' | 'ink' | 'secondary' | 'danger' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   icon?: React.ReactNode;
   children?: React.ReactNode;
@@ -46,6 +47,7 @@ export const RetroButton: React.FC<RetroButtonProps> = ({
 
   const variants: Record<NonNullable<RetroButtonProps['variant']>, string> = {
     primary: 'bg-candy-lokum text-carbon hover:-translate-y-0.5',
+    ink: 'bg-carbon text-paper hover:-translate-y-0.5',
     secondary: 'bg-paper-deep text-carbon hover:-translate-y-0.5 hover:bg-paper-dim',
     danger: 'bg-candy-danger text-paper hover:-translate-y-0.5',
     ghost:

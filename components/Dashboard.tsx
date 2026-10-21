@@ -11,6 +11,7 @@ import { UserProfileModal } from './UserProfileModal';
 import { ArenaBattle } from './ArenaBattle';
 import { KnowledgeQuiz } from './KnowledgeQuiz';
 import { RetroChess } from './RetroChess';
+import { BattleshipGame } from './BattleshipGame';
 import { Leaderboard } from './Leaderboard';
 import { Achievements } from './Achievements';
 import { RetroButton } from './RetroButton';
@@ -202,6 +203,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
         err instanceof Error && err.message ? err.message : 'Oyuna katılırken hata oluştu.';
       toast.error(message);
     }
+  };
+
+  // Yerel, sıralamasız antrenman (sunucuya hiçbir şey yazmaz).
+  const handleStartPractice = (gameType: string) => {
+    setActiveGame(`practice-${Date.now()}`, gameType, 'BOT', true);
   };
 
   // Aktif oyuna geri dön
@@ -403,6 +409,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
               onLeave={handleLeaveGame}
               onMatchSettled={handleMatchSettled}
             />
+          ) : activeGameType === 'Amiral Battı' ? (
+            <BattleshipGame
+              gameId={activeGameId}
+              currentUser={currentUser}
+              opponentName={opponentName || 'Rakip'}
+              isBot={isBot}
+              onGameEnd={handleGameFinish}
+              onLeave={handleLeaveGame}
+              onMatchSettled={handleMatchSettled}
+            />
           ) : activeGameType === 'Nişancı Düellosu' ? (
             <ArenaBattle
               gameId={activeGameId}
@@ -507,6 +523,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     onCancelGame={handleCancelGame}
                     onViewProfile={handleViewProfile}
                     onRejoinGame={handleRejoinGame}
+                    onStartPractice={handleStartPractice}
                     activeTournament={activeTournament}
                   />
                 </div>

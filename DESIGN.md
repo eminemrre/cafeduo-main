@@ -3,31 +3,33 @@ version: alpha
 name: CafeDuo — Masa Oyuncakları
 description: A café table turned into a toy set. The page is the stationery of the café table — table tent, order slip, colour sheets, the menu — with real 3D toys (cup, knight, question card, target, coin) as its objects.
 colors:
-  primary: "#FF5C8A"
-  on-primary: "#17140F"
-  ink: "#17140F"
-  ink-soft: "#4A4540"
-  paper: "#FFFFFF"
-  ice: "#EEF6F8"
-  ice-deep: "#D9EAEF"
-  lokum: "#FF5C8A"
-  limon: "#FFD23F"
-  gok: "#1FB3FF"
-  fistik: "#B6D31B"
-  gok-deep: "#1597D9"
-  fistik-face: "#C8E23A"
-  coffee: "#5A3424"
-  board-light: "#F2F9FB"
-  board-dark: "#7FC9EE"
-  success: "#177A41"
-  danger: "#D62F2F"
-  ink-raised: "#2A251C"
-  lokum-text: "#C4265F"
-  gok-text: "#0B6AA8"
-  limon-text: "#8A6608"
-  fistik-text: "#5F7A0C"
-  danger-text: "#B8241A"
-  danger-wash: "#FCE8E8"
+  primary: '#FF5C8A'
+  on-primary: '#17140F'
+  ink: '#17140F'
+  ink-soft: '#4A4540'
+  paper: '#FFFFFF'
+  ice: '#EEF6F8'
+  ice-deep: '#D9EAEF'
+  lokum: '#FF5C8A'
+  limon: '#FFD23F'
+  gok: '#1FB3FF'
+  fistik: '#B6D31B'
+  deniz: '#2EC4B6'
+  gok-deep: '#1597D9'
+  fistik-face: '#C8E23A'
+  coffee: '#5A3424'
+  board-light: '#F2F9FB'
+  board-dark: '#7FC9EE'
+  success: '#177A41'
+  danger: '#D62F2F'
+  ink-raised: '#2A251C'
+  lokum-text: '#C4265F'
+  gok-text: '#0B6AA8'
+  limon-text: '#8A6608'
+  fistik-text: '#5F7A0C'
+  deniz-text: '#0B7A70'
+  danger-text: '#B8241A'
+  danger-wash: '#FCE8E8'
 typography:
   display-xl:
     fontFamily: Baloo 2
@@ -152,144 +154,144 @@ spacing:
   3xl: 128px
 components:
   button-primary:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.paper}"
-    typography: "{typography.button}"
-    rounded: "{rounded.none}"
+    backgroundColor: '{colors.ink}'
+    textColor: '{colors.paper}'
+    typography: '{typography.button}'
+    rounded: '{rounded.none}'
     height: 48px
     padding: 0 20px
   button-primary-on-candy:
-    backgroundColor: "{colors.lokum}"
-    textColor: "{colors.ink}"
-    typography: "{typography.button}"
-    rounded: "{rounded.none}"
+    backgroundColor: '{colors.lokum}'
+    textColor: '{colors.ink}'
+    typography: '{typography.button}'
+    rounded: '{rounded.none}'
     height: 48px
     padding: 0 22px
   button-quiet:
     backgroundColor: none
-    textColor: "{colors.ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.none}"
+    textColor: '{colors.ink}'
+    typography: '{typography.label}'
+    rounded: '{rounded.none}'
     height: 44px
   table-tent:
-    backgroundColor: "{colors.paper}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.none}"
+    backgroundColor: '{colors.paper}'
+    textColor: '{colors.ink}'
+    rounded: '{rounded.none}'
     padding: 96px 48px 56px
     width: 560px
   slip-sheet:
-    backgroundColor: "{colors.paper}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.none}"
+    backgroundColor: '{colors.paper}'
+    textColor: '{colors.ink}'
+    rounded: '{rounded.none}'
     padding: 36px 32px 52px
   colour-sheet:
-    backgroundColor: "{colors.gok}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.none}"
+    backgroundColor: '{colors.gok}'
+    textColor: '{colors.ink}'
+    rounded: '{rounded.none}'
   menu-bar:
-    backgroundColor: "{colors.paper}"
-    textColor: "{colors.ink}"
-    typography: "{typography.body}"
-    rounded: "{rounded.none}"
+    backgroundColor: '{colors.paper}'
+    textColor: '{colors.ink}'
+    typography: '{typography.body}'
+    rounded: '{rounded.none}'
     height: 56px
     padding: 0 18px
   action-cell:
-    backgroundColor: "{colors.lokum}"
-    textColor: "{colors.ink}"
-    typography: "{typography.button}"
-    rounded: "{rounded.none}"
+    backgroundColor: '{colors.lokum}'
+    textColor: '{colors.ink}'
+    typography: '{typography.button}'
+    rounded: '{rounded.none}'
     height: 72px
   cell-quiet-on-ink:
-    backgroundColor: "{colors.ink-raised}"
-    textColor: "{colors.paper}"
-    typography: "{typography.button}"
-    rounded: "{rounded.none}"
+    backgroundColor: '{colors.ink-raised}'
+    textColor: '{colors.paper}'
+    typography: '{typography.button}'
+    rounded: '{rounded.none}'
     height: 72px
   input:
-    backgroundColor: "{colors.ice}"
-    textColor: "{colors.ink}"
-    typography: "{typography.body}"
-    rounded: "{rounded.none}"
+    backgroundColor: '{colors.ice}'
+    textColor: '{colors.ink}'
+    typography: '{typography.body}'
+    rounded: '{rounded.none}'
     height: 52px
     padding: 0 14px
   panel-surface:
-    backgroundColor: "{colors.paper}"
-    textColor: "{colors.ink}"
-    typography: "{typography.body}"
-    rounded: "{rounded.none}"
+    backgroundColor: '{colors.paper}'
+    textColor: '{colors.ink}'
+    typography: '{typography.body}'
+    rounded: '{rounded.none}'
     padding: 20px
   panel-ground:
-    backgroundColor: "{colors.ice}"
-    textColor: "{colors.ink}"
+    backgroundColor: '{colors.ice}'
+    textColor: '{colors.ink}'
   panel-well:
-    backgroundColor: "{colors.ice-deep}"
-    textColor: "{colors.ink-soft}"
-    rounded: "{rounded.none}"
+    backgroundColor: '{colors.ice-deep}'
+    textColor: '{colors.ink-soft}'
+    rounded: '{rounded.none}'
     padding: 12px
   chip-satranc:
-    backgroundColor: "{colors.gok}"
-    textColor: "{colors.ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.none}"
+    backgroundColor: '{colors.gok}'
+    textColor: '{colors.ink}'
+    typography: '{typography.label}'
+    rounded: '{rounded.none}'
     padding: 6px 12px
   chip-bilgi:
-    backgroundColor: "{colors.limon}"
-    textColor: "{colors.ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.none}"
+    backgroundColor: '{colors.limon}'
+    textColor: '{colors.ink}'
+    typography: '{typography.label}'
+    rounded: '{rounded.none}'
     padding: 6px 12px
   chip-nisanci:
-    backgroundColor: "{colors.lokum}"
-    textColor: "{colors.ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.none}"
+    backgroundColor: '{colors.lokum}'
+    textColor: '{colors.ink}'
+    typography: '{typography.label}'
+    rounded: '{rounded.none}'
     padding: 6px 12px
   chip-odul:
-    backgroundColor: "{colors.fistik}"
-    textColor: "{colors.ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.none}"
+    backgroundColor: '{colors.fistik}'
+    textColor: '{colors.ink}'
+    typography: '{typography.label}'
+    rounded: '{rounded.none}'
     padding: 6px 12px
   board-square-light:
-    backgroundColor: "{colors.board-light}"
-    textColor: "{colors.ink}"
+    backgroundColor: '{colors.board-light}'
+    textColor: '{colors.ink}'
   board-square-dark:
-    backgroundColor: "{colors.board-dark}"
-    textColor: "{colors.ink}"
+    backgroundColor: '{colors.board-dark}'
+    textColor: '{colors.ink}'
   toy-knight-base:
-    backgroundColor: "{colors.gok-deep}"
+    backgroundColor: '{colors.gok-deep}'
   toy-coin-face:
-    backgroundColor: "{colors.fistik-face}"
-    textColor: "{colors.ink}"
+    backgroundColor: '{colors.fistik-face}'
+    textColor: '{colors.ink}'
   toy-cup-coffee:
-    backgroundColor: "{colors.coffee}"
+    backgroundColor: '{colors.coffee}'
   status-success:
-    backgroundColor: "{colors.success}"
-    textColor: "{colors.paper}"
-    rounded: "{rounded.none}"
+    backgroundColor: '{colors.success}'
+    textColor: '{colors.paper}'
+    rounded: '{rounded.none}'
   status-danger:
-    backgroundColor: "{colors.danger}"
-    textColor: "{colors.paper}"
-    rounded: "{rounded.none}"
+    backgroundColor: '{colors.danger}'
+    textColor: '{colors.paper}'
+    rounded: '{rounded.none}'
   status-danger-wash:
-    backgroundColor: "{colors.danger-wash}"
-    textColor: "{colors.danger-text}"
-    typography: "{typography.body}"
-    rounded: "{rounded.none}"
+    backgroundColor: '{colors.danger-wash}'
+    textColor: '{colors.danger-text}'
+    typography: '{typography.body}'
+    rounded: '{rounded.none}'
   text-link:
-    textColor: "{colors.gok-text}"
-    typography: "{typography.label}"
+    textColor: '{colors.gok-text}'
+    typography: '{typography.label}'
   text-emphasis:
-    textColor: "{colors.lokum-text}"
+    textColor: '{colors.lokum-text}'
   text-caution:
-    textColor: "{colors.limon-text}"
-    typography: "{typography.meta}"
+    textColor: '{colors.limon-text}'
+    typography: '{typography.meta}'
   text-points:
-    textColor: "{colors.fistik-text}"
-    typography: "{typography.label}"
+    textColor: '{colors.fistik-text}'
+    typography: '{typography.label}'
   text-loss:
-    textColor: "{colors.danger-text}"
-    typography: "{typography.label}"
+    textColor: '{colors.danger-text}'
+    typography: '{typography.label}'
 ---
 
 ## Overview
@@ -300,7 +302,7 @@ real 3D objects in soft, matte, vinyl-toy candy colours. The visitor plays with 
 about them; the opponent is the next table and the prize is that café's reward (see PRODUCT.md).
 
 **The direction (v2, 2026-10-19): the page is the object.** The landing does not illustrate the
-product — it *is* the stationery of the café table. The first screen is the table tent (a 5:7
+product — it _is_ the stationery of the café table. The first screen is the table tent (a 5:7
 card, scalloped at the top corners, cropped by the fold, with a real QR to cafeduotr.com). Below
 it, in order: the order slip (how it works, with dotted leaders and one inverted result bar), three
 sticky colour sheets (one per game, stacking at −72 px steps while the headings stay in the visible
@@ -330,7 +332,7 @@ one hand, cup in the other. Light grounds; colour does the talking.
 
 ## Colors
 
-Strategy: **Drenched** on Vitrin surfaces (a section *is* its colour), **Restrained** on Masa
+Strategy: **Drenched** on Vitrin surfaces (a section _is_ its colour), **Restrained** on Masa
 surfaces (ice and white, one candy accent per game).
 
 - **Ink (#17140F)** is the only text colour on every candy field and on ice and white. It passes AA
@@ -339,6 +341,11 @@ surfaces (ice and white, one candy accent per game).
 - **Limon (#FFD23F)** is **Bilgi Yarışı**.
 - **Gök (#1FB3FF)** is **Retro Satranç**; the board's dark squares are a paler gök (#7FC9EE).
 - **Fıstık (#B6D31B)**, pistachio, is **points and rewards** (coins, coupons, the wheel, the menu).
+- **Deniz (#2EC4B6)** is **Amiral Battı**, approved 2026-10-21. Ink on deniz
+  has 8.47:1 contrast; deniz-text (#0B7A70) is 5.21:1 on paper and 4.76:1 on ice.
+  It appears on the game's lobby marker, selected game card, own-turn band,
+  hits and selected placement ship. Misses are ink dots; hits are ink crosses;
+  sunk cells are ink with deniz crosses, so colour is never the only signal.
 - **Ice (#EEF6F8)** and **ice-deep (#D9EAEF)** are the Masa ground and wells; **paper (#FFFFFF)**
   is the surface on top of them (the tent, the slip, the sheets' content, the menu bars).
 - **Success (#177A41)** and **danger (#D62F2F)** are for states only, never decoration.
@@ -382,7 +389,7 @@ paper (the sentence) → ink (footer).
   the lower half of a phone screen, within thumb reach.
 - "Kaydol" (signed in: "Panele geç") and "Giriş yap" are always reachable on Vitrin (sticky
   header). There is exactly one sign-up button per screen area, never a duplicate pair.
-- The sticky sheets slot their headings into the top band: sheet *i* sticks at `88px + i·72px`
+- The sticky sheets slot their headings into the top band: sheet _i_ sticks at `88px + i·72px`
   (phones `56px + i·52px`), so 72 px of every sheet stays visible while it is covered.
 - The landing ends with ink: the wordmark built from coloured blocks, four columns, the contact and
   a dotted tear line above the closing row.
@@ -430,13 +437,19 @@ notice) get one soft shadow (`0 16px 34px rgba(23,20,15,0.22)`).
 - **Action cell:** a flat 72 px rectangle, one per action; the primary is lokum, the quiet one is
   `#2A251C` on ink.
 - **Input:** ice fill, ink text, 3 px ink underline, 0 radius, 52 px tall, label above or inline
-  (never only a placeholder). On the landing the input *is* the blank of the closing sentence.
+  (never only a placeholder). On the landing the input _is_ the blank of the closing sentence.
 - **Panel surface:** paper on ice, 0 radius, 20 px padding, no shadow, no border.
 - **Game chips:** the game's colour, ink text, square. The same chip appears in lobby rows, history
   and on the landing.
 - **Chess board:** light squares `board-light`, dark squares `board-dark`, last move tinted limon,
   selection ring lokum, coordinates 11 px inside the squares (decorative; the board has screen-reader
   labels).
+- **Battleship seas:** square 8×8 cells with 3 px water gaps; the main sea fills
+  the phone column, the own sea has a small overview and an expanded keyboard
+  view. Desktop uses two columns. Placement uses four ship bars (4, 3, 3, 2),
+  rotate and random placement, with an explicit fleet confirmation. A shot is
+  select-then-fire, never a one-tap accident. Ranked clocks/scores/hits are
+  server snapshots; practice is labelled Antrenman and never pays points.
 - **Coin and coupon:** points are shown as a fıstık coin with the number in `score`; a coupon is a
   paper ticket with a QR code and a fıstık edge.
 - **Footer mark:** the wordmark built from seven coloured rectangles of different heights with the
@@ -468,14 +481,14 @@ WebGL, with reduced motion and before the scene loads; content and actions never
 canvas. Canvas labels are drawn in Baloo 2, so re-render the fallbacks (`/tmp/cdl-scripts/render-toys.mjs`)
 when the display face or its weight changes.
 
-| Toy | Colour | Meaning |
-| --- | --- | --- |
-| Chess knight | gök | Retro Satranç |
-| Question card / buzzer | limon | Bilgi Yarışı |
-| Target with a dart | lokum | Nişancı Düellosu |
-| Coin "CD" | fıstık | Points |
-| Cup | lokum and paper | The café, the coffee break |
-| Table tent `MASA07` | paper and ink | The opponent is a table |
+| Toy                    | Colour          | Meaning                    |
+| ---------------------- | --------------- | -------------------------- |
+| Chess knight           | gök             | Retro Satranç              |
+| Question card / buzzer | limon           | Bilgi Yarışı               |
+| Target with a dart     | lokum           | Nişancı Düellosu           |
+| Coin "CD"              | fıstık          | Points                     |
+| Cup                    | lokum and paper | The café, the coffee break |
+| Table tent `MASA07`    | paper and ink   | The opponent is a table    |
 
 ## Do's and Don'ts
 

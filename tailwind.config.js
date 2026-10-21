@@ -33,6 +33,7 @@ module.exports = {
           limon: '#FFD23F',
           'limon-deep': '#E0AE18',
           fistik: '#B6D31B',
+          deniz: '#2EC4B6',
           danger: '#D62F2F',
         },
       },

@@ -3,10 +3,12 @@ import type { CompetitiveActionEnvelope, CompetitiveEngineState, CompetitiveGame
 
 export const COMPETITIVE_PROTOCOL_VERSION = 2;
 
-export const isCompetitiveGameType = (gameType: unknown): boolean => {
-  const type = String(gameType || '').trim();
-  return type === 'Bilgi Yarışı' || type === 'Nişancı Düellosu';
-};
+// Kept in step with `competitive: true` in shared/gameRegistry.js (CommonJS, so
+// Vite cannot import it at runtime); competitiveGame.test.ts checks the match.
+export const COMPETITIVE_GAME_TYPES = ['Bilgi Yarışı', 'Nişancı Düellosu', 'Amiral Battı'] as const;
+
+export const isCompetitiveGameType = (gameType: unknown): boolean =>
+  (COMPETITIVE_GAME_TYPES as readonly string[]).includes(String(gameType || '').trim());
 
 export const engineOf = (snapshot: CompetitiveGame | null | undefined) =>
   (snapshot?.gameState?.engine as CompetitiveEngineState | undefined) || null;

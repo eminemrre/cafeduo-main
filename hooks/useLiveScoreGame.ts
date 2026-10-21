@@ -23,7 +23,7 @@ import { socketService } from '../lib/socket';
  */
 
 export interface LiveMatchStats {
-  kind: 'quiz' | 'arena';
+  kind: 'quiz' | 'arena' | 'battleship';
   playerScore: number;
   opponentScore: number;
   durationMs: number;
@@ -31,11 +31,15 @@ export interface LiveMatchStats {
   correctAnswers?: number;
 }
 
-export type LiveActionType = 'answer' | 'joker' | 'fire' | 'resign';
+export type LiveActionType = 'answer' | 'joker' | 'fire' | 'place' | 'resign';
 
 export interface LiveActionInput {
   type: LiveActionType;
   optionIndex?: number;
+  /** Amiral Battı target cell (0-63). */
+  cell?: number;
+  /** Amiral Battı fleet layout, in fleet order. */
+  layout?: { cell: number; dir: 'h' | 'v' }[];
 }
 
 export interface LiveActionResult {
@@ -56,7 +60,7 @@ export interface UseLiveScoreGameOptions {
   /** Fallback polling interval; never below 15 s for competitive games. */
   pollIntervalMs?: number;
   logName?: string;
-  statsKind: 'quiz' | 'arena';
+  statsKind: 'quiz' | 'arena' | 'battleship';
   onGameEnd: (winner: string, points: number, stats?: LiveMatchStats) => void;
 }
 
@@ -96,6 +100,8 @@ type ActionRetry = {
     roundId: string;
     type: LiveActionType;
     optionIndex?: number;
+    cell?: number;
+    layout?: { cell: number; dir: 'h' | 'v' }[];
   };
 };
 
@@ -302,7 +308,13 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
         return { ok: false, code: 'NO_ROUND', message: 'Tur henüz hazır değil.' };
       }
 
-      const actionKey = `${roundId}|${input.type}|${input.optionIndex ?? ''}`;
+      const actionKey = [
+        roundId,
+        input.type,
+        input.optionIndex ?? '',
+        input.cell ?? '',
+        input.layout ? JSON.stringify(input.layout) : '',
+      ].join('|');
       const previous = retryRef.current;
       const payload =
         previous && previous.key === actionKey
@@ -312,6 +324,8 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
               roundId,
               type: input.type,
               ...(input.optionIndex !== undefined ? { optionIndex: input.optionIndex } : {}),
+              ...(input.cell !== undefined ? { cell: input.cell } : {}),
+              ...(input.layout ? { layout: input.layout } : {}),
             };
       retryRef.current = { key: actionKey, payload };
 

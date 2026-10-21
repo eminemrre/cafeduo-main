@@ -82,6 +82,8 @@ reported as `CLIENT_UPDATE_REQUIRED`; there is no legacy fallback.
 1. **Preflight**
    - Confirm CI is green for the whole chain and the backend + frontend are
      deployed together.
+   - Apply the migrations first (`npm run migrate:status`, then `npm run
+migrate:up`); the transition helper needs `games.game_private_state`.
    - Confirm `GAME_ENGINE_V2_ENABLED=false` and take a database backup.
    - Record `/api/health`, `/api/readiness` and Sentry state.
 2. **Freeze new ranked games**

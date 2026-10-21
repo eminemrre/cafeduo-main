@@ -1,17 +1,7 @@
-// eslint-disable-next-line no-redeclare
-const crypto = require('crypto');
 const db = require('../db');
+const logger = require('../utils/logger');
 const { rollbackQuietly } = require('../utils/transaction');
-
-/**
- * Per-redemption unique coupon code. Same format as commerceHandlers
- * (CD-XXXX-XXXX-XXXX) so the cafe-admin scanner can validate codes
- * from either path uniformly.
- */
-const generateCouponCode = () => {
-  const hex = crypto.randomBytes(6).toString('hex').toUpperCase();
-  return `CD-${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}`;
-};
+const { generateCouponCode } = require('../utils/couponCode');
 
 // Mağaza Eşyaları (Hardcoded yapılandırma - İleride tabloya alınabilir)
 const STORE_ITEMS = [
@@ -71,7 +61,7 @@ const storeController = {
     try {
       res.json({ success: true, items: STORE_ITEMS });
     } catch (error) {
-      console.error('getItems error:', error);
+      logger.error('getItems error', error);
       res.status(500).json({ success: false, message: 'Sunucu hatası' });
     }
   },
@@ -92,7 +82,7 @@ const storeController = {
 
       res.json({ success: true, inventory: result.rows });
     } catch (error) {
-      console.error('getInventory error:', error);
+      logger.error('getInventory error', error);
       res.status(500).json({ success: false, message: 'Envanter alınırken hata oluştu' });
     }
   },
@@ -186,7 +176,7 @@ const storeController = {
       });
     } catch (error) {
       await rollbackQuietly(client);
-      console.error('buyItem error:', error);
+      logger.error('buyItem error', error);
       res.status(500).json({ success: false, message: 'Satın alma işlemi sırasında hata oluştu' });
     } finally {
       client.release();

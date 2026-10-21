@@ -12,16 +12,10 @@
  * Mirrors the registerGameCleanupJobs pattern (setInterval + pool query +
  * structured logger) so it shares the same restart story.
  */
-// eslint-disable-next-line no-redeclare
-const crypto = require('crypto');
 const { rollbackQuietly } = require('../utils/transaction');
+const { generateCouponCode } = require('../utils/couponCode');
 
 const TOURNAMENT_JOB_INTERVAL_MS = Number(process.env.TOURNAMENT_JOB_INTERVAL_MS || 60_000);
-
-const generateCouponCode = () => {
-  const hex = crypto.randomBytes(6).toString('hex').toUpperCase();
-  return `CD-${hex.slice(0, 4)}-${hex.slice(4, 8)}-${hex.slice(8, 12)}`;
-};
 
 /**
  * Distribute prizes for one tournament. Caller holds no transaction — we

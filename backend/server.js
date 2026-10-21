@@ -17,16 +17,20 @@ function loadEnvFile() {
   for (const envPath of possiblePaths) {
     if (fs.existsSync(envPath)) {
       require('dotenv').config({ path: envPath });
-      console.log(`✅ Loaded .env from: ${envPath}`);
+      console.log(`Loaded .env from: ${envPath}`);
       return;
     }
   }
 
-  console.warn('⚠️  .env file NOT FOUND in any standard location!');
+  console.warn('.env file NOT FOUND in any standard location!');
   console.warn('Checked paths:', possiblePaths);
 }
 
 loadEnvFile();
+
+// The logger reads env vars, so it can only load after loadEnvFile(); the env
+// diagnostics above stay on the console for that reason.
+const logger = require('./utils/logger');
 
 // Sentry APM Monitoring
 const Sentry = require('@sentry/node');
@@ -60,9 +64,9 @@ if (process.env.SENTRY_DSN) {
     },
   });
   isSentryInitialized = true;
-  console.log('✅ Sentry APM initialized');
+  logger.info('Sentry APM initialized');
 } else {
-  console.log('⚠️  SENTRY_DSN not set - APM monitoring disabled');
+  logger.info('SENTRY_DSN not set - APM monitoring disabled');
 }
 
 // Core dependencies
@@ -135,7 +139,6 @@ const {
 } = require('./utils/serverConfig');
 
 // Setup Logger
-const logger = require('./utils/logger');
 const handleApiError = createErrorHandler({ logger });
 
 const BOOTSTRAP_ADMIN_EMAILS = parseAdminEmails(
@@ -147,9 +150,7 @@ const BOOTSTRAP_ADMIN_EMAILS = parseAdminEmails(
 // (see initDb) silently skips admin creation instead of installing a known-weak password.
 const BOOTSTRAP_ADMIN_PASSWORD = String(process.env.BOOTSTRAP_ADMIN_PASSWORD || '');
 if (!BOOTSTRAP_ADMIN_PASSWORD) {
-  // Logger isn't initialized yet at this point; use plain console so the warning still surfaces.
-
-  console.warn(
+  logger.warn(
     '[bootstrap] BOOTSTRAP_ADMIN_PASSWORD is unset — admin upsert will be skipped on startup.'
   );
 }
@@ -1190,9 +1191,9 @@ try {
       customSiteTitle: 'CafeDuo API Documentation',
     })
   );
-  console.log('✅ Swagger UI available at /api-docs');
+  logger.info('Swagger UI available at /api-docs');
 } catch (swaggerErr) {
-  console.warn('⚠️  Swagger UI not loaded:', swaggerErr.message);
+  logger.warn('Swagger UI not loaded', swaggerErr);
 }
 
 // --- API ROUTES ---
@@ -1303,28 +1304,30 @@ process.on('SIGTERM', () => {
 });
 
 // Initialize DB and start server
-initDb().then(async () => {
-  await promoteBootstrapAdmins();
+initDb()
+  .then(async () => {
+    await promoteBootstrapAdmins();
 
-  const startServer = (portToUse) => {
-    server.listen(portToUse, () => {
-      logger.info(`🚀 Server running on http://localhost:${portToUse}`);
+    const startServer = (portToUse) => {
+      server.listen(portToUse, () => {
+        logger.info(`🚀 Server running on http://localhost:${portToUse}`);
+      });
+    };
+
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        logger.error(
+          `Port ${PORT} is already in use. Server will exit to avoid mismatched proxy routing.`
+        );
+        process.exit(1);
+        return;
+      }
+      logger.error('Server error:', err);
     });
-  };
 
-  server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-      logger.error(
-        `Port ${PORT} is already in use. Server will exit to avoid mismatched proxy routing.`
-      );
-      process.exit(1);
-      return;
-    }
-    logger.error('Server error:', err);
+    startServer(PORT);
+  })
+  .catch((err) => {
+    logger.error('CRITICAL: Server failed to start', err);
+    process.exit(1);
   });
-
-  startServer(PORT);
-}).catch((err) => {
-  logger.error('CRITICAL: Server failed to start', err);
-  process.exit(1);
-});

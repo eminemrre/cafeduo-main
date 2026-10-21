@@ -34,9 +34,6 @@ if (sentryDsn) {
       return event;
     },
   });
-  console.warn('✅ Sentry frontend monitoring initialized');
-} else {
-  console.warn('⚠️  VITE_SENTRY_DSN not set - frontend monitoring disabled');
 }
 
 const rootElement = document.getElementById('root');

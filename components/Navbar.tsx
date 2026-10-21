@@ -68,11 +68,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
 
   return (
     <>
-      <nav
-        className="duo-nav duo-scope"
-        role="navigation"
-        aria-label="Ana navigasyon"
-      >
+      <nav className="duo-nav duo-scope" role="navigation" aria-label="Ana navigasyon">
         <div className="duo-nav-bar">
           <button
             type="button"
@@ -97,6 +93,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
               <>
                 {NAV_ITEMS.map((item) => (
                   <button
+                    type="button"
                     key={item.id}
                     onClick={() => scrollToSection(item.id)}
                     className="duo-nav-link duo-focus"
@@ -105,6 +102,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                   </button>
                 ))}
                 <button
+                  type="button"
                   onClick={goToBusiness}
                   aria-current={isBusinessPage ? 'page' : undefined}
                   className={`duo-nav-link duo-nav-business duo-focus transition-all ${
@@ -128,6 +126,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                   </div>
                 )}
                 <button
+                  type="button"
                   onClick={onLogout}
                   data-testid="logout-button"
                   className="duo-quiet duo-focus gap-2 px-2"
@@ -140,6 +139,7 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
           </div>
 
           <button
+            type="button"
             ref={menuToggleRef}
             onClick={() => setIsOpen(!isOpen)}
             aria-expanded={isOpen}
@@ -191,7 +191,9 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
               aria-hidden={false}
             >
               <motion.div variants={menuItem} className="flex items-center justify-between">
-                <span className="font-candy-display text-[1.75rem] leading-none text-carbon">Menü</span>
+                <span className="font-candy-display text-[1.75rem] leading-none text-carbon">
+                  Menü
+                </span>
                 {!isLoggedIn && <Bell size={18} className="text-carbon-muted" />}
               </motion.div>
               {!isLoggedIn ? (
@@ -229,7 +231,9 @@ export const Navbar: React.FC<NavbarProps> = ({ isLoggedIn = false, user, onLogo
                       <span className="flex items-center gap-2">
                         <Wallet size={20} /> Cüzdan
                       </span>
-                      <span className="[font-variant-numeric:tabular-nums]">{user.points} puan</span>
+                      <span className="[font-variant-numeric:tabular-nums]">
+                        {user.points} puan
+                      </span>
                     </motion.div>
                   )}
                   <motion.button

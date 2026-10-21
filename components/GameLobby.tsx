@@ -98,6 +98,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
                     <div className="flex min-w-0 items-center gap-4">
                       <button
+                        type="button"
                         onClick={() => onViewProfile(hostName)}
                         className="duo-focus w-12 h-12 shrink-0 bg-carbon text-paper font-candy-display text-2xl flex items-center justify-center transition-transform hover:-translate-y-0.5"
                         title="Profili Görüntüle"
@@ -107,6 +108,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                       <div className="min-w-0">
                         <div className="flex items-center gap-x-3 gap-y-1 flex-wrap">
                           <button
+                            type="button"
                             onClick={() => onViewProfile(hostName)}
                             className="duo-focus font-candy-body font-semibold text-lg text-carbon underline decoration-transparent decoration-[3px] underline-offset-4 transition-colors hover:decoration-carbon"
                           >
@@ -126,6 +128,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
 
                     {!isOwnLobby ? (
                       <button
+                        type="button"
                         onClick={() => onJoinGame(Number(req.id))}
                         disabled={isInGame}
                         className="duo-button duo-focus w-full sm:w-auto min-h-12 px-6 bg-candy-lokum text-carbon font-semibold text-[15px] transition-transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
@@ -138,6 +141,7 @@ const GameLobbyComponent: React.FC<GameLobbyProps> = ({
                           Senin lobin
                         </span>
                         <button
+                          type="button"
                           onClick={() => onCancelGame(req.id)}
                           className="duo-quiet duo-focus"
                           data-testid={`cancel-game-${req.id}`}

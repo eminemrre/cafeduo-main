@@ -435,6 +435,7 @@ export const KnowledgeQuiz: React.FC<KnowledgeQuizProps> = ({
                     : 'bg-paper-dim text-carbon-muted';
               return (
                 <button
+                  type="button"
                   key={`${roundIndex}-${idx}`}
                   data-testid={`knowledge-option-${idx}`}
                   onClick={() => handleAnswer(idx)}

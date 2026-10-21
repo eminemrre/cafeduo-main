@@ -116,6 +116,7 @@ const createGameHandlers = ({
     logger,
     buildChessTimeoutResolution,
     getMemoryGames,
+    getMemoryUsers,
     emitRealtimeUpdate,
   });
 
@@ -132,6 +133,7 @@ const createGameHandlers = ({
     isDbConnected,
     logger,
     getMemoryGames,
+    getMemoryUsers,
     emitRealtimeUpdate,
   });
 

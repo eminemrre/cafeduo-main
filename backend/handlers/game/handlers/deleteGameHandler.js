@@ -4,6 +4,9 @@
  */
 
 const { isAdminActor } = require('../validation');
+const { COMPETITIVE_ENGINE_GAME_TYPES } = require('../../../utils/gameEngineConfig');
+
+const competitiveTypes = Array.from(COMPETITIVE_ENGINE_GAME_TYPES);
 
 const createDeleteGameHandler = (deps) => {
   const {
@@ -29,23 +32,33 @@ const createDeleteGameHandler = (deps) => {
               OR LOWER(COALESCE(guest_name, '')) = LOWER($2)
               OR $3 = true
             )
+            AND (
+              game_type <> ALL($4::text[])
+              OR status = 'waiting'
+              OR (
+                status = 'finished'
+                AND game_state->'engine'->'result'->>'settled' = 'true'
+              )
+            )
           RETURNING id, table_code
         `,
-        [id, req.user?.username || '', isAdminActor(req.user)]
+        [id, req.user?.username || '', isAdminActor(req.user), competitiveTypes]
       );
       if (result.rows.length === 0) {
         return res.status(404).json({ error: 'Oyun bulunamadı veya silme yetkiniz yok.' });
       }
-      
+
       const deletedGame = result.rows[0];
-      
+
       // Cache invalidation - oyun silindi
-      lobbyCacheService?.onGameDeleted({
-        tableCode: deletedGame.table_code,
-      }).catch((err) => {
-        logger.warn(`Cache invalidation failed on game deleted: ${err.message}`);
-      });
-      
+      lobbyCacheService
+        ?.onGameDeleted({
+          tableCode: deletedGame.table_code,
+        })
+        .catch((err) => {
+          logger.warn(`Cache invalidation failed on game deleted: ${err.message}`);
+        });
+
       emitLobbyUpdate({
         action: 'game_deleted',
         gameId: id,
@@ -58,10 +71,18 @@ const createDeleteGameHandler = (deps) => {
     let deletedTableCode = null;
     const nextGames = currentGames.filter((game) => {
       if (String(game.id) !== String(id)) return true;
+      if (competitiveTypes.includes(String(game.gameType || '').trim())) {
+        const settled =
+          game.status === 'finished' && game.gameState?.engine?.result?.settled === true;
+        if (game.status !== 'waiting' && !settled) return true;
+      }
       deletedTableCode = game.table;
       if (isAdminActor(req.user)) return false;
       const actor = String(req.user?.username || '').toLowerCase();
-      return String(game.hostName || '').toLowerCase() !== actor && String(game.guestName || '').toLowerCase() !== actor;
+      return (
+        String(game.hostName || '').toLowerCase() !== actor &&
+        String(game.guestName || '').toLowerCase() !== actor
+      );
     });
     if (nextGames.length === currentGames.length) {
       return res.status(404).json({ error: 'Oyun bulunamadı veya silme yetkiniz yok.' });

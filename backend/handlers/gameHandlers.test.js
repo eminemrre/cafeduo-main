@@ -877,7 +877,7 @@ describe('gameHandlers (memory mode)', () => {
         id: 32,
         hostName: 'u1',
         guestName: 'u2',
-        gameType: 'Nişancı Düellosu',
+        gameType: 'Retro Satranç',
         points: 40,
         table: 'MASA01',
         status: 'active',

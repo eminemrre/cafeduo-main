@@ -11,6 +11,7 @@ const { normalizeActionEnvelope } = require('../../../gameEngine/actionProtocol'
 const { processCompetitiveAction, resolveActorKey } = require('../../../gameEngine/engineActions');
 const { defaultRegistry } = require('../../../gameEngine/gameLock');
 const { serializeGameForActor } = require('../../../gameEngine/gameView');
+const { finalizeMemoryEngineGame, settleDbEngineGame } = require('../../../gameEngine/settlement');
 
 const ENGINE_GAME_SELECT = `
   SELECT
@@ -24,7 +25,9 @@ const ENGINE_GAME_SELECT = `
     winner,
     game_state,
     game_private_state,
-    created_at
+    created_at,
+    to_jsonb(games)->>'cafe_id' AS cafe_id,
+    to_jsonb(games)->>'tournament_id' AS tournament_id
   FROM games
   WHERE id = $1
   FOR UPDATE
@@ -36,6 +39,7 @@ const createGameActionHandler = (deps) => {
     isDbConnected,
     logger,
     getMemoryGames,
+    getMemoryUsers,
     emitRealtimeUpdate,
     gameLock = defaultRegistry,
   } = deps;
@@ -91,8 +95,33 @@ const createGameActionHandler = (deps) => {
           });
         }
 
+        let nextGameState = { ...(game.game_state || {}), engine: processed.state };
+        let status = processed.status;
+        let winner = processed.winner;
+        const wasSettled = Boolean(game.game_state?.engine?.result?.settled);
+
+        if (processed.state.phase === 'finished') {
+          const settled = await settleDbEngineGame({
+            client,
+            game,
+            gameState: nextGameState,
+            privateState: processed.privateState,
+            logger,
+            nowMs: Date.now(),
+          });
+          if (!settled.ok) {
+            await client.query('ROLLBACK');
+            return res.status(409).json({
+              error: 'Oyun sonucu henüz hazır değil.',
+              code: settled.code || 'SERVER_RESULT_PENDING',
+            });
+          }
+          nextGameState = settled.gameState;
+          status = 'finished';
+          winner = settled.winner;
+        }
+
         if (!processed.duplicate) {
-          const nextGameState = { ...(game.game_state || {}), engine: processed.state };
           await client.query(
             `
               UPDATE games
@@ -105,27 +134,24 @@ const createGameActionHandler = (deps) => {
             [
               JSON.stringify(nextGameState),
               JSON.stringify(processed.privateState),
-              processed.status,
-              processed.winner,
+              status,
+              winner,
               id,
             ]
           );
-          await client.query('COMMIT');
-          announce(id, processed.status, processed.state, processed.winner);
-          game.game_state = nextGameState;
-        } else {
-          await client.query('COMMIT');
         }
+        await client.query('COMMIT');
+        if (!processed.duplicate || (!wasSettled && status === 'finished')) {
+          announce(id, status, nextGameState.engine, winner);
+        }
+        game.game_state = nextGameState;
+        game.status = status;
+        game.winner = winner;
 
         return res.json({
           success: true,
           duplicate: Boolean(processed.duplicate),
-          game: serializeGameForActor({
-            ...game,
-            game_state: game.game_state,
-            status: processed.status,
-            winner: processed.winner,
-          }),
+          game: serializeGameForActor(game),
         });
       } catch (err) {
         await client.query('ROLLBACK').catch(() => undefined);
@@ -157,12 +183,26 @@ const createGameActionHandler = (deps) => {
         return { error: processed };
       }
 
+      const wasSettled = Boolean(game.gameState?.engine?.result?.settled);
       if (!processed.duplicate) {
         game.gameState = { ...(game.gameState || {}), engine: processed.state };
         game.gamePrivateState = processed.privateState;
         game.status = processed.status;
         game.winner = processed.winner;
-        announce(game.id, processed.status, processed.state, processed.winner);
+      }
+
+      let finalized = { settled: false, cancelled: false };
+      if (processed.state.phase === 'finished') {
+        finalized = finalizeMemoryEngineGame({
+          game,
+          privateState: game.gamePrivateState,
+          getMemoryUsers,
+          nowMs: Date.now(),
+        });
+      }
+
+      if (!processed.duplicate || (!wasSettled && finalized.settled)) {
+        announce(game.id, game.status, game.gameState.engine, game.winner);
       }
 
       return {

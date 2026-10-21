@@ -193,7 +193,7 @@ describe('finishGameHandler (DB path)', () => {
       id: 1,
       host_name: 'Alice',
       guest_name: 'Bob',
-      game_type: 'Nişancı Düellosu',
+      game_type: 'Retro Satranç',
       points: 10,
       status: 'active',
       winner: null,
@@ -220,7 +220,7 @@ describe('finishGameHandler (DB path)', () => {
       id: 1,
       host_name: 'Alice',
       guest_name: 'Bob',
-      game_type: 'Nişancı Düellosu',
+      game_type: 'Retro Satranç',
       points: 10,
       status: 'active',
       winner: null,
@@ -247,7 +247,7 @@ describe('finishGameHandler (DB path)', () => {
       id: 1,
       host_name: 'Alice',
       guest_name: 'Bob',
-      game_type: 'Nişancı Düellosu',
+      game_type: 'Retro Satranç',
       points: 10,
       status: 'active',
       winner: null,
@@ -278,7 +278,7 @@ describe('finishGameHandler (DB path)', () => {
       id: 1,
       host_name: 'Alice',
       guest_name: 'Bob',
-      game_type: 'Nişancı Düellosu',
+      game_type: 'Retro Satranç',
       points: 30,
       status: 'active',
       winner: null,
@@ -324,7 +324,7 @@ describe('finishGameHandler (DB path)', () => {
       id: 1,
       host_name: 'Alice',
       guest_name: 'Bob',
-      game_type: 'Nişancı Düellosu',
+      game_type: 'Retro Satranç',
       points: 100, // stake bigger than Bob's balance
       status: 'active',
       winner: null,
@@ -397,7 +397,7 @@ describe('finishGameHandler (DB path)', () => {
       id: 1,
       host_name: 'Alice',
       guest_name: 'Bob',
-      game_type: 'Nişancı Düellosu',
+      game_type: 'Retro Satranç',
       points: 30,
       status: 'finished',
       winner: 'Alice',
@@ -429,7 +429,7 @@ describe('finishGameHandler (DB path)', () => {
       id: 1,
       host_name: 'Alice',
       guest_name: 'Bob',
-      game_type: 'Nişancı Düellosu',
+      game_type: 'Retro Satranç',
       points: 30,
       status: 'finished',
       winner: 'Alice',
@@ -467,7 +467,7 @@ describe('finishGameHandler (DB path)', () => {
       id: 1,
       host_name: 'Alice',
       guest_name: 'Bob',
-      game_type: 'Nişancı Düellosu',
+      game_type: 'Retro Satranç',
       points: 30,
       status: 'finished',
       winner: 'Bob', // stored winner is Bob
@@ -490,7 +490,7 @@ describe('finishGameHandler (DB path)', () => {
       id: 1,
       host_name: 'Alice',
       guest_name: 'Bob',
-      game_type: 'Nişancı Düellosu',
+      game_type: 'Retro Satranç',
       points: 30,
       status: 'active',
       winner: null,
@@ -528,7 +528,7 @@ describe('finishGameHandler (DB path)', () => {
       id: 1,
       host_name: 'Alice',
       guest_name: 'Bob',
-      game_type: 'Nişancı Düellosu',
+      game_type: 'Retro Satranç',
       points: 10,
       status: 'invalid_state', // unknown status → assertGameStatusTransition fails
       winner: null,
@@ -570,7 +570,7 @@ describe('finishGameHandler (memory path)', () => {
           id: 1,
           hostName: 'Alice',
           guestName: 'Bob',
-          gameType: 'Nişancı Düellosu',
+          gameType: 'Retro Satranç',
           points: 10,
           status: 'active',
           gameState: { resolvedWinner: 'Alice' },
@@ -593,7 +593,7 @@ describe('finishGameHandler (memory path)', () => {
           id: 1,
           hostName: 'Alice',
           guestName: 'Bob',
-          gameType: 'Nişancı Düellosu',
+          gameType: 'Retro Satranç',
           points: 10,
           status: 'active',
           gameState: {},
@@ -616,7 +616,7 @@ describe('finishGameHandler (memory path)', () => {
         id: 1,
         hostName: 'Alice',
         guestName: 'Bob',
-        gameType: 'Nişancı Düellosu',
+        gameType: 'Retro Satranç',
         points: 30,
         status: 'active',
         winner: null,
@@ -694,7 +694,7 @@ describe('finishGameHandler (memory path)', () => {
         id: 1,
         hostName: 'Alice',
         guestName: 'Bob',
-        gameType: 'Nişancı Düellosu',
+        gameType: 'Retro Satranç',
         points: 30,
         status: 'finished',
         winner: 'Alice',
@@ -727,7 +727,7 @@ describe('finishGameHandler (memory path)', () => {
         id: 1,
         hostName: 'Alice',
         guestName: 'Bob',
-        gameType: 'Nişancı Düellosu',
+        gameType: 'Retro Satranç',
         points: 30,
         status: 'finished',
         winner: 'Bob', // stored winner
@@ -742,5 +742,221 @@ describe('finishGameHandler (memory path)', () => {
     await handler(req, res);
 
     expect(res.statusCode).toBe(409);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Protocol v2 engine finalization
+// ---------------------------------------------------------------------------
+
+const finishedQuizEngine = () => ({
+  version: 2,
+  kind: 'quiz',
+  revision: 31,
+  phase: 'finished',
+  roundIndex: 10,
+  totalRounds: 10,
+  players: {
+    host: { name: 'Alice', score: 120, correct: 9 },
+    guest: { name: 'Bob', score: 80, correct: 6 },
+  },
+  result: {
+    winner: 'Alice',
+    draw: false,
+    reason: 'rounds_complete',
+    scores: { host: 120, guest: 80 },
+  },
+});
+
+const quizPrivateWithAction = () => ({
+  version: 2,
+  kind: 'quiz',
+  questions: [],
+  actions: { host: { act_1: { status: 'applied' } }, guest: {} },
+});
+
+describe('finishGameHandler (engine v2)', () => {
+  it('finalizes a finished DB engine once and returns the settled snapshot', async () => {
+    const game = {
+      id: 90,
+      host_name: 'Alice',
+      guest_name: 'Bob',
+      game_type: 'Bilgi Yarışı',
+      points: 10,
+      status: 'active',
+      winner: null,
+      game_state: { engine: finishedQuizEngine() },
+      game_private_state: quizPrivateWithAction(),
+    };
+    const users = [
+      { id: 1, username: 'Alice', points: 100, wins: 0, games_played: 0 },
+      { id: 2, username: 'Bob', points: 40, wins: 0, games_played: 0 },
+    ];
+    const client = makeDbClient({ users });
+    const emitRealtimeUpdate = jest.fn();
+    const deps = makeDeps({
+      dbConnected: true,
+      client,
+      gameService: makeGameService(game),
+      emitRealtimeUpdate,
+    });
+    const handler = createFinishGameHandler(deps);
+    const res = createMockRes();
+
+    await handler(
+      { params: { id: '90' }, user: { username: 'Alice', role: 'user' }, body: {} },
+      res
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.payload).toMatchObject({
+      success: true,
+      winner: 'Alice',
+      draw: false,
+      settlementApplied: true,
+      transferredPoints: 10,
+    });
+    expect(res.payload.game.gameState.engine.result).toMatchObject({
+      settled: true,
+      transferredPoints: 10,
+    });
+    expect(users[0].points).toBe(110);
+    expect(users[1].points).toBe(30);
+    expect(emitRealtimeUpdate).toHaveBeenCalledWith(
+      '90',
+      expect.objectContaining({ type: 'game_finished', winner: 'Alice' })
+    );
+
+    // The next call reads the settled row from the database.
+    game.game_state = res.payload.game.gameState;
+    game.status = 'finished';
+    const retry = createMockRes();
+    await handler(
+      { params: { id: '90' }, user: { username: 'Alice', role: 'user' }, body: {} },
+      retry
+    );
+    expect(retry.statusCode).toBe(200);
+    expect(retry.payload.transferredPoints).toBe(10);
+    expect(users[0].points).toBe(110);
+    expect(users[1].points).toBe(30);
+  });
+
+  it('refuses a competitive game without engine state instead of using legacy results', async () => {
+    const game = {
+      id: 91,
+      host_name: 'Alice',
+      guest_name: 'Bob',
+      game_type: 'Bilgi Yarışı',
+      points: 10,
+      status: 'active',
+      winner: null,
+      game_state: { resolvedWinner: 'Alice' },
+      game_private_state: null,
+    };
+    const deps = makeDeps({
+      dbConnected: true,
+      client: makeDbClient(),
+      gameService: makeGameService(game),
+    });
+    const handler = createFinishGameHandler(deps);
+    const res = createMockRes();
+
+    await handler(
+      { params: { id: '91' }, user: { username: 'Alice', role: 'user' }, body: {} },
+      res
+    );
+
+    expect(res.statusCode).toBe(409);
+    expect(res.payload.code).toBe('ENGINE_STATE_MISSING');
+  });
+
+  it('finalizes a finished memory engine once without double-paying', async () => {
+    const game = {
+      id: 92,
+      hostName: 'Alice',
+      guestName: 'Bob',
+      gameType: 'Bilgi Yarışı',
+      points: 10,
+      table: 'MASA01',
+      status: 'active',
+      winner: null,
+      gameState: { engine: finishedQuizEngine() },
+      gamePrivateState: quizPrivateWithAction(),
+    };
+    const users = [
+      { username: 'Alice', points: 100, wins: 0, gamesPlayed: 0 },
+      { username: 'Bob', points: 40, wins: 0, gamesPlayed: 0 },
+    ];
+    const deps = makeDeps({ memoryGames: [game], memoryUsers: users });
+    const handler = createFinishGameHandler(deps);
+
+    const res = createMockRes();
+    await handler(
+      { params: { id: '92' }, user: { username: 'Alice', role: 'user' }, body: {} },
+      res
+    );
+    expect(res.statusCode).toBe(200);
+    expect(res.payload).toMatchObject({ winner: 'Alice', transferredPoints: 10 });
+    expect(game.gameState.engine.result).toMatchObject({ settled: true });
+    expect(users[0].points).toBe(110);
+    expect(users[1].points).toBe(30);
+
+    const retry = createMockRes();
+    await handler(
+      { params: { id: '92' }, user: { username: 'Alice', role: 'user' }, body: {} },
+      retry
+    );
+    expect(retry.statusCode).toBe(200);
+    expect(users[0].points).toBe(110);
+    expect(users[1].points).toBe(30);
+  });
+
+  it('cancels a no-action memory match without touching balances', async () => {
+    const game = {
+      id: 93,
+      hostName: 'Alice',
+      guestName: 'Bob',
+      gameType: 'Bilgi Yarışı',
+      points: 10,
+      table: 'MASA01',
+      status: 'active',
+      winner: null,
+      gameState: {
+        engine: {
+          ...finishedQuizEngine(),
+          result: {
+            winner: null,
+            draw: true,
+            reason: 'rounds_complete',
+            scores: { host: 0, guest: 0 },
+          },
+        },
+      },
+      gamePrivateState: {
+        version: 2,
+        kind: 'quiz',
+        questions: [],
+        actions: { host: {}, guest: {} },
+      },
+    };
+    const users = [
+      { username: 'Alice', points: 100, wins: 0, gamesPlayed: 0 },
+      { username: 'Bob', points: 40, wins: 0, gamesPlayed: 0 },
+    ];
+    const deps = makeDeps({ memoryGames: [game], memoryUsers: users });
+    const handler = createFinishGameHandler(deps);
+    const res = createMockRes();
+
+    await handler(
+      { params: { id: '93' }, user: { username: 'Alice', role: 'user' }, body: {} },
+      res
+    );
+
+    expect(res.statusCode).toBe(200);
+    expect(res.payload).toMatchObject({ cancelled: true, winner: null, transferredPoints: 0 });
+    expect(game.status).toBe('finished');
+    expect(game.gameState.engine.result).toMatchObject({ cancelled: true, settled: true });
+    expect(users[0]).toMatchObject({ points: 100, gamesPlayed: 0 });
+    expect(users[1]).toMatchObject({ points: 40, gamesPlayed: 0 });
   });
 });

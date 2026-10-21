@@ -10,6 +10,7 @@ const {
   startAimState,
 } = require('../../../gameEngine/aimEngine');
 const { AIM_GAME_TYPE, QUIZ_GAME_TYPE } = require('../../../../shared/gameRegistry');
+const { recordActionReceipt } = require('../../../gameEngine/actionProtocol');
 
 const createMockRes = () => {
   const res = {};
@@ -54,7 +55,7 @@ const buildMemoryGame = (nowMs = Date.now()) => {
   };
 };
 
-const makeDeps = ({ games = [], connected = false, client = null } = {}) => {
+const makeDeps = ({ games = [], memoryUsers = [], connected = false, client = null } = {}) => {
   const deps = {
     pool: {
       connect: jest.fn(async () => client),
@@ -62,6 +63,7 @@ const makeDeps = ({ games = [], connected = false, client = null } = {}) => {
     isDbConnected: jest.fn(async () => connected),
     logger: { error: jest.fn(), warn: jest.fn() },
     getMemoryGames: () => games,
+    getMemoryUsers: () => memoryUsers,
     emitRealtimeUpdate: jest.fn(),
   };
   return deps;
@@ -382,5 +384,61 @@ describe('gameActionHandler – aim', () => {
     expect(res.payload.game.gameState.engine.round.shots).toBeUndefined();
     expect(res.payload.game.gameState.engine.players.host.score).toBe(0);
     expect(deps.emitRealtimeUpdate).toHaveBeenCalled();
+  });
+});
+
+describe('gameActionHandler – settlement', () => {
+  it('settles a finished game on a duplicate retry without paying twice', async () => {
+    const game = buildMemoryGame();
+    const envelope = {
+      actionId: 'act_dup_settle',
+      roundId: 'r1',
+      type: 'answer',
+      optionIndex: 0,
+    };
+    game.gamePrivateState.actions = recordActionReceipt({
+      ledger: game.gamePrivateState.actions,
+      actorKey: 'host',
+      envelope,
+      receipt: { status: 'applied', revision: 9 },
+    });
+    game.gameState.engine.phase = 'finished';
+    game.gameState.engine.result = {
+      winner: 'Alice',
+      draw: false,
+      reason: 'rounds_complete',
+      scores: { host: 40, guest: 10 },
+    };
+    game.gameState.engine.players.host.score = 40;
+    game.gameState.engine.players.guest.score = 10;
+    const users = [
+      { username: 'Alice', points: 100, wins: 0, gamesPlayed: 0 },
+      { username: 'Bob', points: 40, wins: 0, gamesPlayed: 0 },
+    ];
+    const deps = makeDeps({ games: [game], memoryUsers: users });
+    const handler = createGameActionHandler(deps);
+    const res = createMockRes();
+
+    await handler(request('Alice', envelope), res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.payload.duplicate).toBe(true);
+    expect(game.status).toBe('finished');
+    expect(game.gameState.engine.result).toMatchObject({
+      settled: true,
+      transferredPoints: 10,
+    });
+    expect(users[0].points).toBe(110);
+    expect(users[1].points).toBe(30);
+    expect(deps.emitRealtimeUpdate).toHaveBeenCalledWith(
+      42,
+      expect.objectContaining({ type: 'game_state_updated', status: 'finished', winner: 'Alice' })
+    );
+
+    const retry = createMockRes();
+    await handler(request('Alice', envelope), retry);
+    expect(retry.statusCode).toBe(200);
+    expect(users[0].points).toBe(110);
+    expect(users[1].points).toBe(30);
   });
 });

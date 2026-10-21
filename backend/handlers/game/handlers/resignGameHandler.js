@@ -11,6 +11,7 @@ const {
 const { mapTransitionError } = require('../utils/errorHelpers');
 const { applyDbSettlement, applyMemorySettlement } = require('../settlementUtils');
 const { rollbackQuietly } = require('../../../utils/transaction');
+const { isCompetitiveEngineGameType } = require('../../../utils/gameEngineConfig');
 
 const createResignGameHandler = (deps) => {
   const {
@@ -55,6 +56,13 @@ const createResignGameHandler = (deps) => {
         if (!actorParticipant) {
           await rollbackQuietly(client);
           return res.status(403).json({ error: 'Bu oyunda teslim olma yetkin yok.' });
+        }
+        if (isCompetitiveEngineGameType(game.game_type)) {
+          await rollbackQuietly(client);
+          return res.status(409).json({
+            error: 'Teslim olma bu oyunda eylem uç noktasından işlenir.',
+            code: 'USE_ENGINE_ACTION',
+          });
         }
         const resignStatus = assertRequiredGameStatus({
           currentStatus: game.status,
@@ -167,6 +175,12 @@ const createResignGameHandler = (deps) => {
     });
     if (!actorParticipant) {
       return res.status(403).json({ error: 'Bu oyunda teslim olma yetkin yok.' });
+    }
+    if (isCompetitiveEngineGameType(game.gameType)) {
+      return res.status(409).json({
+        error: 'Teslim olma bu oyunda eylem uç noktasından işlenir.',
+        code: 'USE_ENGINE_ACTION',
+      });
     }
     const resignStatus = assertRequiredGameStatus({
       currentStatus: game.status,

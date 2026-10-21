@@ -160,7 +160,7 @@ describe('resignGameHandler (DB path)', () => {
           id: 1,
           host_name: 'u1',
           guest_name: 'u2',
-          game_type: 'Nişancı Düellosu',
+          game_type: 'Retro Satranç',
           points: 10,
           status: 'active',
           game_state: {},
@@ -186,7 +186,7 @@ describe('resignGameHandler (DB path)', () => {
           id: 1,
           host_name: 'u1',
           guest_name: 'u2',
-          game_type: 'Nişancı Düellosu',
+          game_type: 'Retro Satranç',
           points: 10,
           status: 'waiting',
           game_state: {},
@@ -212,7 +212,7 @@ describe('resignGameHandler (DB path)', () => {
           id: 1,
           host_name: 'u1',
           guest_name: '', // no opponent
-          game_type: 'Nişancı Düellosu',
+          game_type: 'Retro Satranç',
           points: 10,
           status: 'active',
           game_state: {},
@@ -236,7 +236,7 @@ describe('resignGameHandler (DB path)', () => {
       id: 1,
       host_name: 'Alice',
       guest_name: 'Bob',
-      game_type: 'Nişancı Düellosu',
+      game_type: 'Retro Satranç',
       points: 30,
       status: 'active',
       winner: null,
@@ -342,7 +342,7 @@ describe('resignGameHandler (DB path)', () => {
       id: 1,
       host_name: 'Alice',
       guest_name: 'Bob',
-      game_type: 'Nişancı Düellosu',
+      game_type: 'Retro Satranç',
       points: 30,
       status: 'active',
       winner: null,
@@ -394,7 +394,7 @@ describe('resignGameHandler (memory path)', () => {
           id: 1,
           hostName: 'u1',
           guestName: 'u2',
-          gameType: 'Nişancı Düellosu',
+          gameType: 'Retro Satranç',
           points: 10,
           status: 'active',
         },
@@ -416,7 +416,7 @@ describe('resignGameHandler (memory path)', () => {
           id: 1,
           hostName: 'u1',
           guestName: 'u2',
-          gameType: 'Nişancı Düellosu',
+          gameType: 'Retro Satranç',
           points: 10,
           status: 'waiting',
         },
@@ -438,7 +438,7 @@ describe('resignGameHandler (memory path)', () => {
         id: 1,
         hostName: 'Alice',
         guestName: 'Bob',
-        gameType: 'Nişancı Düellosu',
+        gameType: 'Retro Satranç',
         points: 30,
         status: 'active',
         gameState: {},
@@ -477,5 +477,59 @@ describe('resignGameHandler (memory path)', () => {
       '1',
       expect.objectContaining({ type: 'game_finished', winner: 'Bob', reason: 'resign' })
     );
+  });
+});
+
+describe('resignGameHandler – protocol v2 boundary', () => {
+  it('refuses to settle a competitive game through the legacy resign endpoint (DB)', async () => {
+    const client = makeDbClient({
+      games: [
+        {
+          id: 70,
+          host_name: 'Alice',
+          guest_name: 'Bob',
+          game_type: 'Bilgi Yarışı',
+          points: 10,
+          status: 'active',
+          winner: null,
+          game_state: { engine: { version: 2, phase: 'open' } },
+        },
+      ],
+    });
+    const deps = makeDeps({ dbConnected: true, client });
+    const handler = createResignGameHandler(deps);
+    const res = createMockRes();
+
+    await handler(
+      { params: { id: '70' }, user: { username: 'Alice', role: 'user' }, body: {} },
+      res
+    );
+
+    expect(res.statusCode).toBe(409);
+    expect(res.payload.code).toBe('USE_ENGINE_ACTION');
+  });
+
+  it('refuses to settle a competitive game through the legacy resign endpoint (memory)', async () => {
+    const game = {
+      id: 71,
+      hostName: 'Alice',
+      guestName: 'Bob',
+      gameType: 'Bilgi Yarışı',
+      points: 10,
+      status: 'active',
+      gameState: { engine: { version: 2, phase: 'open' } },
+    };
+    const deps = makeDeps({ memoryGames: [game] });
+    const handler = createResignGameHandler(deps);
+    const res = createMockRes();
+
+    await handler(
+      { params: { id: '71' }, user: { username: 'Alice', role: 'user' }, body: {} },
+      res
+    );
+
+    expect(res.statusCode).toBe(409);
+    expect(res.payload.code).toBe('USE_ENGINE_ACTION');
+    expect(game.status).toBe('active');
   });
 });

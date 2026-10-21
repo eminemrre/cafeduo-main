@@ -130,6 +130,7 @@ const applyDbSettlement = async ({ client, game, winnerName, isDraw, gameType, l
       SELECT id, username, points
       FROM users
       WHERE LOWER(username) = ANY($1::text[])
+      ORDER BY LOWER(username)
       FOR UPDATE
     `,
     [uniqueLowerParticipants]

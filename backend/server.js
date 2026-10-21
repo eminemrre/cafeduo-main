@@ -127,6 +127,7 @@ const { createGameService } = require('./services/gameService');
 const { createLobbyCacheService } = require('./services/lobbyCacheService');
 const { registerGameCleanupJobs } = require('./jobs/gameCleanupJobs');
 const { registerTournamentJobs } = require('./jobs/tournamentJobs');
+const { registerGameEngineJobs } = require('./jobs/gameEngineJobs');
 const { authenticateToken, requireOwnership } = require('./middleware/auth'); // Auth Middleware Imports
 const { socketAuthMiddleware } = require('./middleware/socketAuth'); // Socket.IO Auth Middleware
 const { getBlacklistFailMode, getRequiredJwtSecret } = require('./utils/securityConfig');
@@ -1119,6 +1120,15 @@ registerTournamentJobs({
   isDbConnected,
   logger,
   clearCache,
+});
+
+// Competitive engine clocks: advances expired rounds and settles finished
+// matches even when both clients are gone. Row locks make multi-instance
+// ticks idempotent.
+registerGameEngineJobs({
+  pool,
+  isDbConnected,
+  logger,
 });
 
 // --- SWAGGER UI ---

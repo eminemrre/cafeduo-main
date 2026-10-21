@@ -13,6 +13,11 @@ const {
 const { mapTransitionError } = require('../utils/errorHelpers');
 const { applyDbSettlement, applyMemorySettlement } = require('../settlementUtils');
 const { rollbackQuietly } = require('../../../utils/transaction');
+const { isCompetitiveEngineGameType } = require('../../../utils/gameEngineConfig');
+const { syncCompetitiveGame } = require('../../../gameEngine/engineActions');
+const { serializeGameForActor } = require('../../../gameEngine/gameView');
+const { defaultRegistry } = require('../../../gameEngine/gameLock');
+const { finalizeMemoryEngineGame, settleDbEngineGame } = require('../../../gameEngine/settlement');
 
 const createFinishGameHandler = (deps) => {
   const {
@@ -28,6 +33,155 @@ const createFinishGameHandler = (deps) => {
     getMemoryUsers,
     emitRealtimeUpdate,
   } = deps;
+
+  const finishEngineFromDb = async ({ client, game, id, res }) => {
+    const nowMs = Date.now();
+    const sync = syncCompetitiveGame({ game, nowMs });
+    const gameState = sync.changed
+      ? { ...(game.game_state || {}), engine: sync.state }
+      : game.game_state && typeof game.game_state === 'object'
+        ? game.game_state
+        : {};
+    const engine = gameState.engine;
+    if (!engine || engine.version !== 2) {
+      await rollbackQuietly(client);
+      return res.status(409).json({
+        error: 'Bu oyun sunucu motoru durumu olmadan kapatılamaz.',
+        code: 'ENGINE_STATE_MISSING',
+      });
+    }
+    if (engine.phase !== 'finished') {
+      await rollbackQuietly(client);
+      return res.status(409).json({
+        error: 'Sonuç henüz sunucu tarafından belirlenmedi.',
+        code: 'SERVER_RESULT_PENDING',
+      });
+    }
+
+    const settled = await settleDbEngineGame({
+      client,
+      game,
+      gameState,
+      privateState: game.game_private_state,
+      logger,
+      nowMs,
+    });
+    if (!settled.ok) {
+      await rollbackQuietly(client);
+      return res.status(409).json({
+        error: 'Sonuç henüz sunucu tarafından belirlenmedi.',
+        code: settled.code || 'SERVER_RESULT_PENDING',
+      });
+    }
+
+    await client.query('COMMIT');
+    const view = serializeGameForActor({
+      ...game,
+      game_state: settled.gameState,
+      status: 'finished',
+      winner: settled.winner,
+    });
+    emitRealtimeUpdate(id, {
+      type: 'game_finished',
+      gameId: id,
+      status: 'finished',
+      winner: settled.winner,
+      draw: Boolean(engine.result?.draw),
+      cancelled: Boolean(engine.result?.cancelled),
+      reason: engine.result?.reason || 'rounds_complete',
+      gameState: view.gameState,
+    });
+    return res.json({
+      success: true,
+      winner: settled.winner,
+      draw: Boolean(engine.result?.draw),
+      cancelled: Boolean(engine.result?.cancelled),
+      settlementApplied: true,
+      transferredPoints: settled.transferredPoints,
+      game: view,
+    });
+  };
+
+  const finishEngineFromMemory = async ({ id, res }) => {
+    const outcome = await defaultRegistry.runExclusive(id, async () => {
+      const game = getMemoryGames().find((item) => String(item.id) === String(id));
+      if (!game) {
+        return { status: 404, body: { error: 'Oyun bulunamadı.' } };
+      }
+      const engineBefore = game.gameState?.engine;
+      if (!engineBefore || engineBefore.version !== 2) {
+        return {
+          status: 409,
+          body: {
+            error: 'Bu oyun sunucu motoru durumu olmadan kapatılamaz.',
+            code: 'ENGINE_STATE_MISSING',
+          },
+        };
+      }
+      if (engineBefore.phase !== 'finished') {
+        const advanced = syncCompetitiveGame({ game, nowMs: Date.now() });
+        if (advanced.changed) {
+          game.gameState = { ...(game.gameState || {}), engine: advanced.state };
+          game.status = advanced.status || game.status;
+          game.winner = advanced.winner || null;
+        }
+        if (advanced.state?.phase !== 'finished') {
+          return {
+            status: 409,
+            body: {
+              error: 'Sonuç henüz sunucu tarafından belirlenmedi.',
+              code: 'SERVER_RESULT_PENDING',
+            },
+          };
+        }
+      }
+
+      const finalized = finalizeMemoryEngineGame({
+        game,
+        privateState: game.gamePrivateState,
+        getMemoryUsers,
+        nowMs: Date.now(),
+      });
+      const engine = game.gameState?.engine;
+      if (!engine?.result?.settled) {
+        return {
+          status: 409,
+          body: {
+            error: 'Sonuç henüz sunucu tarafından belirlenmedi.',
+            code: 'SERVER_RESULT_PENDING',
+          },
+        };
+      }
+
+      const view = serializeGameForActor(game);
+      if (finalized.changed) {
+        emitRealtimeUpdate(id, {
+          type: 'game_finished',
+          gameId: id,
+          status: 'finished',
+          winner: game.winner || null,
+          draw: Boolean(engine.result?.draw),
+          cancelled: Boolean(engine.result?.cancelled),
+          reason: engine.result?.reason || 'rounds_complete',
+          gameState: view.gameState,
+        });
+      }
+      return {
+        status: 200,
+        body: {
+          success: true,
+          winner: game.winner || null,
+          draw: Boolean(engine.result?.draw),
+          cancelled: Boolean(engine.result?.cancelled),
+          settlementApplied: true,
+          transferredPoints: Number(engine.result?.transferredPoints || 0),
+          game: view,
+        },
+      };
+    });
+
+    return res.status(outcome.status).json(outcome.body);
+  };
 
   const finishGame = async (req, res) => {
     const { id } = req.params;
@@ -67,6 +221,10 @@ const createFinishGameHandler = (deps) => {
         if (!actorParticipant && !adminActor) {
           await rollbackQuietly(client);
           return res.status(403).json({ error: 'Bu oyunu kapatma yetkin yok.' });
+        }
+
+        if (isCompetitiveEngineGameType(game.game_type)) {
+          return finishEngineFromDb({ client, game, id, res });
         }
 
         const participants = getGameParticipants(game);
@@ -272,6 +430,10 @@ const createFinishGameHandler = (deps) => {
     const adminActor = isAdminActor(req.user);
     if (!actorParticipant && !adminActor) {
       return res.status(403).json({ error: 'Bu oyunu kapatma yetkin yok.' });
+    }
+
+    if (isCompetitiveEngineGameType(game.gameType)) {
+      return finishEngineFromMemory({ id, res });
     }
 
     const participants = getGameParticipants({

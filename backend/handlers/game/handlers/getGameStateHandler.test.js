@@ -55,12 +55,13 @@ const buildMemoryGame = (nowMs) => {
   };
 };
 
-const makeDeps = ({ games = [], connected = false, pool = null } = {}) => ({
+const makeDeps = ({ games = [], memoryUsers = [], connected = false, pool = null } = {}) => ({
   pool,
   isDbConnected: jest.fn(async () => connected),
   logger: { error: jest.fn(), warn: jest.fn() },
   buildChessTimeoutResolution: jest.fn(() => null),
   getMemoryGames: () => games,
+  getMemoryUsers: () => memoryUsers,
   emitRealtimeUpdate: jest.fn(),
 });
 
@@ -165,6 +166,50 @@ describe('getGameStateHandler – competitive engine', () => {
       direction: expect.any(Number),
     });
     expect(res.payload.gamePrivateState).toBeUndefined();
+  });
+
+  it('settles a finished memory engine exactly once on read', async () => {
+    const game = buildMemoryGame(Date.now());
+    game.gameState.engine.phase = 'finished';
+    game.gameState.engine.result = {
+      winner: 'Alice',
+      draw: false,
+      reason: 'rounds_complete',
+      scores: { host: 40, guest: 10 },
+    };
+    game.gamePrivateState.actions = {
+      host: { act_read_1: { status: 'applied' } },
+      guest: {},
+    };
+    game.gameState.engine.players.host.score = 40;
+    game.gameState.engine.players.guest.score = 10;
+    const users = [
+      { username: 'Alice', points: 100, wins: 0, gamesPlayed: 0 },
+      { username: 'Bob', points: 40, wins: 0, gamesPlayed: 0 },
+    ];
+    const deps = makeDeps({ games: [game], memoryUsers: users });
+    const handler = createGetGameStateHandler(deps);
+
+    const first = createMockRes();
+    await handler({ params: { id: '5' }, user: { username: 'Alice' } }, first);
+
+    expect(first.statusCode).toBe(200);
+    expect(first.payload.gameState.engine.result).toMatchObject({
+      settled: true,
+      transferredPoints: 10,
+    });
+    expect(users[0].points).toBe(110);
+    expect(users[1].points).toBe(30);
+    expect(deps.emitRealtimeUpdate).toHaveBeenCalledWith(
+      '5',
+      expect.objectContaining({ type: 'game_finished', winner: 'Alice' })
+    );
+
+    const second = createMockRes();
+    await handler({ params: { id: '5' }, user: { username: 'Alice' } }, second);
+    expect(second.statusCode).toBe(200);
+    expect(users[0].points).toBe(110);
+    expect(users[1].points).toBe(30);
   });
 
   it('refuses a non-participant before serializing', async () => {

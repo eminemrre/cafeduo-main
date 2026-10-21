@@ -99,8 +99,11 @@ const RESULT_KEYS = [
   'reason',
   'scores',
   'transferredPoints',
+  'stakeTransferred',
   'cancelled',
   'maxScore',
+  'settled',
+  'settledAt',
 ];
 
 const sanitizePlayer = (player) => pick(player, PLAYER_KEYS);

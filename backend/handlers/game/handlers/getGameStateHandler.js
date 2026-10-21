@@ -8,14 +8,19 @@ const { GAME_STATUS, assertGameStatusTransition } = require('../../../utils/game
 const { serializeGameForActor } = require('../../../gameEngine/gameView');
 const { syncCompetitiveGame } = require('../../../gameEngine/engineActions');
 const { defaultRegistry } = require('../../../gameEngine/gameLock');
+const {
+  finalizeEngineGameById,
+  finalizeMemoryEngineGame,
+} = require('../../../gameEngine/settlement');
 
 const createGetGameStateHandler = (deps) => {
   const {
     pool,
     isDbConnected,
-    logger: _logger,
+    logger,
     buildChessTimeoutResolution,
     getMemoryGames,
+    getMemoryUsers,
     emitRealtimeUpdate,
   } = deps;
 
@@ -62,7 +67,9 @@ const createGetGameStateHandler = (deps) => {
       }
 
       const engineSync = syncCompetitiveGame({ game: row, nowMs: Date.now() });
-      if (engineSync.changed) {
+      const engineFinished =
+        engineSync.state?.phase === 'finished' && !engineSync.state?.result?.settled;
+      if (engineSync.changed && !engineFinished) {
         const nextGameState = { ...(row.gameState || {}), engine: engineSync.state };
         const updateResult = await pool.query(
           `
@@ -103,6 +110,33 @@ const createGetGameStateHandler = (deps) => {
           // overwriting it.
           const refreshed = await pool.query(baseSelectQuery, [id]);
           if (refreshed.rows.length > 0) row = refreshed.rows[0];
+        }
+      } else if (engineFinished) {
+        // The engine is done. Advancing and paying must happen under the row
+        // lock, so this path cannot race an action or the timeout job.
+        const finalized = await finalizeEngineGameById({
+          pool,
+          gameId: id,
+          logger,
+          nowMs: Date.now(),
+        }).catch((err) => {
+          logger.error('Engine finalize on read failed', err);
+          return null;
+        });
+        if (finalized) {
+          const refreshed = await pool.query(baseSelectQuery, [id]);
+          if (refreshed.rows.length > 0) row = refreshed.rows[0];
+          if (row.gameState?.engine?.phase === 'finished') {
+            emitRealtimeUpdate(id, {
+              type: 'game_finished',
+              gameId: id,
+              status: 'finished',
+              winner: row.winner || null,
+              reason: row.gameState?.engine?.result?.reason || 'rounds_complete',
+              cancelled: Boolean(row.gameState?.engine?.result?.cancelled),
+              gameState: serializeGameForActor(row).gameState,
+            });
+          }
         }
       }
 
@@ -182,19 +216,34 @@ const createGetGameStateHandler = (deps) => {
     await defaultRegistry.runExclusive(id, async () => {
       const lockedGame = getMemoryGames().find((item) => String(item.id) === String(id));
       if (!lockedGame) return;
-      const memoryEngineSync = syncCompetitiveGame({ game: lockedGame, nowMs: Date.now() });
-      if (!memoryEngineSync.changed) return;
-      lockedGame.gameState = { ...(lockedGame.gameState || {}), engine: memoryEngineSync.state };
-      lockedGame.status = memoryEngineSync.status;
-      lockedGame.winner = memoryEngineSync.winner;
-      emitRealtimeUpdate(id, {
-        type: 'game_state_updated',
-        gameId: id,
-        status: memoryEngineSync.status,
-        revision: memoryEngineSync.state.revision,
-        phase: memoryEngineSync.state.phase,
-        winner: memoryEngineSync.winner,
+      const finalized = finalizeMemoryEngineGame({
+        game: lockedGame,
+        privateState: lockedGame.gamePrivateState,
+        getMemoryUsers,
+        nowMs: Date.now(),
       });
+      if (!finalized.changed) return;
+      const engine = lockedGame.gameState?.engine;
+      if (finalized.settled) {
+        emitRealtimeUpdate(id, {
+          type: 'game_finished',
+          gameId: id,
+          status: lockedGame.status,
+          winner: lockedGame.winner || null,
+          reason: engine?.result?.reason || 'rounds_complete',
+          cancelled: Boolean(engine?.result?.cancelled),
+          gameState: serializeGameForActor(lockedGame).gameState,
+        });
+      } else if (engine) {
+        emitRealtimeUpdate(id, {
+          type: 'game_state_updated',
+          gameId: id,
+          status: lockedGame.status,
+          revision: engine.revision,
+          phase: engine.phase,
+          winner: lockedGame.winner || null,
+        });
+      }
     });
 
     const timeoutResolution = buildChessTimeoutResolution({

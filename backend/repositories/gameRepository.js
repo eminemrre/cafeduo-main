@@ -217,7 +217,9 @@ const createGameRepository = ({ pool, supportedGameTypes }) => {
           game_state,
           game_private_state,
           winner,
-          created_at
+          created_at,
+          to_jsonb(games)->>'cafe_id' AS cafe_id,
+          to_jsonb(games)->>'tournament_id' AS tournament_id
         FROM games
         WHERE id = $1
         FOR UPDATE

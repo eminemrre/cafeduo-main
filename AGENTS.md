@@ -112,6 +112,17 @@ npm run migrate:status   # when touching migrations
   server share the position function), and score only from the server-time position. The
   competitive gauge speed is the same on touch and desktop; `pointer: coarse` may change
   practice presentation only.
+- Settlement for a competitive engine game happens only in `backend/gameEngine/settlement.js`
+  and at most once: the `games` row is locked, the public engine result gets
+  `settled/settledAt/transferredPoints`, and `applyDbSettlement`/`applyMemorySettlement` runs in
+  the same transaction. Never let `/finish`, `/resign`, deletion or a socket event choose a
+  winner. `/resign` answers `USE_ENGINE_ACTION` for competitive games; resignation goes through
+  `POST /actions` with `type: "resign"`. `/finish` only queries/finalizes the engine result.
+- `games.game_state.engine.result.cancelled` with `reason: "abandoned"` marks a match where
+  neither player produced an accepted action; it must not touch balances or games_played.
+- `backend/jobs/gameEngineJobs.js` advances expired engine clocks and settles finished matches in
+  bounded batches. It relies on the row lock and the `settled` flag, so multiple instances and a
+  reader/action/finish race are safe. Do not force-close engine rows from the cleanup job.
 - Game state changes go through the game handlers; chess moves use `gameMoveService.js` with
   transaction locking.
 - Settlement (`backend/handlers/game/settlementUtils.js`): the winner receives

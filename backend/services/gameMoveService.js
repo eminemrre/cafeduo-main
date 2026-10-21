@@ -2,6 +2,28 @@ const { Chess } = require('chess.js');
 const { GAME_STATUS } = require('../utils/gameStateMachine');
 const { rollbackQuietly } = require('../utils/transaction');
 
+const LEGACY_COMPETITIVE_FIELDS = ['liveSubmission', 'scoreSubmission', 'gameState', 'move'];
+
+const findLegacyCompetitiveField = (body) => {
+  if (!body || typeof body !== 'object') return null;
+  return (
+    LEGACY_COMPETITIVE_FIELDS.find((field) => body[field] !== undefined && body[field] !== null) ||
+    null
+  );
+};
+
+/**
+ * The legacy protocol let a client write its own score, state or winner.
+ * It must fail loudly instead of being silently ignored, so an old cached
+ * client knows to refresh rather than believing its action was accepted.
+ */
+const legacyProtocolResponse = (res, field) =>
+  res.status(410).json({
+    error: 'Bu oyun isteği artık kabul edilmiyor. Lütfen sayfayı yenileyip tekrar dene.',
+    code: 'LEGACY_PROTOCOL_DISABLED',
+    field,
+  });
+
 const createGameMoveService = ({
   pool,
   isDbConnected,
@@ -16,10 +38,6 @@ const createGameMoveService = ({
   assertGameStatusTransition,
   assertRequiredGameStatus,
   mapTransitionError,
-  sanitizeLiveSubmission,
-  getGameParticipants,
-  pickWinnerFromResults,
-  sanitizeScoreSubmission,
   getMemoryGames,
   emitRealtimeUpdate,
   applyDbSettlement,
@@ -34,11 +52,6 @@ const createGameMoveService = ({
   const toIsoTime = (input) => {
     const parsed = Date.parse(String(input || ''));
     return Number.isFinite(parsed) ? parsed : null;
-  };
-
-  const normalizeSubmissionKey = (value) => {
-    const key = String(value || '').trim();
-    return key ? key.slice(0, 96) : null;
   };
 
   const normalizeClockState = (rawClock) => {
@@ -89,7 +102,7 @@ const createGameMoveService = ({
 
   const makeMove = async (req, res) => {
     const { id } = req.params;
-    const { player, move, gameState, scoreSubmission, chessMove, liveSubmission } = req.body || {};
+    const { player, chessMove } = req.body || {};
     const actorName = String(req.user?.username || '').trim();
 
     if (await isDbConnected()) {
@@ -122,6 +135,12 @@ const createGameMoveService = ({
 
         const currentState =
           game.game_state && typeof game.game_state === 'object' ? game.game_state : {};
+
+        const rejectedField = findLegacyCompetitiveField(req.body);
+        if (rejectedField) {
+          await rollbackQuietly(client);
+          return legacyProtocolResponse(res, rejectedField);
+        }
 
         if (chessMove) {
           if (!isChessGameType(game.game_type)) {
@@ -371,287 +390,6 @@ const createGameMoveService = ({
             },
           });
         }
-
-        if (liveSubmission) {
-          const liveSubmissionStatus = assertRequiredGameStatus({
-            currentStatus: game.status,
-            requiredStatus: GAME_STATUS.ACTIVE,
-            context: 'live_submission',
-          });
-          if (!liveSubmissionStatus.ok) {
-            await rollbackQuietly(client);
-            return res.status(409).json(mapTransitionError(liveSubmissionStatus));
-          }
-          if (!actorParticipant) {
-            await rollbackQuietly(client);
-            return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
-          }
-
-          const safeLive = sanitizeLiveSubmission(
-            liveSubmission,
-            String(game.game_type || '').trim()
-          );
-          if (safeLive.mode && safeLive.mode !== String(game.game_type || '').trim()) {
-            await rollbackQuietly(client);
-            return res.status(400).json({ error: 'Canlı ilerleme oyun türü eşleşmiyor.' });
-          }
-
-          const currentLive =
-            currentState.live && typeof currentState.live === 'object' ? currentState.live : {};
-          const currentSubmissions =
-            currentLive.submissions && typeof currentLive.submissions === 'object'
-              ? currentLive.submissions
-              : {};
-          const currentActorSubmission =
-            currentSubmissions[actorParticipant] &&
-            typeof currentSubmissions[actorParticipant] === 'object'
-              ? currentSubmissions[actorParticipant]
-              : {};
-          const incomingLiveKey = normalizeSubmissionKey(safeLive.submissionKey);
-          const existingLiveKey = normalizeSubmissionKey(currentActorSubmission?.submissionKey);
-          if (incomingLiveKey && existingLiveKey && incomingLiveKey === existingLiveKey) {
-            await rollbackQuietly(client);
-            const participants = getGameParticipants(game);
-            const waitingFor = participants.filter((name) => !currentSubmissions[name]?.done);
-            const resolvedWinner = participants.every((name) =>
-              Boolean(currentSubmissions[name]?.done)
-            )
-              ? pickWinnerFromResults(currentSubmissions, participants)
-              : null;
-            return res.json({
-              success: true,
-              idempotent: true,
-              gameState: currentState,
-              live: currentLive,
-              waitingFor,
-              resolvedWinner: resolvedWinner || null,
-            });
-          }
-
-          const nextSubmissions = {
-            ...currentSubmissions,
-            [actorParticipant]: {
-              ...(currentSubmissions[actorParticipant] || {}),
-              ...safeLive,
-            },
-          };
-
-          const participants = getGameParticipants(game);
-          const resolvedWinner = participants.every((name) => Boolean(nextSubmissions[name]?.done))
-            ? pickWinnerFromResults(nextSubmissions, participants)
-            : null;
-
-          const nextLiveState = {
-            mode: safeLive.mode || String(game.game_type || '').trim(),
-            submissions: nextSubmissions,
-            ...(resolvedWinner ? { resolvedWinner } : {}),
-            updatedAt: safeLive.updatedAt,
-          };
-
-          const nextState = {
-            ...currentState,
-            live: nextLiveState,
-          };
-          if (resolvedWinner) {
-            nextState.resolvedWinner = resolvedWinner;
-          }
-
-          await client.query(
-            `
-              UPDATE games
-              SET game_state = $1::jsonb
-              WHERE id = $2
-            `,
-            [JSON.stringify(nextState), id]
-          );
-
-          await client.query('COMMIT');
-          const waitingFor = participants.filter((name) => !nextSubmissions[name]?.done);
-          emitRealtimeUpdate(id, {
-            type: 'live_submission',
-            gameId: id,
-            live: nextLiveState,
-            waitingFor,
-            resolvedWinner: resolvedWinner || null,
-          });
-          return res.json({
-            success: true,
-            gameState: nextState,
-            live: nextLiveState,
-            waitingFor,
-            resolvedWinner: resolvedWinner || null,
-          });
-        }
-
-        if (scoreSubmission) {
-          const scoreSubmissionStatus = assertRequiredGameStatus({
-            currentStatus: game.status,
-            requiredStatus: GAME_STATUS.ACTIVE,
-            context: 'score_submission',
-          });
-          if (!scoreSubmissionStatus.ok) {
-            await rollbackQuietly(client);
-            return res.status(409).json(mapTransitionError(scoreSubmissionStatus));
-          }
-
-          if (!actorParticipant) {
-            await rollbackQuietly(client);
-            return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
-          }
-
-          const scorePayload =
-            scoreSubmission && typeof scoreSubmission === 'object' ? scoreSubmission : {};
-          const currentResults =
-            currentState.results && typeof currentState.results === 'object'
-              ? currentState.results
-              : {};
-          const currentActorScore =
-            currentResults[actorParticipant] && typeof currentResults[actorParticipant] === 'object'
-              ? currentResults[actorParticipant]
-              : {};
-          const incomingScoreSubmission = sanitizeScoreSubmission(
-            {
-              ...scorePayload,
-              username: actorName,
-            },
-            String(game.game_type || '').trim()
-          );
-          const incomingScoreKey = normalizeSubmissionKey(incomingScoreSubmission?.submissionKey);
-          const existingScoreKey = normalizeSubmissionKey(currentActorScore?.submissionKey);
-          if (incomingScoreKey && existingScoreKey && incomingScoreKey === existingScoreKey) {
-            await rollbackQuietly(client);
-            const participants = getGameParticipants(game);
-            const resolvedWinner = pickWinnerFromResults(currentResults, participants);
-            return res.json({
-              success: true,
-              idempotent: true,
-              gameState: currentState,
-              resolvedWinner: resolvedWinner || null,
-              waitingFor: participants.filter((name) => !currentResults[name]),
-            });
-          }
-
-          const nextResults = {
-            ...currentResults,
-            [actorParticipant]: incomingScoreSubmission,
-          };
-
-          const participants = getGameParticipants(game);
-          const resolvedWinner = pickWinnerFromResults(nextResults, participants);
-          const nextState = {
-            ...currentState,
-            results: nextResults,
-            ...(resolvedWinner ? { resolvedWinner } : {}),
-          };
-
-          await client.query(
-            `
-              UPDATE games
-              SET game_state = $1::jsonb
-              WHERE id = $2
-            `,
-            [JSON.stringify(nextState), id]
-          );
-
-          await client.query('COMMIT');
-          emitRealtimeUpdate(id, {
-            type: 'score_submission',
-            gameId: id,
-            gameState: nextState,
-            resolvedWinner: resolvedWinner || null,
-          });
-          return res.json({
-            success: true,
-            gameState: nextState,
-            resolvedWinner: resolvedWinner || null,
-            waitingFor: participants.filter((name) => !nextResults[name]),
-          });
-        }
-
-        if (gameState && typeof gameState === 'object') {
-          const gameStateUpdateStatus = assertRequiredGameStatus({
-            currentStatus: game.status,
-            requiredStatus: GAME_STATUS.ACTIVE,
-            context: 'game_state_update',
-          });
-          if (!gameStateUpdateStatus.ok) {
-            await rollbackQuietly(client);
-            return res.status(409).json(mapTransitionError(gameStateUpdateStatus));
-          }
-
-          const mergedState = {
-            ...currentState,
-            ...gameState,
-          };
-
-          if (currentState.results && !mergedState.results) {
-            mergedState.results = currentState.results;
-          }
-
-          await client.query(
-            `
-              UPDATE games
-              SET game_state = $1::jsonb
-              WHERE id = $2
-            `,
-            [JSON.stringify(mergedState), id]
-          );
-          await client.query('COMMIT');
-          emitRealtimeUpdate(id, {
-            type: 'game_state',
-            gameId: id,
-            gameState: mergedState,
-          });
-          return res.json({ success: true, gameState: mergedState });
-        }
-
-        const legacyMoveStatus = assertRequiredGameStatus({
-          currentStatus: game.status,
-          requiredStatus: GAME_STATUS.ACTIVE,
-          context: 'legacy_move',
-        });
-        if (!legacyMoveStatus.ok) {
-          await rollbackQuietly(client);
-          return res.status(409).json(mapTransitionError(legacyMoveStatus));
-        }
-
-        const hostName = String(game.host_name || '')
-          .trim()
-          .toLowerCase();
-        const guestName = String(game.guest_name || '')
-          .trim()
-          .toLowerCase();
-        const actorNormalized = String(actorParticipant || '')
-          .trim()
-          .toLowerCase();
-        const resolvedPlayer = adminActor
-          ? player === 'guest'
-            ? 'guest'
-            : 'host'
-          : actorNormalized === hostName
-            ? 'host'
-            : actorNormalized === guestName
-              ? 'guest'
-              : null;
-
-        if (resolvedPlayer !== 'host' && resolvedPlayer !== 'guest') {
-          await rollbackQuietly(client);
-          return res.status(403).json({ error: 'Bu hamleyi yapmaya yetkin yok.' });
-        }
-
-        const query =
-          resolvedPlayer === 'host'
-            ? 'UPDATE games SET player1_move = $1 WHERE id = $2'
-            : 'UPDATE games SET player2_move = $1 WHERE id = $2';
-        await client.query(query, [String(move || '').slice(0, 64), id]);
-        await client.query('COMMIT');
-        emitRealtimeUpdate(id, {
-          type: 'legacy_move',
-          gameId: id,
-          player: resolvedPlayer,
-          move: String(move || '').slice(0, 64),
-        });
-        return res.json({ success: true });
       } catch (err) {
         await rollbackQuietly(client);
         logger.error('Game move update error', err);
@@ -673,6 +411,11 @@ const createGameMoveService = ({
     const adminActor = isAdminActor(req.user);
     if (!actorParticipant && !adminActor) {
       return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
+    }
+
+    const rejectedField = findLegacyCompetitiveField(req.body);
+    if (rejectedField) {
+      return legacyProtocolResponse(res, rejectedField);
     }
 
     if (chessMove) {
@@ -888,239 +631,6 @@ const createGameMoveService = ({
         },
       });
     }
-
-    if (liveSubmission) {
-      const liveSubmissionStatus = assertRequiredGameStatus({
-        currentStatus: game.status,
-        requiredStatus: GAME_STATUS.ACTIVE,
-        context: 'live_submission_memory',
-      });
-      if (!liveSubmissionStatus.ok) {
-        return res.status(409).json(mapTransitionError(liveSubmissionStatus));
-      }
-      if (!actorParticipant) {
-        return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
-      }
-
-      const safeLive = sanitizeLiveSubmission(liveSubmission, String(game.gameType || '').trim());
-      if (safeLive.mode && safeLive.mode !== String(game.gameType || '').trim()) {
-        return res.status(400).json({ error: 'Canlı ilerleme oyun türü eşleşmiyor.' });
-      }
-
-      const liveState =
-        game.gameState?.live && typeof game.gameState.live === 'object' ? game.gameState.live : {};
-      const currentSubmissions =
-        liveState.submissions && typeof liveState.submissions === 'object'
-          ? liveState.submissions
-          : {};
-      const currentActorSubmission =
-        currentSubmissions[actorParticipant] &&
-        typeof currentSubmissions[actorParticipant] === 'object'
-          ? currentSubmissions[actorParticipant]
-          : {};
-      const incomingLiveKey = normalizeSubmissionKey(safeLive.submissionKey);
-      const existingLiveKey = normalizeSubmissionKey(currentActorSubmission?.submissionKey);
-      if (incomingLiveKey && existingLiveKey && incomingLiveKey === existingLiveKey) {
-        const participants = getGameParticipants({
-          host_name: game.hostName,
-          guest_name: game.guestName,
-        });
-        const waitingFor = participants.filter((name) => !currentSubmissions[name]?.done);
-        const resolvedWinner = participants.every((name) => Boolean(currentSubmissions[name]?.done))
-          ? pickWinnerFromResults(currentSubmissions, participants)
-          : null;
-        return res.json({
-          success: true,
-          idempotent: true,
-          gameState: game.gameState || {},
-          live: liveState,
-          waitingFor,
-          resolvedWinner: resolvedWinner || null,
-        });
-      }
-
-      const nextSubmissions = {
-        ...currentSubmissions,
-        [actorParticipant]: {
-          ...(currentSubmissions[actorParticipant] || {}),
-          ...safeLive,
-        },
-      };
-      const participants = getGameParticipants({
-        host_name: game.hostName,
-        guest_name: game.guestName,
-      });
-      const resolvedWinner = participants.every((name) => Boolean(nextSubmissions[name]?.done))
-        ? pickWinnerFromResults(nextSubmissions, participants)
-        : null;
-
-      const nextLive = {
-        mode: safeLive.mode || String(game.gameType || '').trim(),
-        submissions: nextSubmissions,
-        ...(resolvedWinner ? { resolvedWinner } : {}),
-        updatedAt: safeLive.updatedAt,
-      };
-
-      game.gameState = {
-        ...(game.gameState || {}),
-        live: nextLive,
-      };
-      if (resolvedWinner) {
-        game.gameState.resolvedWinner = resolvedWinner;
-      }
-
-      const waitingFor = participants.filter((name) => !nextSubmissions[name]?.done);
-      emitRealtimeUpdate(id, {
-        type: 'live_submission',
-        gameId: id,
-        live: nextLive,
-        waitingFor,
-        resolvedWinner: resolvedWinner || null,
-      });
-      return res.json({
-        success: true,
-        gameState: game.gameState,
-        live: nextLive,
-        waitingFor,
-        resolvedWinner: resolvedWinner || null,
-      });
-    }
-
-    if (scoreSubmission) {
-      const scoreSubmissionStatus = assertRequiredGameStatus({
-        currentStatus: game.status,
-        requiredStatus: GAME_STATUS.ACTIVE,
-        context: 'score_submission_memory',
-      });
-      if (!scoreSubmissionStatus.ok) {
-        return res.status(409).json(mapTransitionError(scoreSubmissionStatus));
-      }
-      if (!actorParticipant) {
-        return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
-      }
-      const canonicalParticipant = normalizeParticipantName(actorName, {
-        host_name: game.hostName,
-        guest_name: game.guestName,
-      });
-      if (!canonicalParticipant) {
-        return res.status(403).json({ error: 'Bu oyunun oyuncusu değilsin.' });
-      }
-      game.gameState = game.gameState || {};
-      game.gameState.results = game.gameState.results || {};
-      const incomingScoreSubmission = sanitizeScoreSubmission(
-        {
-          ...(typeof scoreSubmission === 'object' ? scoreSubmission : {}),
-          username: actorName,
-        },
-        String(game.gameType || '').trim()
-      );
-      const existingScoreSubmission =
-        game.gameState.results[canonicalParticipant] &&
-        typeof game.gameState.results[canonicalParticipant] === 'object'
-          ? game.gameState.results[canonicalParticipant]
-          : {};
-      const incomingScoreKey = normalizeSubmissionKey(incomingScoreSubmission?.submissionKey);
-      const existingScoreKey = normalizeSubmissionKey(existingScoreSubmission?.submissionKey);
-      if (incomingScoreKey && existingScoreKey && incomingScoreKey === existingScoreKey) {
-        const participants = getGameParticipants({
-          host_name: game.hostName,
-          guest_name: game.guestName,
-        });
-        const resolvedWinner = pickWinnerFromResults(game.gameState.results, participants);
-        return res.json({
-          success: true,
-          idempotent: true,
-          gameState: game.gameState,
-          resolvedWinner: resolvedWinner || null,
-          waitingFor: participants.filter((name) => !game.gameState.results[name]),
-        });
-      }
-      game.gameState.results[canonicalParticipant] = incomingScoreSubmission;
-
-      const participants = getGameParticipants({
-        host_name: game.hostName,
-        guest_name: game.guestName,
-      });
-      const resolvedWinner = pickWinnerFromResults(game.gameState.results, participants);
-      if (resolvedWinner) {
-        game.gameState.resolvedWinner = resolvedWinner;
-      }
-
-      emitRealtimeUpdate(id, {
-        type: 'score_submission',
-        gameId: id,
-        gameState: game.gameState,
-        resolvedWinner: resolvedWinner || null,
-      });
-      return res.json({
-        success: true,
-        gameState: game.gameState,
-        resolvedWinner: resolvedWinner || null,
-        waitingFor: participants.filter((name) => !game.gameState.results[name]),
-      });
-    }
-
-    if (gameState && typeof gameState === 'object') {
-      const gameStateUpdateStatus = assertRequiredGameStatus({
-        currentStatus: game.status,
-        requiredStatus: GAME_STATUS.ACTIVE,
-        context: 'game_state_update_memory',
-      });
-      if (!gameStateUpdateStatus.ok) {
-        return res.status(409).json(mapTransitionError(gameStateUpdateStatus));
-      }
-
-      game.gameState = { ...(game.gameState || {}), ...gameState };
-      emitRealtimeUpdate(id, {
-        type: 'game_state',
-        gameId: id,
-        gameState: game.gameState,
-      });
-      return res.json({ success: true, gameState: game.gameState });
-    }
-
-    const legacyMoveStatus = assertRequiredGameStatus({
-      currentStatus: game.status,
-      requiredStatus: GAME_STATUS.ACTIVE,
-      context: 'legacy_move_memory',
-    });
-    if (!legacyMoveStatus.ok) {
-      return res.status(409).json(mapTransitionError(legacyMoveStatus));
-    }
-
-    const hostName = String(game.hostName || '')
-      .trim()
-      .toLowerCase();
-    const guestName = String(game.guestName || '')
-      .trim()
-      .toLowerCase();
-    const actorNormalized = String(actorParticipant || '')
-      .trim()
-      .toLowerCase();
-    const resolvedPlayer = adminActor
-      ? player === 'guest'
-        ? 'guest'
-        : 'host'
-      : actorNormalized === hostName
-        ? 'host'
-        : actorNormalized === guestName
-          ? 'guest'
-          : null;
-    if (resolvedPlayer === 'host') {
-      game.player1Move = String(move || '').slice(0, 64);
-    } else if (resolvedPlayer === 'guest') {
-      game.player2Move = String(move || '').slice(0, 64);
-    } else {
-      return res.status(403).json({ error: 'Bu hamleyi yapmaya yetkin yok.' });
-    }
-
-    emitRealtimeUpdate(id, {
-      type: 'legacy_move',
-      gameId: id,
-      player: resolvedPlayer,
-      move: String(move || '').slice(0, 64),
-    });
-    return res.json({ success: true });
   };
 
   return {

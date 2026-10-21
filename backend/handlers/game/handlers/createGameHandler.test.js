@@ -9,6 +9,9 @@
 
 const { createCreateGameHandler } = require('./createGameHandler');
 
+// Creation tests below cover the handler, not the rollout gate; keep protocol v2 open.
+process.env.GAME_ENGINE_V2_ENABLED = 'true';
+
 const createMockRes = () => {
   const res = {};
   res.statusCode = 200;
@@ -457,5 +460,48 @@ describe('createGameHandler (memory path)', () => {
 
     expect(res.statusCode).toBe(201);
     expect(deps._memoryGamesRef[0].table).toBe('MASA00');
+  });
+});
+
+describe('createGameHandler – protocol v2 rollout gate', () => {
+  const original = process.env.GAME_ENGINE_V2_ENABLED;
+  afterEach(() => {
+    process.env.GAME_ENGINE_V2_ENABLED = original;
+  });
+
+  it('closes Bilgi Yarışı and Nişancı Düellosu while the flag is off', async () => {
+    delete process.env.GAME_ENGINE_V2_ENABLED;
+    const handler = createCreateGameHandler(makeDeps());
+    for (const gameType of ['Bilgi Yarışı', 'Nişancı Düellosu']) {
+      const res = createMockRes();
+      await handler(
+        {
+          user: {
+            username: 'u1',
+            cafe_id: 1,
+            table_number: '5',
+            points: 100,
+          },
+          body: { gameType, points: 10 },
+        },
+        res
+      );
+      expect(res.statusCode).toBe(503);
+      expect(res.payload.code).toBe('GAME_ENGINE_MAINTENANCE');
+    }
+  });
+
+  it('keeps Retro Satranç open while the flag is off', async () => {
+    delete process.env.GAME_ENGINE_V2_ENABLED;
+    const handler = createCreateGameHandler(makeDeps({ dbConnected: false }));
+    const res = createMockRes();
+    await handler(
+      {
+        user: { username: 'u1', cafe_id: 1, table_number: '5', points: 100 },
+        body: { gameType: 'Retro Satranç', points: 0 },
+      },
+      res
+    );
+    expect(res.statusCode).not.toBe(503);
   });
 });

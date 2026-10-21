@@ -7,6 +7,9 @@
  */
 
 const { createJoinGameHandler } = require('./joinGameHandler');
+
+// Join tests below cover the handler, not the rollout gate; keep protocol v2 open.
+process.env.GAME_ENGINE_V2_ENABLED = 'true';
 const { GAME_STATUS } = require('../../../utils/gameStateMachine');
 
 const createMockRes = () => {
@@ -588,5 +591,59 @@ describe('joinGameHandler (memory path)', () => {
 
     expect(res.statusCode).toBe(400);
     expect(res.payload.error).toMatch(/puan gerekli/);
+  });
+});
+
+describe('joinGameHandler – protocol v2 rollout gate', () => {
+  const original = process.env.GAME_ENGINE_V2_ENABLED;
+  afterEach(() => {
+    process.env.GAME_ENGINE_V2_ENABLED = original;
+  });
+
+  it('refuses to join a quiz/aim game while the flag is off', async () => {
+    delete process.env.GAME_ENGINE_V2_ENABLED;
+    const game = {
+      id: 7,
+      host_name: 'Alice',
+      guest_name: null,
+      game_type: 'Bilgi Yarışı',
+      points: 10,
+      table_code: 'MASA05',
+      status: 'waiting',
+      game_state: {},
+      created_at: new Date().toISOString(),
+    };
+    const deps = {
+      pool: {
+        connect: jest.fn(async () => ({
+          query: jest.fn(async (sql) =>
+            /FROM\s+games/i.test(sql) ? { rows: [game] } : { rows: [] }
+          ),
+          release: jest.fn(),
+        })),
+      },
+      isDbConnected: jest.fn(async () => true),
+      logger: { error: jest.fn(), warn: jest.fn() },
+      normalizeTableCode,
+      normalizeParticipantName,
+      gameService: { findGameByIdForUpdate: jest.fn(async () => game) },
+      lobbyCacheService: {},
+      getMemoryGames: () => [],
+      emitRealtimeUpdate: jest.fn(),
+      emitLobbyUpdate: jest.fn(),
+      GAME_STATUS,
+    };
+    const handler = createJoinGameHandler(deps);
+    const res = createMockRes();
+    await handler(
+      {
+        params: { id: '7' },
+        user: { username: 'Bob', cafe_id: 1, table_number: '5', points: 100 },
+        body: {},
+      },
+      res
+    );
+    expect(res.statusCode).toBe(503);
+    expect(res.payload.code).toBe('GAME_ENGINE_MAINTENANCE');
   });
 });

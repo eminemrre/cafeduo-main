@@ -14,21 +14,8 @@
  *   - chess: checkmate → settlement + finished + emit
  *   - chess: draw (gameOver, winner yok) → settlement + finished
  *   - chess: geçersiz durum geçişi sonrası → 409
- *   - liveSubmission: inactive → 409
- *   - liveSubmission: aktör yok → 403
- *   - liveSubmission: mode uyumsuz → 400
- *   - liveSubmission: idempotent aynı key → erken dönüş
- *   - liveSubmission: başarılı kayıt + emit
- *   - scoreSubmission: inactive → 409
- *   - scoreSubmission: aktör yok → 403
- *   - scoreSubmission: idempotent → zaten test edildi
- *   - scoreSubmission: yeni kayıt + emit
- *   - gameState güncelleme: active → merge + emit
- *   - gameState güncelleme: inactive → 409
- *   - legacy move (host): update + emit
- *   - legacy move (guest): update + emit
- *   - legacy move: yetkisiz → 403
- *   - legacy move: inactive → 409
+ *   - legacy liveSubmission/scoreSubmission/gameState/move → 410, no write, no emit
+ *   - non-participant legacy payload → 403
  *   - catch bloğu → 500 + rollback
  *
  * Memory yolu:
@@ -44,21 +31,8 @@
  *   - chess: checkmate → settlement + finished
  *   - chess: draw → settlement + finished
  *   - chess: geçersiz geçiş → 409
- *   - liveSubmission: inactive → 409
- *   - liveSubmission: aktör yok → 403
- *   - liveSubmission: mode uyumsuz → 400
- *   - liveSubmission: idempotent
- *   - liveSubmission: başarılı
- *   - scoreSubmission: inactive → 409
- *   - scoreSubmission: aktör yok → 403
- *   - scoreSubmission: idempotent
- *   - scoreSubmission: yeni kayıt
- *   - gameState: inactive → 409
- *   - gameState: başarılı merge
- *   - legacy move: host
- *   - legacy move: guest
- *   - legacy move: yetkisiz → 403
- *   - legacy move: inactive → 409
+ *   - legacy liveSubmission/scoreSubmission/gameState/move → 410, no memory write, no emit
+ *   - non-participant legacy payload → 403
  */
 
 const { createGameMoveService } = require('./gameMoveService');
@@ -390,192 +364,51 @@ describe('gameMoveService – DB yolu', () => {
   // liveSubmission
   // -------------------------------------------------------------------------
 
-  it('liveSubmission: oyun active değilse 409', async () => {
-    const { service } = buildService({ gameRow: { ...SCORE_GAME, status: 'finished' } });
-    const res = createMockRes();
-    await service.makeMove(scoreReq({ liveSubmission: { submissionKey: 'k1' } }), res);
-    expect(res.statusCode).toBe(409);
-  });
+  // -------------------------------------------------------------------------
+  // Legacy competitive protocol is closed
+  // -------------------------------------------------------------------------
 
-  it('liveSubmission: aktör katılımcı değilse 403', async () => {
+  it.each(['liveSubmission', 'scoreSubmission', 'gameState', 'move'])(
+    '%s alanı 410 LEGACY_PROTOCOL_DISABLED döner ve hiçbir yazma yapmaz',
+    async (field) => {
+      const { service, client, deps } = buildService({ gameRow: SCORE_GAME });
+      const res = createMockRes();
+      const value = field === 'move' ? 'sahte-hamle' : { score: 99999, scoreKey: 'k' };
+      await service.makeMove(scoreReq({ [field]: value }), res);
+      expect(res.statusCode).toBe(410);
+      expect(res.payload).toEqual(
+        expect.objectContaining({ code: 'LEGACY_PROTOCOL_DISABLED', field })
+      );
+      expect(deps.emitRealtimeUpdate).not.toHaveBeenCalled();
+      expect(client._committed).toBe(false);
+      expect(client._rolledBack).toBe(true);
+    }
+  );
+
+  it('katılımcı olmayan legacy payload 403 alır, alan reddi bilgisi sızmaz', async () => {
     const { service } = buildService({ gameRow: SCORE_GAME });
     const res = createMockRes();
     await service.makeMove(
       {
         params: { id: '9' },
         user: { username: 'yabanci' },
-        body: { liveSubmission: { submissionKey: 'k1' } },
+        body: { scoreSubmission: { score: 5 } },
       },
       res
     );
     expect(res.statusCode).toBe(403);
+    expect(res.payload.code).toBeUndefined();
   });
 
-  it('liveSubmission: mode oyun türüyle eşleşmiyorsa 400', async () => {
-    const { service } = buildService({ gameRow: SCORE_GAME });
+  it('satranç oyununda gameState enjeksiyonu reddedilir', async () => {
+    const { service, deps } = buildService({ gameRow: CHESS_GAME });
     const res = createMockRes();
     await service.makeMove(
-      scoreReq({ liveSubmission: { submissionKey: 'k1', mode: 'Yanlış Tür' } }),
+      chessReq({ gameState: { resolvedWinner: 'u1', settlementApplied: true } }),
       res
     );
-    expect(res.statusCode).toBe(400);
-    expect(res.payload?.error).toMatch(/oyun türü eşleşmiyor/);
-  });
-
-  it('liveSubmission: aynı submissionKey ile tekrar gönderilince idempotent döner', async () => {
-    const { service } = buildService({
-      gameRow: {
-        ...SCORE_GAME,
-        game_state: {
-          live: {
-            submissions: {
-              u1: { submissionKey: 'live-key-1', done: false },
-            },
-          },
-        },
-      },
-    });
-    const res = createMockRes();
-    await service.makeMove(scoreReq({ liveSubmission: { submissionKey: 'live-key-1' } }), res);
-    expect(res.statusCode).toBe(200);
-    expect(res.payload?.idempotent).toBe(true);
-  });
-
-  it('liveSubmission: yeni submission kaydedilir, emit çağrılır', async () => {
-    const { service, emit } = buildService({ gameRow: SCORE_GAME });
-    const res = createMockRes();
-    await service.makeMove(scoreReq({ liveSubmission: { submissionKey: 'live-new-1' } }), res);
-    expect(res.statusCode).toBe(200);
-    expect(res.payload?.success).toBe(true);
-    expect(emit).toHaveBeenCalledWith('9', expect.objectContaining({ type: 'live_submission' }));
-  });
-
-  // -------------------------------------------------------------------------
-  // scoreSubmission
-  // -------------------------------------------------------------------------
-
-  it('scoreSubmission: oyun active değilse 409', async () => {
-    const { service } = buildService({ gameRow: { ...SCORE_GAME, status: 'finished' } });
-    const res = createMockRes();
-    await service.makeMove(scoreReq({ scoreSubmission: { score: 5, submissionKey: 'k1' } }), res);
-    expect(res.statusCode).toBe(409);
-  });
-
-  it('scoreSubmission: aktör katılımcı değilse 403', async () => {
-    const { service } = buildService({ gameRow: SCORE_GAME });
-    const res = createMockRes();
-    await service.makeMove(
-      {
-        params: { id: '9' },
-        user: { username: 'yabanci' },
-        body: { scoreSubmission: { score: 5, submissionKey: 'k1' } },
-      },
-      res
-    );
-    expect(res.statusCode).toBe(403);
-  });
-
-  it('scoreSubmission: yeni skor kaydedilir, emit çağrılır', async () => {
-    const { service, emit } = buildService({ gameRow: SCORE_GAME });
-    const res = createMockRes();
-    await service.makeMove(
-      scoreReq({ scoreSubmission: { score: 7, submissionKey: 'new-score-1' } }),
-      res
-    );
-    expect(res.statusCode).toBe(200);
-    expect(res.payload?.success).toBe(true);
-    expect(emit).toHaveBeenCalledWith('9', expect.objectContaining({ type: 'score_submission' }));
-  });
-
-  it('scoreSubmission: idempotent aynı key tekrar gönderilince UPDATE yapılmaz', async () => {
-    const { service, client } = buildService({
-      gameRow: {
-        ...SCORE_GAME,
-        game_state: {
-          results: {
-            u1: { score: 5, submissionKey: 'dup-key' },
-          },
-        },
-      },
-    });
-    const res = createMockRes();
-    await service.makeMove(
-      scoreReq({ scoreSubmission: { score: 5, submissionKey: 'dup-key' } }),
-      res
-    );
-    expect(res.statusCode).toBe(200);
-    expect(res.payload?.idempotent).toBe(true);
-    const updateCalled = client.query.mock.calls.some(
-      ([sql]) =>
-        String(sql || '').includes('UPDATE games') && String(sql || '').includes('SET game_state')
-    );
-    expect(updateCalled).toBe(false);
-  });
-
-  // -------------------------------------------------------------------------
-  // gameState güncelleme
-  // -------------------------------------------------------------------------
-
-  it('gameState: active oyunda merge edilir, emit çağrılır', async () => {
-    const { service, emit } = buildService({ gameRow: SCORE_GAME });
-    const res = createMockRes();
-    await service.makeMove(scoreReq({ gameState: { customKey: 'val' } }), res);
-    expect(res.statusCode).toBe(200);
-    expect(res.payload?.success).toBe(true);
-    expect(emit).toHaveBeenCalledWith('9', expect.objectContaining({ type: 'game_state' }));
-  });
-
-  it('gameState: inactive oyunda 409 döner', async () => {
-    const { service } = buildService({ gameRow: { ...SCORE_GAME, status: 'finished' } });
-    const res = createMockRes();
-    await service.makeMove(scoreReq({ gameState: { x: 1 } }), res);
-    expect(res.statusCode).toBe(409);
-  });
-
-  // -------------------------------------------------------------------------
-  // Legacy move
-  // -------------------------------------------------------------------------
-
-  it('legacy move: host kendi hamlesi için player1_move update eder', async () => {
-    const { service, client } = buildService({ gameRow: SCORE_GAME });
-    const res = createMockRes();
-    await service.makeMove(scoreReq({ move: 'A', player: 'host' }), res);
-    expect(res.statusCode).toBe(200);
-    const updateCall = client.query.mock.calls.find(([sql]) =>
-      String(sql || '').includes('player1_move')
-    );
-    expect(updateCall).toBeDefined();
-  });
-
-  it('legacy move: guest kendi hamlesi için player2_move update eder', async () => {
-    const { service, client } = buildService({ gameRow: SCORE_GAME });
-    const res = createMockRes();
-    await service.makeMove(
-      { params: { id: '9' }, user: { username: 'u2' }, body: { move: 'B', player: 'guest' } },
-      res
-    );
-    expect(res.statusCode).toBe(200);
-    const updateCall = client.query.mock.calls.find(([sql]) =>
-      String(sql || '').includes('player2_move')
-    );
-    expect(updateCall).toBeDefined();
-  });
-
-  it('legacy move: katılımcı olmayan 403 alır', async () => {
-    const { service } = buildService({ gameRow: SCORE_GAME });
-    const res = createMockRes();
-    await service.makeMove(
-      { params: { id: '9' }, user: { username: 'yabanci' }, body: { move: 'X' } },
-      res
-    );
-    expect(res.statusCode).toBe(403);
-  });
-
-  it('legacy move: inactive oyunda 409 döner', async () => {
-    const { service } = buildService({ gameRow: { ...SCORE_GAME, status: 'finished' } });
-    const res = createMockRes();
-    await service.makeMove(scoreReq({ move: 'X' }), res);
-    expect(res.statusCode).toBe(409);
+    expect(res.statusCode).toBe(410);
+    expect(deps.emitRealtimeUpdate).not.toHaveBeenCalled();
   });
 
   // -------------------------------------------------------------------------
@@ -776,182 +609,29 @@ describe('gameMoveService – memory yolu', () => {
   });
 
   // -------------------------------------------------------------------------
-  // liveSubmission – memory
+  // Legacy competitive protocol is closed (memory path)
   // -------------------------------------------------------------------------
 
-  it('liveSubmission: inactive → 409', async () => {
-    const g = { ...memScoreGame(), status: 'finished' };
-    const { service } = buildMemService({ game: g });
-    const res = createMockRes();
-    await service.makeMove(memReq('11', 'u1', { liveSubmission: { submissionKey: 'k1' } }), res);
-    expect(res.statusCode).toBe(409);
-  });
+  it.each(['liveSubmission', 'scoreSubmission', 'gameState', 'move'])(
+    '%s alanı 410 döner, bellekteki oyunu değiştirmez ve emit etmez',
+    async (field) => {
+      const game = memScoreGame();
+      const { service, emit } = buildMemService({ game });
+      const res = createMockRes();
+      const value = field === 'move' ? 'X' : { score: 99999 };
+      await service.makeMove(memReq('11', 'u1', { [field]: value }), res);
+      expect(res.statusCode).toBe(410);
+      expect(res.payload.code).toBe('LEGACY_PROTOCOL_DISABLED');
+      expect(emit).not.toHaveBeenCalled();
+      expect(game.gameState).toEqual({});
+      expect(game.status).toBe('active');
+    }
+  );
 
-  it('liveSubmission: aktör yok → 403', async () => {
-    const g = memScoreGame();
-    const { service } = buildMemService({ game: g });
+  it('katılımcı olmayan legacy payload memory yolunda 403 alır', async () => {
+    const { service } = buildMemService({ game: memScoreGame() });
     const res = createMockRes();
-    await service.makeMove(
-      memReq('11', 'yabanci', { liveSubmission: { submissionKey: 'k1' } }),
-      res
-    );
+    await service.makeMove(memReq('11', 'yabanci', { scoreSubmission: { score: 9 } }), res);
     expect(res.statusCode).toBe(403);
-  });
-
-  it('liveSubmission: mode uyumsuz → 400', async () => {
-    const g = memScoreGame();
-    const { service } = buildMemService({ game: g });
-    const res = createMockRes();
-    await service.makeMove(
-      memReq('11', 'u1', { liveSubmission: { submissionKey: 'k1', mode: 'Yanlış' } }),
-      res
-    );
-    expect(res.statusCode).toBe(400);
-  });
-
-  it('liveSubmission: idempotent aynı key', async () => {
-    const g = {
-      ...memScoreGame(),
-      gameState: {
-        live: {
-          submissions: { u1: { submissionKey: 'live-mem-1', done: false } },
-        },
-      },
-    };
-    const { service } = buildMemService({ game: g });
-    const res = createMockRes();
-    await service.makeMove(
-      memReq('11', 'u1', { liveSubmission: { submissionKey: 'live-mem-1' } }),
-      res
-    );
-    expect(res.statusCode).toBe(200);
-    expect(res.payload?.idempotent).toBe(true);
-  });
-
-  it('liveSubmission: yeni submission kaydedilir, emit çağrılır', async () => {
-    const g = memScoreGame();
-    const { service, emit } = buildMemService({ game: g });
-    const res = createMockRes();
-    await service.makeMove(
-      memReq('11', 'u1', { liveSubmission: { submissionKey: 'live-new-mem' } }),
-      res
-    );
-    expect(res.statusCode).toBe(200);
-    expect(emit).toHaveBeenCalledWith('11', expect.objectContaining({ type: 'live_submission' }));
-  });
-
-  // -------------------------------------------------------------------------
-  // scoreSubmission – memory
-  // -------------------------------------------------------------------------
-
-  it('scoreSubmission: inactive → 409', async () => {
-    const g = { ...memScoreGame(), status: 'finished' };
-    const { service } = buildMemService({ game: g });
-    const res = createMockRes();
-    await service.makeMove(
-      memReq('11', 'u1', { scoreSubmission: { score: 5, submissionKey: 'k1' } }),
-      res
-    );
-    expect(res.statusCode).toBe(409);
-  });
-
-  it('scoreSubmission: aktör yok → 403', async () => {
-    const g = memScoreGame();
-    const { service } = buildMemService({ game: g });
-    const res = createMockRes();
-    await service.makeMove(
-      memReq('11', 'yabanci', { scoreSubmission: { score: 5, submissionKey: 'k1' } }),
-      res
-    );
-    expect(res.statusCode).toBe(403);
-  });
-
-  it('scoreSubmission: idempotent aynı key → tekrar kaydedilmez', async () => {
-    const g = {
-      ...memScoreGame(),
-      gameState: {
-        results: { u1: { score: 3, submissionKey: 'mem-score-key' } },
-      },
-    };
-    const { service } = buildMemService({ game: g });
-    const res = createMockRes();
-    await service.makeMove(
-      memReq('11', 'u1', { scoreSubmission: { score: 3, submissionKey: 'mem-score-key' } }),
-      res
-    );
-    expect(res.statusCode).toBe(200);
-    expect(res.payload?.idempotent).toBe(true);
-  });
-
-  it('scoreSubmission: yeni skor kaydedilir, emit çağrılır', async () => {
-    const g = memScoreGame();
-    const { service, emit } = buildMemService({ game: g });
-    const res = createMockRes();
-    await service.makeMove(
-      memReq('11', 'u1', { scoreSubmission: { score: 7, submissionKey: 'mem-new-score' } }),
-      res
-    );
-    expect(res.statusCode).toBe(200);
-    expect(emit).toHaveBeenCalledWith('11', expect.objectContaining({ type: 'score_submission' }));
-  });
-
-  // -------------------------------------------------------------------------
-  // gameState – memory
-  // -------------------------------------------------------------------------
-
-  it('gameState: inactive → 409', async () => {
-    const g = { ...memScoreGame(), status: 'finished' };
-    const { service } = buildMemService({ game: g });
-    const res = createMockRes();
-    await service.makeMove(memReq('11', 'u1', { gameState: { x: 1 } }), res);
-    expect(res.statusCode).toBe(409);
-  });
-
-  it('gameState: merge edilir, emit çağrılır', async () => {
-    const g = memScoreGame();
-    const { service, emit } = buildMemService({ game: g });
-    const res = createMockRes();
-    await service.makeMove(memReq('11', 'u1', { gameState: { testKey: 'abc' } }), res);
-    expect(res.statusCode).toBe(200);
-    expect(res.payload?.gameState?.testKey).toBe('abc');
-    expect(emit).toHaveBeenCalledWith('11', expect.objectContaining({ type: 'game_state' }));
-  });
-
-  // -------------------------------------------------------------------------
-  // Legacy move – memory
-  // -------------------------------------------------------------------------
-
-  it('legacy move: host player1Move kaydedilir', async () => {
-    const g = memScoreGame();
-    const { service } = buildMemService({ game: g });
-    const res = createMockRes();
-    await service.makeMove(memReq('11', 'u1', { move: 'hamle-X' }), res);
-    expect(res.statusCode).toBe(200);
-    expect(g.player1Move).toBe('hamle-X');
-  });
-
-  it('legacy move: guest player2Move kaydedilir', async () => {
-    const g = memScoreGame();
-    const { service } = buildMemService({ game: g });
-    const res = createMockRes();
-    await service.makeMove(memReq('11', 'u2', { move: 'hamle-Y' }), res);
-    expect(res.statusCode).toBe(200);
-    expect(g.player2Move).toBe('hamle-Y');
-  });
-
-  it('legacy move: yetkisiz kullanıcı → 403', async () => {
-    const g = memScoreGame();
-    const { service } = buildMemService({ game: g });
-    const res = createMockRes();
-    await service.makeMove(memReq('11', 'yabanci', { move: 'X' }), res);
-    expect(res.statusCode).toBe(403);
-  });
-
-  it('legacy move: inactive → 409', async () => {
-    const g = { ...memScoreGame(), status: 'finished' };
-    const { service } = buildMemService({ game: g });
-    const res = createMockRes();
-    await service.makeMove(memReq('11', 'u1', { move: 'X' }), res);
-    expect(res.statusCode).toBe(409);
   });
 });

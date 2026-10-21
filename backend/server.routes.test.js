@@ -118,9 +118,10 @@ describe('backend/server.js route registry', () => {
     expect(serverSource).toContain('SELECT id, host_name, guest_name, status');
     expect(serverSource).toContain('LIMIT 1');
     expect(serverSource).toContain("socket.on('join_game', async");
-    expect(serverSource).toContain('emitSocketRoomError(socket, \'forbidden\')');
-    expect(serverSource).toContain('isSocketInGameRoom(socket, normalizedGameId)');
-    expect(serverSource).toContain("socket.emit('game_room_error'");
+    expect(serverSource).toContain("emitSocketRoomError(socket, 'forbidden')");
+    expect(serverSource).toContain('rejectLegacySocketAction');
+    expect(serverSource).not.toContain("socket.to(normalizedGameId).emit('opponent_move'");
+    expect(serverSource).not.toContain("socket.to(normalizedGameId).emit('game_state_updated'");
   });
 
   it('passes production build metadata to system routes', () => {

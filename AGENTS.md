@@ -88,9 +88,13 @@ npm run migrate:status   # when touching migrations
 - HTTP: `backend/routes/` → handlers/controllers → services/repositories; middleware includes
   `authenticateToken`, `csrfMiddleware` and Redis-backed rate limiting.
 - Realtime: Socket.IO authenticates with the JWT in `socket.auth.token`
-  (`backend/middleware/socketAuth.js`). Events: `join_game`, `game_move`, `update_game_state`,
-  `game_state_updated`, `lobby_updated`. Call `emitLobbyUpdate(tableCode)` after game
-  mutations, and emit only after the DB commit.
+  (`backend/middleware/socketAuth.js`). Events: `join_game`, `leave_game`, `game_state_updated`,
+  `game_room_error`, `lobby_updated`. Sockets only carry server notifications; player actions go
+  through the authenticated HTTP game endpoints. `game_move` and `update_game_state` are rejected.
+  Call `emitLobbyUpdate(tableCode)` after game mutations, and emit only after the DB commit.
+- Competitive games (Bilgi Yarışı, Nişancı Düellosu) run only the server-authoritative protocol.
+  No new game is created or joined while `GAME_ENGINE_V2_ENABLED` is false, and legacy
+  live/score/state/winner writes answer `410 LEGACY_PROTOCOL_DISABLED`.
 - Game state changes go through the game handlers; chess moves use `gameMoveService.js` with
   transaction locking.
 - Settlement (`backend/handlers/game/settlementUtils.js`): the winner receives
@@ -170,7 +174,7 @@ npm run migrate:status   # when touching migrations
   `REDIS_URL` and fall back to memory without it; `RATE_LIMIT_PASS_ON_STORE_ERROR=false` rejects
   requests when Redis fails (recommended in production).
 - **PWA is enabled**: `vite-plugin-pwa` generates a service worker with `registerType:
-  'autoUpdate'` (`vite.config.ts`), so a deploy reaches open clients on their next load.
+'autoUpdate'` (`vite.config.ts`), so a deploy reaches open clients on their next load.
 - **Toy fallbacks carry labels in the display face**: `public/landing/toys/*.webp` are stills of
   the Three.js scene, rendered through the dev-only page `toy-render.html` (git-excluded via
   `.git/info/exclude`, so recreate it when missing; it must import `@fontsource/baloo-2/800.css`

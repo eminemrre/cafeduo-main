@@ -45,7 +45,6 @@ const createGameHandlers = ({
   normalizeTableCode,
   getGameParticipants,
   normalizeParticipantName,
-  sanitizeScoreSubmission,
   pickWinnerFromResults,
   gameService,
   lobbyCacheService,
@@ -141,15 +140,6 @@ const createGameHandlers = ({
     buildChessStateFromEngine,
     assertGameStatusTransition: require('../utils/gameStateMachine').assertGameStatusTransition,
     assertRequiredGameStatus: require('../utils/gameStateMachine').assertRequiredGameStatus,
-    getGameParticipants,
-    pickWinnerFromResults,
-    sanitizeScoreSubmission,
-    sanitizeLiveSubmission: (payload, gameType) =>
-      require('./game/utils/helperUtils').sanitizeLiveSubmission(
-        payload,
-        gameType,
-        normalizeGameType
-      ),
     getMemoryGames,
     getMemoryUsers,
     io,

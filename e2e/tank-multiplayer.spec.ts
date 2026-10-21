@@ -12,8 +12,17 @@ const authHeader = (token: string, csrfToken?: string) => ({
   ...(csrfToken ? { 'X-CSRF-Token': csrfToken, Cookie: `csrf_token=${csrfToken}` } : { Cookie: '' }),
 });
 
-test.describe('Aim Duel Multiplayer Sync & Settlement', () => {
-  test('@advanced resolves aim duel winner from server-side scores despite spoofed finish payload', async ({
+/**
+ * Protocol v2 rollout guard.
+ *
+ * Until the server-authoritative engine and its client ship together, the two
+ * ranked game types are closed and every legacy write path answers 410. These
+ * assertions are replaced by the full v2 match flow in the final PR of the
+ * series; keeping them here means the intermediate main branch cannot quietly
+ * fall back to client-supplied scores.
+ */
+test.describe('Competitive protocol boundary', () => {
+  test('@advanced refuses to open Bilgi Yarışı / Nişancı Düellosu while v2 is disabled', async ({
     request,
     baseURL,
   }) => {
@@ -21,126 +30,26 @@ test.describe('Aim Duel Multiplayer Sync & Settlement', () => {
     const apiRoot = resolveApiBaseUrl(root);
     await waitForApiReady(request, apiRoot);
 
-    const host = await provisionUser(request, root, 'aimhost');
-    const guest = await provisionUser(request, root, 'aimguest');
-    const intruder = await provisionUser(request, root, 'aimx');
-
+    const host = await provisionUser(request, root, 'v2gate');
     await checkInUser(request, root, host.token, { tableNumber: 9, csrfToken: host.csrfToken });
-    await checkInUser(request, root, guest.token, { tableNumber: 9, csrfToken: guest.csrfToken });
-    await checkInUser(request, root, intruder.token, { tableNumber: 9, csrfToken: intruder.csrfToken });
 
-    const createRes = await request.post(`${apiRoot}/api/games`, {
-      headers: authHeader(host.token, host.csrfToken),
-      data: {
-        hostName: host.credentials.username,
-        gameType: 'Nişancı Düellosu',
-        points: 0,
-        table: 'MASA09',
-      },
-    });
-    expect(createRes.ok()).toBeTruthy();
-    const createdGame = await createRes.json();
-    const gameId = createdGame.id;
-    expect(gameId).toBeTruthy();
-
-    const joinRes = await request.post(`${apiRoot}/api/games/${gameId}/join`, {
-      headers: authHeader(guest.token, guest.csrfToken),
-      data: { guestName: guest.credentials.username },
-    });
-    expect(joinRes.ok()).toBeTruthy();
-
-    const intruderLiveRes = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
-      headers: authHeader(intruder.token, intruder.csrfToken),
-      data: {
-        liveSubmission: {
-          mode: 'Nişancı Düellosu',
-          score: 99,
-          roundsWon: 99,
-          round: 1,
-          done: false,
-          submissionKey: `arena|${gameId}|intruder|1|99|0`,
+    for (const gameType of ['Bilgi Yarışı', 'Nişancı Düellosu']) {
+      const createRes = await request.post(`${apiRoot}/api/games`, {
+        headers: authHeader(host.token, host.csrfToken),
+        data: {
+          hostName: host.credentials.username,
+          gameType,
+          points: 0,
+          table: 'MASA09',
         },
-      },
-    });
-    expect(intruderLiveRes.status()).toBe(403);
-
-    const hostLiveRes = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
-      headers: authHeader(host.token, host.csrfToken),
-      data: {
-        liveSubmission: {
-          mode: 'Nişancı Düellosu',
-          score: 2,
-          roundsWon: 2,
-          round: 2,
-          done: false,
-          submissionKey: `arena|${gameId}|${host.credentials.username}|2|2|0`,
-        },
-      },
-    });
-    expect(hostLiveRes.ok()).toBeTruthy();
-
-    const guestLiveRes = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
-      headers: authHeader(guest.token, guest.csrfToken),
-      data: {
-        liveSubmission: {
-          mode: 'Nişancı Düellosu',
-          score: 1,
-          roundsWon: 1,
-          round: 2,
-          done: false,
-          submissionKey: `arena|${gameId}|${guest.credentials.username}|2|1|0`,
-        },
-      },
-    });
-    expect(guestLiveRes.ok()).toBeTruthy();
-
-    const hostScoreRes = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
-      headers: authHeader(host.token, host.csrfToken),
-      data: {
-        scoreSubmission: {
-          username: host.credentials.username,
-          score: 3,
-          roundsWon: 3,
-          durationMs: 7200,
-        },
-      },
-    });
-    expect(hostScoreRes.ok()).toBeTruthy();
-
-    const guestScoreRes = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
-      headers: authHeader(guest.token, guest.csrfToken),
-      data: {
-        scoreSubmission: {
-          username: guest.credentials.username,
-          score: 1,
-          roundsWon: 1,
-          durationMs: 6900,
-        },
-      },
-    });
-    expect(guestScoreRes.ok()).toBeTruthy();
-
-    const spoofedFinishRes = await request.post(`${apiRoot}/api/games/${gameId}/finish`, {
-      headers: authHeader(guest.token, guest.csrfToken),
-      data: {
-        winner: intruder.credentials.username,
-      },
-    });
-    expect(spoofedFinishRes.ok()).toBeTruthy();
-    const spoofedFinishBody = await spoofedFinishRes.json();
-    expect(spoofedFinishBody.winner).toBe(host.user.username);
-
-    const gameStateRes = await request.get(`${apiRoot}/api/games/${gameId}`, {
-      headers: authHeader(host.token),
-    });
-    expect(gameStateRes.ok()).toBeTruthy();
-    const gameState = await gameStateRes.json();
-    expect(gameState.status).toBe('finished');
-    expect(gameState.gameState?.resolvedWinner).toBe(host.user.username);
-    expect(gameState.winner).toBe(host.user.username);
+      });
+      expect(createRes.status()).toBe(503);
+      const body = await createRes.json();
+      expect(body.code).toBe('GAME_ENGINE_MAINTENANCE');
+    }
   });
 
-  test('@advanced resign finalizes aim duel match and blocks additional score writes', async ({
+  test('@advanced rejects client-written scores, state and winners on an existing game', async ({
     request,
     baseURL,
   }) => {
@@ -148,24 +57,24 @@ test.describe('Aim Duel Multiplayer Sync & Settlement', () => {
     const apiRoot = resolveApiBaseUrl(root);
     await waitForApiReady(request, apiRoot);
 
-    const host = await provisionUser(request, root, 'aimresh');
-    const guest = await provisionUser(request, root, 'aimresg');
+    const host = await provisionUser(request, root, 'v2write');
+    const guest = await provisionUser(request, root, 'v2writeg');
+    await checkInUser(request, root, host.token, { tableNumber: 11, csrfToken: host.csrfToken });
+    await checkInUser(request, root, guest.token, { tableNumber: 11, csrfToken: guest.csrfToken });
 
-    await checkInUser(request, root, host.token, { tableNumber: 10, csrfToken: host.csrfToken });
-    await checkInUser(request, root, guest.token, { tableNumber: 10, csrfToken: guest.csrfToken });
-
+    // Chess is outside the gate, so it gives us a real game to attack.
     const createRes = await request.post(`${apiRoot}/api/games`, {
       headers: authHeader(host.token, host.csrfToken),
       data: {
         hostName: host.credentials.username,
-        gameType: 'Nişancı Düellosu',
+        gameType: 'Retro Satranç',
         points: 0,
-        table: 'MASA10',
+        table: 'MASA11',
+        chessClock: { baseSeconds: 180, incrementSeconds: 2 },
       },
     });
     expect(createRes.ok()).toBeTruthy();
-    const createdGame = await createRes.json();
-    const gameId = createdGame.id;
+    const gameId = (await createRes.json()).id;
 
     const joinRes = await request.post(`${apiRoot}/api/games/${gameId}/join`, {
       headers: authHeader(guest.token, guest.csrfToken),
@@ -173,34 +82,36 @@ test.describe('Aim Duel Multiplayer Sync & Settlement', () => {
     });
     expect(joinRes.ok()).toBeTruthy();
 
-    const resignRes = await request.post(`${apiRoot}/api/games/${gameId}/resign`, {
-      headers: authHeader(guest.token, guest.csrfToken),
-      data: {},
-    });
-    expect(resignRes.ok()).toBeTruthy();
-    const resignBody = await resignRes.json();
-    expect(resignBody.winner).toBe(host.user.username);
+    for (const payload of [
+      { scoreSubmission: { username: host.credentials.username, score: 320, roundsWon: 15 } },
+      { liveSubmission: { mode: 'Bilgi Yarışı', score: 320, round: 10, done: true } },
+      { gameState: { resolvedWinner: host.credentials.username, settlementApplied: true } },
+      { move: 'e2e4' },
+    ]) {
+      const res = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
+        headers: authHeader(host.token, host.csrfToken),
+        data: payload,
+      });
+      expect(res.status()).toBe(410);
+      const body = await res.json();
+      expect(body.code).toBe('LEGACY_PROTOCOL_DISABLED');
+    }
 
-    const guestLateScoreRes = await request.post(`${apiRoot}/api/games/${gameId}/move`, {
-      headers: authHeader(guest.token, guest.csrfToken),
-      data: {
-        scoreSubmission: {
-          username: guest.credentials.username,
-          score: 9,
-          roundsWon: 9,
-          durationMs: 1000,
-        },
-      },
+    const finishRes = await request.post(`${apiRoot}/api/games/${gameId}/finish`, {
+      headers: authHeader(host.token, host.csrfToken),
+      data: { winner: host.credentials.username },
     });
-    expect(guestLateScoreRes.status()).toBe(409);
+    expect(finishRes.status()).toBe(410);
+    expect((await finishRes.json()).code).toBe('LEGACY_PROTOCOL_DISABLED');
 
     const stateRes = await request.get(`${apiRoot}/api/games/${gameId}`, {
       headers: authHeader(host.token),
     });
     expect(stateRes.ok()).toBeTruthy();
     const stateBody = await stateRes.json();
-    expect(stateBody.status).toBe('finished');
-    expect(stateBody.winner).toBe(host.user.username);
-    expect(stateBody.gameState?.resolvedWinner).toBe(host.user.username);
+    expect(stateBody.status).toBe('active');
+    expect(stateBody.winner).toBeNull();
+    expect(stateBody.gameState?.resolvedWinner).toBeUndefined();
+    expect(stateBody.gameState?.settlementApplied).toBeUndefined();
   });
 });

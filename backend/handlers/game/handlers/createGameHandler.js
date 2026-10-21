@@ -7,6 +7,10 @@ const { isAdminActor } = require('../validation');
 const { sendApiError } = require('../../../utils/routeHelpers');
 const { isChessGameType, createInitialChessState } = require('../chessUtils');
 const { rollbackQuietly } = require('../../../utils/transaction');
+const {
+  isCompetitiveEngineGameType,
+  isGameEngineV2Enabled,
+} = require('../../../utils/gameEngineConfig');
 
 const createCreateGameHandler = (deps) => {
   const {
@@ -48,6 +52,17 @@ const createCreateGameHandler = (deps) => {
     // form, validator, and handler all agree.
     if (points > 150) {
       return res.status(400).json({ error: 'Katılım puanı en fazla 150 olabilir.' });
+    }
+
+    // Protocol v2 gate. The legacy client writes score and winner into the game
+    // row; until the server-authoritative engine and its client are both live,
+    // these two game types stay closed instead of falling back to that path.
+    if (isCompetitiveEngineGameType(gameType) && !isGameEngineV2Enabled()) {
+      return res.status(503).json({
+        error:
+          'Bilgi Yarışı ve Nişancı Düellosu sunucu doğrulamasına geçiyor. Kısa bir süre yeni maç açılamıyor.',
+        code: 'GAME_ENGINE_MAINTENANCE',
+      });
     }
 
     const actorCafeId = req.user?.cafe_id ?? null;

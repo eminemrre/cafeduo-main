@@ -166,6 +166,28 @@ describe('finishGameHandler (DB path)', () => {
     expect(client.calls.some((c) => /ROLLBACK/.test(c.sql))).toBe(true);
   });
 
+  it('rejects a client-supplied winner with 410 before touching the database', async () => {
+    const client = makeDbClient();
+    const deps = makeDeps({
+      dbConnected: true,
+      client,
+      gameService: makeGameService(null),
+    });
+    const handler = createFinishGameHandler(deps);
+    const req = {
+      params: { id: '1' },
+      body: { winner: 'Alice' },
+      user: { username: 'Alice' },
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(410);
+    expect(res.payload.code).toBe('LEGACY_PROTOCOL_DISABLED');
+    expect(client.query).not.toHaveBeenCalled();
+  });
+
   it('returns 403 when actor is not a participant and not admin', async () => {
     const game = {
       id: 1,
@@ -190,34 +212,6 @@ describe('finishGameHandler (DB path)', () => {
     await handler(req, res);
 
     expect(res.statusCode).toBe(403);
-    expect(client.calls.some((c) => /ROLLBACK/.test(c.sql))).toBe(true);
-  });
-
-  it('returns 409 server_result_pending when non-admin sends winner with no derived winner', async () => {
-    const game = {
-      id: 1,
-      host_name: 'Alice',
-      guest_name: 'Bob',
-      game_type: 'Nişancı Düellosu',
-      points: 10,
-      status: 'active',
-      winner: null,
-      game_state: {},
-    };
-    const client = makeDbClient();
-    const deps = makeDeps({
-      dbConnected: true,
-      client,
-      gameService: makeGameService(game),
-    });
-    const handler = createFinishGameHandler(deps);
-    const req = { params: { id: '1' }, body: { winner: 'Alice' }, user: { username: 'Alice' } };
-    const res = createMockRes();
-
-    await handler(req, res);
-
-    expect(res.statusCode).toBe(409);
-    expect(res.payload.code).toBe('server_result_pending');
     expect(client.calls.some((c) => /ROLLBACK/.test(c.sql))).toBe(true);
   });
 
@@ -248,7 +242,7 @@ describe('finishGameHandler (DB path)', () => {
     expect(res.payload.code).toBe('server_result_pending');
   });
 
-  it('returns 400 when admin provides unknown winner name and no derived winner', async () => {
+  it('rejects an admin-supplied winner the same way (no manual result via finish)', async () => {
     const game = {
       id: 1,
       host_name: 'Alice',
@@ -275,8 +269,8 @@ describe('finishGameHandler (DB path)', () => {
 
     await handler(req, res);
 
-    expect(res.statusCode).toBe(400);
-    expect(res.payload.error).toMatch(/geçersiz kazanan/i);
+    expect(res.statusCode).toBe(410);
+    expect(res.payload.code).toBe('LEGACY_PROTOCOL_DISABLED');
   });
 
   it('happy path win: transfers stake, updates status, emits game_finished', async () => {

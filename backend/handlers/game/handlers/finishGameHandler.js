@@ -34,6 +34,21 @@ const createFinishGameHandler = (deps) => {
     const requestedWinner = req.body?.winner;
     const actorName = String(req.user?.username || '').trim();
 
+    // A game result is derived by the server only. A client-supplied winner is
+    // an old-protocol call: reject it explicitly instead of ignoring it, so a
+    // stale client cannot believe it settled the match.
+    if (
+      requestedWinner !== undefined &&
+      requestedWinner !== null &&
+      String(requestedWinner).trim()
+    ) {
+      return res.status(410).json({
+        error: 'Oyun sonucu istemciden belirlenemez. Lütfen sayfayı yenileyip tekrar dene.',
+        code: 'LEGACY_PROTOCOL_DISABLED',
+        field: 'winner',
+      });
+    }
+
     if (await isDbConnected()) {
       const client = await pool.connect();
       try {

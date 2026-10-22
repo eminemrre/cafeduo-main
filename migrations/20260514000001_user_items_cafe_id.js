@@ -32,8 +32,11 @@ exports.up = (pgm) => {
 };
 
 exports.down = (pgm) => {
+  // 20261001000001 adopts this index with IF NOT EXISTS and drops it on its
+  // own rollback, so it may already be gone here.
   pgm.dropIndex('user_items', ['cafe_id', 'code'], {
     name: 'idx_user_items_cafe_code',
+    ifExists: true,
   });
   pgm.dropColumn('user_items', 'cafe_id');
 };

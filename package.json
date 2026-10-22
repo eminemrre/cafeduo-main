@@ -61,6 +61,7 @@
     "migrate:down": "node scripts/migrations/run-node-pg-migrate.js down",
     "migrate:redo": "node scripts/migrations/run-node-pg-migrate.js redo",
     "migrate:status": "node scripts/migrations/status.js",
+    "migrate:verify-fresh": "node scripts/migrations/verify-fresh-chain.js",
     "migrate:baseline:report": "node scripts/migrations/legacy-baseline.js report",
     "migrate:baseline:apply": "node scripts/migrations/legacy-baseline.js apply",
     "migrate:adopt": "node scripts/migrations/adopt-bootstrap.js",

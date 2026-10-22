@@ -3,9 +3,10 @@
  *
  * Every action is identified by a client-generated `actionId` plus the
  * `roundId` it belongs to. Retrying the same action returns the stored
- * receipt; reusing the id for a different payload is a conflict. The client
- * timestamp is accepted for diagnostics only and never used for scoring —
- * the engine scores at the server receive time.
+ * receipt; reusing the id for a different payload is a conflict. Client
+ * timestamps are ignored, with one bounded exception: an aim `fire` may carry
+ * `shotAt`, which the engine clamps to its latency allowance before the server
+ * receive time. Deadlines and ordering always use the receive time.
  */
 
 const { createHash } = require('crypto');
@@ -67,6 +68,17 @@ const normalizeActionEnvelope = (body) => {
       return { ok: false, code: 'INVALID_OPTION', message: 'Cevap seçeneği geçersiz.' };
     }
     envelope.optionIndex = optionIndex;
+  }
+
+  // Aim lag compensation: the client's estimate, in server-clock epoch ms, of
+  // the moment it drew the reticle it fired at. The engine only uses it inside
+  // a short window before the server receive time (see aimEngine).
+  if (type === ACTION_TYPES.FIRE && body?.shotAt !== undefined) {
+    const shotAt = body.shotAt;
+    if (!Number.isSafeInteger(shotAt) || shotAt <= 0) {
+      return { ok: false, code: 'INVALID_SHOT_TIME', message: 'Atış zamanı geçersiz.' };
+    }
+    envelope.shotAt = shotAt;
   }
 
   return { ok: true, envelope };

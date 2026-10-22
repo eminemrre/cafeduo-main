@@ -56,10 +56,17 @@ Correct answer = 10 + remaining full seconds; streak bonus from the third
 correct answer in a row; final question ×2; cap 320. A tie is `draw: true` and
 `winner: null`.
 
-Aim: 5 rounds × 8 s + 750 ms reveal. One shared server-seeded trajectory; the
-server scores the position at **request receive time**: distance ≤ 4 → 3,
-≤ 10 → 2, ≤ 18 → 1, otherwise 0. Cap 15. The former mobile 7/32 speed is not
-used in a ranked match.
+Aim: 5 rounds × 8 s + 750 ms reveal. One shared server-seeded trajectory with a
+seeded rhythm; distance ≤ 2.5 → 3, ≤ 6 → 2, ≤ 12 → 1, otherwise 0. Cap 15. The
+former mobile 7/32 speed is not used in a ranked match.
+
+Lag compensation (approved 2026-10-22): `fire` may carry `shotAt`, the
+client's server-clock estimate of the reticle frame on screen. The server
+scores `clamp(shotAt, max(receivedAt − 250 ms, round start), receivedAt)`;
+without `shotAt` it scores the receive time. The round deadline, "both fired"
+closing and ordering still use the receive time, and `shotAt` is part of the
+action fingerprint. A forged value can only pick a moment from the last 250 ms,
+which the public trajectory already allows a scripted client to time.
 
 ## Settlement
 

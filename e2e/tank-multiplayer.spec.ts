@@ -557,22 +557,31 @@ test.describe('Server-authoritative competitive games', () => {
         const body = await response.json();
         const click = await pages.guestPage.evaluate(() => (window as any).__aimClick);
         const shot = body.game.gameState.engine.round.shots.guest;
-        const { positionAt, pointsAt } = require('../shared/aimTrajectory');
+        const { positionAt, pointsAt, pointsFromDistance } = require('../shared/aimTrajectory');
         const receivedAt = Date.parse(body.game.serverReceivedAt);
-        const elapsed = receivedAt - Date.parse(round.startedAt);
-        expect(shot.position).toBeCloseTo(positionAt(round.trajectory, elapsed), 5);
-        expect(shot.points).toBe(pointsAt(round.trajectory, elapsed));
-        const displayedPoints = Math.abs(click.displayedPosition - 50) <= 4 ? 3 : Math.abs(click.displayedPosition - 50) <= 10 ? 2 : Math.abs(click.displayedPosition - 50) <= 18 ? 1 : 0;
+        const startedAt = Date.parse(round.startedAt);
+        // Lag compensation: the server scores the client's draw time, clamped
+        // to 250 ms before receipt and to the round start.
+        const shotAt = response.request().postDataJSON().shotAt;
+        expect(Number.isSafeInteger(shotAt)).toBe(true);
+        const scoredAt = Math.min(receivedAt, Math.max(shotAt, receivedAt - 250, startedAt));
+        expect(shot.position).toBeCloseTo(positionAt(round.trajectory, scoredAt - startedAt), 5);
+        expect(shot.points).toBe(pointsAt(round.trajectory, scoredAt - startedAt));
+        const displayedPoints = pointsFromDistance(Math.abs(click.displayedPosition - 50));
         expect(displayedPoints).toBe(3);
         const clickServerAt = click.clientAt - 700;
         const truePositionAtClick = positionAt(round.trajectory, clickServerAt - Date.parse(round.startedAt));
-        const report = { configuredRttMs: rtt, clientClockSkewMs: 700, timings, displayedPosition: click.displayedPosition, truePositionAtClick, displayPositionError: click.displayedPosition - truePositionAtClick, displayedPoints, officialPosition: shot.position, officialPoints: shot.points, pointsDelta: shot.points - displayedPoints, ingressAfterClickMs: receivedAt - clickServerAt, activationApproved: false };
+        const report = { configuredRttMs: rtt, clientClockSkewMs: 700, timings, displayedPosition: click.displayedPosition, truePositionAtClick, displayPositionError: click.displayedPosition - truePositionAtClick, displayedPoints, officialPosition: shot.position, officialPoints: shot.points, pointsDelta: shot.points - displayedPoints, officialMinusDisplayed: shot.position - click.displayedPosition, ingressAfterClickMs: receivedAt - clickServerAt, rewindMs: receivedAt - scoredAt };
         console.log(`AIM_RTT_MEASUREMENT ${JSON.stringify(report)}`);
         await testInfo.attach(`aim-rtt-${rtt}.json`, { body: JSON.stringify(report, null, 2), contentType: 'application/json' });
         expect(timings.some(timing => timing.method === 'GET' && timing.elapsedMs >= rtt)).toBe(true);
-        // Measurement integrity is gated. Playability approval is deliberately
-        // NOT inferred from HTTP 200 or a score below the cap.
         expect(Number.isFinite(report.displayPositionError)).toBe(true);
+        // Playability gate: the client fires at the frame on screen, so the
+        // official shot lands where the reticle was drawn (only the integer-ms
+        // shot time differs) and a centre shot keeps its 3 points on a slow
+        // network.
+        expect(Math.abs(report.officialMinusDisplayed)).toBeLessThanOrEqual(0.5);
+        expect(shot.points).toBe(3);
       } finally {
         await closeGamePages(pages);
       }

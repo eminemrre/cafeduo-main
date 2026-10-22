@@ -122,7 +122,10 @@ npm run migrate:status   # when touching migrations
   the server bank only prevents new matches from exposing answers and future questions.
 - `backend/gameEngine/aimEngine.js` is the same shape for Nişancı Düellosu: 5 rounds of 8 s plus
   750 ms feedback, one common server-seeded trajectory (`shared/aimTrajectory.js`, client and
-  server share the position function), and score only from the server-time position. Zones are
+  server share the position function), and score only from the server-side position function.
+  Lag compensation (approved 2026-10-22): `fire` may carry `shotAt`, the client's server-clock
+  time of the reticle frame on screen; the engine clamps it to `[receipt − AIM_MAX_REWIND_MS
+  (250), receipt]` and to the round start, and the deadline still uses receipt time. Zones are
   `AIM_ZONES` (3/2/1 points within 2.5/6/12 units of the centre); the trajectory carries a
   seeded two-wave `rhythm` around the mean speed, integrated in closed form, and a trajectory
   without one keeps constant speed. Every client threshold reads the shared zones. The

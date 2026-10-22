@@ -3,9 +3,16 @@
  *
  * Five rounds of 8 s, 750 ms result feedback. The server seeds the reticle
  * trajectory; a `fire` action carries no position or score. The score is
- * derived from the reticle position at the server receive time using the
- * shared pure trajectory function.
+ * derived from the shared pure trajectory function at the moment the player
+ * saw: the client's `shotAt`, clamped to at most AIM_MAX_REWIND_MS before the
+ * server receive time (approved 2026-10-22 to remove the network-delay
+ * penalty). Without `shotAt` the receive time is used.
  */
+
+// One-way network delay the server forgives. Covers phone networks up to
+// roughly 500 ms round trip; the most a forged `shotAt` buys is choosing a
+// moment from the last 250 ms, which the public trajectory already allows.
+const AIM_MAX_REWIND_MS = 250;
 
 const { randomInt: cryptoRandomInt } = require('crypto');
 const {
@@ -237,7 +244,17 @@ const applyAimAction = ({ state, privateState, actorKey, envelope, nowMs = Date.
     if (next.phase !== 'open') return reject(409, 'ROUND_CLOSED', 'Atış süresi doldu.');
     if (shots[actorKey]) return reject(409, 'ALREADY_FIRED', 'Bu turda zaten ateş ettin.');
 
-    const elapsedMs = Math.max(0, nowMs - toMs(next.round.startedAt));
+    // Lag compensation: score the reticle where the player saw it. The
+    // client's claimed draw time is trusted only within AIM_MAX_REWIND_MS
+    // before receipt and never before the round opened; the deadline and the
+    // receipt order above still use the receive time.
+    const roundStartMs = toMs(next.round.startedAt);
+    const claimed = Number.isSafeInteger(envelope.shotAt) ? envelope.shotAt : nowMs;
+    const scoredAtMs = Math.min(
+      nowMs,
+      Math.max(claimed, nowMs - AIM_MAX_REWIND_MS, roundStartMs)
+    );
+    const elapsedMs = Math.max(0, scoredAtMs - roundStartMs);
     const position = positionAt(next.round.trajectory, elapsedMs);
     const points = pointsAt(next.round.trajectory, elapsedMs);
     shots[actorKey] = {
@@ -280,6 +297,7 @@ const applyAimAction = ({ state, privateState, actorKey, envelope, nowMs = Date.
 };
 
 module.exports = {
+  AIM_MAX_REWIND_MS,
   AIM_MAX_SCORE,
   AIM_REVEAL_MS,
   AIM_ROUND_COUNT,

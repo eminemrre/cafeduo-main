@@ -180,12 +180,18 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
   // The reticle: the shared trajectory function at the (estimated) server
   // clock, never a locally invented gauge or a per-device difficulty. Hidden
   // once the player has fired, so the faint dart shows where the shot went.
+  // The last reticle the stage drew (estimated server time + position). A shot
+  // fires at this frame, so it lands exactly where the player saw it.
+  const lastReadRef = useRef<{ at: number; position: number } | null>(null);
   const readPosition = useCallback((): number | null => {
     if (phase !== 'open' || done || hasFired) return null;
     if (isBot) return positionAt(bot.trajectory, Date.now() - bot.roundStartedAt);
     if (!serverTrajectory || !serverStartedAt) return null;
-    const elapsed = Math.max(0, liveServerNow() - Date.parse(serverStartedAt));
-    return positionAt(serverTrajectory as AimTrajectory, elapsed);
+    const at = liveServerNow();
+    const elapsed = Math.max(0, at - Date.parse(serverStartedAt));
+    const position = positionAt(serverTrajectory as AimTrajectory, elapsed);
+    lastReadRef.current = { at, position };
+    return position;
   }, [
     bot.roundStartedAt,
     bot.trajectory,
@@ -329,6 +335,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
 
   const fire = useCallback(() => {
     if (phase !== 'open' || hasFired || done || livePending) return;
+    const drawn = lastReadRef.current;
     const position = readPosition();
     if (position === null) return;
     if (isBot) {
@@ -356,9 +363,15 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
       }));
       return;
     }
-    const shot = clampGauge(position);
+    // Fire at the frame on screen (if it is current), not at "now": the server
+    // scores that moment, bounded by its latency allowance, so the shot lands
+    // where the reticle was drawn rather than where it is on arrival.
+    const now = liveServerNow();
+    const frame = drawn && now - drawn.at >= 0 && now - drawn.at < 100 ? drawn : { at: now, position };
+    const shot = clampGauge(frame.position);
     setOptimisticShot(shot);
-    void submitLiveAction({ type: 'fire' }).then((result) => {
+    const shotAt = Math.round(frame.at);
+    void submitLiveAction({ type: 'fire', shotAt }).then((result) => {
       if (!result.ok && result.code !== 'BUSY') setOptimisticShot(null);
     });
   }, [
@@ -369,6 +382,7 @@ export const ArenaBattle: React.FC<ArenaBattleProps> = ({
     hasFired,
     isBot,
     livePending,
+    liveServerNow,
     readPosition,
     submitLiveAction,
     phase,

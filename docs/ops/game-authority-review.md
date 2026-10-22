@@ -60,10 +60,22 @@ Görünen/gerçek click konumu farkları sırasıyla +2.17, -2.13, +1.35 birimdi
 Her resmi puan, sunucunun giriş zamanı ve ortak trajectory fonksiyonuyla ayrıca
 doğrulanır. Ham JSON ölçümleri Playwright attachment'ıdır.
 
-**ENGEL:** merkezde görünen 3 puanlık atış resmi olarak 1–2 puana düşebiliyor.
-Saat kalibrasyonu uplink gecikmesini ortadan kaldırmaz. Receipt-time ve mevcut
-hız/eşikler korunmuştur; oynanabilirlik tamam veya aktivasyon onaylı değildir.
-Ölçüm testinin yeşil olması ürün kabulü değil, ölçümün/puan hesabının doğruluğudur.
+~~**ENGEL:** merkezde görünen 3 puanlık atış resmi olarak 1–2 puana düşebiliyor.~~
+
+**ÇÖZÜLDÜ (2026-10-22, kullanıcı onayı):** gecikme telafisi. İstemci ekrandaki
+nişangah karesinin sunucu-saati zamanını `shotAt` olarak gönderir; sunucu bunu
+alış anından en fazla 250 ms geriye ve tur başına kırparak puanlar. Süre sonu,
+sıra ve "ikisi de ateş etti" kapanışı alış zamanında kalır. Aynı `@rtt` testi
+artık kabul kapısıdır (resmi − görünen ≤ 0,5 birim ve 3 puan):
+
+| Yapay RTT | Görünen puan | Resmi puan | Resmi − görünen | Geri sarma |
+| --------- | ------------ | ---------- | --------------- | ---------- |
+| 50 ms     | 3            | 3          | 0,00004         | 78 ms      |
+| 150 ms    | 3            | 3          | 0,00003         | 117 ms     |
+| 300 ms    | 3            | 3          | −0,05           | 191 ms     |
+
+Sahte `shotAt` en fazla son 250 ms içinden bir an seçtirir; ortak trajectory
+istemcide olduğu için betikli bir istemci bunu zaten zamanlayabilir.
 
 **2026-10-21 zorluk kararı (kullanıcı):** bölgeler ±4/±10/±18 yerine ±2.5/±6/±12;
 trajectory sunucu tohumlu iki dalgalı ritimle ortalama hız etrafında hızlanıp

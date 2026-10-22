@@ -36,6 +36,8 @@ export type LiveActionType = 'answer' | 'joker' | 'fire' | 'resign';
 export interface LiveActionInput {
   type: LiveActionType;
   optionIndex?: number;
+  /** Aim fire only: estimated server time (epoch ms) the reticle was drawn. */
+  shotAt?: number;
 }
 
 export interface LiveActionResult {
@@ -312,6 +314,10 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
               roundId,
               type: input.type,
               ...(input.optionIndex !== undefined ? { optionIndex: input.optionIndex } : {}),
+              // A retry reuses this payload, so the first shot time is kept.
+              ...(input.type === 'fire' && input.shotAt !== undefined
+                ? { shotAt: input.shotAt }
+                : {}),
             };
       retryRef.current = { key: actionKey, payload };
 

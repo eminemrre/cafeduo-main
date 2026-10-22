@@ -316,4 +316,5 @@ export interface CompetitiveActionEnvelope {
   optionIndex?: number;
   cell?: number;
   layout?: { cell: number; dir: 'h' | 'v' }[];
+  auto?: true;
 }

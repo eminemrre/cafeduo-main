@@ -1,4 +1,5 @@
 import { test, expect, type APIRequestContext, type Browser, type Page } from '@playwright/test';
+import fs from 'node:fs/promises';
 import {
   DEFAULT_E2E_APP_BASE_URL,
   bootstrapAuthenticatedPage,
@@ -74,15 +75,30 @@ async function waitForEngine(
   throw new Error(`Timed out waiting for ${label}: ${JSON.stringify(last?.gameState?.engine?.phase)}`);
 }
 
-async function openPages(browser: Browser, root: string, pair: Awaited<ReturnType<typeof provisionPair>>) {
+async function openPages(
+  browser: Browser,
+  root: string,
+  pair: Awaited<ReturnType<typeof provisionPair>>,
+  options: { harPath?: string; onGuestPage?: (page: Page) => void } = {}
+) {
   const hostContext = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
   const guestContext = await browser.newContext({
     viewport: { width: 390, height: 844 },
     isMobile: true,
     hasTouch: true,
+    ...(options.harPath
+      ? {
+          recordHar: {
+            path: options.harPath,
+            content: 'embed' as const,
+            urlFilter: /\/api\/(games|users)\//,
+          },
+        }
+      : {}),
   });
   const hostPage = await hostContext.newPage();
   const guestPage = await guestContext.newPage();
+  options.onGuestPage?.(guestPage);
   await Promise.all([
     bootstrapAuthenticatedPage(hostPage, root, pair.host, {
       checkedIn: true,
@@ -114,12 +130,34 @@ test.describe('Amiral Battı', () => {
     browser,
     request,
     baseURL,
-  }) => {
+  }, testInfo) => {
     const root = baseURL || DEFAULT_E2E_APP_BASE_URL;
     const apiRoot = apiRootFor(root);
     await waitForApiReady(request, apiRoot);
     const pair = await provisionPair(request, root, `bs${Date.now().toString(36).slice(-5)}`);
-    const pages = await openPages(browser, root, pair);
+    const rawHar = testInfo.outputPath('guest-private.har');
+    const safeHar = testInfo.outputPath('guest-games.har');
+    // Socket.IO polling and WebSocket frames are a separate transport; record
+    // them from the first connection so a sanitizer regression cannot hide.
+    const guestSocketPayloads: string[] = [];
+    const guestSocketResponses: Promise<void>[] = [];
+    const pages = await openPages(browser, root, pair, {
+      harPath: rawHar,
+      onGuestPage: (page) => {
+        page.on('websocket', (socket) => {
+          socket.on('framereceived', (frame) => guestSocketPayloads.push(String(frame.payload)));
+        });
+        page.on('response', (response) => {
+          if (!/\/socket\.io\//.test(response.url())) return;
+          guestSocketResponses.push(
+            response
+              .text()
+              .then((text) => guestSocketPayloads.push(text))
+              .catch(() => undefined)
+          );
+        });
+      },
+    });
 
     // Every game payload the guest's browser receives.
     const guestBodies: any[] = [];
@@ -152,11 +190,10 @@ test.describe('Amiral Battı', () => {
       await capture(pages.guestPage, 'phone-1-placement');
       await capture(pages.hostPage, 'desktop-1-placement');
 
-      // Place through the UI: random layout, then confirm.
+      // Explicit server-seeded random placement confirms in one request;
+      // manual placement still uses the separate confirmation button.
       for (const page of [pages.hostPage, pages.guestPage]) {
         await page.getByTestId('battleship-shuffle').click();
-        await expect(page.getByTestId('battleship-confirm')).toBeEnabled();
-        await page.getByTestId('battleship-confirm').click();
       }
       const battle = await waitForEngine(
         request,
@@ -174,6 +211,19 @@ test.describe('Amiral Battı', () => {
       const guestFleet = fleetCells(guestView);
       expect(hostFleet).toHaveLength(12);
       expect(guestFleet).toHaveLength(12);
+
+      // Discovery, join retries and history must not project even the owner's fleet.
+      for (const endpoint of [
+        `/api/users/${pair.host.credentials.username}/active-game`,
+        `/api/users/${pair.host.credentials.username}/game-history`,
+      ]) {
+        const res = await request.get(`${apiRoot}${endpoint}`, { headers: authHeaders(pair.host) });
+        expect(res.ok()).toBe(true);
+        expect(await res.text()).not.toContain('"fleet"');
+      }
+      const rejoin = await request.post(`${apiRoot}/api/games/${gameId}/join`, { headers: authHeaders(pair.guest), data: { guestName: pair.guest.credentials.username } });
+      expect(rejoin.ok()).toBe(true);
+      expect(await rejoin.text()).not.toContain('"fleet"');
 
       // Trade six shots through the UI, whoever has the turn.
       for (let shot = 0; shot < 6; shot += 1) {
@@ -223,9 +273,7 @@ test.describe('Amiral Battı', () => {
 
       // Privacy: nothing the guest's browser received carries the host's
       // unhit ship cells, the seeded layouts or another actor's fleet.
-      const hitCells = new Set(
-        before.boards.host.shots.map((entry: any) => entry.cell)
-      );
+      const hitCells = new Set(before.boards.host.shots.map((entry: any) => entry.cell));
       const hiddenHostCells = hostFleet.filter((cell) => !hitCells.has(cell));
       expect(guestBodies.length).toBeGreaterThan(3);
       for (const body of guestBodies) {
@@ -239,6 +287,14 @@ test.describe('Amiral Battı', () => {
           (ship: any) => ship.cells
         );
         expect(sunkHost.filter((cell: number) => hiddenHostCells.includes(cell))).toEqual([]);
+      }
+
+      // The shared socket transport never carries a fleet, not even the
+      // owner's, and never the private state.
+      await Promise.all(guestSocketResponses);
+      expect(guestSocketPayloads.length).toBeGreaterThan(0);
+      for (const payload of guestSocketPayloads) {
+        expect(payload).not.toMatch(/fleet|autoLayouts|firstTurn|game_private_state/);
       }
 
       // Resign settles once and both screens show the result.
@@ -272,6 +328,21 @@ test.describe('Amiral Battı', () => {
       }
     } finally {
       await Promise.all([pages.hostContext.close(), pages.guestContext.close()]);
+      // Keep real response bodies for local REA inspection, but never publish
+      // credentials/cookies from the synthetic test session in the evidence.
+      try {
+        const har = JSON.parse(await fs.readFile(rawHar, 'utf8'));
+        for (const entry of har.log.entries) {
+          entry.request.headers = [];
+          entry.request.cookies = [];
+          entry.request.queryString = [];
+          delete entry.request.postData;
+          entry.response.headers = [];
+          entry.response.cookies = [];
+        }
+        await fs.writeFile(safeHar, JSON.stringify(har));
+        await testInfo.attach('guest-games.har', { path: safeHar, contentType: 'application/json' });
+      } finally { await fs.unlink(rawHar).catch(() => undefined); }
     }
   });
 

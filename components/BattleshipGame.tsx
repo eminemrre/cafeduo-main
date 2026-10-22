@@ -464,8 +464,13 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
     [activeShip, direction, draft, draftShips]
   );
 
-  const shuffle = () => {
+  const shuffle = async () => {
     setPlacementError(null);
+    if (!isBot) {
+      const result = await live.submitAction({ type: 'place', auto: true });
+      if (!result.ok && result.message) setPlacementError(result.message);
+      return;
+    }
     setDraft(randomLayout(randomInt));
     setActiveShip(null);
   };
@@ -697,10 +702,20 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
                 >
                   Döndür · {direction === 'h' ? 'yatay' : 'dikey'}
                 </RetroButton>
-                <RetroButton variant="ghost" onClick={shuffle} data-testid="battleship-shuffle">
-                  Rastgele dağıt
+                <RetroButton
+                  variant="ghost"
+                  disabled={live.pending}
+                  onClick={() => void shuffle()}
+                  data-testid="battleship-shuffle"
+                >
+                  {isBot ? 'Rastgele dağıt' : 'Rastgele yerleştir'}
                 </RetroButton>
               </div>
+              {!isBot && (
+                <p className="text-sm text-carbon-muted">
+                  Rastgele yerleştirme filonu hemen onaylar; yerleşimi sunucu seçer.
+                </p>
+              )}
               <p className="duo-game-status min-h-[44px]" aria-live="polite">
                 {placementError || status}
               </p>

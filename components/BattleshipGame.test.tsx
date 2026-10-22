@@ -285,7 +285,7 @@ describe('BattleshipGame ranked', () => {
       />
     );
     await screen.findByTestId('battleship-placement');
-    fireEvent.click(screen.getByTestId('battleship-shuffle'));
+    for (const index of [0, 8, 16, 24]) fireEvent.click(cell('battleship-placement-grid', index));
     fireEvent.click(screen.getByTestId('battleship-confirm'));
     await waitFor(() => expect(mockApi.games.action).toHaveBeenCalledTimes(1));
     const [, payload] = mockApi.games.action.mock.calls[0];

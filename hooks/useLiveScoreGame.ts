@@ -40,6 +40,7 @@ export interface LiveActionInput {
   cell?: number;
   /** Amiral Battı fleet layout, in fleet order. */
   layout?: { cell: number; dir: 'h' | 'v' }[];
+  auto?: true;
 }
 
 export interface LiveActionResult {
@@ -102,6 +103,7 @@ type ActionRetry = {
     optionIndex?: number;
     cell?: number;
     layout?: { cell: number; dir: 'h' | 'v' }[];
+    auto?: true;
   };
 };
 
@@ -314,6 +316,7 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
         input.optionIndex ?? '',
         input.cell ?? '',
         input.layout ? JSON.stringify(input.layout) : '',
+        input.auto ? 'auto' : '',
       ].join('|');
       const previous = retryRef.current;
       const payload =
@@ -326,6 +329,7 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
               ...(input.optionIndex !== undefined ? { optionIndex: input.optionIndex } : {}),
               ...(input.cell !== undefined ? { cell: input.cell } : {}),
               ...(input.layout ? { layout: input.layout } : {}),
+              ...(input.auto ? { auto: true as const } : {}),
             };
       retryRef.current = { key: actionKey, payload };
 
@@ -457,6 +461,15 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
           },
           Date.now()
         );
+        const actorKey = actorKeyFor(base, currentUser.username);
+        if (
+          incoming.kind === 'battleship' &&
+          actorKey &&
+          incoming.players?.[actorKey]?.placed &&
+          !base.actorView?.fleet?.length
+        ) {
+          void fetchSnapshot(true);
+        }
         return;
       }
       void fetchSnapshot(true);
@@ -493,7 +506,7 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
         pollRef.current = null;
       }
     };
-  }, [applySnapshot, fetchSnapshot, gameId, isBot, pollIntervalMs]);
+  }, [applySnapshot, currentUser.username, fetchSnapshot, gameId, isBot, pollIntervalMs]);
 
   // Refresh just after a server deadline: this only asks the server to advance
   // its clock, it never submits a score or picks a winner.

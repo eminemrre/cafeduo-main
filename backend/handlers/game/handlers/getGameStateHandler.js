@@ -5,18 +5,27 @@
 
 const { isAdminActor } = require('../validation');
 const { GAME_STATUS, assertGameStatusTransition } = require('../../../utils/gameStateMachine');
+const { serializeGameForActor } = require('../../../gameEngine/gameView');
+const { syncCompetitiveGame } = require('../../../gameEngine/engineActions');
+const { defaultRegistry } = require('../../../gameEngine/gameLock');
+const {
+  finalizeEngineGameById,
+  finalizeMemoryEngineGame,
+} = require('../../../gameEngine/settlement');
 
 const createGetGameStateHandler = (deps) => {
   const {
     pool,
     isDbConnected,
-    logger: _logger,
+    logger,
     buildChessTimeoutResolution,
     getMemoryGames,
+    getMemoryUsers,
     emitRealtimeUpdate,
   } = deps;
 
   const getGameState = async (req, res) => {
+    const receivedAt = Date.now();
     const { id } = req.params;
     const actor = String(req.user?.username || '')
       .trim()
@@ -36,6 +45,7 @@ const createGetGameStateHandler = (deps) => {
           player1_move as "player1Move",
           player2_move as "player2Move",
           game_state as "gameState",
+          game_private_state as "gamePrivateState",
           created_at as "createdAt"
         FROM games
         WHERE id = $1
@@ -55,6 +65,83 @@ const createGetGameStateHandler = (deps) => {
         .toLowerCase();
       if (!adminActor && actor && actor !== host && actor !== guest) {
         return res.status(403).json({ error: 'Bu oyunun detaylarını görme yetkin yok.' });
+      }
+
+      const engineSync = syncCompetitiveGame({ game: row, nowMs: Date.now() });
+      const engineFinished =
+        engineSync.state?.phase === 'finished' && !engineSync.state?.result?.settled;
+      if (engineSync.changed && !engineFinished) {
+        const nextGameState = { ...(row.gameState || {}), engine: engineSync.state };
+        const updateResult = await pool.query(
+          `
+            UPDATE games
+            SET game_state = $2::jsonb,
+                status = $3::text,
+                winner = $4::text
+            WHERE id = $1
+              AND game_state = $5::jsonb
+            RETURNING id
+          `,
+          [
+            id,
+            JSON.stringify(nextGameState),
+            engineSync.status,
+            engineSync.winner,
+            JSON.stringify(row.gameState || {}),
+          ]
+        );
+        if (updateResult.rows.length > 0) {
+          row = {
+            ...row,
+            gameState: nextGameState,
+            status: engineSync.status,
+            winner: engineSync.winner,
+          };
+          emitRealtimeUpdate(id, {
+            type: 'game_state_updated',
+            gameId: id,
+            status: engineSync.status,
+            revision: engineSync.state.revision,
+            phase: engineSync.state.phase,
+            winner: engineSync.winner,
+            gameState: serializeGameForActor(row).gameState,
+            serverNow: new Date().toISOString(),
+          });
+        } else {
+          // An action committed between our read and this optimistic update.
+          // Read again so the response reflects the action instead of
+          // overwriting it.
+          const refreshed = await pool.query(baseSelectQuery, [id]);
+          if (refreshed.rows.length > 0) row = refreshed.rows[0];
+        }
+      } else if (engineFinished) {
+        // The engine is done. Advancing and paying must happen under the row
+        // lock, so this path cannot race an action or the timeout job.
+        const finalized = await finalizeEngineGameById({
+          pool,
+          gameId: id,
+          logger,
+          nowMs: Date.now(),
+        }).catch((err) => {
+          logger.error('Engine finalize on read failed', err);
+          return null;
+        });
+        if (finalized) {
+          const refreshed = await pool.query(baseSelectQuery, [id]);
+          if (refreshed.rows.length > 0) row = refreshed.rows[0];
+          if (row.gameState?.engine?.phase === 'finished') {
+            emitRealtimeUpdate(id, {
+              type: 'game_finished',
+              gameId: id,
+              status: 'finished',
+              winner: row.winner || null,
+              reason: row.gameState?.engine?.result?.reason || 'rounds_complete',
+              cancelled: Boolean(row.gameState?.engine?.result?.cancelled),
+              gameState: serializeGameForActor(row).gameState,
+              serverNow: new Date().toISOString(),
+            });
+          }
+        }
       }
 
       const timeoutResolution = buildChessTimeoutResolution({
@@ -100,7 +187,10 @@ const createGetGameStateHandler = (deps) => {
             winner: timeoutResolution.winner,
             reason: 'timeout',
             chess: timeoutResolution.nextChessState,
-            gameState: timeoutResolution.nextGameState,
+            gameState: serializeGameForActor({
+              gameType: row.gameType,
+              gameState: timeoutResolution.nextGameState,
+            }).gameState,
           });
         } else {
           const refreshed = await pool.query(baseSelectQuery, [id]);
@@ -110,7 +200,7 @@ const createGetGameStateHandler = (deps) => {
         }
       }
 
-      return res.json(row);
+      return res.json(serializeGameForActor(row, req.user?.username, receivedAt));
     }
 
     const game = getMemoryGames().find((item) => String(item.id) === String(id));
@@ -126,6 +216,42 @@ const createGetGameStateHandler = (deps) => {
     if (!adminActor && actor && actor !== host && actor !== guest) {
       return res.status(403).json({ error: 'Bu oyunun detaylarını görme yetkin yok.' });
     }
+
+    await defaultRegistry.runExclusive(id, async () => {
+      const lockedGame = getMemoryGames().find((item) => String(item.id) === String(id));
+      if (!lockedGame) return;
+      const finalized = finalizeMemoryEngineGame({
+        game: lockedGame,
+        privateState: lockedGame.gamePrivateState,
+        getMemoryUsers,
+        nowMs: Date.now(),
+      });
+      if (!finalized.changed) return;
+      const engine = lockedGame.gameState?.engine;
+      if (finalized.settled) {
+        emitRealtimeUpdate(id, {
+          type: 'game_finished',
+          gameId: id,
+          status: lockedGame.status,
+          winner: lockedGame.winner || null,
+          reason: engine?.result?.reason || 'rounds_complete',
+          cancelled: Boolean(engine?.result?.cancelled),
+          gameState: serializeGameForActor(lockedGame).gameState,
+          serverNow: new Date().toISOString(),
+        });
+      } else if (engine) {
+        emitRealtimeUpdate(id, {
+          type: 'game_state_updated',
+          gameId: id,
+          status: lockedGame.status,
+          revision: engine.revision,
+          phase: engine.phase,
+          winner: lockedGame.winner || null,
+          gameState: serializeGameForActor(lockedGame).gameState,
+          serverNow: new Date().toISOString(),
+        });
+      }
+    });
 
     const timeoutResolution = buildChessTimeoutResolution({
       gameType: game.gameType,
@@ -152,12 +278,15 @@ const createGetGameStateHandler = (deps) => {
           winner: timeoutResolution.winner,
           reason: 'timeout',
           chess: timeoutResolution.nextChessState,
-          gameState: timeoutResolution.nextGameState,
+          gameState: serializeGameForActor({
+            gameType: game.gameType,
+            gameState: timeoutResolution.nextGameState,
+          }).gameState,
         });
       }
     }
 
-    return res.json(game);
+    return res.json(serializeGameForActor(game, req.user?.username, receivedAt));
   };
 
   return getGameState;

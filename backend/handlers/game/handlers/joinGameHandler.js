@@ -8,6 +8,23 @@ const { isChessGameType, activateChessClockState } = require('../chessUtils');
 const { assertGameStatusTransition } = require('../../../utils/gameStateMachine');
 const { mapTransitionError } = require('../utils/errorHelpers');
 const { rollbackQuietly } = require('../../../utils/transaction');
+const {
+  isCompetitiveEngineGameType,
+  isGameEngineV2Enabled,
+} = require('../../../utils/gameEngineConfig');
+const { serializeGameForActor } = require('../../../gameEngine/gameView');
+const {
+  getEngine,
+  isEnginePrivateStateReady,
+  startEngineState,
+} = require('../../../gameEngine/engines');
+
+const maintenanceResponse = (res) =>
+  res.status(503).json({
+    error:
+      'Bilgi Yarışı ve Nişancı Düellosu sunucu doğrulamasına geçiyor. Kısa bir süre yeni maç açılamıyor.',
+    code: 'GAME_ENGINE_MAINTENANCE',
+  });
 
 const createJoinGameHandler = (deps) => {
   const {
@@ -53,6 +70,12 @@ const createJoinGameHandler = (deps) => {
           await rollbackQuietly(client);
           return res.status(404).json({ error: 'Oyun bulunamadı.' });
         }
+        // Old or new, no competitive game may be joined while the legacy
+        // score protocol is the only one a deployed client understands.
+        if (isCompetitiveEngineGameType(game.game_type) && !isGameEngineV2Enabled()) {
+          await rollbackQuietly(client);
+          return maintenanceResponse(res);
+        }
         if (String(game.host_name || '').toLowerCase() === guestName.toLowerCase()) {
           await rollbackQuietly(client);
           return res.status(400).json({ error: 'Kendi oyununa katılamazsın.' });
@@ -85,20 +108,7 @@ const createJoinGameHandler = (deps) => {
             canonicalGuest.toLowerCase() === String(game.guest_name).toLowerCase()
           ) {
             await client.query('COMMIT');
-            return res.json({
-              success: true,
-              game: {
-                id: game.id,
-                hostName: game.host_name,
-                gameType: game.game_type,
-                points: game.points,
-                table: game.table_code,
-                status: game.status,
-                guestName: game.guest_name,
-                gameState: game.game_state,
-                createdAt: game.created_at,
-              },
-            });
+            return res.json({ success: true, game: serializeGameForActor(game) });
           }
 
           await rollbackQuietly(client);
@@ -124,14 +134,38 @@ const createJoinGameHandler = (deps) => {
           return res.status(409).json({ error: 'Bu kullanıcı zaten aktif bir oyunda.' });
         }
 
+        if (getEngine(game.game_type)) {
+          if (!isEnginePrivateStateReady(game.game_type, game.game_private_state)) {
+            await rollbackQuietly(client);
+            return res.status(409).json({
+              error: 'Bu oyun sunucu durumu olmadan başlatılamaz.',
+              code: 'ENGINE_STATE_MISSING',
+            });
+          }
+        }
+
         const nextGameState = (() => {
           const current =
             game.game_state && typeof game.game_state === 'object' ? { ...game.game_state } : {};
-          if (!isChessGameType(game.game_type)) return current;
-          return {
-            ...current,
-            chess: activateChessClockState(current.chess),
-          };
+          if (isChessGameType(game.game_type)) {
+            return {
+              ...current,
+              chess: activateChessClockState(current.chess),
+            };
+          }
+          if (getEngine(game.game_type)) {
+            return {
+              ...current,
+              engine: startEngineState({
+                gameType: game.game_type,
+                privateState: game.game_private_state,
+                hostName: game.host_name,
+                guestName,
+                nowMs: Date.now(),
+              }),
+            };
+          }
+          return current;
         })();
 
         const joinedGame = gameService?.activateGameWithGuest
@@ -158,12 +192,14 @@ const createJoinGameHandler = (deps) => {
             logger.warn(`Cache invalidation failed on game joined: ${err.message}`);
           });
 
+        const joinedView = serializeGameForActor(joinedGame);
         emitRealtimeUpdate(joinedGame.id, {
           type: 'game_joined',
           gameId: joinedGame.id,
-          status: joinedGame.status,
-          guestName: joinedGame.guestName,
-          gameState: joinedGame.gameState || {},
+          status: joinedView.status,
+          guestName: joinedView.guestName,
+          gameState: joinedView.gameState || {},
+          serverNow: joinedView.serverNow,
         });
         emitLobbyUpdate({
           action: 'game_joined',
@@ -171,7 +207,7 @@ const createJoinGameHandler = (deps) => {
           tableCode: joinedGame.table,
           status: joinedGame.status,
         });
-        return res.json({ success: true, game: joinedGame });
+        return res.json({ success: true, game: joinedView });
       } catch (err) {
         await rollbackQuietly(client);
         logger.error('Join game error', err);
@@ -185,6 +221,9 @@ const createJoinGameHandler = (deps) => {
     const game = memoryGames.find((item) => String(item.id) === String(id));
     if (!game) {
       return res.status(404).json({ error: 'Oyun bulunamadı.' });
+    }
+    if (isCompetitiveEngineGameType(game.gameType) && !isGameEngineV2Enabled()) {
+      return maintenanceResponse(res);
     }
     if (String(game.hostName || '').toLowerCase() === guestName.toLowerCase()) {
       return res.status(400).json({ error: 'Kendi oyununa katılamazsın.' });
@@ -208,7 +247,7 @@ const createJoinGameHandler = (deps) => {
     }
     if (game.status === 'active') {
       if (String(game.guestName || '').toLowerCase() === guestName.toLowerCase()) {
-        return res.json({ success: true, game });
+        return res.json({ success: true, game: serializeGameForActor(game) });
       }
       return res.status(409).json({ error: 'Oyun dolu.' });
     }
@@ -222,6 +261,15 @@ const createJoinGameHandler = (deps) => {
       return res.status(409).json(mapTransitionError(memoryJoinTransition));
     }
 
+    if (getEngine(game.gameType)) {
+      if (!isEnginePrivateStateReady(game.gameType, game.gamePrivateState)) {
+        return res.status(409).json({
+          error: 'Bu oyun sunucu durumu olmadan başlatılamaz.',
+          code: 'ENGINE_STATE_MISSING',
+        });
+      }
+    }
+
     game.status = 'active';
     game.guestName = guestName;
     if (isChessGameType(game.gameType)) {
@@ -231,13 +279,27 @@ const createJoinGameHandler = (deps) => {
         ...current,
         chess: activateChessClockState(current.chess),
       };
+    } else if (getEngine(game.gameType)) {
+      const current =
+        game.gameState && typeof game.gameState === 'object' ? { ...game.gameState } : {};
+      game.gameState = {
+        ...current,
+        engine: startEngineState({
+          gameType: game.gameType,
+          privateState: game.gamePrivateState,
+          hostName: game.hostName,
+          guestName,
+          nowMs: Date.now(),
+        }),
+      };
     }
+    const joinedMemoryView = serializeGameForActor(game);
     emitRealtimeUpdate(game.id, {
       type: 'game_joined',
       gameId: game.id,
-      status: game.status,
-      guestName: game.guestName,
-      gameState: game.gameState || {},
+      status: joinedMemoryView.status,
+      guestName: joinedMemoryView.guestName,
+      gameState: joinedMemoryView.gameState || {},
     });
     emitLobbyUpdate({
       action: 'game_joined',
@@ -245,7 +307,7 @@ const createJoinGameHandler = (deps) => {
       tableCode: game.table,
       status: game.status,
     });
-    return res.json({ success: true, game });
+    return res.json({ success: true, game: serializeGameForActor(game) });
   };
 
   return joinGame;

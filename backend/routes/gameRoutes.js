@@ -6,6 +6,8 @@ const {
   validateMovePayload,
 } = require('../validators/gameValidators');
 
+const { serializeGameForActor } = require('../gameEngine/gameView');
+
 const createGameRoutes = ({ authenticateToken, gameHandlers, gameService }) => {
   const router = express.Router();
 
@@ -13,6 +15,12 @@ const createGameRoutes = ({ authenticateToken, gameHandlers, gameService }) => {
   router.post('/games', authenticateToken, validateCreateGamePayload, gameHandlers.createGame);
   router.post('/games/:id/join', authenticateToken, validateJoinGamePayload, gameHandlers.joinGame);
   router.get('/games/:id', authenticateToken, validateGameIdParam, gameHandlers.getGameState);
+  router.post(
+    '/games/:id/actions',
+    authenticateToken,
+    validateGameIdParam,
+    gameHandlers.gameAction
+  );
   router.post('/games/:id/move', authenticateToken, validateMovePayload, gameHandlers.makeMove);
   router.post(
     '/games/:id/draw-offer',
@@ -41,7 +49,9 @@ const createGameRoutes = ({ authenticateToken, gameHandlers, gameService }) => {
 
     try {
       const activeGame = await gameService.getActiveGameForUser(username);
-      return res.json(activeGame);
+      // Discovery surface only. Actor-private data is retrieved through the
+      // authenticated /games/:id snapshot, never through active-game/history.
+      return res.json(serializeGameForActor(activeGame));
     } catch {
       return res.status(500).json({ error: 'Aktif oyun sorgulanamadı.' });
     }

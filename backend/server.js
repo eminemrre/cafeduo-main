@@ -107,10 +107,10 @@ const { createProfileRoutes } = require('./routes/profileRoutes');
 const { createSystemRoutes } = require('./routes/systemRoutes');
 const { createGameRoutes } = require('./routes/gameRoutes');
 const memoryState = require('./store/memoryState');
+const { rejectLegacySocketAction } = require('./socket/legacySocketGuard');
 const {
   getGameParticipants,
   normalizeParticipantName,
-  sanitizeScoreSubmission,
   pickWinnerFromResults,
 } = require('./utils/gameResults');
 const {
@@ -127,6 +127,7 @@ const { createGameService } = require('./services/gameService');
 const { createLobbyCacheService } = require('./services/lobbyCacheService');
 const { registerGameCleanupJobs } = require('./jobs/gameCleanupJobs');
 const { registerTournamentJobs } = require('./jobs/tournamentJobs');
+const { registerGameEngineJobs } = require('./jobs/gameEngineJobs');
 const { authenticateToken, requireOwnership } = require('./middleware/auth'); // Auth Middleware Imports
 const { socketAuthMiddleware } = require('./middleware/socketAuth'); // Socket.IO Auth Middleware
 const { getBlacklistFailMode, getRequiredJwtSecret } = require('./utils/securityConfig');
@@ -304,8 +305,6 @@ const canAccessGameRoom = async (socket, normalizedGameId) => {
   return Boolean(game && normalizeParticipantName(username, game));
 };
 
-const isSocketInGameRoom = (socket, normalizedGameId) => socket.rooms.has(normalizedGameId);
-
 io.on('connection', (socket) => {
   logger.info(`Client connected: ${socket.id} (User: ${socket.username})`);
 
@@ -353,76 +352,22 @@ io.on('connection', (socket) => {
     logger.info(`Socket ${socket.id} (${socket.username}) left game: ${normalizedGameId}`);
   });
 
-  // SECURITY: Allowed move action types for validation
-  const ALLOWED_MOaE_ACTIONS = new Set([
-    'shot_result',
-    'turn_timeout',
-    'game_over',
-    'player_left',
-    'fire',
-    'move',
-    'resign',
-    'draw_offer',
-  ]);
+  // Legacy socket relays are closed. A room member could previously send any
+  // object and have it re-emitted as `game_state_updated`/`opponent_move`,
+  // which let a client inject a fake score or winner into its opponent's UI.
+  // Gameplay now goes through the authenticated HTTP game engine; sockets only
+  // carry notifications from the server.
+  const rejectSocketAction = (eventName, data) =>
+    rejectLegacySocketAction({
+      socket,
+      eventName,
+      data,
+      normalizeGameId: normalizeSocketGameId,
+      logger,
+    });
 
-  socket.on('game_move', (data) => {
-    const normalizedGameId = normalizeSocketGameId(data?.gameId);
-    if (!normalizedGameId) return;
-    if (!isSocketInGameRoom(socket, normalizedGameId)) {
-      emitSocketRoomError(socket, 'not_in_room');
-      return;
-    }
-
-    const move = data?.move;
-    // validate move data size and structure
-    if (move && typeof move === 'object') {
-      const moveKeys = Object.keys(move);
-      if (moveKeys.length > 20) return; // Prevent oversized payloads
-      // validate action type if present
-      if (move.action && !ALLOWED_MOaE_ACTIONS.has(String(move.action))) {
-        logger.warn(`Blocked game_move with invalid action: ${move.action}`, {
-          socketId: socket.id,
-          gameId: normalizedGameId,
-        });
-        return;
-      }
-      // Validate angle/power ranges for legacy projectile submissions
-      if (typeof move.angle === 'number' && (move.angle < 0 || move.angle > 360)) return;
-      if (typeof move.power === 'number' && (move.power < 0 || move.power > 200)) return;
-    }
-
-    const sanitizedMove = {
-      gameId: normalizedGameId,
-      move: move ?? null,
-      player: socket.username, // Use authenticated username instead of client-provided player
-      ts: Date.now(),
-    };
-
-    socket.to(normalizedGameId).emit('opponent_move', sanitizedMove);
-  });
-
-  // Game state sync
-  socket.on('update_game_state', (data) => {
-    const normalizedGameId = normalizeSocketGameId(data?.gameId);
-    if (!normalizedGameId) return;
-    if (!isSocketInGameRoom(socket, normalizedGameId)) {
-      emitSocketRoomError(socket, 'not_in_room');
-      return;
-    }
-
-    const nextState = data?.state ?? {};
-    try {
-      if (JSON.stringify(nextState).length > 10000) {
-        emitSocketRoomError(socket, 'state_too_large');
-        return;
-      }
-    } catch {
-      emitSocketRoomError(socket, 'invalid_state');
-      return;
-    }
-
-    socket.to(normalizedGameId).emit('game_state_updated', nextState);
-  });
+  socket.on('game_move', (data) => rejectSocketAction('game_move', data));
+  socket.on('update_game_state', (data) => rejectSocketAction('update_game_state', data));
 
   socket.on('disconnect', () => {
     logger.info(`Client disconnected: ${socket.id} (User: ${socket.username})`);
@@ -969,7 +914,6 @@ const gameHandlers = createGameHandlers({
   normalizeTableCode,
   getGameParticipants,
   normalizeParticipantName,
-  sanitizeScoreSubmission,
   pickWinnerFromResults,
   gameService,
   lobbyCacheService,
@@ -1176,6 +1120,17 @@ registerTournamentJobs({
   isDbConnected,
   logger,
   clearCache,
+});
+
+// Competitive engine clocks: advances expired rounds and settles finished
+// matches even when both clients are gone. Row locks make multi-instance
+// ticks idempotent.
+registerGameEngineJobs({
+  pool,
+  isDbConnected,
+  logger,
+  getMemoryGames: () => MEMORY_GAMES,
+  getMemoryUsers: () => MEMORY_USERS,
 });
 
 // --- SWAGGER UI ---

@@ -75,24 +75,24 @@ describe('formatGameResponse', () => {
       id: 5,
       host_name: 'emin',
       guest_name: 'rakip',
-      game_type: 'retro_chess',
+      game_type: 'Retro Satranç',
       points: 100,
       table_code: 'MASA08',
       status: 'playing',
       winner: 'emin',
-      game_state: { fen: 'startpos' },
+      game_state: { chess: { fen: 'startpos' }, results: { emin: 9 }, resolvedWinner: 'emin' },
       created_at: '2026-08-06T00:00:00Z',
     });
     expect(formatted).toEqual({
       id: 5,
       hostName: 'emin',
       guestName: 'rakip',
-      gameType: 'retro_chess',
+      gameType: 'Retro Satranç',
       points: 100,
       table: 'MASA08',
       status: 'playing',
       winner: 'emin',
-      gameState: { fen: 'startpos' },
+      gameState: { chess: { fen: 'startpos' }, resolvedWinner: 'emin' },
       createdAt: '2026-08-06T00:00:00Z',
     });
   });

@@ -2,7 +2,7 @@
  * Type definitions for shared/gameRegistry.js.
  */
 
-export type GameMode = 'aim' | 'quiz' | 'chess';
+export type GameMode = 'aim' | 'quiz' | 'chess' | 'battleship';
 
 export interface GameRegistryEntry {
   type: string;
@@ -13,6 +13,8 @@ export interface GameRegistryEntry {
   maxScore: number | null;
   minPoints: number;
   submissionKeyPrefix: string;
+  /** Runs only on the server-authoritative v2 engine. */
+  competitive: boolean;
   category: string;
   description: string;
 }
@@ -20,9 +22,11 @@ export interface GameRegistryEntry {
 export const AIM_GAME_TYPE: string;
 export const QUIZ_GAME_TYPE: string;
 export const CHESS_GAME_TYPE: string;
+export const BATTLESHIP_GAME_TYPE: string;
 
 export const GAME_REGISTRY: Record<string, GameRegistryEntry>;
 export const SUPPORTED_GAME_TYPES: Set<string>;
+export const COMPETITIVE_GAME_TYPES: Set<string>;
 export const GAME_TYPE_LIST: GameRegistryEntry[];
 export const GAME_TYPE_ALIASES: Record<string, string>;
 

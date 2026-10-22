@@ -77,6 +77,16 @@ Tüm sistemi konteynerde çalıştırmak için `docker compose up -d`; üretim b
 npm run migrate:up && npm run migrate:down && npm run migrate:up
 ```
 
+Tüm migration geçmişinin boş bir veritabanını kurduğunu, tamamen geri aldığını ve
+aynı şemayla yeniden kurduğunu CI `fresh-db-migrations` işi doğrular. Yerelde yalnız
+boş, tek kullanımlık ve adı `_test`/`_ci` ile biten bir loopback veritabanında çalıştırın
+(zincirdeki `20260513000001` admin olmayan tüm kullanıcıları siler):
+
+```bash
+MIGRATION_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:5432/cafeduo_migrations_ci \
+FRESH_MIGRATION_DB_APPROVED=1 npm run migrate:verify-fresh
+```
+
 ## Test
 
 ```bash

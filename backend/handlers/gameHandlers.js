@@ -33,6 +33,7 @@ const {
   createFinishGameHandler,
   createDrawOfferHandler,
   createMakeMoveHandler,
+  createGameActionHandler,
   createGetGamesHandler,
 } = require('./game/handlers');
 
@@ -45,7 +46,6 @@ const createGameHandlers = ({
   normalizeTableCode,
   getGameParticipants,
   normalizeParticipantName,
-  sanitizeScoreSubmission,
   pickWinnerFromResults,
   gameService,
   lobbyCacheService,
@@ -116,6 +116,7 @@ const createGameHandlers = ({
     logger,
     buildChessTimeoutResolution,
     getMemoryGames,
+    getMemoryUsers,
     emitRealtimeUpdate,
   });
 
@@ -125,6 +126,15 @@ const createGameHandlers = ({
     logger,
     supportedGameTypes,
     getMemoryGames,
+  });
+
+  const gameAction = createGameActionHandler({
+    pool,
+    isDbConnected,
+    logger,
+    getMemoryGames,
+    getMemoryUsers,
+    emitRealtimeUpdate,
   });
 
   const makeMove = createMakeMoveHandler({
@@ -141,15 +151,6 @@ const createGameHandlers = ({
     buildChessStateFromEngine,
     assertGameStatusTransition: require('../utils/gameStateMachine').assertGameStatusTransition,
     assertRequiredGameStatus: require('../utils/gameStateMachine').assertRequiredGameStatus,
-    getGameParticipants,
-    pickWinnerFromResults,
-    sanitizeScoreSubmission,
-    sanitizeLiveSubmission: (payload, gameType) =>
-      require('./game/utils/helperUtils').sanitizeLiveSubmission(
-        payload,
-        gameType,
-        normalizeGameType
-      ),
     getMemoryGames,
     getMemoryUsers,
     io,
@@ -214,6 +215,7 @@ const createGameHandlers = ({
     joinGame,
     getGameState,
     getUserGameHistory,
+    gameAction,
     makeMove,
     drawOffer,
     resignGame,

@@ -1,8 +1,8 @@
 /**
  * CreateGameModal — "Yeni oyun kur", in the v2 language (DESIGN.md).
  *
- * Three game cards, each filled with its game's colour when picked (Retro
- * Satranç gök, Bilgi Yarışı limon, Nişancı Düellosu lokum), the stake as a
+ * Four game cards, each filled with its game's colour when picked (Retro
+ * Satranç gök, Bilgi Yarışı limon, Nişancı Düellosu lokum, Amiral Battı deniz), the stake as a
  * range plus an underlined number input, preset chips, the optional chess
  * tempo and a slip-style summary that closes on an ink bar. Text content and
  * data-testid attributes are preserved so CreateGameModal.test.tsx passes:
@@ -11,7 +11,7 @@
  *   - exact game descriptions for the 3 cards
  *   - "En az" / "100" / "250" / "En çok" preset labels
  *   - "Oyun:" / "Katılım puanın:" / "Kalan:" summary labels
- *   - data-testid: create-game-modal, game-type-{chess,knowledge,aim},
+ *   - data-testid: create-game-modal, game-type-{chess,knowledge,aim,battleship},
  *     game-points-input, create-game-submit
  */
 import React, { useState, useEffect, useId } from 'react';
@@ -36,13 +36,13 @@ interface CreateGameModalProps {
 }
 
 interface GameDef {
-  id: 'chess' | 'knowledge' | 'aim';
+  id: 'chess' | 'knowledge' | 'aim' | 'battleship';
   name: string;
   category: string;
   description: string;
   minPoints: number;
-  /** The game's colour from DESIGN.md: gök, limon or lokum. */
-  tone: 'gok' | 'limon' | 'lokum';
+  /** The game's colour from DESIGN.md: gök, limon, lokum or deniz. */
+  tone: 'gok' | 'limon' | 'lokum' | 'deniz';
 }
 
 // PR #36 — stake bounds rewritten: minimum dropped (0-point matches OK for
@@ -75,6 +75,14 @@ const GAME_TYPES: GameDef[] = [
     minPoints: 0,
     tone: 'lokum',
   },
+  {
+    id: 'battleship',
+    name: 'Amiral Battı',
+    category: 'Strateji',
+    description: 'Filonu gizlice yerleştir, sırayla ateş et, rakip filoyu ilk sen batır.',
+    minPoints: 0,
+    tone: 'deniz',
+  },
 ];
 
 const CHESS_TEMPO_OPTIONS = [
@@ -93,6 +101,7 @@ const TONE_FILL: Record<GameDef['tone'], string> = {
   gok: 'bg-candy-gok',
   limon: 'bg-candy-limon',
   lokum: 'bg-candy-lokum',
+  deniz: 'bg-candy-deniz',
 };
 
 export const CreateGameModal: React.FC<CreateGameModalProps> = ({
@@ -274,7 +283,7 @@ export const CreateGameModal: React.FC<CreateGameModalProps> = ({
                 <div
                   role="group"
                   aria-labelledby={gameTypeLabelId}
-                  className="grid grid-cols-3 gap-2"
+                  className="grid grid-cols-2 gap-2"
                 >
                   {GAME_TYPES.map((game) => {
                     const active = gameType === game.name;

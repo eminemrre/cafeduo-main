@@ -1,18 +1,26 @@
 /**
- * Bilgi Yarışı: the question pool and the rules of a match.
+ * Unranked bot practice for Bilgi Yarışı.
  *
- * Both players of a match must see the same questions with the options in the same order, so
- * everything here is derived from one seed: the game's id (quizSeed). A solo game against the
- * bot gets a fresh seed per match.
+ * Ranked questions live only in `backend/gameEngine/data/quizQuestions.json`
+ * and are never shipped to the browser. This small, non-secret set exists so
+ * the local bot mode still works without importing the ranked bank. The score
+ * rules below mirror the server for practice only; a multiplayer match always
+ * reads its score from the server snapshot.
  */
-import { QUIZ_QUESTION_BANK, type QuizBankEntry, type QuizLevel } from './quizQuestionBank';
-
-export type { QuizLevel };
+export type QuizLevel = 'orta' | 'zor';
 
 export interface QuizQuestion {
   question: string;
   options: [string, string, string, string];
   answerIndex: number;
+  category: string;
+  level: QuizLevel;
+}
+
+interface PracticeBankEntry {
+  question: string;
+  answer: string;
+  wrong: [string, string, string];
   category: string;
   level: QuizLevel;
 }
@@ -24,6 +32,149 @@ export const CORRECT_POINTS = 10;
 /** Extra points per correct answer from the third correct answer in a row. */
 export const STREAK_BONUS = 5;
 export const STREAK_FROM = 3;
+
+const BOT_PRACTICE_BANK: readonly PracticeBankEntry[] = [
+  {
+    question: 'Türkiye Cumhuriyeti hangi yıl kuruldu?',
+    answer: '1923',
+    wrong: ['1919', '1920', '1938'],
+    category: 'Tarih',
+    level: 'orta',
+  },
+  {
+    question: 'İstanbul hangi kıtalar üzerinde yer alır?',
+    answer: 'Avrupa ve Asya',
+    wrong: ['Avrupa ve Afrika', 'Asya ve Avustralya', 'Afrika ve Asya'],
+    category: 'Coğrafya',
+    level: 'orta',
+  },
+  {
+    question: 'Bir üçgenin iç açıları toplamı kaç derecedir?',
+    answer: '180',
+    wrong: ['90', '270', '360'],
+    category: 'Matematik',
+    level: 'orta',
+  },
+  {
+    question: 'Suyun kimyasal formülü nedir?',
+    answer: 'H₂O',
+    wrong: ['CO₂', 'O₂', 'NaCl'],
+    category: 'Bilim',
+    level: 'orta',
+  },
+  {
+    question: '“Küçük Prens” kitabının yazarı kimdir?',
+    answer: 'Antoine de Saint-Exupéry',
+    wrong: ['Victor Hugo', 'Jules Verne', 'Albert Camus'],
+    category: 'Edebiyat',
+    level: 'orta',
+  },
+  {
+    question: 'Türkiye’nin en yüksek dağı hangisidir?',
+    answer: 'Ağrı Dağı',
+    wrong: ['Erciyes Dağı', 'Uludağ', 'Kaçkar Dağı'],
+    category: 'Coğrafya',
+    level: 'orta',
+  },
+  {
+    question: 'Güneş sistemindeki en büyük gezegen hangisidir?',
+    answer: 'Jüpiter',
+    wrong: ['Satürn', 'Dünya', 'Neptün'],
+    category: 'Bilim',
+    level: 'orta',
+  },
+  {
+    question: 'Bir yılda kaç ay vardır?',
+    answer: '12',
+    wrong: ['10', '11', '13'],
+    category: 'Genel kültür',
+    level: 'orta',
+  },
+  {
+    question: 'Türkiye’nin başkenti neresidir?',
+    answer: 'Ankara',
+    wrong: ['İstanbul', 'İzmir', 'Bursa'],
+    category: 'Coğrafya',
+    level: 'orta',
+  },
+  {
+    question: 'İnsan vücudunda kanı pompalayan organ hangisidir?',
+    answer: 'Kalp',
+    wrong: ['Akciğer', 'Karaciğer', 'Böbrek'],
+    category: 'Bilim',
+    level: 'orta',
+  },
+  {
+    question: 'Hangi sayı asal değildir?',
+    answer: '21',
+    wrong: ['17', '19', '23'],
+    category: 'Matematik',
+    level: 'zor',
+  },
+  {
+    question: 'Osmanlı Devleti’nin ilk başkenti neresidir?',
+    answer: 'Söğüt',
+    wrong: ['Bursa', 'Edirne', 'İstanbul'],
+    category: 'Tarih',
+    level: 'zor',
+  },
+  {
+    question: 'Işık boşlukta yaklaşık olarak saniyede kaç kilometre yol alır?',
+    answer: '300.000',
+    wrong: ['30.000', '3.000.000', '1.500'],
+    category: 'Bilim',
+    level: 'zor',
+  },
+  {
+    question: '“İnce Memed” romanının yazarı kimdir?',
+    answer: 'Yaşar Kemal',
+    wrong: ['Orhan Kemal', 'Sabahattin Ali', 'Fakir Baykurt'],
+    category: 'Edebiyat',
+    level: 'zor',
+  },
+  {
+    question: 'Dünyanın en uzun nehri hangisidir?',
+    answer: 'Nil',
+    wrong: ['Amazon', 'Yangtze', 'Mississippi'],
+    category: 'Coğrafya',
+    level: 'zor',
+  },
+  {
+    question: 'Bir altıgenin iç açıları toplamı kaç derecedir?',
+    answer: '720',
+    wrong: ['540', '630', '900'],
+    category: 'Matematik',
+    level: 'zor',
+  },
+  {
+    question: 'Türkiye’nin ilk kadın pilotu kimdir?',
+    answer: 'Sabiha Gökçen',
+    wrong: ['Halide Edip Adıvar', 'Afet İnan', 'Safiye Ali'],
+    category: 'Tarih',
+    level: 'zor',
+  },
+  {
+    question: 'Periyodik tabloda “Au” hangi elementin sembolüdür?',
+    answer: 'Altın',
+    wrong: ['Gümüş', 'Bakır', 'Alüminyum'],
+    category: 'Bilim',
+    level: 'zor',
+  },
+  {
+    question: 'Hangi ülke iki kıtada toprağa sahiptir ve başkenti iki kıtaya yayılır?',
+    answer: 'Türkiye',
+    wrong: ['Mısır', 'Rusya', 'Endonezya'],
+    category: 'Coğrafya',
+    level: 'zor',
+  },
+  {
+    question: '“Suç ve Ceza” romanının yazarı kimdir?',
+    answer: 'Dostoyevski',
+    wrong: ['Tolstoy', 'Turgenyev', 'Çehov'],
+    category: 'Edebiyat',
+    level: 'zor',
+  },
+];
 
 const hashSeed = (input: string): number => {
   let hash = 2166136261;
@@ -53,10 +204,10 @@ const shuffle = <T>(items: readonly T[], random: () => number): T[] => {
   return copy;
 };
 
-/** The seed both players of a match share. */
-export const quizSeed = (gameId: string | number) => `quiz:${String(gameId)}`;
+/** The seed both players of a local bot match share. */
+export const quizSeed = (gameId: string | number) => `bot-quiz:${String(gameId)}`;
 
-const toQuestion = (entry: QuizBankEntry, random: () => number): QuizQuestion => {
+const toQuestion = (entry: PracticeBankEntry, random: () => number): QuizQuestion => {
   const options = shuffle([entry.answer, ...entry.wrong], random) as QuizQuestion['options'];
   return {
     question: entry.question,
@@ -68,36 +219,20 @@ const toQuestion = (entry: QuizBankEntry, random: () => number): QuizQuestion =>
 };
 
 /**
- * The questions of one match: drawn from every category in turn so a match never stays on one
- * subject, with the options shuffled. The same seed always gives the same set.
+ * A local practice set. This is deliberately not the ranked bank: it is small,
+ * public trivia and only powers the bot mode.
  */
 export const buildQuizRoundSet = (
   seedSource: string | number,
-  roundCount: number,
-  bank: readonly QuizBankEntry[] = QUIZ_QUESTION_BANK
+  roundCount: number
 ): QuizQuestion[] => {
-  const random = mulberry32(hashSeed(String(seedSource || 'cafeduo-quiz-seed')));
-  const count = Math.max(1, Math.min(bank.length, Math.floor(roundCount || 0)));
-
-  const byCategory = new Map<string, QuizBankEntry[]>();
-  for (const entry of bank) {
-    const list = byCategory.get(entry.category) ?? [];
-    list.push(entry);
-    byCategory.set(entry.category, list);
-  }
-  const piles = shuffle([...byCategory.values()], random).map((pile) => shuffle(pile, random));
-
-  const picked: QuizBankEntry[] = [];
-  for (let turn = 0; picked.length < count; turn += 1) {
-    const pile = piles[turn % piles.length];
-    const entry = pile.pop();
-    if (entry) picked.push(entry);
-    if (piles.every((p) => p.length === 0)) break;
-  }
+  const random = mulberry32(hashSeed(String(seedSource || 'cafeduo-bot-practice')));
+  const count = Math.max(1, Math.min(BOT_PRACTICE_BANK.length, Math.floor(roundCount || 0)));
+  const picked = shuffle(BOT_PRACTICE_BANK, random).slice(0, count);
   return picked.map((entry) => toQuestion(entry, random));
 };
 
-/** "Yarı yarıya": the two wrong options to hide, the same for both players. */
+/** "Yarı yarıya": the two wrong options to hide in bot practice. */
 export const halfAndHalf = (question: QuizQuestion, seedSource: string): [number, number] => {
   const random = mulberry32(hashSeed(`${seedSource}|${question.question}`));
   const wrong = shuffle(
@@ -116,10 +251,7 @@ export interface AnswerScore {
   streak: number;
 }
 
-/**
- * Points for one answer: 10 for a correct answer, +1 for every second left, +5 from the third
- * correct answer in a row, and the last question counts double.
- */
+/** Practice-only scoring, kept in step with the server rules. */
 export const scoreAnswer = ({
   correct,
   secondsLeft,

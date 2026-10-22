@@ -95,6 +95,9 @@ test('@smoke a failed game creation stays open with an inline error and can retr
   });
   await page.getByRole('button', { name: /Oyun Kur/i }).first().click();
   const dialog = page.getByRole('dialog', { name: 'Yeni oyun kur' });
+  // Ranked quiz/aim creation is closed until GAME_ENGINE_V2_ENABLED is turned
+  // on; this test exercises the generic retry/success path with chess.
+  await dialog.getByTestId('game-type-chess').click();
   await dialog.getByTestId('create-game-submit').click();
   await expect(dialog.getByRole('alert')).toHaveText('Oyun servisi meşgul. Tekrar dene.');
   await expect(dialog).toBeVisible();

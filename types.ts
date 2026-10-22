@@ -195,3 +195,127 @@ export interface TournamentLeaderboardResponse {
   >;
   leaderboard: TournamentLeaderboardRow[];
 }
+
+/** Public engine state for protocol v2 games (quiz / aim / battleship). */
+export interface CompetitiveEnginePlayer {
+  name: string | null;
+  score: number;
+  roundsWon?: number;
+  correct?: number;
+  streak?: number;
+  hits?: number;
+  answered?: boolean;
+  jokerUsed?: boolean;
+  left?: boolean;
+  /** Amiral Battı: fleet placed (by the player, or auto-placed at the deadline). */
+  placed?: boolean;
+  autoPlaced?: boolean;
+  shots?: number;
+  missedTurns?: number;
+}
+
+export interface CompetitiveEngineShot {
+  position: number;
+  points: number;
+}
+
+export interface CompetitiveEngineRound {
+  id: string;
+  index: number;
+  startedAt: string;
+  endsAt: string;
+  /** Amiral Battı: 'placement' or 'battle', and whose turn it is in battle. */
+  phase?: string;
+  turn?: 'host' | 'guest' | null;
+  question?: string;
+  options?: string[];
+  category?: string;
+  level?: 'orta' | 'zor';
+  correctIndex?: number | null;
+  picks?: { host: number | null; guest: number | null };
+  scoreDelta?: { host: number; guest: number };
+  shots?: {
+    host: CompetitiveEngineShot | null;
+    guest: CompetitiveEngineShot | null;
+  };
+  trajectory?: {
+    start: number;
+    direction: 1 | -1;
+    speed?: number;
+    rhythm?: { amplitude: number; periodMs: number; phase: number }[];
+  };
+}
+
+export interface CompetitiveEngineResult {
+  winner: string | null;
+  draw?: boolean;
+  reason?: string;
+  scores?: { host: number; guest: number };
+  transferredPoints?: number;
+  stakeTransferred?: number;
+  cancelled?: boolean;
+  maxScore?: number;
+  settled?: boolean;
+  settledAt?: string;
+}
+
+/** One side's waters in Amiral Battı: shots fired at it and ships already sunk. */
+export interface BattleshipBoard {
+  shots: { cell: number; hit: boolean }[];
+  sunk: { size: number; cells: number[] }[];
+}
+
+export interface BattleshipLastShot {
+  by: 'host' | 'guest';
+  /** Null when the turn timed out without a shot. */
+  cell: number | null;
+  hit: boolean;
+  sunkSize: number | null;
+  at: string;
+}
+
+export interface CompetitiveEngineState {
+  version: 2;
+  kind: 'quiz' | 'aim' | 'battleship';
+  revision: number;
+  phase: 'waiting' | 'open' | 'reveal' | 'placement' | 'battle' | 'finished';
+  roundIndex: number;
+  totalRounds: number;
+  startedAt: string | null;
+  phaseEndsAt: string | null;
+  updatedAt: string;
+  players: {
+    host: CompetitiveEnginePlayer;
+    guest: CompetitiveEnginePlayer;
+  };
+  round: CompetitiveEngineRound | null;
+  result: CompetitiveEngineResult | null;
+  boards?: { host: BattleshipBoard; guest: BattleshipBoard };
+  lastShot?: BattleshipLastShot | null;
+}
+
+export interface CompetitiveGame extends GameRequest {
+  actorView?: {
+    joker?: { roundId: string; hiddenOptions: number[] };
+    /** Amiral Battı: the authenticated player's own ships. */
+    fleet?: { size: number; cells: number[] }[];
+  };
+  winner?: string | null;
+  createdAt?: string;
+  protocolVersion?: number;
+  serverNow?: string;
+  serverReceivedAt?: string;
+  gameState?: {
+    engine?: CompetitiveEngineState;
+  };
+}
+
+export interface CompetitiveActionEnvelope {
+  actionId: string;
+  roundId: string;
+  type: 'answer' | 'joker' | 'fire' | 'place' | 'resign';
+  optionIndex?: number;
+  cell?: number;
+  layout?: { cell: number; dir: 'h' | 'v' }[];
+  auto?: true;
+}

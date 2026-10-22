@@ -14,7 +14,7 @@
  *   stage.destroy();
  *
  * Not unit-tested (WebGL unavailable in jsdom); KnowledgeQuiz.test.tsx
- * mocks the React wrapper out, same pattern as AimBattleStageCanvas and
+ * mocks the React wrapper out, same pattern as
  * ChessBoardOverlay.
  */
 

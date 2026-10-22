@@ -1,4 +1,8 @@
 ﻿const { createGameHandlers } = require('./gameHandlers');
+const { createAimPrivateState } = require('../gameEngine/aimEngine');
+
+// These tests cover the handlers, not the rollout gate; keep protocol v2 open.
+process.env.GAME_ENGINE_V2_ENABLED = 'true';
 
 const createMockRes = () => {
   const res = {};
@@ -300,6 +304,7 @@ describe('gameHandlers (memory mode)', () => {
         points: 20,
         table: 'MASA05',
         status: 'waiting',
+        gamePrivateState: createAimPrivateState(),
       },
     ];
 
@@ -405,6 +410,7 @@ describe('gameHandlers (memory mode)', () => {
         points: 120,
         table: 'MASA05',
         status: 'waiting',
+        gamePrivateState: createAimPrivateState(),
       },
     ];
 
@@ -646,7 +652,7 @@ describe('gameHandlers (memory mode)', () => {
     expect(winner.points).toBe(240);
   });
 
-  it('accepts score submissions and resolves winner', async () => {
+  it('rejects legacy score submissions without resolving a winner', async () => {
     memoryGames = [
       {
         id: 2,
@@ -660,25 +666,22 @@ describe('gameHandlers (memory mode)', () => {
       },
     ];
 
-    const moveReq1 = {
-      params: { id: '2' },
-      user: { username: 'u1', role: 'user', isAdmin: false },
-      body: { scoreSubmission: { score: 10 } },
-    };
-    const moveRes1 = createMockRes();
-    await handlers.makeMove(moveReq1, moveRes1);
-    expect(moveRes1.statusCode).toBe(200);
-    expect(moveRes1.payload.resolvedWinner).toBeNull();
-
-    const moveReq2 = {
-      params: { id: '2' },
-      user: { username: 'u2', role: 'user', isAdmin: false },
-      body: { scoreSubmission: { score: 5 } },
-    };
-    const moveRes2 = createMockRes();
-    await handlers.makeMove(moveReq2, moveRes2);
-    expect(moveRes2.statusCode).toBe(200);
-    expect(moveRes2.payload.resolvedWinner).toBe('u1');
+    for (const username of ['u1', 'u2']) {
+      const res = createMockRes();
+      await handlers.makeMove(
+        {
+          params: { id: '2' },
+          user: { username, role: 'user', isAdmin: false },
+          body: { scoreSubmission: { score: 320, roundsWon: 15 } },
+        },
+        res
+      );
+      expect(res.statusCode).toBe(410);
+      expect(res.payload.code).toBe('LEGACY_PROTOCOL_DISABLED');
+    }
+    expect(memoryGames[0].gameState.results).toBeUndefined();
+    expect(memoryGames[0].gameState.resolvedWinner).toBeUndefined();
+    expect(memoryGames[0].status).toBe('active');
   });
 
   it('returns transition payload when move is sent to non-active game', async () => {
@@ -687,7 +690,7 @@ describe('gameHandlers (memory mode)', () => {
         id: 41,
         hostName: 'u1',
         guestName: 'u2',
-        gameType: 'Nişancı Düellosu',
+        gameType: 'Retro Satranç',
         points: 20,
         table: 'MASA01',
         status: 'finished',
@@ -698,7 +701,7 @@ describe('gameHandlers (memory mode)', () => {
     const moveReq = {
       params: { id: '41' },
       user: { username: 'u1', role: 'user', isAdmin: false },
-      body: { move: 'left' },
+      body: { chessMove: { from: 'e2', to: 'e4' } },
     };
     const moveRes = createMockRes();
     await handlers.makeMove(moveReq, moveRes);
@@ -781,7 +784,7 @@ describe('gameHandlers (memory mode)', () => {
     expect(memoryGames).toHaveLength(0);
   });
 
-  it('rejects manual finish until server resolves winner', async () => {
+  it('rejects a client-supplied finish result', async () => {
     memoryGames = [
       {
         id: 33,
@@ -795,23 +798,25 @@ describe('gameHandlers (memory mode)', () => {
       },
     ];
 
-    const finishReq = {
-      params: { id: '33' },
-      user: { username: 'u1', role: 'user', isAdmin: false },
-      body: { winner: 'u2' },
-    };
     const finishRes = createMockRes();
-    await handlers.finishGame(finishReq, finishRes);
+    await handlers.finishGame(
+      {
+        params: { id: '33' },
+        user: { username: 'u1', role: 'user', isAdmin: false },
+        body: { winner: 'u1' },
+      },
+      finishRes
+    );
 
-    expect(finishRes.statusCode).toBe(409);
-    expect(finishRes.payload?.code).toBe('server_result_pending');
+    expect(finishRes.statusCode).toBe(410);
+    expect(finishRes.payload?.code).toBe('LEGACY_PROTOCOL_DISABLED');
     expect(memoryGames[0].status).toBe('active');
   });
 
-  it('rejects manual self winner with server_result_pending for non-admin', async () => {
+  it('rejects a client-supplied finish result', async () => {
     memoryGames = [
       {
-        id: 34,
+        id: 33,
         hostName: 'u1',
         guestName: 'u2',
         gameType: 'Nişancı Düellosu',
@@ -822,23 +827,25 @@ describe('gameHandlers (memory mode)', () => {
       },
     ];
 
-    const finishReq = {
-      params: { id: '34' },
-      user: { username: 'u1', role: 'user', isAdmin: false },
-      body: { winner: 'u1' },
-    };
     const finishRes = createMockRes();
-    await handlers.finishGame(finishReq, finishRes);
+    await handlers.finishGame(
+      {
+        params: { id: '33' },
+        user: { username: 'u1', role: 'user', isAdmin: false },
+        body: { winner: 'u1' },
+      },
+      finishRes
+    );
 
-    expect(finishRes.statusCode).toBe(409);
-    expect(finishRes.payload?.code).toBe('server_result_pending');
+    expect(finishRes.statusCode).toBe(410);
+    expect(finishRes.payload?.code).toBe('LEGACY_PROTOCOL_DISABLED');
     expect(memoryGames[0].status).toBe('active');
   });
 
-  it('allows admin to finalize with manual winner override when server result is missing', async () => {
+  it('rejects a client-supplied finish result', async () => {
     memoryGames = [
       {
-        id: 35,
+        id: 33,
         hostName: 'u1',
         guestName: 'u2',
         gameType: 'Nişancı Düellosu',
@@ -849,17 +856,19 @@ describe('gameHandlers (memory mode)', () => {
       },
     ];
 
-    const finishReq = {
-      params: { id: '35' },
-      user: { username: 'adminUser', role: 'admin', isAdmin: true },
-      body: { winner: 'u2' },
-    };
     const finishRes = createMockRes();
-    await handlers.finishGame(finishReq, finishRes);
+    await handlers.finishGame(
+      {
+        params: { id: '33' },
+        user: { username: 'u1', role: 'user', isAdmin: false },
+        body: { winner: 'u1' },
+      },
+      finishRes
+    );
 
-    expect(finishRes.statusCode).toBe(200);
-    expect(memoryGames[0].status).toBe('finished');
-    expect(memoryGames[0].winner).toBe('u2');
+    expect(finishRes.statusCode).toBe(410);
+    expect(finishRes.payload?.code).toBe('LEGACY_PROTOCOL_DISABLED');
+    expect(memoryGames[0].status).toBe('active');
   });
 
   it('applies point transfer on finish (winner +stake, loser -stake)', async () => {
@@ -868,7 +877,7 @@ describe('gameHandlers (memory mode)', () => {
         id: 32,
         hostName: 'u1',
         guestName: 'u2',
-        gameType: 'Nişancı Düellosu',
+        gameType: 'Retro Satranç',
         points: 40,
         table: 'MASA01',
         status: 'active',

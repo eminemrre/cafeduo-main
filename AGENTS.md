@@ -12,15 +12,25 @@ Stack: Node + Express (CommonJS), React + Vite + TypeScript, PostgreSQL, Redis, 
 - `npm run quality` — lint + typecheck
 - `npm run build` — Vite production build
 - `npm run test:e2e:smoke` — Playwright smoke suite (Chromium)
+- `npm run test:e2e:v2` — two-context ranked quiz/aim suite; starts the stack with
+  `GAME_ENGINE_V2_ENABLED=true`
+- `npm run game-engine:transition` — read-only dry run for retiring pre-v2 active games;
+  `--apply` requires explicit approval and an environment gate
 - `npm run migrate:create <name>` / `migrate:up` / `migrate:down` / `migrate:status`
 - `npm run smoke:live` — production health probe
 
 ## Workflow
 
-- Work on a branch and open a pull request. A push to `main` deploys to production through
-  Dokploy, so `main` only receives reviewed merges.
-- `.github/workflows/deploy-vps.yml` is the retired pipeline; Dokploy pulls `main` and runs
-  `deploy/docker-compose.dokploy.yml`.
+- Work on a branch and open a pull request. A push to `main` deploys to production, so `main`
+  only receives reviewed merges.
+- Production deploys through `.github/workflows/deploy-vps.yml` (after a green `CI/CD Pipeline`
+  on a `main` push): SSH → `deploy/scripts/deploy-production.sh` with
+  `deploy/docker-compose.prod.yml` + `docker-compose.hardening.yml` and the server-managed
+  `/opt/cafeduo-main/.env` (verified in Actions runs on 2026-10-21). The script backs up the
+  database, builds, and **aborts on pending migrations**; it never runs them. Apply a new
+  migration on the server before merging. Every API env var must be listed in
+  `docker-compose.prod.yml` (`deploymentContract.test.js`). `docker-compose.dokploy.yml` is
+  kept in sync but is not what production runs.
 - Husky's pre-commit hook runs lint-staged (eslint --fix + prettier --write on staged files).
 - Production: https://cafeduotr.com, health check `/api/health`.
 
@@ -31,6 +41,7 @@ npm run quality          # lint + typecheck
 npm test                 # unit tests
 npm run build            # Vite build must succeed
 npm run test:e2e:smoke   # when touching user flows
+npm run test:e2e:v2      # when touching ranked quiz/aim protocol
 npm run migrate:status   # when touching migrations
 ```
 
@@ -45,6 +56,10 @@ npm run migrate:status   # when touching migrations
 - **Use `node-pg-migrate` for all schema changes** — never extend the `initDb` DDL in
   `backend/server.js`.
 - **Test migrations both ways**: `npm run migrate:up && npm run migrate:down && npm run migrate:up`.
+- **The whole history must install an empty database**: CI's `fresh-db-migrations` job runs
+  `npm run migrate:verify-fresh` (up → full down → up, identical schema). Every `down` must
+  tolerate objects a later migration adopted with `IF NOT EXISTS` and already dropped; use
+  `ifExists`. Production never ran `20240224000002` (the legacy baseline marks it superseded).
 - **No N+1 queries** — no queries inside loops; batch with `ANY($1)`, `UNNEST`, CTEs or JOINs.
 
 ### Redis
@@ -88,9 +103,68 @@ npm run migrate:status   # when touching migrations
 - HTTP: `backend/routes/` → handlers/controllers → services/repositories; middleware includes
   `authenticateToken`, `csrfMiddleware` and Redis-backed rate limiting.
 - Realtime: Socket.IO authenticates with the JWT in `socket.auth.token`
-  (`backend/middleware/socketAuth.js`). Events: `join_game`, `game_move`, `update_game_state`,
-  `game_state_updated`, `lobby_updated`. Call `emitLobbyUpdate(tableCode)` after game
-  mutations, and emit only after the DB commit.
+  (`backend/middleware/socketAuth.js`). Events: `join_game`, `leave_game`, `game_state_updated`,
+  `game_room_error`, `lobby_updated`. Sockets only carry server notifications; player actions go
+  through the authenticated HTTP game endpoints. `game_move` and `update_game_state` are rejected.
+  Call `emitLobbyUpdate(tableCode)` after game mutations, and emit only after the DB commit.
+- Competitive games (Bilgi Yarışı, Nişancı Düellosu, Amiral Battı; `competitive: true` in
+  `shared/gameRegistry.js`) run only the server-authoritative protocol. Create, join, actions,
+  readers and the deadline job reach their rules only through `backend/gameEngine/engines.js`;
+  a new competitive game is one entry there, never another type if-chain in a handler.
+  No new game is created or joined while `GAME_ENGINE_V2_ENABLED` is false, and legacy
+  live/score/state/winner writes answer `410 LEGACY_PROTOCOL_DISABLED`.
+- Every game HTTP/socket payload goes through `backend/gameEngine/gameView.js`. Never return a raw
+  `games` row. `games.game_state` is the public engine view; answer keys, future questions and
+  action receipts live in `games.game_private_state` and are never selected for a response.
+  Joker choices are private per actor: only authenticated HTTP action/GET may project
+  `actorView.joker`. Shared `gameState` and sockets must never carry `hiddenOptions`.
+  Catch-up uses persisted deadlines, not reader/worker `now` as the next round start.
+  Capture trusted action time before pool/lock waits. Never reopen an already-closed round
+  or credit a timestamp preceding its start. See `docs/ops/game-authority-review.md` for
+  unresolved cross-instance ordering and aim-playability release blockers.
+- Competitive actions go through `POST /api/games/:id/actions` (authenticated HTTP, never a
+  socket): `{ actionId, roundId, type, optionIndex? }`. DB rows are locked with
+  `SELECT ... FOR UPDATE`; memory games use `gameLock`. Retries with the same payload return the
+  stored receipt, a changed payload with the same `actionId` is `409 ACTION_ID_CONFLICT`, and
+  the client timestamp is ignored. Socket events only announce a revision; clients refetch the
+  snapshot.
+- `backend/gameEngine/quizEngine.js` is pure and time-driven: callers pass the server clock and
+  persist the returned state. quiz question data lives in
+  `backend/gameEngine/data/quizQuestions.json`; the client must not import the ranked bank.
+  The 396 questions were published in an older client bundle, so they are not secret history;
+  the server bank only prevents new matches from exposing answers and future questions.
+- `backend/gameEngine/aimEngine.js` is the same shape for Nişancı Düellosu: 5 rounds of 8 s plus
+  750 ms feedback, one common server-seeded trajectory (`shared/aimTrajectory.js`, client and
+  server share the position function), and score only from the server-side position function.
+  Lag compensation (approved 2026-10-22): `fire` may carry `shotAt`, the client's server-clock
+  time of the reticle frame on screen; the engine clamps it to `[receipt − AIM_MAX_REWIND_MS
+(250), receipt]` and to the round start, and the deadline still uses receipt time. Zones are
+  `AIM_ZONES` (3/2/1 points within 2.5/6/12 units of the centre); the trajectory carries a
+  seeded two-wave `rhythm` around the mean speed, integrated in closed form, and a trajectory
+  without one keeps constant speed. Every client threshold reads the shared zones. The
+  competitive gauge speed is the same on touch and desktop; `pointer: coarse` may change
+  practice presentation only.
+- `backend/gameEngine/battleshipEngine.js` runs Amiral Battı with the rules in
+  `shared/battleship.js` (8x8, fleet 4+3+3+2, 45 s placement, 20 s turns, no extra shot on a
+  hit, three missed turns forfeit, 128-turn cap: 64 cells per player). Fleets, seeded auto layouts and the first
+  turn stay in `game_private_state`; the public state holds only shots, sunk ship shapes and
+  the turn. A player's own fleet is projected as `actorView.fleet` by authenticated HTTP
+  action/GET only, never on discovery/history. Actions: `place {layout}` or server-seeded
+  `place {auto:true}`, and `fire {cell}`; turn ids run `r1`..`r999`. Both strict numeric
+  coordinates and the full legal action ledger are retained across retries.
+- Settlement for a competitive engine game happens only in `backend/gameEngine/settlement.js`
+  and at most once: the `games` row is locked, the public engine result gets
+  `settled/settledAt/transferredPoints`, and `applyDbSettlement`/`applyMemorySettlement` runs in
+  the same transaction. Never let `/finish`, `/resign`, deletion or a socket event choose a
+  winner. `/resign` answers `USE_ENGINE_ACTION` for competitive games; resignation goes through
+  `POST /actions` with `type: "resign"`. `/finish` only queries/finalizes the engine result.
+- `games.game_state.engine.result.cancelled` with `reason: "abandoned"` marks a match where
+  neither player produced an accepted action; it must not touch balances or games_played.
+- `backend/jobs/gameEngineJobs.js` advances expired engine clocks and settles finished matches in
+  bounded batches. It relies on the row lock and the `settled` flag, so multiple instances and a
+  reader/action/finish race are safe. Do not force-close engine rows from the cleanup job. It
+  picks every phase except `waiting`/`finished` whose `phaseEndsAt` passed; never list an
+  engine's phases by name there.
 - Game state changes go through the game handlers; chess moves use `gameMoveService.js` with
   transaction locking.
 - Settlement (`backend/handlers/game/settlementUtils.js`): the winner receives
@@ -170,7 +244,7 @@ npm run migrate:status   # when touching migrations
   `REDIS_URL` and fall back to memory without it; `RATE_LIMIT_PASS_ON_STORE_ERROR=false` rejects
   requests when Redis fails (recommended in production).
 - **PWA is enabled**: `vite-plugin-pwa` generates a service worker with `registerType:
-  'autoUpdate'` (`vite.config.ts`), so a deploy reaches open clients on their next load.
+'autoUpdate'` (`vite.config.ts`), so a deploy reaches open clients on their next load.
 - **Toy fallbacks carry labels in the display face**: `public/landing/toys/*.webp` are stills of
   the Three.js scene, rendered through the dev-only page `toy-render.html` (git-excluded via
   `.git/info/exclude`, so recreate it when missing; it must import `@fontsource/baloo-2/800.css`

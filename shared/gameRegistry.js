@@ -12,6 +12,7 @@
 const AIM_GAME_TYPE = 'Nişancı Düellosu';
 const QUIZ_GAME_TYPE = 'Bilgi Yarışı';
 const CHESS_GAME_TYPE = 'Retro Satranç';
+const BATTLESHIP_GAME_TYPE = 'Amiral Battı';
 
 /** Canonical game definitions keyed by their display type. */
 const GAME_REGISTRY = {
@@ -22,6 +23,7 @@ const GAME_REGISTRY = {
     maxScore: 15,
     minPoints: 40,
     submissionKeyPrefix: 'arena',
+    competitive: true,
     category: 'Refleks',
     description: 'Nişangahı merkeze kilitle, tur tur isabet topla.',
   },
@@ -32,6 +34,7 @@ const GAME_REGISTRY = {
     maxScore: 320,
     minPoints: 120,
     submissionKeyPrefix: 'quiz',
+    competitive: true,
     category: 'Bilgi',
     description: 'Kısa bilgi sorularında doğru cevabı en hızlı ver.',
   },
@@ -42,12 +45,32 @@ const GAME_REGISTRY = {
     maxScore: null,
     minPoints: 90,
     submissionKeyPrefix: 'chess',
+    competitive: false,
     category: 'Strateji',
     description: 'Klasik 2 oyunculu satranç. Gerçek zamanlı ve hamle doğrulamalı.',
+  },
+  [BATTLESHIP_GAME_TYPE]: {
+    type: BATTLESHIP_GAME_TYPE,
+    mode: 'battleship',
+    // Turn-based with a 200-turn cap; there is no fixed round count.
+    maxRounds: null,
+    // Score is ship cells hit: 4 + 3 + 3 + 2.
+    maxScore: 12,
+    minPoints: 0,
+    submissionKeyPrefix: 'battleship',
+    competitive: true,
+    category: 'Strateji',
+    description: 'Filonu gizlice yerleştir, sırayla ateş et, rakip filoyu ilk sen batır.',
   },
 };
 
 const SUPPORTED_GAME_TYPES = new Set(Object.keys(GAME_REGISTRY));
+/** Game types that run only on the server-authoritative v2 engine. */
+const COMPETITIVE_GAME_TYPES = new Set(
+  Object.values(GAME_REGISTRY)
+    .filter((entry) => entry.competitive)
+    .map((entry) => entry.type)
+);
 const GAME_TYPE_LIST = Object.values(GAME_REGISTRY);
 
 /**
@@ -88,14 +111,20 @@ const GAME_TYPE_ALIASES = {
   trivia: QUIZ_GAME_TYPE,
   bilgi: QUIZ_GAME_TYPE,
   bilgi_yarisi: QUIZ_GAME_TYPE,
+  battleship: BATTLESHIP_GAME_TYPE,
+  amiral: BATTLESHIP_GAME_TYPE,
+  amiral_batti: BATTLESHIP_GAME_TYPE,
+  amiral_batt: BATTLESHIP_GAME_TYPE,
 };
 
 module.exports = {
   AIM_GAME_TYPE,
   QUIZ_GAME_TYPE,
   CHESS_GAME_TYPE,
+  BATTLESHIP_GAME_TYPE,
   GAME_REGISTRY,
   SUPPORTED_GAME_TYPES,
+  COMPETITIVE_GAME_TYPES,
   GAME_TYPE_LIST,
   GAME_TYPE_ALIASES,
   getGameScoreBounds,

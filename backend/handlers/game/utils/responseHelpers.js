@@ -1,3 +1,5 @@
+const { serializeGameForActor } = require('../../../gameEngine/gameView');
+
 /**
  * Response helper utilities for game handlers
  * Provides standardized response formatting functions
@@ -24,7 +26,7 @@ const sendGameUpdate = (res, game, statusCode = 200) => {
  */
 const sendLobbyUpdate = (io, payload = {}) => {
   if (!io || typeof io.emit !== 'function') return;
-  
+
   io.emit('lobby_updated', {
     type: 'lobby_updated',
     timestamp: new Date().toISOString(),
@@ -33,26 +35,11 @@ const sendLobbyUpdate = (io, payload = {}) => {
 };
 
 /**
- * Format game response for API
+ * Format game response for API through the allowlisted game view.
  * @param {Object} game - Raw game object from database/memory
- * @returns {Object} Formatted game object
+ * @returns {Object} Safe game view
  */
-const formatGameResponse = (game) => {
-  if (!game) return null;
-
-  return {
-    id: game.id,
-    hostName: game.host_name || game.hostName,
-    guestName: game.guest_name || game.guestName,
-    gameType: game.game_type || game.gameType,
-    points: game.points,
-    table: game.table_code || game.table,
-    status: game.status,
-    winner: game.winner || null,
-    gameState: game.game_state || game.gameState || {},
-    createdAt: game.created_at || game.createdAt,
-  };
-};
+const formatGameResponse = (game) => serializeGameForActor(game);
 
 /**
  * Send success response with optional data

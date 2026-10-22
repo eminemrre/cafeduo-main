@@ -58,6 +58,8 @@ services:
       RATE_LIMIT_REDIS_PREFIX: '${RATE_LIMIT_REDIS_PREFIX:-cafeduo:ratelimit}'
       RATE_LIMIT_PASS_ON_STORE_ERROR: '${RATE_LIMIT_PASS_ON_STORE_ERROR:-false}'
       BLACKLIST_FAIL_MODE: '${BLACKLIST_FAIL_MODE:-closed}'
+      # Server-authoritative ranked games; set in the server-managed .env.
+      GAME_ENGINE_V2_ENABLED: '${GAME_ENGINE_V2_ENABLED:-false}'
       TRUST_PROXY: '${TRUST_PROXY:-1}'
       RATE_LIMIT_WINDOW_MS: '${RATE_LIMIT_WINDOW_MS:-900000}'
       RATE_LIMIT_MAX_REQUESTS: '${RATE_LIMIT_MAX_REQUESTS:-600}'

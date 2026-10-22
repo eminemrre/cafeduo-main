@@ -1,5 +1,5 @@
 import React from 'react';
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import {
   AIM_GAME_TYPE,
   ArenaBattle,
@@ -8,11 +8,21 @@ import {
   pointsFromShot,
   shotLabel,
 } from './ArenaBattle';
+import { api } from '../lib/api';
 import { GAME_REGISTRY } from '../shared/gameRegistry';
-import { User } from '../types';
+import type { CompetitiveEngineState, CompetitiveGame, User } from '../types';
 
 jest.mock('../lib/gameAudio', () => ({
   playGameSfx: jest.fn(),
+}));
+
+jest.mock('../lib/api', () => ({
+  api: {
+    games: {
+      get: jest.fn(),
+      action: jest.fn(),
+    },
+  },
 }));
 
 jest.mock('../lib/socket', () => ({
@@ -21,6 +31,7 @@ jest.mock('../lib/socket', () => ({
     onConnectionChange: jest.fn(() => jest.fn()),
     getSocket: jest.fn(() => ({ on: jest.fn(), off: jest.fn() })),
     joinGame: jest.fn(),
+    leaveGame: jest.fn(),
   },
 }));
 
@@ -39,56 +50,98 @@ jest.mock('./RetroButton', () => ({
   ),
 }));
 
-// PixiJS overlay requires WebGL; mock as inert canvas in tests so the
-// dynamic import + app.init() don't fire in jsdom.
-// `mockStageComesUp` decides whether the fake stage reports itself ready.
-let mockStageComesUp = false;
-jest.mock('./games/AimBattleStageCanvas', () => ({
-  AimBattleStageCanvas: React.forwardRef(function MockAimBattleStageCanvas(
-    props: { className?: string; onReadyChange?: (ready: boolean) => void },
-    _ref: React.Ref<unknown>
-  ) {
-    const { onReadyChange } = props;
-    React.useEffect(() => {
-      if (mockStageComesUp) onReadyChange?.(true);
-    }, [onReadyChange]);
-    return <canvas data-testid="aim-battle-pixi-canvas" />;
-  }),
-}));
+const mockApi = api as unknown as {
+  games: { get: jest.Mock; action: jest.Mock };
+};
 
-describe('ArenaBattle', () => {
-  const mockUser: User = {
-    id: 1,
-    username: 'emin',
-    email: 'emin@example.com',
-    points: 100,
-    wins: 0,
-    gamesPlayed: 0,
+const mockUser: User = {
+  id: 1,
+  username: 'emin',
+  email: 'emin@example.com',
+  points: 100,
+  wins: 0,
+  gamesPlayed: 0,
+};
+
+const buildAimEngine = (
+  overrides: Partial<CompetitiveEngineState> = {}
+): CompetitiveEngineState => {
+  const now = Date.now();
+  return {
+    version: 2,
+    kind: 'aim',
+    revision: 1,
+    phase: 'open',
+    roundIndex: 1,
+    totalRounds: 5,
+    startedAt: new Date(now).toISOString(),
+    phaseEndsAt: new Date(now + 8000).toISOString(),
+    updatedAt: new Date(now).toISOString(),
+    players: {
+      host: { name: 'emin', score: 0, hits: 0, answered: false },
+      guest: { name: 'bob', score: 0, hits: 0, answered: false },
+    },
+    round: {
+      id: 'r1',
+      index: 1,
+      startedAt: new Date(now).toISOString(),
+      endsAt: new Date(now + 8000).toISOString(),
+      trajectory: { start: 40, direction: 1, speed: 4 / 46 },
+    },
+    result: null,
+    ...overrides,
   };
+};
 
-  beforeEach(() => {
-    jest.useFakeTimers();
-    mockStageComesUp = false;
-  });
+const buildAimSnapshot = (overrides: Partial<CompetitiveGame> = {}): CompetitiveGame => ({
+  id: 'game-1',
+  hostName: 'emin',
+  guestName: 'bob',
+  gameType: 'Nişancı Düellosu',
+  points: 10,
+  table: 'MASA01',
+  status: 'active',
+  protocolVersion: 2,
+  serverNow: new Date().toISOString(),
+  gameState: { engine: buildAimEngine() },
+  ...overrides,
+});
 
-  afterEach(() => {
-    jest.runOnlyPendingTimers();
-    jest.useRealTimers();
-    jest.restoreAllMocks();
-  });
+beforeEach(() => {
+  jest.clearAllMocks();
+  mockApi.games.get.mockResolvedValue(buildAimSnapshot());
+});
 
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
+describe('ArenaBattle scoring helpers', () => {
   it('scores shots by distance from the center', () => {
     expect(clampGauge(140)).toBe(100);
     expect(clampGauge(-10)).toBe(0);
     expect(pointsFromShot(50)).toBe(3);
-    expect(pointsFromShot(58)).toBe(2);
-    expect(pointsFromShot(65)).toBe(1);
-    expect(pointsFromShot(80)).toBe(0);
+    expect(pointsFromShot(52.5)).toBe(3);
+    expect(pointsFromShot(55)).toBe(2);
+    expect(pointsFromShot(58)).toBe(1);
+    expect(pointsFromShot(62)).toBe(1);
+    expect(pointsFromShot(65)).toBe(0);
     expect(shotLabel(50)).toBe('Mükemmel kilit');
   });
 
   it('keeps the registry score cap in step with the rounds and the best shot', () => {
     expect(GAME_REGISTRY[AIM_GAME_TYPE].maxScore).toBe(MAX_ROUNDS * 3);
+  });
+});
+
+describe('ArenaBattle bot practice', () => {
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+
+  afterEach(() => {
+    jest.runOnlyPendingTimers();
+    jest.useRealTimers();
   });
 
   it('renders the reticle game and debug snapshot', () => {
@@ -183,7 +236,8 @@ describe('ArenaBattle', () => {
     expect(onLeave).toHaveBeenCalledTimes(1);
   });
 
-  it('draws the reticle in CSS while the WebGL stage is not up', () => {
+  it('draws the reticle and a target at the real zone scale without WebGL', () => {
+    jest.spyOn(Math, 'random').mockReturnValue(0.5);
     render(
       <ArenaBattle
         currentUser={mockUser}
@@ -193,11 +247,17 @@ describe('ArenaBattle', () => {
         onLeave={jest.fn()}
       />
     );
-    expect(screen.getByTestId('arena-reticle')).toBeInTheDocument();
+    expect(screen.queryByTestId('aim-battle-pixi-canvas')).not.toBeInTheDocument();
+    const reticle = screen.getByTestId('arena-reticle');
+    expect(reticle.style.visibility).toBe('visible');
+    expect(parseFloat(reticle.style.left)).toBeCloseTo(50, 5);
+    expect(screen.getByTestId('arena-stage')).toHaveAccessibleName(
+      'Hedef tahtası: merkezden 2,5 birim 3 puan, merkezden 6 birim 2 puan, merkezden 12 birim 1 puan, daha uzak atış 0 puan.'
+    );
   });
 
-  it('leaves the reticle to the WebGL stage once it draws', () => {
-    mockStageComesUp = true;
+  it('moves the practice reticle with a varying rhythm, not a fixed step', () => {
+    jest.spyOn(Math, 'random').mockReturnValue(0.5);
     render(
       <ArenaBattle
         currentUser={mockUser}
@@ -207,6 +267,124 @@ describe('ArenaBattle', () => {
         onLeave={jest.fn()}
       />
     );
-    expect(screen.queryByTestId('arena-reticle')).not.toBeInTheDocument();
+    const reticle = screen.getByTestId('arena-reticle');
+    const samples: number[] = [];
+    for (let i = 0; i < 6; i += 1) {
+      act(() => {
+        jest.advanceTimersByTime(100);
+      });
+      samples.push(parseFloat(reticle.style.left));
+    }
+    const steps = samples.slice(1).map((value, i) => Math.abs(value - samples[i]));
+    expect(Math.max(...steps) - Math.min(...steps)).toBeGreaterThan(0.5);
+  });
+
+  it('sticks darts, fills the round pips and pops the points after a shot', () => {
+    jest.spyOn(Math, 'random').mockReturnValue(0.5);
+    render(
+      <ArenaBattle
+        currentUser={mockUser}
+        gameId={1}
+        isBot
+        onGameEnd={jest.fn()}
+        onLeave={jest.fn()}
+      />
+    );
+
+    fireEvent.click(screen.getByTestId('arena-fire-button'));
+
+    expect(screen.getByTestId('arena-dart-me-1').style.left).toBe('50%');
+    expect(screen.getByTestId('arena-dart-op-1')).toBeInTheDocument();
+    expect(screen.getByTestId('arena-score-me')).toHaveTextContent('3');
+    expect(screen.getByTestId('arena-scoreboard')).toHaveTextContent('3');
+    expect(screen.getByTestId('arena-stage')).toHaveTextContent('+3');
+    expect(screen.getByTestId('arena-reticle').style.visibility).toBe('hidden');
+
+    act(() => {
+      jest.advanceTimersByTime(800);
+    });
+    // Round 2: the popup is gone, round 1's darts stay on the board.
+    expect(screen.getByTestId('arena-stage')).not.toHaveTextContent('+3');
+    expect(screen.getByTestId('arena-dart-me-1')).toBeInTheDocument();
+    expect(screen.getByTestId('arena-reticle').style.visibility).toBe('visible');
+  });
+});
+
+describe('ArenaBattle multiplayer', () => {
+  it('fires with an action envelope and applies the server reveal', async () => {
+    mockApi.games.action.mockResolvedValue({
+      success: true,
+      game: buildAimSnapshot({
+        gameState: {
+          engine: buildAimEngine({
+            revision: 2,
+            phase: 'reveal',
+            players: {
+              host: { name: 'emin', score: 3, answered: true },
+              guest: { name: 'bob', score: 0, answered: false },
+            },
+            round: {
+              ...buildAimEngine().round!,
+              shots: {
+                host: { position: 52, points: 3 },
+                guest: null,
+              },
+              scoreDelta: { host: 3, guest: 0 },
+            },
+          }),
+        },
+      }),
+    });
+
+    render(
+      <ArenaBattle
+        currentUser={mockUser}
+        gameId="game-1"
+        isBot={false}
+        onGameEnd={jest.fn()}
+        onLeave={jest.fn()}
+      />
+    );
+
+    const fireButton = screen.getByTestId('arena-fire-button');
+    await waitFor(() => expect(fireButton).not.toBeDisabled());
+    fireEvent.click(fireButton);
+
+    await waitFor(() => expect(mockApi.games.action).toHaveBeenCalledTimes(1));
+    const [gameId, payload] = mockApi.games.action.mock.calls[0];
+    expect(gameId).toBe('game-1');
+    expect(payload).toEqual(expect.objectContaining({ roundId: 'r1', type: 'fire' }));
+    // The moment the reticle was drawn, in estimated server time; the server
+    // bounds it to its latency allowance and never takes a position or score.
+    expect(Number.isSafeInteger(payload.shotAt)).toBe(true);
+    expect(Math.abs(payload.shotAt - Date.now())).toBeLessThan(60_000);
+    expect(payload.position).toBeUndefined();
+    expect(payload.points).toBeUndefined();
+    expect(payload.score).toBeUndefined();
+
+    await screen.findByText('Atışın: Mükemmel kilit (3). Rakip ateş etmedi.');
+    expect(screen.getByTestId('arena-battle')).toHaveTextContent('3');
+    expect(screen.getByTestId('arena-fire-button')).toBeDisabled();
+    // The official position replaces the faint local estimate.
+    expect(screen.getByTestId('arena-dart-me-1').style.left).toBe('52%');
+    expect(screen.getByTestId('arena-dart-me-1')).not.toHaveClass('duo-aim-dart--ghost');
+    expect(screen.queryByTestId('arena-dart-op-1')).not.toBeInTheDocument();
+  });
+
+  it('shows a refresh path for an active legacy snapshot', async () => {
+    mockApi.games.get.mockResolvedValue(buildAimSnapshot({ protocolVersion: 1, gameState: {} }));
+    render(
+      <ArenaBattle
+        currentUser={mockUser}
+        gameId="game-1"
+        isBot={false}
+        onGameEnd={jest.fn()}
+        onLeave={jest.fn()}
+      />
+    );
+
+    await screen.findByText('İstemci güncellemesi gerekiyor');
+    expect(screen.getByText('Sayfayı yenile')).toBeInTheDocument();
+    expect(screen.queryByTestId('arena-fire-button')).not.toBeInTheDocument();
   });
 });

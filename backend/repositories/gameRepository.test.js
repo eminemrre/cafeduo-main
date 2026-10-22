@@ -71,13 +71,14 @@ describe('gameRepository', () => {
 
     // cafe_id added as $6, tournament_id as $7 (both null when not provided)
     expect(client.query).toHaveBeenCalledWith(
-      expect.stringContaining("VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb, $6, $7)"),
+      expect.stringContaining("VALUES ($1, $2, $3, $4, 'waiting', $5::jsonb, $6, $7, $8::jsonb)"),
       [
         'emin',
         'retro_chess',
         100,
         'MASA08',
         JSON.stringify({ chess: { fen: 'startpos' } }),
+        null,
         null,
         null,
       ]
@@ -97,7 +98,7 @@ describe('gameRepository', () => {
 
     expect(client.query).toHaveBeenCalledWith(
       expect.stringContaining("WHERE id = $2\n          AND status = 'waiting'"),
-      ['rakip', 14, JSON.stringify({ turn: 'w' })]
+      ['rakip', 14, JSON.stringify({ turn: 'w' }), null]
     );
     expect(updated).toEqual({ id: 14, guestName: 'rakip', status: 'active' });
   });

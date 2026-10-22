@@ -2,9 +2,10 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop, 'feat/**', 'fix/**']
+    branches: [main, develop, 'feat/**', 'fix/**', 'security/game-authority-*']
   pull_request:
-    branches: [main, develop]
+    branches: [main, develop, 'security/game-authority-*']
+  workflow_dispatch:
 
 env:
   NODE_VERSION: '22.x'
@@ -21,6 +22,11 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0  # Badge güncelleme için tam history gerekli
+
+      - name: Record validated revision
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: echo "CHECKOUT=$(git rev-parse HEAD) HEAD=${PR_HEAD_SHA:-$GITHUB_SHA}"
 
       - name: Setup Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v7
@@ -140,6 +146,35 @@ jobs:
       branches_pct: ${{ steps.coverage.outputs.BRANCHES_PCT }}
       badge_color: ${{ steps.coverage.outputs.BADGE_COLOR }}
       test_count: ${{ steps.coverage.outputs.TEST_COUNT }}
+
+  # ==========================================
+  # Job 1b: Whole migration history on an empty PostgreSQL
+  # ==========================================
+  fresh-db-migrations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: disposable-ci-only
+          POSTGRES_DB: cafeduo_migrations_ci
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - run: npm ci
+      - name: up → full down → up on an empty database
+        run: npm run migrate:verify-fresh
+        env:
+          MIGRATION_TEST_DATABASE_URL: postgresql://postgres:disposable-ci-only@127.0.0.1:5432/cafeduo_migrations_ci
+          FRESH_MIGRATION_DB_APPROVED: '1'
 
   # ==========================================
   # Job 2: E2E Tests (Playwright)

@@ -13,6 +13,7 @@ const { createFinishGameHandler } = require('./finishGameHandler');
 const { createDrawOfferHandler } = require('./drawOfferHandler');
 const { createMakeMoveHandler } = require('./makeMoveHandler');
 const { createGetGamesHandler } = require('./getGamesHandler');
+const { createGameActionHandler } = require('./gameActionHandler');
 
 module.exports = {
   createDeleteGameHandler,
@@ -25,4 +26,5 @@ module.exports = {
   createDrawOfferHandler,
   createMakeMoveHandler,
   createGetGamesHandler,
+  createGameActionHandler,
 };

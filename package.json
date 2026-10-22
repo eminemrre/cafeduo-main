@@ -61,9 +61,12 @@
     "migrate:down": "node scripts/migrations/run-node-pg-migrate.js down",
     "migrate:redo": "node scripts/migrations/run-node-pg-migrate.js redo",
     "migrate:status": "node scripts/migrations/status.js",
+    "migrate:verify-fresh": "node scripts/migrations/verify-fresh-chain.js",
     "migrate:baseline:report": "node scripts/migrations/legacy-baseline.js report",
     "migrate:baseline:apply": "node scripts/migrations/legacy-baseline.js apply",
-    "migrate:adopt": "node scripts/migrations/adopt-bootstrap.js"
+    "migrate:adopt": "node scripts/migrations/adopt-bootstrap.js",
+    "test:e2e:v2": "node scripts/e2e/run-v2.cjs",
+    "game-engine:transition": "node scripts/ops/game-engine-v2-transition.mjs"
   },
   "dependencies": {
     "@fontsource/baloo-2": "^5.3.0",

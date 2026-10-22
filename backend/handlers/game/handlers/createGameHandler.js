@@ -7,6 +7,12 @@ const { isAdminActor } = require('../validation');
 const { sendApiError } = require('../../../utils/routeHelpers');
 const { isChessGameType, createInitialChessState } = require('../chessUtils');
 const { rollbackQuietly } = require('../../../utils/transaction');
+const {
+  isCompetitiveEngineGameType,
+  isGameEngineV2Enabled,
+} = require('../../../utils/gameEngineConfig');
+const { serializeGameForActor } = require('../../../gameEngine/gameView');
+const { createEnginePrivateState } = require('../../../gameEngine/engines');
 
 const createCreateGameHandler = (deps) => {
   const {
@@ -48,6 +54,17 @@ const createCreateGameHandler = (deps) => {
     // form, validator, and handler all agree.
     if (points > 150) {
       return res.status(400).json({ error: 'Katılım puanı en fazla 150 olabilir.' });
+    }
+
+    // Protocol v2 gate. The legacy client writes score and winner into the game
+    // row; until the server-authoritative engine and its client are both live,
+    // these two game types stay closed instead of falling back to that path.
+    if (isCompetitiveEngineGameType(gameType) && !isGameEngineV2Enabled()) {
+      return res.status(503).json({
+        error:
+          'Bilgi Yarışı ve Nişancı Düellosu sunucu doğrulamasına geçiyor. Kısa bir süre yeni maç açılamıyor.',
+        code: 'GAME_ENGINE_MAINTENANCE',
+      });
     }
 
     const actorCafeId = req.user?.cafe_id ?? null;
@@ -207,6 +224,7 @@ const createCreateGameHandler = (deps) => {
         const initialGameState = isChessGameType(gameType)
           ? { chess: createInitialChessState(req.body?.chessClock) }
           : {};
+        const initialPrivateState = createEnginePrivateState(gameType);
 
         const createdGame = gameService?.insertWaitingGame
           ? await gameService.insertWaitingGame(client, {
@@ -215,6 +233,7 @@ const createCreateGameHandler = (deps) => {
               points,
               table,
               gameState: initialGameState,
+              gamePrivateState: initialPrivateState,
               cafeId: actorCafeId,
               tournamentId,
             })
@@ -241,7 +260,7 @@ const createCreateGameHandler = (deps) => {
           tableCode: createdGame.table,
           status: createdGame.status,
         });
-        return res.status(201).json(createdGame);
+        return res.status(201).json(serializeGameForActor(createdGame));
       } catch (err) {
         await rollbackQuietly(client);
         return sendApiError(res, logger, 'Create game error', err, 'Oyun kurulamadı.');
@@ -259,7 +278,7 @@ const createCreateGameHandler = (deps) => {
     if (existingMemoryGame) {
       return res.status(409).json({
         error: 'Önce mevcut oyunu tamamla veya lobiye dön.',
-        game: existingMemoryGame,
+        game: serializeGameForActor(existingMemoryGame),
       });
     }
 
@@ -274,6 +293,7 @@ const createCreateGameHandler = (deps) => {
       gameState: isChessGameType(gameType)
         ? { chess: createInitialChessState(req.body?.chessClock) }
         : {},
+      gamePrivateState: createEnginePrivateState(gameType),
       createdAt: new Date().toISOString(),
     };
     const nextGames = [newGame, ...memoryGames];
@@ -284,7 +304,7 @@ const createCreateGameHandler = (deps) => {
       tableCode: newGame.table,
       status: newGame.status,
     });
-    return res.status(201).json(newGame);
+    return res.status(201).json(serializeGameForActor(newGame));
   };
 
   return createGame;

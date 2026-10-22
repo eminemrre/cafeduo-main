@@ -4,5 +4,6 @@ export const gameChipFill = (gameType: string) => {
   if (gameType === 'Retro Satranç') return 'bg-candy-gok';
   if (gameType === 'Bilgi Yarışı') return 'bg-candy-limon';
   if (gameType === 'Nişancı Düellosu') return 'bg-candy-lokum';
+  if (gameType === 'Amiral Battı') return 'bg-candy-deniz';
   return 'bg-paper-dim';
 };

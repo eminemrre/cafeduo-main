@@ -97,27 +97,26 @@ exports.up = (pgm) => {
         name: 'idx_user_items_user_used',
     });
 
-    // ============================================================================
-    // PASSWORD_RESET_TOKENS TABLE INDEXES
-    // ============================================================================
-
-    // Token lookup + expiration
-    pgm.createIndex('password_reset_tokens', ['token', 'expires_at'], {
-        name: 'idx_password_tokens_expires',
-    });
+    // PASSWORD_RESET_TOKENS: no index here. This migration used to index a
+    // `token` column that never existed (the table stores `token_hash`), which
+    // broke `migrate:up` on every empty database. Token lookups are already
+    // covered by idx_password_reset_lookup (token_hash, expires_at, used_at)
+    // from the initial schema. Production never ran this migration: the legacy
+    // baseline marks it superseded by 20260306190000.
 };
 
 exports.down = (pgm) => {
-    // Drop indexes in reverse order
-    pgm.dropIndex('password_reset_tokens', 'idx_password_tokens_expires');
-    pgm.dropIndex('user_items', 'idx_user_items_user_used');
-    pgm.dropIndex('users', 'idx_users_cafe_active');
-    pgm.dropIndex('users', 'idx_users_points_desc');
-    pgm.dropIndex('users', 'idx_users_cafe_table');
-    pgm.dropIndex('users', 'idx_users_username_lower_cafe');
-    pgm.dropIndex('games', 'idx_games_guest_status_created');
-    pgm.dropIndex('games', 'idx_games_host_status_created');
-    pgm.dropIndex('games', 'idx_games_status_type_created');
-    pgm.dropIndex('games', 'idx_games_status_table_created');
-    pgm.dropIndex('games', 'idx_games_status_created');
+    // Drop indexes in reverse order. 20260306190000 drops the same names with
+    // IF EXISTS when rolled back first, so every drop here must tolerate that.
+    const ifExists = { ifExists: true };
+    pgm.dropIndex('user_items', [], { name: 'idx_user_items_user_used', ...ifExists });
+    pgm.dropIndex('users', [], { name: 'idx_users_cafe_active', ...ifExists });
+    pgm.dropIndex('users', [], { name: 'idx_users_points_desc', ...ifExists });
+    pgm.dropIndex('users', [], { name: 'idx_users_cafe_table', ...ifExists });
+    pgm.dropIndex('users', [], { name: 'idx_users_username_lower_cafe', ...ifExists });
+    pgm.dropIndex('games', [], { name: 'idx_games_guest_status_created', ...ifExists });
+    pgm.dropIndex('games', [], { name: 'idx_games_host_status_created', ...ifExists });
+    pgm.dropIndex('games', [], { name: 'idx_games_status_type_created', ...ifExists });
+    pgm.dropIndex('games', [], { name: 'idx_games_status_table_created', ...ifExists });
+    pgm.dropIndex('games', [], { name: 'idx_games_status_created', ...ifExists });
 };

@@ -1,4 +1,6 @@
+import { COMPETITIVE_GAME_TYPES as REGISTRY_COMPETITIVE_TYPES } from '../shared/gameRegistry';
 import {
+  COMPETITIVE_GAME_TYPES,
   actorKeyFor,
   createActionId,
   engineOf,
@@ -81,9 +83,11 @@ describe('competitive game helpers', () => {
       expect(serverClockOffset(snapshot, sentAt + rtt + processing, sentAt)).toBe(offset);
     }
   );
-  it('recognizes only the two ranked game types', () => {
+  it('recognizes exactly the registry competitive game types', () => {
     expect(isCompetitiveGameType('Bilgi Yarışı')).toBe(true);
     expect(isCompetitiveGameType('Nişancı Düellosu')).toBe(true);
+    expect(isCompetitiveGameType('Amiral Battı')).toBe(true);
+    expect([...COMPETITIVE_GAME_TYPES].sort()).toEqual([...REGISTRY_COMPETITIVE_TYPES].sort());
     expect(isCompetitiveGameType('Retro Satranç')).toBe(false);
     expect(isCompetitiveGameType('')).toBe(false);
   });

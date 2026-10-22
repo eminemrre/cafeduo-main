@@ -15,7 +15,8 @@ import { popIn, reducedFade } from '../ui/motionVariants';
 
 /** Oyun bileşenlerinin maç bitiminde elinde olan, tamamı client-side istatistikler. */
 export interface MatchStats {
-  kind: 'chess' | 'quiz' | 'arena';
+  kind: 'chess' | 'quiz' | 'arena' | 'battleship';
+  /** Amiral Battı: ship cells hit (of 12). */
   playerScore?: number;
   opponentScore?: number;
   maxRounds?: number;
@@ -122,7 +123,10 @@ export const MatchResultCard: React.FC<MatchResultCardProps> = ({
   const chips: Array<{ label: string; value: string }> = [];
   if (stats) {
     if (typeof stats.playerScore === 'number' && typeof stats.opponentScore === 'number') {
-      chips.push({ label: 'Skor', value: `${stats.playerScore}–${stats.opponentScore}` });
+      chips.push({
+        label: stats.kind === 'battleship' ? 'İsabet' : 'Skor',
+        value: `${stats.playerScore}–${stats.opponentScore}`,
+      });
     }
     if (stats.kind === 'quiz' && typeof stats.maxRounds === 'number') {
       chips.push(

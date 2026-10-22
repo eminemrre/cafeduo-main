@@ -48,6 +48,8 @@ interface GameSectionProps {
   onCancelGame?: (gameId: number | string) => Promise<void>;
   onViewProfile: (username: string) => void;
   onRejoinGame: () => void;
+  /** Starts a local, unranked practice match against the bot. */
+  onStartPractice?: (gameType: string) => void;
 }
 
 export const GameSection: React.FC<GameSectionProps> = ({
@@ -67,6 +69,7 @@ export const GameSection: React.FC<GameSectionProps> = ({
   onCancelGame = async () => {},
   onViewProfile,
   onRejoinGame,
+  onStartPractice,
   activeTournament = null,
 }) => {
   const [quickJoinBusy, setQuickJoinBusy] = useState(false);
@@ -241,6 +244,31 @@ export const GameSection: React.FC<GameSectionProps> = ({
           </div>
         )}
       </div>
+
+      {onStartPractice && (
+        <section
+          aria-labelledby="duo-practice-heading"
+          className="flex flex-col gap-4 bg-paper-deep p-5 sm:flex-row sm:items-center sm:justify-between"
+          data-testid="battleship-practice"
+        >
+          <div className="min-w-0">
+            <h3 id="duo-practice-heading" className="duo-lobby-heading mb-1 text-carbon">
+              Antrenman
+            </h3>
+            <p className="font-candy-body text-[15px] leading-6 text-carbon">
+              Amiral Battı'yı bota karşı dene. Süre yok, puan değişmez.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => onStartPractice('Amiral Battı')}
+            className="duo-button duo-focus shrink-0 min-h-12 px-5 bg-candy-deniz text-carbon font-candy-body text-base font-semibold transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
+            data-testid="battleship-practice-start"
+          >
+            Bota karşı oyna
+          </button>
+        </section>
+      )}
 
       {/* Oyun Geçmişi */}
       <section aria-labelledby="duo-history-heading">

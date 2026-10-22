@@ -49,7 +49,7 @@ jobs:
           GAME_ENGINE_TEST_DB_APPROVED: '1'
         run: |
           node scripts/e2e/prepare-game-engine-db.cjs
-          npx jest backend/gameEngine/settlement.postgres.test.js --runInBand --ci
+          npx jest backend/gameEngine/settlement.postgres.test.js backend/gameEngine/battleship.postgres.test.js --runInBand --ci
   smoke-critical:
     timeout-minutes: 30
     runs-on: ubuntu-latest

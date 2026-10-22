@@ -1,7 +1,8 @@
 /**
  * Feature gate for the server-authoritative competitive engine (protocol v2).
  *
- * While the flag is off, Bilgi Yarışı and Nişancı Düellosu accept no new games.
+ * While the flag is off, the competitive games (Bilgi Yarışı, Nişancı Düellosu,
+ * Amiral Battı: `competitive: true` in shared/gameRegistry.js) accept no new games.
  * The legacy score/live-submission protocol is rejected at every entry point, so
  * a half-deployed client/server pair can never produce a ranked result.
  *
@@ -9,9 +10,9 @@
  * after both the backend and the new client are live.
  */
 
-const { AIM_GAME_TYPE, QUIZ_GAME_TYPE } = require('../../shared/gameRegistry');
+const { COMPETITIVE_GAME_TYPES } = require('../../shared/gameRegistry');
 
-const COMPETITIVE_ENGINE_GAME_TYPES = new Set([QUIZ_GAME_TYPE, AIM_GAME_TYPE]);
+const COMPETITIVE_ENGINE_GAME_TYPES = COMPETITIVE_GAME_TYPES;
 
 const isGameEngineV2Enabled = () => {
   const raw = String(process.env.GAME_ENGINE_V2_ENABLED || '')

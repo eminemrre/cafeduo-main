@@ -7,9 +7,7 @@
  */
 
 const { ACTION_TYPES, checkActionReceipt, recordActionReceipt } = require('./actionProtocol');
-const { advanceQuiz, applyQuizAction } = require('./quizEngine');
-const { advanceAim, applyAimAction } = require('./aimEngine');
-const { AIM_GAME_TYPE, QUIZ_GAME_TYPE } = require('../../shared/gameRegistry');
+const { getEngine } = require('./engines');
 
 const read = (game, camel, snake) => (game?.[camel] !== undefined ? game[camel] : game?.[snake]);
 
@@ -56,8 +54,8 @@ const processCompetitiveAction = ({ game, actorName, envelope, nowMs = Date.now(
     };
   }
 
-  const gameType = gameTypeOf(game);
-  if (gameType !== QUIZ_GAME_TYPE && gameType !== AIM_GAME_TYPE) {
+  const engine = getEngine(gameTypeOf(game));
+  if (!engine) {
     return {
       ok: false,
       status: 400,
@@ -103,69 +101,31 @@ const processCompetitiveAction = ({ game, actorName, envelope, nowMs = Date.now(
     };
   }
 
-  if (gameType === QUIZ_GAME_TYPE) {
-    const applied = applyQuizAction({
-      state,
-      privateState,
-      actorKey,
-      envelope,
-      nowMs,
-    });
-    if (!applied.ok) return applied;
+  const applied = engine.applyAction({
+    state,
+    privateState,
+    actorKey,
+    envelope,
+    nowMs,
+  });
+  if (!applied.ok) return applied;
 
-    const ledger = recordActionReceipt({
-      ledger: privateState.actions,
-      actorKey,
-      envelope,
-      receipt: {
-        status: 'applied',
-        revision: applied.state.revision,
-        at: new Date(nowMs).toISOString(),
-      },
-    });
-    return {
-      ok: true,
-      actorKey,
-      state: applied.state,
-      privateState: { ...applied.privateState, actions: ledger },
-      ...resultOf(applied.state),
-    };
-  }
-
-  if (gameType === AIM_GAME_TYPE) {
-    const applied = applyAimAction({
-      state,
-      privateState,
-      actorKey,
-      envelope,
-      nowMs,
-    });
-    if (!applied.ok) return applied;
-
-    const ledger = recordActionReceipt({
-      ledger: privateState.actions,
-      actorKey,
-      envelope,
-      receipt: {
-        status: 'applied',
-        revision: applied.state.revision,
-        at: new Date(nowMs).toISOString(),
-      },
-    });
-    return {
-      ok: true,
-      actorKey,
-      state: applied.state,
-      privateState: { ...applied.privateState, actions: ledger },
-      ...resultOf(applied.state),
-    };
-  }
-
+  const ledger = recordActionReceipt({
+    ledger: privateState.actions,
+    actorKey,
+    envelope,
+    receipt: {
+      status: 'applied',
+      revision: applied.state.revision,
+      at: new Date(nowMs).toISOString(),
+    },
+  });
   return {
-    ok: false,
-    status: 400,
-    code: 'INVALID_ACTION_FOR_GAME',
-    message: 'Bu eylem bu oyun için geçerli değil.',
+    ok: true,
+    actorKey,
+    state: applied.state,
+    privateState: { ...applied.privateState, actions: ledger },
+    ...resultOf(applied.state),
   };
 };
 
@@ -174,7 +134,7 @@ const processCompetitiveAction = ({ game, actorName, envelope, nowMs = Date.now(
  * Used when a snapshot is read after a deadline passed.
  */
 const syncCompetitiveGame = ({ game, nowMs = Date.now() }) => {
-  const gameType = gameTypeOf(game);
+  const engine = getEngine(gameTypeOf(game));
   const rawState = read(game, 'gameState', 'game_state');
   const privateState = read(game, 'gamePrivateState', 'game_private_state');
   const state = rawState && typeof rawState === 'object' ? rawState.engine : null;
@@ -189,12 +149,7 @@ const syncCompetitiveGame = ({ game, nowMs = Date.now() }) => {
     return { changed: false, state, status: null, winner: null };
   }
 
-  let advanced = { state, changed: false };
-  if (gameType === QUIZ_GAME_TYPE) {
-    advanced = advanceQuiz(state, privateState, nowMs);
-  } else if (gameType === AIM_GAME_TYPE) {
-    advanced = advanceAim(state, privateState, nowMs);
-  }
+  const advanced = engine ? engine.advance(state, privateState, nowMs) : { state, changed: false };
 
   if (!advanced.changed) {
     return {

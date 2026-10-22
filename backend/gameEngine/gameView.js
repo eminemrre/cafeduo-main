@@ -10,8 +10,15 @@
  * game view.
  */
 
-const { CHESS_GAME_TYPE, AIM_GAME_TYPE, QUIZ_GAME_TYPE } = require('../../shared/gameRegistry');
+const {
+  CHESS_GAME_TYPE,
+  AIM_GAME_TYPE,
+  BATTLESHIP_GAME_TYPE,
+  QUIZ_GAME_TYPE,
+} = require('../../shared/gameRegistry');
+const { CELL_COUNT, FLEET, isCell } = require('../../shared/battleship');
 const { isCompetitiveEngineGameType } = require('../utils/gameEngineConfig');
+const { fleetOf } = require('./battleshipEngine');
 
 const read = (game, camelKey, snakeKey) => {
   if (!game || typeof game !== 'object') return undefined;
@@ -51,6 +58,7 @@ const pick = (source, keys) => {
 const isChessType = (gameType) => String(gameType || '').trim() === CHESS_GAME_TYPE;
 const isAimType = (gameType) => String(gameType || '').trim() === AIM_GAME_TYPE;
 const isQuizType = (gameType) => String(gameType || '').trim() === QUIZ_GAME_TYPE;
+const isBattleshipType = (gameType) => String(gameType || '').trim() === BATTLESHIP_GAME_TYPE;
 
 // Chess state is produced by the server (clock + engine). These keys are safe
 // for both participants; anything else in the JSONB blob is not exposed.
@@ -75,9 +83,14 @@ const PLAYER_KEYS = [
   'answered',
   'jokerUsed',
   'left',
+  'placed',
+  'autoPlaced',
+  'shots',
+  'missedTurns',
 ];
 const PICK_KEYS = ['host', 'guest'];
 const SHOT_KEYS = ['distance', 'points', 'position'];
+const LAST_SHOT_KEYS = ['by', 'cell', 'hit', 'sunkSize', 'at'];
 const TRAJECTORY_KEYS = ['start', 'direction', 'speed', 'durationMs', 'rhythm'];
 const ENGINE_STATE_KEYS = [
   'version',
@@ -92,6 +105,8 @@ const ENGINE_STATE_KEYS = [
   'players',
   'round',
   'result',
+  'boards',
+  'lastShot',
 ];
 const RESULT_KEYS = [
   'winner',
@@ -117,6 +132,7 @@ const sanitizeRound = (round) => {
     'phase',
     'startedAt',
     'endsAt',
+    'turn',
     'question',
     'category',
     'level',
@@ -147,11 +163,28 @@ const sanitizeRound = (round) => {
   return out;
 };
 
+const STRUCTURED_ENGINE_KEYS = ['players', 'round', 'result', 'boards', 'lastShot'];
+
+/**
+ * One side's waters in Amiral Battı: only the shots fired at it and the
+ * shapes of ships already sunk. Where unhit ships lie is never public.
+ */
+const sanitizeBoard = (board) => ({
+  shots: (Array.isArray(board?.shots) ? board.shots : [])
+    .filter((shot) => isCell(shot?.cell))
+    .slice(0, CELL_COUNT)
+    .map((shot) => ({ cell: shot.cell, hit: shot.hit === true })),
+  sunk: (Array.isArray(board?.sunk) ? board.sunk : []).slice(0, FLEET.length).map((ship) => ({
+    size: Number.isInteger(ship?.size) ? ship.size : 0,
+    cells: (Array.isArray(ship?.cells) ? ship.cells : []).filter(isCell).slice(0, FLEET[0]),
+  })),
+});
+
 const sanitizeEngineState = (engine) => {
   if (!engine || typeof engine !== 'object') return undefined;
   const out = pick(
     engine,
-    ENGINE_STATE_KEYS.filter((key) => !['players', 'round', 'result'].includes(key))
+    ENGINE_STATE_KEYS.filter((key) => !STRUCTURED_ENGINE_KEYS.includes(key))
   );
 
   if (engine.players && typeof engine.players === 'object') {
@@ -164,6 +197,18 @@ const sanitizeEngineState = (engine) => {
   if (round) out.round = round;
   if (engine.result && typeof engine.result === 'object') {
     out.result = pick(engine.result, RESULT_KEYS);
+  }
+  if (engine.boards && typeof engine.boards === 'object') {
+    out.boards = {
+      host: sanitizeBoard(engine.boards.host),
+      guest: sanitizeBoard(engine.boards.guest),
+    };
+  }
+  if (engine.lastShot !== undefined) {
+    out.lastShot =
+      engine.lastShot && typeof engine.lastShot === 'object'
+        ? pick(engine.lastShot, LAST_SHOT_KEYS)
+        : null;
   }
   return out;
 };
@@ -219,14 +264,38 @@ const serializeGameForActor = (game, actorName, receivedAt) => {
 
   // Actor-only projection is deliberately outside the common gameState used
   // by sockets/history. Never infer the actor from a request payload.
-  if (isQuizType(gameType) && actorName) {
+  const actorKey = (() => {
+    if (!actorName) return null;
     const actor = String(actorName).trim().toLowerCase();
-    const key = ['host', 'guest'].find(
-      (role) =>
-        String(readField(game, `${role}Name`) || '')
-          .trim()
-          .toLowerCase() === actor
+    return (
+      ['host', 'guest'].find(
+        (role) =>
+          String(readField(game, `${role}Name`) || '')
+            .trim()
+            .toLowerCase() === actor
+      ) || null
     );
+  })();
+
+  // Amiral Battı: the actor's own ships, once placed (or auto-placed). The
+  // opponent's fleet and the unused seeded layouts never leave private state.
+  if (isBattleshipType(gameType) && actorKey) {
+    const engine = out.gameState.engine;
+    const player = engine?.players?.[actorKey];
+    if (player && (player.placed || player.autoPlaced)) {
+      const ships = fleetOf(read(game, 'gamePrivateState', 'game_private_state'), actorKey);
+      if (ships.length === FLEET.length)
+        out.actorView = {
+          fleet: ships.slice(0, FLEET.length).map((ship) => ({
+            size: ship.size,
+            cells: (Array.isArray(ship.cells) ? ship.cells : []).filter(isCell),
+          })),
+        };
+    }
+  }
+
+  if (isQuizType(gameType) && actorName) {
+    const key = actorKey;
     const joker = key && read(game, 'gamePrivateState', 'game_private_state')?.jokers?.[key];
     const round = out.gameState.engine?.round;
     if (joker && round?.id === joker.roundId && Array.isArray(joker.hidden)) {
@@ -282,6 +351,7 @@ module.exports = {
   CHESS_STATE_KEYS,
   ENGINE_STATE_KEYS,
   isAimType,
+  isBattleshipType,
   isChessType,
   isQuizType,
   sanitizeEngineState,

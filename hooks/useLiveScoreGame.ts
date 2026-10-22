@@ -23,7 +23,7 @@ import { socketService } from '../lib/socket';
  */
 
 export interface LiveMatchStats {
-  kind: 'quiz' | 'arena';
+  kind: 'quiz' | 'arena' | 'battleship';
   playerScore: number;
   opponentScore: number;
   durationMs: number;
@@ -31,13 +31,18 @@ export interface LiveMatchStats {
   correctAnswers?: number;
 }
 
-export type LiveActionType = 'answer' | 'joker' | 'fire' | 'resign';
+export type LiveActionType = 'answer' | 'joker' | 'fire' | 'place' | 'resign';
 
 export interface LiveActionInput {
   type: LiveActionType;
   optionIndex?: number;
   /** Aim fire only: estimated server time (epoch ms) the reticle was drawn. */
   shotAt?: number;
+  /** Amiral Battı target cell (0-63). */
+  cell?: number;
+  /** Amiral Battı fleet layout, in fleet order. */
+  layout?: { cell: number; dir: 'h' | 'v' }[];
+  auto?: true;
 }
 
 export interface LiveActionResult {
@@ -58,7 +63,7 @@ export interface UseLiveScoreGameOptions {
   /** Fallback polling interval; never below 15 s for competitive games. */
   pollIntervalMs?: number;
   logName?: string;
-  statsKind: 'quiz' | 'arena';
+  statsKind: 'quiz' | 'arena' | 'battleship';
   onGameEnd: (winner: string, points: number, stats?: LiveMatchStats) => void;
 }
 
@@ -98,6 +103,9 @@ type ActionRetry = {
     roundId: string;
     type: LiveActionType;
     optionIndex?: number;
+    cell?: number;
+    layout?: { cell: number; dir: 'h' | 'v' }[];
+    auto?: true;
   };
 };
 
@@ -304,7 +312,14 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
         return { ok: false, code: 'NO_ROUND', message: 'Tur henüz hazır değil.' };
       }
 
-      const actionKey = `${roundId}|${input.type}|${input.optionIndex ?? ''}`;
+      const actionKey = [
+        roundId,
+        input.type,
+        input.optionIndex ?? '',
+        input.cell ?? '',
+        input.layout ? JSON.stringify(input.layout) : '',
+        input.auto ? 'auto' : '',
+      ].join('|');
       const previous = retryRef.current;
       const payload =
         previous && previous.key === actionKey
@@ -314,6 +329,9 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
               roundId,
               type: input.type,
               ...(input.optionIndex !== undefined ? { optionIndex: input.optionIndex } : {}),
+              ...(input.cell !== undefined ? { cell: input.cell } : {}),
+              ...(input.layout ? { layout: input.layout } : {}),
+              ...(input.auto ? { auto: true as const } : {}),
               // A retry reuses this payload, so the first shot time is kept.
               ...(input.type === 'fire' && input.shotAt !== undefined
                 ? { shotAt: input.shotAt }
@@ -449,6 +467,15 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
           },
           Date.now()
         );
+        const actorKey = actorKeyFor(base, currentUser.username);
+        if (
+          incoming.kind === 'battleship' &&
+          actorKey &&
+          incoming.players?.[actorKey]?.placed &&
+          !base.actorView?.fleet?.length
+        ) {
+          void fetchSnapshot(true);
+        }
         return;
       }
       void fetchSnapshot(true);
@@ -485,7 +512,7 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
         pollRef.current = null;
       }
     };
-  }, [applySnapshot, fetchSnapshot, gameId, isBot, pollIntervalMs]);
+  }, [applySnapshot, currentUser.username, fetchSnapshot, gameId, isBot, pollIntervalMs]);
 
   // Refresh just after a server deadline: this only asks the server to advance
   // its clock, it never submits a score or picks a winner.

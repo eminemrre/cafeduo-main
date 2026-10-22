@@ -212,6 +212,23 @@ import { useRewards } from '../hooks/useRewards';
 const mockUseGames = useGames as jest.MockedFunction<typeof useGames>;
 const mockUseRewards = useRewards as jest.MockedFunction<typeof useRewards>;
 
+jest.mock('./BattleshipGame', () => {
+  const Game = ({ currentUser, onGameEnd }: any) => (
+    <button
+      onClick={() =>
+        onGameEnd(currentUser.username, 0, {
+          kind: 'battleship',
+          playerScore: 12,
+          opponentScore: 4,
+        })
+      }
+    >
+      Finish practice
+    </button>
+  );
+  return { BattleshipGame: Game, default: Game, __esModule: true };
+});
+
 describe('Dashboard Integration', () => {
   const mockUser: User = {
     id: 1,
@@ -292,6 +309,18 @@ describe('Dashboard Integration', () => {
   });
 
   describe('Initial Render', () => {
+    it('never changes wallet, wins or games played when practice finishes', async () => {
+      mockUseGames.mockReturnValue({
+        ...defaultGamesState,
+        activeGameId: 'practice-1',
+        activeGameType: 'Amiral Battı',
+        isBot: true,
+      });
+      renderDashboard();
+      fireEvent.click(await screen.findByText('Finish practice'));
+      expect(mockOnUpdateUser).not.toHaveBeenCalled();
+      expect(defaultGamesState.refetch).not.toHaveBeenCalled();
+    });
     it('renders dashboard with user data', () => {
       renderDashboard();
 

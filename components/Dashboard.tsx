@@ -11,6 +11,7 @@ import { UserProfileModal } from './UserProfileModal';
 import { ArenaBattle } from './ArenaBattle';
 import { KnowledgeQuiz } from './KnowledgeQuiz';
 import { RetroChess } from './RetroChess';
+import { lazyWithRetry } from '../lib/lazyWithRetry';
 import { Leaderboard } from './Leaderboard';
 import { Achievements } from './Achievements';
 import { RetroButton } from './RetroButton';
@@ -36,6 +37,8 @@ import { Trophy, Gift, Gamepad2, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../lib/api';
 import { isCompetitiveGameType, resignCompetitiveGame } from '../lib/competitiveGame';
+
+const BattleshipGame = lazyWithRetry(() => import('./BattleshipGame'), 'BattleshipGame');
 
 interface DashboardProps {
   currentUser: User;
@@ -204,6 +207,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
   };
 
+  // Yerel, sıralamasız antrenman (sunucuya hiçbir şey yazmaz).
+  const handleStartPractice = (gameType: string) => {
+    setActiveGame(`practice-${Date.now()}`, gameType, 'BOT', true);
+  };
+
   // Aktif oyuna geri dön
   const handleRejoinGame = () => {
     if (serverActiveGame) {
@@ -339,6 +347,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
     setGameResult((prev) => prev ?? { winner, earnedPoints: safeEarnedPoints, stats });
     setShowGlitchAnim(true);
 
+    // Unranked practice only changes its local result card; not even the
+    // legacy test/mock fallback may increment wins or gamesPlayed.
+    if (isBot) return;
+
     void refetch();
     if (onRefreshUser) {
       void onRefreshUser();
@@ -403,6 +415,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
               onLeave={handleLeaveGame}
               onMatchSettled={handleMatchSettled}
             />
+          ) : activeGameType === 'Amiral Battı' ? (
+            <React.Suspense fallback={<p role="status">Amiral Battı yükleniyor...</p>}>
+              <BattleshipGame
+                gameId={activeGameId}
+                currentUser={currentUser}
+                opponentName={opponentName || 'Rakip'}
+                isBot={isBot}
+                onGameEnd={handleGameFinish}
+                onLeave={handleLeaveGame}
+                onMatchSettled={handleMatchSettled}
+              />
+            </React.Suspense>
           ) : activeGameType === 'Nişancı Düellosu' ? (
             <ArenaBattle
               gameId={activeGameId}
@@ -507,6 +531,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     onCancelGame={handleCancelGame}
                     onViewProfile={handleViewProfile}
                     onRejoinGame={handleRejoinGame}
+                    onStartPractice={handleStartPractice}
                     activeTournament={activeTournament}
                   />
                 </div>

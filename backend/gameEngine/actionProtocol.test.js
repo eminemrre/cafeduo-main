@@ -1,5 +1,6 @@
 const {
   ACTION_TYPES,
+  MAX_RECEIPTS_PER_PLAYER,
   checkActionReceipt,
   fingerprintAction,
   normalizeActionEnvelope,
@@ -73,6 +74,57 @@ describe('normalizeActionEnvelope', () => {
       expect(result.envelope.optionIndex).toBeUndefined();
     }
   });
+
+  it('numbers rounds up to r999 for Amiral Battı turns', () => {
+    expect(normalizeActionEnvelope(validBody({ roundId: 'r201' })).ok).toBe(true);
+    expect(normalizeActionEnvelope(validBody({ roundId: 'r999' })).ok).toBe(true);
+    expect(normalizeActionEnvelope(validBody({ roundId: 'r1000' })).code).toBe('INVALID_ROUND_ID');
+    expect(normalizeActionEnvelope(validBody({ roundId: 'r0' })).code).toBe('INVALID_ROUND_ID');
+  });
+
+  it('keeps a valid target cell on fire and rejects one off the board', () => {
+    const fire = normalizeActionEnvelope(validBody({ type: 'fire', cell: 63, optionIndex: 1 }));
+    expect(fire.envelope).toEqual({
+      actionId: 'act_12345678',
+      roundId: 'r1',
+      type: 'fire',
+      cell: 63,
+    });
+    for (const cell of [64, -1, 2.5, 'A1']) {
+      expect(normalizeActionEnvelope(validBody({ type: 'fire', cell })).code).toBe('INVALID_CELL');
+    }
+    expect(normalizeActionEnvelope(validBody({ type: 'fire', cell: null })).code).toBe(
+      'INVALID_CELL'
+    );
+  });
+
+  it('canonicalises a placement and drops anything but cell and direction', () => {
+    const layout = [
+      { cell: 0, dir: 'H', ships: 'ignored' },
+      { cell: 16, dir: 'v' },
+      { cell: 21, dir: 'h' },
+      { cell: 55, dir: 'v', hit: true },
+    ];
+    const result = normalizeActionEnvelope(validBody({ type: 'place', layout }));
+    expect(result.ok).toBe(true);
+    expect(result.envelope.layout).toEqual([
+      { cell: 0, dir: 'h' },
+      { cell: 16, dir: 'v' },
+      { cell: 21, dir: 'h' },
+      { cell: 55, dir: 'v' },
+    ]);
+    for (const bad of [
+      undefined,
+      layout.slice(0, 3),
+      [...layout, { cell: 1, dir: 'h' }],
+      [{ cell: 70, dir: 'h' }, ...layout.slice(1)],
+      [{ cell: 0, dir: 'd' }, ...layout.slice(1)],
+    ]) {
+      expect(normalizeActionEnvelope(validBody({ type: 'place', layout: bad })).code).toBe(
+        'INVALID_LAYOUT'
+      );
+    }
+  });
 });
 
 describe('action receipts', () => {
@@ -122,7 +174,7 @@ describe('action receipts', () => {
 
   it('bounds the ledger per player', () => {
     let ledger = {};
-    for (let i = 0; i < 70; i += 1) {
+    for (let i = 0; i < MAX_RECEIPTS_PER_PLAYER + 6; i += 1) {
       const next = normalizeActionEnvelope(
         validBody({ actionId: `act_${String(i).padStart(8, '0')}` })
       ).envelope;
@@ -133,8 +185,10 @@ describe('action receipts', () => {
         receipt: { status: 'applied', revision: i },
       });
     }
-    expect(Object.keys(ledger.host)).toHaveLength(64);
+    expect(Object.keys(ledger.host)).toHaveLength(MAX_RECEIPTS_PER_PLAYER);
     expect(ledger.host.act_00000000).toBeUndefined();
-    expect(ledger.host.act_00000069).toBeDefined();
+    expect(
+      ledger.host[`act_${String(MAX_RECEIPTS_PER_PLAYER + 5).padStart(8, '0')}`]
+    ).toBeDefined();
   });
 });

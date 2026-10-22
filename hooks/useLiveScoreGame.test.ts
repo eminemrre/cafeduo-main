@@ -114,6 +114,38 @@ beforeEach(() => {
 });
 
 describe('useLiveScoreGame (protocol v2)', () => {
+  it('refetches actor-only fleet after a shared placement-to-battle notification', async () => {
+    const placement = buildSnapshot({
+      gameType: 'Amiral Battı',
+      gameState: { engine: buildEngine({ kind: 'battleship', phase: 'placement' }) },
+    });
+    mockApi.games.get.mockResolvedValueOnce(placement);
+    const { result } = renderLearningHook({ mode: 'Amiral Battı', statsKind: 'battleship' });
+    await waitFor(() => expect(result.current.engine?.kind).toBe('battleship'));
+    const battle = buildEngine({
+      kind: 'battleship',
+      phase: 'battle',
+      revision: 2,
+      players: {
+        host: { name: 'alice', score: 0, placed: true, autoPlaced: true },
+        guest: { name: 'bob', score: 0, placed: true },
+      },
+    });
+    mockApi.games.get.mockResolvedValue(
+      buildSnapshot({
+        gameType: 'Amiral Battı',
+        actorView: { fleet: [{ size: 4, cells: [0, 1, 2, 3] }] },
+        gameState: { engine: battle },
+      })
+    );
+    act(() => {
+      mockSocketService
+        .getSocket()
+        .emit('game_state_updated', { gameId: 'game-1', gameState: { engine: battle } });
+    });
+    await waitFor(() => expect(result.current.snapshot?.actorView?.fleet).toHaveLength(1));
+    expect(mockApi.games.get).toHaveBeenCalledTimes(2);
+  });
   it('does not touch the network in bot mode', async () => {
     const { result, onGameEnd } = renderLearningHook({ isBot: true, gameId: 'game-1' });
     expect(result.current.playerScore).toBe(0);

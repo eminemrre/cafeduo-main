@@ -284,12 +284,13 @@ const serializeGameForActor = (game, actorName, receivedAt) => {
     const player = engine?.players?.[actorKey];
     if (player && (player.placed || player.autoPlaced)) {
       const ships = fleetOf(read(game, 'gamePrivateState', 'game_private_state'), actorKey);
-      out.actorView = {
-        fleet: ships.slice(0, FLEET.length).map((ship) => ({
-          size: ship.size,
-          cells: (Array.isArray(ship.cells) ? ship.cells : []).filter(isCell),
-        })),
-      };
+      if (ships.length === FLEET.length)
+        out.actorView = {
+          fleet: ships.slice(0, FLEET.length).map((ship) => ({
+            size: ship.size,
+            cells: (Array.isArray(ship.cells) ? ship.cells : []).filter(isCell),
+          })),
+        };
     }
   }
 

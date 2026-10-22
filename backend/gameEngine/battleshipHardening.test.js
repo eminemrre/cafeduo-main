@@ -86,14 +86,14 @@ describe('battleship review hardening', () => {
       state,
       privateState,
       actorKey: 'host',
-      envelope: { type: 'place', layout },
+      envelope: { type: 'place', roundId: 'r1', layout },
       nowMs: 103000,
     });
     const guest = applyBattleshipAction({
       state: host.state,
       privateState: host.privateState,
       actorKey: 'guest',
-      envelope: { type: 'place', layout },
+      envelope: { type: 'place', roundId: 'r1', layout },
       nowMs: 101000,
     });
     expect(guest.state.round.startedAt).toBe(new Date(103000).toISOString());

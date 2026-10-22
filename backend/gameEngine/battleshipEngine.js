@@ -11,7 +11,7 @@
  * missing fleet is auto-placed from a seeded layout; a match nobody placed in
  * is abandoned), alternating 20 s turns with no extra shot on a hit, a missed
  * turn passes, three missed turns in a row forfeit, the first to sink the
- * whole fleet wins, and at the 200-turn cap more hits wins (equal is a draw).
+ * whole fleet wins, and at the 128-turn cap more hits wins (equal is a draw).
  *
  * Every deadline is persisted. Catching up after a restart or a clock jump
  * replays turns from those deadlines, never from the reader's clock.
@@ -59,6 +59,7 @@ const createBattleshipPrivateState = ({ randomInt = (max) => cryptoRandomInt(0, 
   firstTurn: randomInt(2) === 0 ? 'host' : 'guest',
   autoLayouts: { host: randomLayout(randomInt), guest: randomLayout(randomInt) },
   fleets: { host: null, guest: null },
+  placedAt: { host: null, guest: null },
   actions: { host: {}, guest: {} },
 });
 
@@ -276,16 +277,24 @@ const applyBattleshipAction = ({ state, privateState, actorKey, envelope, nowMs 
       return reject(409, 'PLACEMENT_CLOSED', 'Yerleştirme süresi bitti.');
     }
     if (player.placed) return reject(409, 'ALREADY_PLACED', 'Filonu zaten yerleştirdin.');
-    const layout = validateLayout(envelope.layout);
+    const layout = validateLayout(
+      envelope.auto === true ? nextPrivate.autoLayouts[actorKey] : envelope.layout
+    );
     if (!layout.ok) return reject(400, layout.code, layout.message);
 
     nextPrivate.fleets[actorKey] = layout.ships;
+    nextPrivate.placedAt = { ...nextPrivate.placedAt, [actorKey]: iso(nowMs) };
     player.placed = true;
+    player.autoPlaced = envelope.auto === true;
     player.answered = true;
     next.updatedAt = iso(nowMs);
     next.revision += 1;
     if (playerKeys.every((key) => next.players[key].placed)) {
-      beginBattle(next, nextPrivate, nowMs);
+      beginBattle(
+        next,
+        nextPrivate,
+        Math.max(nowMs, ...Object.values(nextPrivate.placedAt).map(toMs))
+      );
     }
     return { ok: true, state: next, privateState: nextPrivate };
   }

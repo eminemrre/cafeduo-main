@@ -22,7 +22,7 @@
   const TURN_MS = 20_000;
   const MAX_MISSED_TURNS = 3;
   /** Hard cap on battle turns, so a stalling pair cannot keep a match open forever. */
-  const MAX_BATTLE_TURNS = 200;
+  const MAX_BATTLE_TURNS = 2 * CELL_COUNT;
   const DIRECTIONS = Object.freeze(['h', 'v']);
 
   const isCell = (value) => Number.isInteger(value) && value >= 0 && value < CELL_COUNT;
@@ -56,7 +56,7 @@
     for (let index = 0; index < FLEET.length; index += 1) {
       const entry = layout[index];
       const size = FLEET[index];
-      const cells = shipCells(Number(entry?.cell), entry?.dir, size);
+      const cells = shipCells(entry?.cell, entry?.dir, size);
       if (!cells) {
         return { ok: false, code: 'INVALID_LAYOUT', message: 'Bir gemi tahtanın dışına taşıyor.' };
       }

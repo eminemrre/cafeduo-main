@@ -21,10 +21,12 @@ const ACTION_TYPES = Object.freeze({
 
 const ACTION_TYPE_VALUES = Object.freeze(Object.values(ACTION_TYPES));
 const ACTION_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
-// r1..r999: Amiral Battı numbers every turn (placement + up to 200 battle turns).
+// r1..r999: Amiral Battı numbers every turn (placement + up to 128 battle turns).
 const ROUND_ID_PATTERN = /^r[1-9][0-9]{0,2}$/;
 const MAX_OPTION_INDEX = 7;
-const MAX_RECEIPTS_PER_PLAYER = 64;
+// A battleship player can place, fire at 64 cells and resign. Retain every
+// legal receipt; never evict one based on JSONB's non-chronological key order.
+const MAX_RECEIPTS_PER_PLAYER = 128;
 
 const text = (value) => String(value ?? '').trim();
 
@@ -73,8 +75,8 @@ const normalizeActionEnvelope = (body) => {
   }
 
   // Amiral Battı aims at a cell; Nişancı Düellosu sends no target at all.
-  if (type === ACTION_TYPES.FIRE && body?.cell !== undefined && body?.cell !== null) {
-    const cell = Number(body.cell);
+  if (type === ACTION_TYPES.FIRE && body?.cell !== undefined) {
+    const cell = body.cell;
     if (!Number.isInteger(cell) || cell < 0 || cell >= CELL_COUNT) {
       return { ok: false, code: 'INVALID_CELL', message: 'Atış karesi geçersiz.' };
     }
@@ -84,13 +86,23 @@ const normalizeActionEnvelope = (body) => {
   // Only the shape is checked here (and canonicalised for the fingerprint);
   // the engine checks bounds and overlaps with the shared rules.
   if (type === ACTION_TYPES.PLACE) {
+    if (body?.auto === true) {
+      if (body.layout !== undefined)
+        return {
+          ok: false,
+          code: 'INVALID_LAYOUT',
+          message: 'Otomatik yerleşimde filo gönderilemez.',
+        };
+      envelope.auto = true;
+      return { ok: true, envelope };
+    }
     const layout = body?.layout;
     if (!Array.isArray(layout) || layout.length !== FLEET.length) {
       return { ok: false, code: 'INVALID_LAYOUT', message: 'Filo yerleşimi geçersiz.' };
     }
     const entries = [];
     for (const entry of layout) {
-      const cell = Number(entry?.cell);
+      const cell = entry?.cell;
       const dir = text(entry?.dir).toLowerCase();
       if (!Number.isInteger(cell) || cell < 0 || cell >= CELL_COUNT || !DIRECTIONS.includes(dir)) {
         return { ok: false, code: 'INVALID_LAYOUT', message: 'Filo yerleşimi geçersiz.' };

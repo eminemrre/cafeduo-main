@@ -130,10 +130,12 @@ npm run migrate:status   # when touching migrations
   practice presentation only.
 - `backend/gameEngine/battleshipEngine.js` runs Amiral Battı with the rules in
   `shared/battleship.js` (8x8, fleet 4+3+3+2, 45 s placement, 20 s turns, no extra shot on a
-  hit, three missed turns forfeit, 200-turn cap). Fleets, seeded auto layouts and the first
+  hit, three missed turns forfeit, 128-turn cap: 64 cells per player). Fleets, seeded auto layouts and the first
   turn stay in `game_private_state`; the public state holds only shots, sunk ship shapes and
   the turn. A player's own fleet is projected as `actorView.fleet` by authenticated HTTP
-  action/GET only. Actions: `place {layout}` and `fire {cell}`; turn ids run `r1`..`r999`.
+  action/GET only, never on discovery/history. Actions: `place {layout}` or server-seeded
+  `place {auto:true}`, and `fire {cell}`; turn ids run `r1`..`r999`. Both strict numeric
+  coordinates and the full legal action ledger are retained across retries.
 - Settlement for a competitive engine game happens only in `backend/gameEngine/settlement.js`
   and at most once: the `games` row is locked, the public engine result gets
   `settled/settledAt/transferredPoints`, and `applyDbSettlement`/`applyMemorySettlement` runs in

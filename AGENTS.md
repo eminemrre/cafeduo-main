@@ -21,10 +21,16 @@ Stack: Node + Express (CommonJS), React + Vite + TypeScript, PostgreSQL, Redis, 
 
 ## Workflow
 
-- Work on a branch and open a pull request. A push to `main` deploys to production through
-  Dokploy, so `main` only receives reviewed merges.
-- `.github/workflows/deploy-vps.yml` is the retired pipeline; Dokploy pulls `main` and runs
-  `deploy/docker-compose.dokploy.yml`.
+- Work on a branch and open a pull request. A push to `main` deploys to production, so `main`
+  only receives reviewed merges.
+- Production deploys through `.github/workflows/deploy-vps.yml` (after a green `CI/CD Pipeline`
+  on a `main` push): SSH → `deploy/scripts/deploy-production.sh` with
+  `deploy/docker-compose.prod.yml` + `docker-compose.hardening.yml` and the server-managed
+  `/opt/cafeduo-main/.env` (verified in Actions runs on 2026-10-21). The script backs up the
+  database, builds, and **aborts on pending migrations**; it never runs them. Apply a new
+  migration on the server before merging. Every API env var must be listed in
+  `docker-compose.prod.yml` (`deploymentContract.test.js`). `docker-compose.dokploy.yml` is
+  kept in sync but is not what production runs.
 - Husky's pre-commit hook runs lint-staged (eslint --fix + prettier --write on staged files).
 - Production: https://cafeduotr.com, health check `/api/health`.
 
@@ -132,7 +138,7 @@ npm run migrate:status   # when touching migrations
   server share the position function), and score only from the server-side position function.
   Lag compensation (approved 2026-10-22): `fire` may carry `shotAt`, the client's server-clock
   time of the reticle frame on screen; the engine clamps it to `[receipt − AIM_MAX_REWIND_MS
-  (250), receipt]` and to the round start, and the deadline still uses receipt time. Zones are
+(250), receipt]` and to the round start, and the deadline still uses receipt time. Zones are
   `AIM_ZONES` (3/2/1 points within 2.5/6/12 units of the centre); the trajectory carries a
   seeded two-wave `rhythm` around the mean speed, integrated in closed form, and a trajectory
   without one keeps constant speed. Every client threshold reads the shared zones. The

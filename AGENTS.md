@@ -45,6 +45,10 @@ npm run migrate:status   # when touching migrations
 - **Use `node-pg-migrate` for all schema changes** — never extend the `initDb` DDL in
   `backend/server.js`.
 - **Test migrations both ways**: `npm run migrate:up && npm run migrate:down && npm run migrate:up`.
+- **The whole history must install an empty database**: CI's `fresh-db-migrations` job runs
+  `npm run migrate:verify-fresh` (up → full down → up, identical schema). Every `down` must
+  tolerate objects a later migration adopted with `IF NOT EXISTS` and already dropped; use
+  `ifExists`. Production never ran `20240224000002` (the legacy baseline marks it superseded).
 - **No N+1 queries** — no queries inside loops; batch with `ANY($1)`, `UNNEST`, CTEs or JOINs.
 
 ### Redis

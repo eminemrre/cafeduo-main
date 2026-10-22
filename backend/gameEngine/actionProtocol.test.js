@@ -45,6 +45,27 @@ describe('normalizeActionEnvelope', () => {
     expect(result.code).toBe(code);
   });
 
+  it('keeps an integer shot time on fire and fingerprints it', () => {
+    const fire = validBody({ type: ACTION_TYPES.FIRE, optionIndex: undefined, shotAt: 1792670000123 });
+    const result = normalizeActionEnvelope(fire);
+    expect(result).toMatchObject({ ok: true, envelope: { type: 'fire', shotAt: 1792670000123 } });
+    const moved = normalizeActionEnvelope({ ...fire, shotAt: 1792670000124 }).envelope;
+    expect(fingerprintAction(moved)).not.toBe(fingerprintAction(result.envelope));
+    // Only fire carries a shot time.
+    const answer = normalizeActionEnvelope(validBody({ shotAt: 1792670000123 }));
+    expect(answer.envelope.shotAt).toBeUndefined();
+  });
+
+  it.each([['string', '1792670000123'], ['float', 1.5], ['negative', -1], ['zero', 0], ['bool', true], ['huge', 2 ** 60]])(
+    'rejects a %s shot time',
+    (_label, shotAt) => {
+      const result = normalizeActionEnvelope(
+        validBody({ type: ACTION_TYPES.FIRE, optionIndex: undefined, shotAt })
+      );
+      expect(result).toMatchObject({ ok: false, code: 'INVALID_SHOT_TIME' });
+    }
+  );
+
   it('does not require an option for fire/joker/resign', () => {
     for (const type of [ACTION_TYPES.FIRE, ACTION_TYPES.JOKER, ACTION_TYPES.RESIGN]) {
       const result = normalizeActionEnvelope(validBody({ type, optionIndex: undefined }));

@@ -1,4 +1,5 @@
 const {
+  AIM_MAX_REWIND_MS,
   AIM_REVEAL_MS,
   AIM_ROUND_COUNT,
   AIM_ROUND_MS,
@@ -192,6 +193,43 @@ describe('aimEngine', () => {
     const next = advanceAim(reveal.state, privateState, AIM_ROUND_MS + AIM_REVEAL_MS);
     expect(next.state.phase).toBe('open');
     expect(next.state.round.id).toBe('r2');
+  });
+
+  it('scores the moment the player saw, within the latency allowance', () => {
+    const { state, privateState } = makeGame();
+    // Received 150 ms after the click the player made at the centre.
+    const shot = fire('r1', 'host', 150, state, privateState, { shotAt: 0 });
+    expect(shot.ok).toBe(true);
+    expect(shot.privateState.shots.r1.host).toMatchObject({
+      position: 50,
+      points: 3,
+      elapsedMs: 0,
+      receivedAt: new Date(150).toISOString(),
+    });
+  });
+
+  it('never rewinds further than the allowance, before the round or into the future', () => {
+    expect(AIM_MAX_REWIND_MS).toBe(250);
+    const { state, privateState } = makeGame();
+    // A claimed shot older than the allowance is moved up to 250 ms before receipt.
+    const old = fire('r1', 'host', 1000, state, privateState, { shotAt: 0 });
+    expect(old.privateState.shots.r1.host).toMatchObject({ elapsedMs: 750, position: 75 });
+    // A claimed shot after receipt is scored at receipt.
+    const future = fire('r1', 'guest', 100, state, privateState, { shotAt: 5000 });
+    expect(future.privateState.shots.r1.guest).toMatchObject({ elapsedMs: 100, position: 60 });
+
+    // A claimed shot before the round opened is scored at the round start.
+    const late = makeGame(10_000);
+    const early = fire('r1', 'host', 10_100, late.state, late.privateState, { shotAt: 9_950 });
+    expect(early.privateState.shots.r1.host).toMatchObject({ elapsedMs: 0, position: 50 });
+  });
+
+  it('keeps the deadline on receive time even when the claimed shot is earlier', () => {
+    const { state, privateState } = makeGame();
+    const late = fire('r1', 'guest', AIM_ROUND_MS + 1, state, privateState, {
+      shotAt: AIM_ROUND_MS - 100,
+    });
+    expect(late).toMatchObject({ ok: false, code: 'ROUND_CLOSED' });
   });
 
   it('rejects stale rounds, second shots and shots after the deadline', () => {

@@ -354,6 +354,10 @@ describe('ArenaBattle multiplayer', () => {
     const [gameId, payload] = mockApi.games.action.mock.calls[0];
     expect(gameId).toBe('game-1');
     expect(payload).toEqual(expect.objectContaining({ roundId: 'r1', type: 'fire' }));
+    // The moment the reticle was drawn, in estimated server time; the server
+    // bounds it to its latency allowance and never takes a position or score.
+    expect(Number.isSafeInteger(payload.shotAt)).toBe(true);
+    expect(Math.abs(payload.shotAt - Date.now())).toBeLessThan(60_000);
     expect(payload.position).toBeUndefined();
     expect(payload.points).toBeUndefined();
     expect(payload.score).toBeUndefined();

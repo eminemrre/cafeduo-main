@@ -56,8 +56,8 @@ const playersShell = () =>
                       <span class="cdl-tent-line-2">yan masada.</span>
                     </h1>
                     <p class="cdl-tent-offer">
-                      Aynı kafedeki biriyle satranç, bilgi yarışı ya da düello oyna; kazandığın puanı
-                      kafenin ödüllerinde harca.
+                      Aynı kafedeki biriyle satranç, bilgi yarışı, düello ya da amiral battı oyna;
+                      kazandığın puanı kafenin ödüllerinde harca.
                     </p>
                     <p class="cdl-tent-meta">
                       <span>İlk 100 puan hediye</span>

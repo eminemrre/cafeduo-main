@@ -13,7 +13,7 @@ export const OWNER_HERO_FACTS = [
   { what: 'CafeDuo Pro', value: '₺800/ay' },
 ] as const;
 
-/** The three games, in the order they stack on the page. */
+/** The four games, in the order they stack on the page. */
 export const GAMES = [
   {
     id: 'satranc',
@@ -36,6 +36,13 @@ export const GAMES = [
     toy: 'target',
     toyAlt: 'Pembe beyaz oyuncak hedef tahtası ve üzerine saplanmış dart',
   },
+  {
+    id: 'amiral',
+    name: 'Amiral Battı',
+    text: 'Filonu gizlice yerleştir, sırayla atış yap; rakibin dört gemisini ilk batıran kazanır. Her atış sunucuda sayılır.',
+    toy: 'ship',
+    toyAlt: 'Deniz turkuazı oyuncak savaş gemisi, beyaz köşkü ve siyah bacasıyla',
+  },
 ] as const;
 
 /** The order slip: what happens, in order, with the real numbers and the time each step takes. */
@@ -51,7 +58,7 @@ export const SLIP = [
     label: 'Masada',
     rows: [
       { what: 'Açık bir oyuna otur; puanı baştan görürsün', value: '1 dk' },
-      { what: 'Satranç, bilgi yarışı ya da düello oyna', value: '3–5 dk' },
+      { what: 'Satranç, bilgi yarışı, düello ya da amiral battı oyna', value: '3–10 dk' },
     ],
   },
   {
@@ -70,8 +77,8 @@ export const SHOWCASE_TABS = [
   {
     id: 'oyun',
     label: 'Oyun',
-    title: 'Üç oyun, tek masa',
-    text: 'Satranç, bilgi yarışı ve düello gerçek zamanlı: her hamle sunucuda doğrulanır, ikiniz de aynı anda görürsünüz.',
+    title: 'Dört oyun, tek masa',
+    text: 'Satranç, bilgi yarışı, düello ve amiral battı gerçek zamanlı: her hamle sunucuda doğrulanır, ikiniz de aynı anda görürsünüz.',
   },
   {
     id: 'puan',

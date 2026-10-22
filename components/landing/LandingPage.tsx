@@ -108,33 +108,33 @@ const Hero: React.FC = () => (
     <div className="cdl-tent">
       <div className="cdl-tent-stack">
         <div className="cdl-tent-card" data-landing-reveal>
-        <i className="cdl-scallop cdl-scallop-tl" aria-hidden="true" />
-        <i className="cdl-scallop cdl-scallop-tr" aria-hidden="true" />
-        <h1 id="cdl-hero-title">
-          <span className="cdl-tent-line-1">Rakibin</span>{' '}
-          <span className="cdl-tent-line-2">yan masada.</span>
-        </h1>
-        <p className="cdl-tent-offer">
-          Aynı kafedeki biriyle satranç, bilgi yarışı ya da düello oyna; kazandığın puanı kafenin
-          ödüllerinde harca.
-        </p>
-        <p className="cdl-tent-meta">
-          <span>İlk 100 puan hediye</span>
-          <i className="cdl-diamond" aria-hidden="true" />
-          <span>Her gün çark</span>
-        </p>
-        <div className="cdl-tent-foot">
-          <div className="cdl-tent-qr">
-            <QRCodeSVG
-              value="https://cafeduotr.com"
-              size={92}
-              level="M"
-              fgColor="#17140F"
-              aria-hidden="true"
-            />
+          <i className="cdl-scallop cdl-scallop-tl" aria-hidden="true" />
+          <i className="cdl-scallop cdl-scallop-tr" aria-hidden="true" />
+          <h1 id="cdl-hero-title">
+            <span className="cdl-tent-line-1">Rakibin</span>{' '}
+            <span className="cdl-tent-line-2">yan masada.</span>
+          </h1>
+          <p className="cdl-tent-offer">
+            Aynı kafedeki biriyle satranç, bilgi yarışı, düello ya da amiral battı oyna; kazandığın
+            puanı kafenin ödüllerinde harca.
+          </p>
+          <p className="cdl-tent-meta">
+            <span>İlk 100 puan hediye</span>
+            <i className="cdl-diamond" aria-hidden="true" />
+            <span>Her gün çark</span>
+          </p>
+          <div className="cdl-tent-foot">
+            <div className="cdl-tent-qr">
+              <QRCodeSVG
+                value="https://cafeduotr.com"
+                size={92}
+                level="M"
+                fgColor="#17140F"
+                aria-hidden="true"
+              />
+            </div>
+            <p className="cdl-tent-scan">Telefonla okut: cafeduotr.com</p>
           </div>
-          <p className="cdl-tent-scan">Telefonla okut: cafeduotr.com</p>
-        </div>
         </div>
       </div>
     </div>
@@ -274,8 +274,8 @@ const Menu: React.FC = () => (
         Menü
       </h2>
       <p className="cdl-menu-note" data-landing-reveal>
-        Puanla ödenir; fiyatlar örnektir, ödülleri her kafe kendi belirler. Günlük çarktan 15, 50
-        ya da 250 puan, bazen bir kahve çıkar.
+        Puanla ödenir; fiyatlar örnektir, ödülleri her kafe kendi belirler. Günlük çarktan 15, 50 ya
+        da 250 puan, bazen bir kahve çıkar.
       </p>
       <div className="cdl-menu-bars">
         {MENU.map((group, index) => (

@@ -10,7 +10,12 @@ import React, { useState } from 'react';
 import { ArrowUpRight } from 'lucide-react';
 import { LandingExperience } from './LandingExperience';
 import { OWNER_HERO_FACTS, toyImage } from './landing/landingContent';
-import { CONTACT_EMAIL, DEFAULT_PILOT_MESSAGE, pilotMailto, whatsappLink } from '../lib/ownerContact';
+import {
+  CONTACT_EMAIL,
+  DEFAULT_PILOT_MESSAGE,
+  pilotMailto,
+  whatsappLink,
+} from '../lib/ownerContact';
 
 const whatsappHref = whatsappLink();
 
@@ -98,7 +103,7 @@ const SET_UP = [
     label: 'Masada',
     rows: [
       { what: 'Müşteri masadaki QR’ı okutur', value: 'tarayıcıda' },
-      { what: 'Yan masayla bir oyun açar', value: '3 oyun' },
+      { what: 'Yan masayla bir oyun açar', value: '4 oyun' },
       { what: 'Kazandığı puan hesabına geçer', value: 'maç bitince' },
     ],
   },
@@ -113,11 +118,7 @@ const SET_UP = [
 
 /** The set-up, printed as the order slip. */
 const HowItWorks: React.FC = () => (
-  <section
-    id="nasil-calisir"
-    className="cdl-field cdl-slip"
-    aria-label="Nasıl çalışır"
-  >
+  <section id="nasil-calisir" className="cdl-field cdl-slip" aria-label="Nasıl çalışır">
     <div className="cdl-slip-copy">
       <h2 id="cdl-owner-slip-title" data-landing-reveal>
         Bir masadan başlar
@@ -160,7 +161,7 @@ const BENEFITS = [
   {
     tone: 'limon',
     title: 'Masada geçen zaman',
-    text: 'Kahvenin yanına satranç, bilgi yarışı ve düello. Etkisini pilotta birlikte değerlendiririz.',
+    text: 'Kahvenin yanına satranç, bilgi yarışı, düello ve amiral battı. Etkisini pilotta birlikte değerlendiririz.',
     toy: 'quiz',
   },
   {

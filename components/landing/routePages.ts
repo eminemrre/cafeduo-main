@@ -22,7 +22,7 @@ export const PUBLIC_PAGES: readonly PublicPage[] = [
     path: '/',
     title: 'CafeDuo: Rakibin yan masada',
     description:
-      'Aynı kafedeki biriyle satranç, bilgi yarışı ya da düello oyna; kazandığın puanı kafenin ödüllerinde harca. İlk 100 puan hediye.',
+      'Aynı kafedeki biriyle satranç, bilgi yarışı, düello ya da amiral battı oyna; kazandığın puanı kafenin ödüllerinde harca. İlk 100 puan hediye.',
   },
   {
     path: '/kafeler',

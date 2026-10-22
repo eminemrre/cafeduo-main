@@ -45,6 +45,7 @@ body:has(.cdl) {
   --limon: #ffd23f;
   --gok: #1fb3ff;
   --fistik: #b6d31b;
+  --deniz: #2ec4b6;
 
   --display: 'Baloo 2', system-ui, sans-serif;
   --text: 'Onest', system-ui, -apple-system, sans-serif;
@@ -616,7 +617,8 @@ body:has(.cdl) {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   height: 84vh;
-  height: 84svh;
+  /* Each sheet sticks lower than the one before; keep its bottom (and its toy) on screen. */
+  height: min(84svh, calc(100svh - 112px - var(--sheet-index) * 72px));
   min-height: 520px;
   overflow: hidden;
 }
@@ -642,6 +644,10 @@ body:has(.cdl) {
 
 .cdl-sheet-nisanci {
   background: var(--lokum);
+}
+
+.cdl-sheet-amiral {
+  background: var(--deniz);
 }
 
 .cdl-sheet-copy {

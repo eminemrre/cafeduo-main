@@ -61,8 +61,7 @@ const createCreateGameHandler = (deps) => {
     // these two game types stay closed instead of falling back to that path.
     if (isCompetitiveEngineGameType(gameType) && !isGameEngineV2Enabled()) {
       return res.status(503).json({
-        error:
-          'Bilgi Yarışı ve Nişancı Düellosu sunucu doğrulamasına geçiyor. Kısa bir süre yeni maç açılamıyor.',
+        error: 'Sıralı oyunlar sunucu doğrulamasına geçiyor. Kısa bir süre yeni maç açılamıyor.',
         code: 'GAME_ENGINE_MAINTENANCE',
       });
     }

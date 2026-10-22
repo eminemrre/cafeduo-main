@@ -52,7 +52,7 @@ const GAME_REGISTRY = {
   [BATTLESHIP_GAME_TYPE]: {
     type: BATTLESHIP_GAME_TYPE,
     mode: 'battleship',
-    // Turn-based with a 200-turn cap; there is no fixed round count.
+    // Turn-based with a 128-turn cap (64 cells per player); no fixed round count.
     maxRounds: null,
     // Score is ship cells hit: 4 + 3 + 3 + 2.
     maxScore: 12,

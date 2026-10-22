@@ -11,19 +11,16 @@
 import React, { useMemo, useState } from 'react';
 import { Trophy, Plus, X, Calendar, Trash2 } from 'lucide-react';
 import type { Reward, Tournament } from '../../types';
-import type {
-  TournamentFormData,
-  TournamentTierForm,
-} from './types';
+import type { TournamentFormData, TournamentTierForm } from './types';
 
-// Game types shipped today. Kept in sync with shared/gameRegistry.js by
-// virtue of strings; backend rejects anything else, so if a new game lands
-// you'll add it here as part of that feature.
-const GAME_TYPE_OPTIONS: Array<{ value: string; label: string }> = [
+// Game types shipped today. The backend accepts exactly shared/gameRegistry.js
+// (CommonJS, so not imported here); TournamentManager.test.tsx keeps the two equal.
+export const GAME_TYPE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: '', label: 'Tüm oyunlar' },
   { value: 'Nişancı Düellosu', label: 'Nişancı Düellosu' },
   { value: 'Bilgi Yarışı', label: 'Bilgi Yarışı' },
   { value: 'Retro Satranç', label: 'Retro Satranç' },
+  { value: 'Amiral Battı', label: 'Amiral Battı' },
 ];
 
 interface TournamentManagerProps {
@@ -75,10 +72,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const activeRewards = useMemo(
-    () => rewards.filter((r) => r.is_active !== false),
-    [rewards]
-  );
+  const activeRewards = useMemo(() => rewards.filter((r) => r.is_active !== false), [rewards]);
 
   const updateTier = (idx: number, patch: Partial<TournamentTierForm>) => {
     const next = tournamentForm.tiers.map((t, i) => (i === idx ? { ...t, ...patch } : t));
@@ -89,10 +83,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
     if (tournamentForm.tiers.length >= 10) return;
     setTournamentForm({
       ...tournamentForm,
-      tiers: [
-        ...tournamentForm.tiers,
-        { rank: tournamentForm.tiers.length + 1, rewardId: null },
-      ],
+      tiers: [...tournamentForm.tiers, { rank: tournamentForm.tiers.length + 1, rewardId: null }],
     });
   };
 
@@ -172,9 +163,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
               <input
                 type="datetime-local"
                 value={tournamentForm.startAt}
-                onChange={(e) =>
-                  setTournamentForm({ ...tournamentForm, startAt: e.target.value })
-                }
+                onChange={(e) => setTournamentForm({ ...tournamentForm, startAt: e.target.value })}
                 required
                 data-testid="tournament-start-input"
                 className="duo-input duo-focus w-full px-3 font-candy-body text-base text-carbon focus:bg-paper"
@@ -266,7 +255,10 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
           </div>
 
           {formError && (
-            <p className="font-candy-body text-sm text-candy-danger" data-testid="tournament-form-error">
+            <p
+              className="font-candy-body text-sm text-candy-danger"
+              data-testid="tournament-form-error"
+            >
               {formError}
             </p>
           )}
@@ -322,9 +314,7 @@ export const TournamentManager: React.FC<TournamentManagerProps> = ({
                           </span>
                         )}
                       </div>
-                      <h4 className="font-candy-body text-base text-carbon truncate">
-                        {t.name}
-                      </h4>
+                      <h4 className="font-candy-body text-base text-carbon truncate">{t.name}</h4>
                       <p className="font-candy-body text-xs text-carbon-muted">
                         {formatLocal(t.start_at)} → {formatLocal(t.end_at)}
                       </p>

@@ -1,7 +1,7 @@
 ---
 version: alpha
 name: CafeDuo — Masa Oyuncakları
-description: A café table turned into a toy set. The page is the stationery of the café table — table tent, order slip, colour sheets, the menu — with real 3D toys (cup, knight, question card, target, coin) as its objects.
+description: A café table turned into a toy set. The page is the stationery of the café table — table tent, order slip, colour sheets, the menu — with real 3D toys (cup, knight, question card, target, ship, coin) as its objects.
 colors:
   primary: '#FF5C8A'
   on-primary: '#17140F'
@@ -297,7 +297,7 @@ components:
 ## Overview
 
 **Masa Oyuncakları (table toys).** CafeDuo turns the café table into a toy set: the cup, the chess
-knight, the question card, the target, the coin and the table tent with its code (`MASA07`) are
+knight, the question card, the target, the battleship, the coin and the table tent with its code (`MASA07`) are
 real 3D objects in soft, matte, vinyl-toy candy colours. The visitor plays with them before reading
 about them; the opponent is the next table and the prize is that café's reward (see PRODUCT.md).
 

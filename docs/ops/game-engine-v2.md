@@ -1,18 +1,16 @@
 # Server-authoritative games (protocol v2)
 
-> **Release blocked after independent review.** Read
-> [game-authority-review.md](game-authority-review.md) first. Its migration-first
-> and disabled-auto-deploy prerequisites supersede the rollout order below.
-> Queue ordering, aim playability and fresh-install migration issues remain
-> open; previous green tests are not activation approval.
+> **Live since 2026-10-22** (release #85, `f16e174`, owner-approved). Production
+> runs `GAME_ENGINE_V2_ENABLED=true`. Aim playability and fresh-install
+> migrations were fixed before release; the one known limit left is
+> cross-instance queue ordering (see
+> [game-authority-review.md](game-authority-review.md)); production runs a single
+> API container.
 
-CafeDuo's ranked **Bilgi Yarışı** and **Nişancı Düellosu** matches are run by the
-server. The client renders public snapshots and sends actions; it never sends a
-score, a winner, a clock value or a settlement flag.
-
-> Status: infrastructure only. `GAME_ENGINE_V2_ENABLED` is **false** in this
-> branch and in production. Activation and retirement of old games require a
-> separate approval; nothing in this document has been run against production.
+CafeDuo's ranked **Bilgi Yarışı**, **Nişancı Düellosu** and **Amiral Battı**
+matches are run by the server. The client renders public snapshots and sends
+actions; it never sends a score, a hit, a winner, a fleet, a clock value or a
+settlement flag.
 
 ## Trust boundary
 
@@ -28,7 +26,7 @@ score, a winner, a clock value or a settlement flag.
   `finish({ winner })` answer `410 LEGACY_PROTOCOL_DISABLED`.
 - `game_move` and `update_game_state` sockets are rejected. Socket events only
   announce a revision; clients refetch the snapshot.
-- Creating or joining a quiz/aim match while the flag is off answers
+- Creating or joining a quiz/aim/battleship match while the flag is off answers
   `503 GAME_ENGINE_MAINTENANCE`.
 
 ## Action protocol
@@ -68,6 +66,21 @@ closing and ordering still use the receive time, and `shotAt` is part of the
 action fingerprint. A forged value can only pick a moment from the last 250 ms,
 which the public trajectory already allows a scripted client to time.
 
+Amiral Battı (`backend/gameEngine/battleshipEngine.js`, rules in
+`shared/battleship.js`): 8×8 seas, fleet 4+3+3+2, 45 s placement, then
+alternating 20 s turns with no extra shot on a hit. A missed turn passes; three
+missed turns in a row forfeit. The first to sink the whole fleet wins; at the
+128-turn cap (64 cells per player) more hits wins and equal is a draw.
+Actions: `place {layout}` (four `{cell, dir}` in fleet order) or
+`place {auto: true}` (the server's seeded layout), then `fire {cell}` (0–63);
+turn ids run `r1`..`r999`. An unfinished placement is auto-placed from the
+seeded layout at the deadline; if nobody placed, the match is `abandoned`.
+Fleets, seeded layouts and the first turn stay in `game_private_state`; the
+public state holds only shots, sunk ship shapes and whose turn it is. A
+player's own fleet is projected as `actorView.fleet` by the authenticated
+action/GET only, never by sockets, lobby, join, active-game or history. The
+practice match against the bot is local and unranked.
+
 ## Settlement
 
 Settlement happens only in `backend/gameEngine/settlement.js` and at most once:
@@ -94,6 +107,15 @@ reported as `CLIENT_UPDATE_REQUIRED`; there is no legacy fallback.
 ## Rollout runbook (requires approval)
 
 **Do not run these steps automatically. Ask the owner for each gate.**
+
+> **Run on 2026-10-22 (owner-approved).** A one-off GitHub Actions job on the
+> production environment (branch deleted afterwards) backed up the database
+> and `.env`, added `games.game_private_state` with its `pgmigrations` row,
+> and set `GAME_ENGINE_V2_ENABLED=true` in `/opt/cafeduo-main/.env`. There were
+> 0 legacy active/waiting ranked games, so no retirement was needed. Merging
+> #85 then deployed through Deploy VPS, whose `migrate:status` gate passed.
+> Production deploys with `deploy/docker-compose.prod.yml`, which must pass the
+> flag (`deploymentContract.test.js`).
 
 1. **Preflight**
    - Confirm CI is green for the whole chain and the backend + frontend are

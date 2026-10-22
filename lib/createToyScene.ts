@@ -47,9 +47,10 @@ export const TOY_COLORS = {
   gokDeep: '#1597D9',
   fistik: '#B6D31B',
   fistikFace: '#C8E23A',
+  deniz: '#2EC4B6',
 } as const;
 
-export type ToyName = 'knight' | 'cup' | 'coin' | 'tent' | 'quiz' | 'target';
+export type ToyName = 'knight' | 'cup' | 'coin' | 'tent' | 'quiz' | 'target' | 'ship';
 export type ToyLayout = 'hero' | 'single';
 
 export interface ToySceneOptions {
@@ -306,7 +307,9 @@ export function createToyScene(canvas: HTMLCanvasElement, options: ToySceneOptio
     const group = new Group();
     const card = track(new RoundedBoxGeometry(1.7, 1.05, 0.08, 4, 0.06));
     const plain = vinyl(TOY_COLORS.paper);
-    const face = decal(labelTexture(options.tableCode ?? 'MASA07', TOY_COLORS.paper, 118, 640, 400));
+    const face = decal(
+      labelTexture(options.tableCode ?? 'MASA07', TOY_COLORS.paper, 118, 640, 400)
+    );
     const front = new Mesh(card, [plain, plain, plain, plain, face, plain]);
     front.position.set(0, 0.48, 0.17);
     front.rotation.x = -0.32;
@@ -333,7 +336,10 @@ export function createToyScene(canvas: HTMLCanvasElement, options: ToySceneOptio
     card.position.y = 1.15;
     card.rotation.x = -0.12;
     group.add(card);
-    const stand = new Mesh(track(new RoundedBoxGeometry(1.2, 0.22, 0.7, 4, 0.08)), vinyl(TOY_COLORS.paper));
+    const stand = new Mesh(
+      track(new RoundedBoxGeometry(1.2, 0.22, 0.7, 4, 0.08)),
+      vinyl(TOY_COLORS.paper)
+    );
     stand.position.y = 0.11;
     group.add(stand);
     return group;
@@ -349,12 +355,18 @@ export function createToyScene(canvas: HTMLCanvasElement, options: ToySceneOptio
       [0.2, TOY_COLORS.ink],
     ];
     rings.forEach(([radius, color], i) => {
-      const ring = new Mesh(track(new CylinderGeometry(radius, radius, 0.2 + i * 0.04, 64)), vinyl(color));
+      const ring = new Mesh(
+        track(new CylinderGeometry(radius, radius, 0.2 + i * 0.04, 64)),
+        vinyl(color)
+      );
       ring.rotation.x = Math.PI / 2;
       ring.position.set(0, 1.35, i * 0.02);
       group.add(ring);
     });
-    const stand = new Mesh(track(new CylinderGeometry(0.12, 0.5, 0.4, 32)), vinyl(TOY_COLORS.paper));
+    const stand = new Mesh(
+      track(new CylinderGeometry(0.12, 0.5, 0.4, 32)),
+      vinyl(TOY_COLORS.paper)
+    );
     stand.position.y = 0.2;
     group.add(stand);
     const dart = new Group();
@@ -366,7 +378,10 @@ export function createToyScene(canvas: HTMLCanvasElement, options: ToySceneOptio
     tip.position.z = -0.6;
     dart.add(tip);
     for (const angle of [0, Math.PI / 2]) {
-      const fin = new Mesh(track(new RoundedBoxGeometry(0.4, 0.02, 0.3, 2, 0.01)), vinyl(TOY_COLORS.limon));
+      const fin = new Mesh(
+        track(new RoundedBoxGeometry(0.4, 0.02, 0.3, 2, 0.01)),
+        vinyl(TOY_COLORS.limon)
+      );
       fin.position.z = 0.42;
       fin.rotation.z = angle;
       dart.add(fin);
@@ -377,9 +392,116 @@ export function createToyScene(canvas: HTMLCanvasElement, options: ToySceneOptio
     return group;
   };
 
-  const builders: Record<ToyName, () => Group> = { knight, cup, coin, tent, quiz, target };
+  /** Amiral Battı: a vinyl toy battleship, hull in deniz, a white deck house, an ink funnel. */
+  const ship = () => {
+    const group = new Group();
+    // Top-down outline (x along the ship, pointed bow at +x), extruded upward.
+    const outline = (scale: number) => {
+      const shape = new Shape();
+      shape.moveTo(-1.25 * scale, -0.42 * scale);
+      shape.lineTo(0.55 * scale, -0.46 * scale);
+      shape.bezierCurveTo(1.0 * scale, -0.42 * scale, 1.3 * scale, -0.18 * scale, 1.45 * scale, 0);
+      shape.bezierCurveTo(
+        1.3 * scale,
+        0.18 * scale,
+        1.0 * scale,
+        0.42 * scale,
+        0.55 * scale,
+        0.46 * scale
+      );
+      shape.lineTo(-1.25 * scale, 0.42 * scale);
+      shape.bezierCurveTo(
+        -1.42 * scale,
+        0.4 * scale,
+        -1.42 * scale,
+        -0.4 * scale,
+        -1.25 * scale,
+        -0.42 * scale
+      );
+      return shape;
+    };
+    const hull = new Mesh(
+      track(
+        new ExtrudeGeometry(outline(1), {
+          depth: 0.42,
+          bevelEnabled: true,
+          bevelThickness: 0.12,
+          bevelSize: 0.1,
+          bevelSegments: 8,
+          curveSegments: 40,
+        })
+      ),
+      vinyl(TOY_COLORS.deniz)
+    );
+    hull.rotation.x = -Math.PI / 2;
+    hull.position.y = 0.12;
+    group.add(hull);
+    const deck = new Mesh(
+      track(
+        new ExtrudeGeometry(outline(0.86), { depth: 0.06, bevelEnabled: false, curveSegments: 40 })
+      ),
+      vinyl(TOY_COLORS.paper)
+    );
+    deck.rotation.x = -Math.PI / 2;
+    deck.position.y = 0.67;
+    group.add(deck);
+    const house = new Mesh(
+      track(new RoundedBoxGeometry(0.95, 0.5, 0.56, 4, 0.1)),
+      vinyl(TOY_COLORS.paper)
+    );
+    house.position.set(-0.3, 0.98, 0);
+    group.add(house);
+    const bridge = new Mesh(
+      track(new RoundedBoxGeometry(0.5, 0.34, 0.44, 4, 0.08)),
+      vinyl(TOY_COLORS.paper)
+    );
+    bridge.position.set(-0.18, 1.38, 0);
+    group.add(bridge);
+    const funnel = new Mesh(
+      track(new CylinderGeometry(0.15, 0.18, 0.5, 32)),
+      vinyl(TOY_COLORS.ink)
+    );
+    funnel.position.set(-0.62, 1.42, 0);
+    group.add(funnel);
+    const windowMaterial = new MeshPhysicalMaterial({
+      color: TOY_COLORS.ink,
+      roughness: 0.3,
+      clearcoat: 1,
+    });
+    materials.add(windowMaterial);
+    for (const x of [-0.6, -0.3, 0]) {
+      const porthole = new Mesh(track(new CircleGeometry(0.075, 24)), windowMaterial);
+      porthole.position.set(x, 0.98, 0.285);
+      group.add(porthole);
+    }
+    const turret = new Mesh(
+      track(new CylinderGeometry(0.24, 0.27, 0.18, 32)),
+      vinyl(TOY_COLORS.deniz)
+    );
+    turret.position.set(0.62, 0.79, 0);
+    group.add(turret);
+    const barrel = new Mesh(
+      track(new CylinderGeometry(0.05, 0.05, 0.55, 16)),
+      vinyl(TOY_COLORS.ink)
+    );
+    barrel.rotation.z = -Math.PI / 2 + 0.12;
+    barrel.position.set(0.92, 0.84, 0);
+    group.add(barrel);
+    return group;
+  };
+
+  const builders: Record<ToyName, () => Group> = { knight, cup, coin, tent, quiz, target, ship };
   const toys: Toy[] = [];
-  const addToy = (name: ToyName, x: number, y: number, z: number, ry: number, scale = 1, rx = 0, rz = 0) => {
+  const addToy = (
+    name: ToyName,
+    x: number,
+    y: number,
+    z: number,
+    ry: number,
+    scale = 1,
+    rx = 0,
+    rz = 0
+  ) => {
     const object = builders[name]();
     object.position.set(x, y, z);
     object.rotation.set(rx, ry, rz);
@@ -404,7 +526,8 @@ export function createToyScene(canvas: HTMLCanvasElement, options: ToySceneOptio
   // Frame the set: fit its bounding sphere (and the knight's landing spot) into the view.
   const bounds = new Box3();
   toys.forEach((toy) => bounds.expandByObject(toy.object));
-  if (options.layout === 'hero') bounds.expandByPoint(new Vector3(KNIGHT_TARGET.x, 2.5, KNIGHT_TARGET.z));
+  if (options.layout === 'hero')
+    bounds.expandByPoint(new Vector3(KNIGHT_TARGET.x, 2.5, KNIGHT_TARGET.z));
   const sphere = bounds.getBoundingSphere(new Sphere());
   const viewDirection = new Vector3(0, 0.62, 1).normalize();
   const lookAt = { x: sphere.center.x, y: sphere.center.y };
@@ -442,11 +565,13 @@ export function createToyScene(canvas: HTMLCanvasElement, options: ToySceneOptio
       // Entrance: each toy drops onto the table in turn and lands with a small squash.
       const local = Math.min(1, Math.max(0, (t - 0.15 - index * 0.14) / 0.75));
       const drop = options.still ? 0 : (1 - easeOutBack(local)) * 3.2;
-      const squash = options.still || local >= 1 ? 0 : Math.sin(local * Math.PI) * 0.12 * (local > 0.6 ? 1 : 0);
+      const squash =
+        options.still || local >= 1 ? 0 : Math.sin(local * Math.PI) * 0.12 * (local > 0.6 ? 1 : 0);
       object.position.y = rest.y + Math.max(-0.2, drop);
       object.scale.y = object.scale.x * (1 - squash);
       // Idle: a slow sway, different per toy.
-      if (!options.still && local >= 1) object.rotation.y = rest.ry + Math.sin(t * 0.8 + index) * 0.06;
+      if (!options.still && local >= 1)
+        object.rotation.y = rest.ry + Math.sin(t * 0.8 + index) * 0.06;
     });
 
     if (move && knightToy) {

@@ -21,8 +21,7 @@ const {
 
 const maintenanceResponse = (res) =>
   res.status(503).json({
-    error:
-      'Bilgi Yarışı ve Nişancı Düellosu sunucu doğrulamasına geçiyor. Kısa bir süre yeni maç açılamıyor.',
+    error: 'Sıralı oyunlar sunucu doğrulamasına geçiyor. Kısa bir süre yeni maç açılamıyor.',
     code: 'GAME_ENGINE_MAINTENANCE',
   });
 

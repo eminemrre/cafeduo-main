@@ -8,7 +8,8 @@ info:
     ödüller satın almayı sağlayan bir platformun backend API'sidir.
 
     ## Özellikler
-    - 🎮 Oyun lobisi (Refleks Avı, Ritim Kopyala, Çift Tek Sprint)
+    - 🎮 Oyun lobisi (Retro Satranç, Bilgi Yarışı, Nişancı Düellosu, Amiral Battı)
+    - 🛡️ Sıralı oyunlarda sunucu otoritesi (`POST /api/games/{id}/actions`)
     - 🏆 Liderlik tablosu
     - 🎁 Ödül mağazası
     - ☕ Kafe check-in sistemi
@@ -395,8 +396,8 @@ paths:
               properties:
                 gameType:
                   type: string
-                  enum: ['Refleks Avı', 'Tank Düellosu', 'Retro Satranç', 'Bilgi Yarışı']
-                  example: 'Refleks Avı'
+                  enum: ['Retro Satranç', 'Bilgi Yarışı', 'Nişancı Düellosu', 'Amiral Battı']
+                  example: 'Amiral Battı'
                 points:
                   type: integer
                   minimum: 0
@@ -532,6 +533,105 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/GameStatusTransitionError'
+
+  /api/games/{id}/actions:
+    post:
+      tags:
+        - Games
+      summary: Sıralı oyun eylemi (protokol v2)
+      description: |
+        Bilgi Yarışı, Nişancı Düellosu ve Amiral Battı için tek eylem yolu. Sunucu skoru, isabeti,
+        süreyi ve kazananı kendisi hesaplar; istemcinin gönderdiği skor/kazanan alanları yok sayılır.
+        Aynı `actionId` ve aynı gövdeyle tekrar saklanan makbuzu döner (`duplicate: true`);
+        aynı `actionId` ile farklı gövde `409 ACTION_ID_CONFLICT` olur.
+        Ayrıntılar: `docs/ops/game-engine-v2.md`.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [actionId, roundId, type]
+              properties:
+                actionId:
+                  type: string
+                  pattern: '^[A-Za-z0-9_-]{8,64}$'
+                roundId:
+                  type: string
+                  pattern: '^r[1-9][0-9]{0,2}$'
+                  example: 'r1'
+                type:
+                  type: string
+                  enum: ['answer', 'joker', 'fire', 'place', 'resign']
+                optionIndex:
+                  type: integer
+                  minimum: 0
+                  maximum: 7
+                  description: Bilgi Yarışı `answer`.
+                shotAt:
+                  type: integer
+                  description: >-
+                    Nişancı `fire`: ekrandaki nişangah karesinin sunucu-saati zamanı (epoch ms).
+                    Sunucu bunu alış anından en fazla 250 ms geriye ve tur başına kırpar.
+                cell:
+                  type: integer
+                  minimum: 0
+                  maximum: 63
+                  description: Amiral Battı `fire` hedef karesi (8×8, satır × 8 + sütun).
+                layout:
+                  type: array
+                  description: Amiral Battı `place`; filo sırasıyla (4, 3, 3, 2) gemi başı ve yön.
+                  items:
+                    type: object
+                    required: [cell, dir]
+                    properties:
+                      cell: { type: integer, minimum: 0, maximum: 63 }
+                      dir: { type: string, enum: ['h', 'v'] }
+                auto:
+                  type: boolean
+                  description: Amiral Battı `place`; sunucunun tohumladığı düzenle yerleştir (`layout` ile birlikte gönderilemez).
+      responses:
+        200:
+          description: Eylem uygulandı ya da aynı eylemin makbuzu döndü
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  duplicate:
+                    type: boolean
+                  game:
+                    $ref: '#/components/schemas/Game'
+        400:
+          description: Geçersiz eylem gövdesi (ör. INVALID_CELL, INVALID_LAYOUT, INVALID_SHOT_TIME)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        401:
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        409:
+          description: Eski/gelecek tur, ikinci eylem, sıra rakipte ya da ACTION_ID_CONFLICT
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        503:
+          description: GAME_ENGINE_MAINTENANCE — sıralı oyunlar geçici olarak kapalı
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
 
   /api/games/{id}/move:
     post:
@@ -1713,7 +1813,7 @@ components:
           example: 'Rival_Pro'
         gameType:
           type: string
-          example: 'Refleks Avı'
+          example: 'Amiral Battı'
         points:
           type: integer
           example: 150

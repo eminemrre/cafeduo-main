@@ -24,7 +24,7 @@ The opponent is another table in the same café, not an online stranger. Check-i
 
 - Check-in by location or table code; table codes normalise to `MASA##` (`5` → `MASA05`).
 - Lobby of open games in the same café; Socket.IO keeps it live.
-- Three games: **Retro Satranç** (real-time, server-validated moves, 3+2 / 5+0 tempos), **Bilgi Yarışı** (10 short questions, fastest correct answer), **Nişancı Düellosu** (lock the crosshair on centre, 5 rounds).
+- Four games: **Retro Satranç** (real-time, server-validated moves, 3+2 / 5+0 tempos), **Bilgi Yarışı** (10 short questions, fastest correct answer), **Nişancı Düellosu** (lock the crosshair on centre, 5 rounds), **Amiral Battı** (8×8 seas, fleet 4+3+3+2, alternate shots; the first to sink the whole fleet wins). The last three are server-authoritative; Amiral Battı also has an unranked practice match against a bot.
 - Stakes: the player chooses a stake; the winner gets `min(stake, loser's points)`.
 - Every new member starts with 100 points. A daily reward wheel pays 15, 50 or 250 points or, rarely, a free coffee.
 - Rewards belong to a café (default catalogue: Oyun Jetonu x5 100, Cheesecake İkramı 400, Bedava Filtre Kahve 500 points); redeeming creates a QR coupon that staff scan.
@@ -33,7 +33,7 @@ The opponent is another table in the same café, not an online stranger. Check-i
 ## Capabilities and Constraints
 
 - Stack is fixed: React + Vite + TypeScript frontend, Node/Express backend, PostgreSQL, Redis, Socket.IO, Tailwind present. Routes, the auth modal and `lazyWithRetry` loading stay.
-- Scope of the redesign: every surface (landing, auth, check-in, player panel, the three games, `/kafeler`, café panel, admin), replacing the current look.
+- Scope of the redesign: every surface (landing, auth, check-in, player panel, the games, `/kafeler`, café panel, admin), replacing the current look.
 - City-neutral: the product and its design must not be tied to one city or university. The department list is currently Pamukkale University's (`constants.ts`); generalising it is an open product decision, not a design one.
 - Turkish UI and content. PWA with auto-update.
 - WebGL may enhance but never carry essential content: every action and text works without it, with reduced motion and with a keyboard.
@@ -46,7 +46,7 @@ The opponent is another table in the same café, not an online stranger. Check-i
 
 ## Evidence on Hand
 
-- Real: the three games, the rules and numbers above, the reward catalogue defaults, `/kafeler` pricing and pilot terms.
+- Real: the four games, the rules and numbers above, the reward catalogue defaults, `/kafeler` pricing and pilot terms.
 - Absent, never to be fabricated: partner café names or photos, player counts, testimonials, ratings, press, statistics of any kind.
 - No product photography exists. Open-licence pictures must be credited and never presented as a partner café.
 

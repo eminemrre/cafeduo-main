@@ -940,6 +940,48 @@ html::-webkit-scrollbar-thumb {
   }
 }
 
+/* Practice against the bot: one tap per game, each in its own colour. */
+.duo-practice-games {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+@media (min-width: 720px) {
+  .duo-practice-games {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.duo-practice-game {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 0;
+  background: #ffffff;
+  color: #17140f;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease,
+    transform 120ms ease;
+}
+.duo-practice-game:hover {
+  background: #d9eaef;
+}
+.duo-practice-game:active {
+  transform: scale(0.98);
+}
+.duo-practice-swatch {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+
 /* =====================================================================
  * Amiral Battı — two 8×8 seas on the Masa ground. Deniz (#2EC4B6) is the
  * game's colour: the turn band when it is yours, a hit, the picked ship.
@@ -953,6 +995,11 @@ html::-webkit-scrollbar-thumb {
   font-weight: 800;
   line-height: 1;
 }
+.duo-bs-subhead {
+  margin-bottom: 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
 .duo-bs-layout {
   display: grid;
   gap: 20px;
@@ -963,12 +1010,59 @@ html::-webkit-scrollbar-thumb {
     align-items: start;
   }
 }
-.duo-bs-side {
+.duo-bs-panel {
   display: flex;
   flex-direction: column;
   gap: 14px;
   min-width: 0;
 }
+.duo-bs-status {
+  min-height: 48px;
+  margin-bottom: 12px;
+}
+.duo-bs-error {
+  color: #b8241a;
+  font-weight: 600;
+}
+
+/* A sea with its coordinates: letters above, numbers on the left. */
+.duo-bs-sea {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  grid-template-rows: 18px auto;
+  gap: 4px 6px;
+  max-width: 502px;
+}
+.duo-bs-sea > .duo-bs-grid {
+  grid-column: 2;
+  grid-row: 2;
+}
+.duo-bs-axis {
+  display: grid;
+  gap: 3px;
+  color: #4a4540;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  user-select: none;
+}
+.duo-bs-axis--cols {
+  grid-column: 2;
+  grid-row: 1;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  align-items: end;
+  max-width: 480px;
+  text-align: center;
+}
+.duo-bs-axis--rows {
+  grid-column: 1;
+  grid-row: 2;
+  grid-template-rows: repeat(8, minmax(0, 1fr));
+  align-items: center;
+  justify-items: end;
+}
+
 .duo-bs-grid {
   display: grid;
   grid-template-columns: repeat(8, minmax(0, 1fr));
@@ -976,14 +1070,14 @@ html::-webkit-scrollbar-thumb {
   width: 100%;
   max-width: 480px;
 }
-.duo-bs-grid--mini {
-  grid-template-columns: repeat(8, 18px);
+.duo-bs-grid--compact {
+  grid-template-columns: repeat(8, 26px);
   gap: 2px;
   width: auto;
 }
 @media (min-width: 900px) {
-  .duo-bs-grid--mini {
-    grid-template-columns: repeat(8, 28px);
+  .duo-bs-grid--compact {
+    grid-template-columns: repeat(8, 34px);
   }
 }
 .duo-bs-cell {
@@ -999,13 +1093,19 @@ html::-webkit-scrollbar-thumb {
 button.duo-bs-cell {
   cursor: pointer;
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition: background-color 120ms ease;
 }
 button.duo-bs-cell[aria-disabled='true'] {
   cursor: default;
 }
-button.duo-bs-cell[aria-disabled='false']:hover {
-  background: #c4dfe6;
+@media (hover: hover) {
+  button.duo-bs-cell[aria-disabled='false']:hover {
+    background: #eef6f8;
+  }
+  button.duo-bs-cell.duo-bs-cell--ship[aria-disabled='false']:hover {
+    background: #2a251c;
+  }
 }
 button.duo-bs-cell:focus-visible {
   outline: 3px solid #17140f;
@@ -1015,8 +1115,11 @@ button.duo-bs-cell:focus-visible {
 .duo-bs-cell--sunk {
   background: #17140f;
 }
-button.duo-bs-cell.duo-bs-cell--ship[aria-disabled='false']:hover {
-  background: #2a251c;
+/* The ship picked for moving or turning. */
+.duo-bs-cell.duo-bs-cell--picked,
+button.duo-bs-cell.duo-bs-cell--picked[aria-disabled='false']:hover {
+  background: #2ec4b6;
+  box-shadow: inset 0 0 0 3px #17140f;
 }
 .duo-bs-cell--hit {
   background: #2ec4b6;
@@ -1032,37 +1135,29 @@ button.duo-bs-cell.duo-bs-cell--ship[aria-disabled='false']:hover {
   background: #17140f;
   transform: translate(-50%, -50%);
 }
-button.duo-bs-cell.duo-bs-cell--selected,
-.duo-bs-cell--selected {
+/* The aimed cell: white with an ink ring and a sight. */
+.duo-bs-cell.duo-bs-cell--selected,
+button.duo-bs-cell.duo-bs-cell--selected[aria-disabled='false']:hover {
   background: #ffffff;
-  box-shadow: inset 0 0 0 4px #17140f;
+  box-shadow: inset 0 0 0 3px #17140f;
 }
 .duo-bs-mark {
   position: absolute;
   inset: 20%;
 }
+.duo-bs-aim {
+  position: absolute;
+  inset: 14%;
+}
 .duo-bs-cell--fresh {
-  animation: duo-bs-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: duo-bs-pop 360ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes duo-bs-pop {
-  0% {
-    transform: scale(0.55);
+  from {
+    transform: scale(0.6);
   }
-  60% {
-    transform: scale(1.12);
-  }
-  100% {
+  to {
     transform: scale(1);
-  }
-}
-.duo-bs-grid--mini .duo-bs-cell {
-  width: 18px;
-  height: 18px;
-}
-@media (min-width: 900px) {
-  .duo-bs-grid--mini .duo-bs-cell {
-    width: 28px;
-    height: 28px;
   }
 }
 
@@ -1071,11 +1166,11 @@ button.duo-bs-cell.duo-bs-cell--selected,
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 4px;
   padding: 14px 16px;
   background: #eef6f8;
   color: #17140f;
-  font-size: 17px;
+  font-size: 16px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -1088,59 +1183,126 @@ button.duo-bs-cell.duo-bs-cell--selected,
   font-size: 15px;
   font-weight: 600;
 }
-.duo-bs-fleet {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px 12px;
-  margin-bottom: 8px;
+
+/* Scoreboard: each side's hits and its own fleet, sunk ships hollow. */
+.duo-bs-board {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  margin-bottom: 14px;
+}
+.duo-bs-side-card {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px 14px 14px;
+  background: #eef6f8;
+  color: #17140f;
+}
+.duo-bs-side-card--me {
+  background: #17140f;
+  color: #ffffff;
+}
+.duo-bs-side-name {
+  overflow: hidden;
   font-size: 15px;
   font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.duo-bs-side-card--turn .duo-bs-side-name::after {
+  content: '';
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-left: 8px;
+  border-radius: 50%;
+  background: #2ec4b6;
+  vertical-align: 1px;
+}
+.duo-bs-side-score {
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-size: 36px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.duo-bs-side-of {
+  margin-left: 2px;
+  color: #4a4540;
+  font-size: 16px;
+  font-weight: 700;
+}
+.duo-bs-side-card--me .duo-bs-side-of {
+  color: #d9eaef;
 }
 .duo-bs-fleet-ships {
   display: flex;
+  flex-wrap: wrap;
   gap: 4px;
 }
 .duo-bs-fleet-ship {
-  height: 12px;
+  height: 10px;
   background: #17140f;
 }
 .duo-bs-fleet-ship--sunk {
-  background: #d9eaef;
+  background: transparent;
+  box-shadow: inset 0 0 0 2px #4a4540;
+}
+.duo-bs-side-card--me .duo-bs-fleet-ship {
+  background: #ffffff;
+}
+.duo-bs-side-card--me .duo-bs-fleet-ship--sunk {
+  background: transparent;
+  box-shadow: inset 0 0 0 2px #d9eaef;
 }
 
+/* Fleet tray: four ships in one row, the active one in deniz. */
 .duo-bs-tray {
   display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
+  margin-bottom: 14px;
+  max-width: 502px;
 }
 .duo-bs-tray-ship {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 48px;
-  padding: 8px 14px;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 60px;
+  padding: 10px;
   border: 0;
   background: #eef6f8;
   color: #17140f;
   font: inherit;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   text-align: left;
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
   transition: background-color 120ms ease;
-}
-.duo-bs-tray-ship--placed {
-  color: #4a4540;
 }
 .duo-bs-tray-ship--active {
   background: #2ec4b6;
-  color: #17140f;
 }
 .duo-bs-tray-hull {
-  flex: none;
-  height: 14px;
+  display: flex;
+  gap: 2px;
+}
+.duo-bs-tray-hull i {
+  width: 9px;
+  height: 9px;
   background: #17140f;
+}
+.duo-bs-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 16px;
+  height: 16px;
 }
 .duo-bs-tools {
   display: flex;
@@ -1149,31 +1311,15 @@ button.duo-bs-cell.duo-bs-cell--selected,
   gap: 8px;
 }
 
-.duo-bs-tabs {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-.duo-bs-tabs button {
-  min-height: 44px;
-  border: 0;
-  border-bottom: 3px solid transparent;
-  background: transparent;
-  font: inherit;
-  font-weight: 600;
-  color: #17140f;
-}
-.duo-bs-tabs button[aria-selected='true'] {
-  border-bottom-color: #17140f;
-}
-.duo-bs-tabs button:focus-visible {
-  outline: 3px solid #17140f;
-  outline-offset: 3px;
-}
-@media (min-width: 900px) {
-  .duo-bs-tabs {
-    display: none;
-  }
+/* The main action stays under the thumb while the sea fills a phone screen. */
+.duo-bs-action {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  max-width: 502px;
+  margin-top: 16px;
+  padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
+  background: #ffffff;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -114,9 +114,9 @@ async function openPages(
   return { hostContext, guestContext, hostPage, guestPage };
 }
 
-const capture = async (page: Page, name: string) => {
+const capture = async (page: Page, name: string, testId = 'battleship-game') => {
   if (!CAPTURE_DIR) return;
-  await page.getByTestId('battleship-game').screenshot({ path: `${CAPTURE_DIR}/${name}.png` });
+  await page.getByTestId(testId).screenshot({ path: `${CAPTURE_DIR}/${name}.png` });
 };
 
 const fleetCells = (game: any): number[] =>
@@ -364,13 +364,25 @@ test.describe('Amiral Battı', () => {
         userOverride: soloUser,
         skipCheckInRecovery: true,
       });
-      await page.getByTestId('battleship-practice-start').click();
+      // The practice card lets the player pick the game first.
+      const practice = page.getByTestId('practice');
+      await expect(practice.getByRole('button')).toHaveText([
+        'Amiral Battı',
+        'Nişancı Düellosu',
+        'Bilgi Yarışı',
+        'Retro Satranç',
+      ]);
+      await capture(page, 'phone-3-practice-picker', 'practice');
+      await page.getByTestId('practice-start-battleship').click();
       await expect(page.getByTestId('battleship-placement')).toBeVisible();
       await page.getByTestId('battleship-shuffle').click();
       await page.getByTestId('battleship-confirm').click();
       await expect(page.getByTestId('battleship-turn')).toContainText('Sıra sende');
-      await page.getByTestId('battleship-target-grid').locator('button[aria-disabled="false"]').first().click();
-      await page.getByTestId('battleship-fire').click();
+      // Tap to aim, tap the same cell again to fire.
+      const aimCell = page.getByTestId('battleship-target-grid').locator('button[aria-disabled="false"]').first();
+      await aimCell.click();
+      await expect(page.getByTestId('battleship-fire')).toContainText('ateş et');
+      await aimCell.click();
       await expect(page.getByTestId('battleship-turn')).toContainText('Sıra sende', { timeout: 5_000 });
       await expect(page.getByTestId('battleship-own-grid').locator('.duo-bs-cell--hit, .duo-bs-cell--miss')).toHaveCount(1);
       await capture(page, 'phone-4-practice');

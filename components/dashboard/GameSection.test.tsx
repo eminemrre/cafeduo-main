@@ -162,6 +162,18 @@ describe('GameSection', () => {
     mockApiGamesGet.mockReset();
   });
 
+  it('lets the player choose which game to practise against the bot', () => {
+    const onStartPractice = jest.fn();
+    renderSection({ onStartPractice });
+    const practice = screen.getByTestId('practice');
+    const choices = Array.from(practice.querySelectorAll('button')).map((b) => b.textContent);
+    expect(choices).toEqual(['Amiral Battı', 'Nişancı Düellosu', 'Bilgi Yarışı', 'Retro Satranç']);
+    fireEvent.click(screen.getByTestId('practice-start-aim'));
+    expect(onStartPractice).toHaveBeenCalledWith('Nişancı Düellosu');
+    fireEvent.click(screen.getByTestId('practice-start-battleship'));
+    expect(onStartPractice).toHaveBeenLastCalledWith('Amiral Battı');
+  });
+
   it('shows loading state when games are loading', () => {
     renderSection({ games: [], gamesLoading: true });
 

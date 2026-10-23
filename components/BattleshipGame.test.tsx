@@ -136,32 +136,44 @@ describe('BattleshipGame practice', () => {
       />
     );
 
-  it('places ships tap by tap, fits a ship at the edge and refuses an overlap', () => {
+  const isShip = (index: number) =>
+    cell('battleship-placement-grid', index).className.includes('duo-bs-cell--ship');
+
+  it('places ships tap by tap and always covers the tapped cell', () => {
     renderPractice();
     expect(screen.getByTestId('battleship-confirm')).toBeDisabled();
     // The 4-ship tapped at H1 (index 7) slides back to E1-H1.
     fireEvent.click(cell('battleship-placement-grid', 7));
-    for (const index of [4, 5, 6, 7]) {
-      expect(cell('battleship-placement-grid', index).className).toContain('duo-bs-cell--ship');
-    }
-    // Next ship (3) vertical over the first one is refused.
-    fireEvent.click(screen.getByTestId('battleship-rotate'));
-    fireEvent.click(cell('battleship-placement-grid', 5));
-    expect(screen.getByText('Gemiler üst üste binemez. Başka bir kare seç.')).toBeInTheDocument();
+    for (const index of [4, 5, 6, 7]) expect(isShip(index)).toBe(true);
+    // The 3-ship tapped at D1, next to it, slides to B1-D1 instead of refusing.
+    fireEvent.click(cell('battleship-placement-grid', 3));
+    for (const index of [1, 2, 3]) expect(isShip(index)).toBe(true);
+    expect(screen.queryByText(/üst üste binemez/)).not.toBeInTheDocument();
     fireEvent.click(cell('battleship-placement-grid', 16));
-    fireEvent.click(cell('battleship-placement-grid', 18));
     fireEvent.click(cell('battleship-placement-grid', 40));
     expect(screen.getByTestId('battleship-confirm')).not.toBeDisabled();
   });
 
-  it('picks up a placed ship again', () => {
+  it('selects a placed ship by tapping it and moves it to the next tapped cell', () => {
     renderPractice();
-    fireEvent.click(screen.getByTestId('battleship-shuffle'));
-    const shipCell = within(screen.getByTestId('battleship-placement-grid'))
-      .getAllByRole('button')
-      .find((button) => button.className.includes('duo-bs-cell--ship'))!;
-    fireEvent.click(shipCell);
-    expect(screen.getByTestId('battleship-confirm')).toBeDisabled();
+    for (const index of [0, 16, 32, 48]) fireEvent.click(cell('battleship-placement-grid', index));
+    // Tapping the 4-ship picks it; the fleet stays complete.
+    fireEvent.click(cell('battleship-placement-grid', 2));
+    expect(cell('battleship-placement-grid', 0).className).toContain('duo-bs-cell--picked');
+    expect(screen.getByTestId('battleship-ship-0')).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByTestId('battleship-confirm')).not.toBeDisabled();
+    fireEvent.click(cell('battleship-placement-grid', 60));
+    for (const index of [60, 61, 62, 63]) expect(isShip(index)).toBe(true);
+    for (const index of [0, 1, 2, 3]) expect(isShip(index)).toBe(false);
+  });
+
+  it('turns the selected placed ship in place', () => {
+    renderPractice();
+    fireEvent.click(cell('battleship-placement-grid', 0));
+    fireEvent.click(cell('battleship-placement-grid', 1));
+    fireEvent.click(screen.getByTestId('battleship-rotate'));
+    for (const index of [0, 8, 16, 24]) expect(isShip(index)).toBe(true);
+    expect(isShip(1)).toBe(false);
   });
 
   it('plays against the bot: select, fire, the bot answers', () => {
@@ -206,11 +218,30 @@ describe('BattleshipGame practice', () => {
     expect(cell('battleship-target-grid', 1)).toHaveFocus();
   });
 
-  it('expands the own fleet into a keyboard-readable grid', () => {
+  it('fires on a second tap of the selected cell', () => {
     renderPractice();
     fireEvent.click(screen.getByTestId('battleship-shuffle'));
     fireEvent.click(screen.getByTestId('battleship-confirm'));
-    fireEvent.click(screen.getByRole('tab', { name: 'Senin suların' }));
+    fireEvent.click(cell('battleship-target-grid', 27));
+    expect(cell('battleship-target-grid', 27)).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(cell('battleship-target-grid', 27));
+    expect(cell('battleship-target-grid', 27)).toHaveAttribute('aria-disabled', 'true');
+    expect(screen.getByTestId('battleship-turn')).toHaveTextContent('Sıra rakipte');
+  });
+
+  it('labels the seas with their coordinates', () => {
+    renderPractice();
+    const grid = screen.getByTestId('battleship-placement-grid');
+    const axes = grid.closest('.duo-bs-sea');
+    expect(axes).toHaveTextContent('ABCDEFGH');
+    expect(axes).toHaveTextContent('12345678');
+  });
+
+  it('always shows the own fleet as a keyboard-readable grid', () => {
+    renderPractice();
+    fireEvent.click(screen.getByTestId('battleship-shuffle'));
+    fireEvent.click(screen.getByTestId('battleship-confirm'));
+    expect(screen.queryByRole('tab')).not.toBeInTheDocument();
     const own = screen.getByTestId('battleship-own-grid');
     expect(within(own).getAllByRole('button')).toHaveLength(64);
     const first = within(own).getAllByRole('button')[0];
@@ -371,7 +402,13 @@ describe('BattleshipGame ranked', () => {
       />
     );
     await screen.findByTestId('battleship-battle');
-    expect(cell('battleship-target-grid', 20)).toHaveAttribute('aria-disabled', 'true');
+    // The next target can be picked ahead, but neither the button nor a
+    // second tap sends a shot while the opponent has the turn.
+    fireEvent.click(cell('battleship-target-grid', 20));
+    fireEvent.click(cell('battleship-target-grid', 20));
+    expect(cell('battleship-target-grid', 20)).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByTestId('battleship-fire')).toBeDisabled();
+    expect(screen.getByTestId('battleship-fire')).toHaveTextContent('E3 hazır · sıra rakipte');
+    expect(mockApi.games.action).not.toHaveBeenCalled();
   });
 });

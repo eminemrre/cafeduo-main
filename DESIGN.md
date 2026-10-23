@@ -444,12 +444,19 @@ notice) get one soft shadow (`0 16px 34px rgba(23,20,15,0.22)`).
 - **Chess board:** light squares `board-light`, dark squares `board-dark`, last move tinted limon,
   selection ring lokum, coordinates 11 px inside the squares (decorative; the board has screen-reader
   labels).
-- **Battleship seas:** square 8×8 cells with 3 px water gaps; the main sea fills
-  the phone column, the own sea has a small overview and an expanded keyboard
-  view. Desktop uses two columns. Placement uses four ship bars (4, 3, 3, 2),
-  rotate and random placement, with an explicit fleet confirmation. A shot is
-  select-then-fire, never a one-tap accident. Ranked clocks/scores/hits are
-  server snapshots; practice is labelled Antrenman and never pays points.
+- **Battleship seas:** square 8×8 cells with 3 px water gaps and A–H / 1–8
+  coordinates; the main sea fills the phone column, the own sea is a compact
+  always-visible grid. Desktop uses two columns. Ships are top-down toy
+  silhouettes spanning their cells (`components/battleship/ShipShape.tsx`): an
+  ink hull with a pointed bow and white deck works — Zırhlı 4 (three turrets),
+  Muhrip 3, Denizaltı 3 (cigar hull), Hücumbot 2. In battle they sit under the
+  cells so hit and miss marks stay on top; sunk enemy ships appear the same way.
+  Placement: drag a ship from the tray or on the sea (the held part stays under
+  the finger; the landing cells show a deniz frame, red when blocked), tap a
+  ship to pick it (deniz hull) and tap again or use its turn handle to rotate.
+  The fleet is confirmed explicitly. A shot is tap to aim, tap again to fire.
+  Ranked clocks/scores/hits are server snapshots; practice is labelled
+  Antrenman and never pays points.
 - **Coin and coupon:** points are shown as a fıstık coin with the number in `score`; a coupon is a
   paper ticket with a QR code and a fıstık edge.
 - **Footer mark:** the wordmark built from seven coloured rectangles of different heights with the

@@ -1273,7 +1273,7 @@ button.duo-bs-cell.duo-bs-cell--selected[aria-disabled='false']:hover {
   justify-content: space-between;
   gap: 8px;
   min-height: 60px;
-  padding: 10px;
+  padding: 10px 8px;
   border: 0;
   background: #eef6f8;
   color: #17140f;
@@ -1288,27 +1288,122 @@ button.duo-bs-cell.duo-bs-cell--selected[aria-disabled='false']:hover {
 .duo-bs-tray-ship--active {
   background: #2ec4b6;
 }
-.duo-bs-tray-hull {
+.duo-bs-tray-top {
   display: flex;
-  gap: 2px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  width: 100%;
 }
-.duo-bs-tray-hull i {
-  width: 9px;
-  height: 9px;
-  background: #17140f;
+.duo-bs-tray-shape {
+  display: block;
+  width: auto;
+  height: 12px;
+}
+.duo-bs-tray-name {
+  font-size: 13px;
 }
 .duo-bs-check {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 16px;
-  height: 16px;
+  flex: none;
+  width: 14px;
+  height: 14px;
 }
 .duo-bs-tools {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
+}
+
+/* Ships are grid items spanning their cells: under the cells in battle (marks
+ * stay on top), over them while placing so they can be dragged. */
+.duo-bs-grid {
+  position: relative;
+}
+.duo-bs-grid .duo-bs-cell {
+  z-index: 1;
+}
+.duo-bs-grid--under .duo-bs-cell--ship,
+.duo-bs-grid--under .duo-bs-cell--sunk,
+.duo-bs-grid--under .duo-bs-cell--on-ship {
+  background: transparent;
+}
+/* While placing, the ship itself shows the state: the cells under it stay sea. */
+.duo-bs-grid--over .duo-bs-cell.duo-bs-cell--ship,
+.duo-bs-grid--over .duo-bs-cell.duo-bs-cell--picked {
+  background: #d9eaef;
+  box-shadow: none;
+}
+.duo-bs-grid button.duo-bs-cell:focus-visible {
+  z-index: 3;
+}
+.duo-bs-ship {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  background: #d9eaef;
+}
+.duo-bs-ship-shape {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.duo-bs-ship--under {
+  z-index: 0;
+  pointer-events: none;
+}
+.duo-bs-ship--over {
+  z-index: 2;
+  cursor: grab;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.duo-bs-ship--dragging {
+  z-index: 4;
+  opacity: 0.92;
+  cursor: grabbing;
+  background: transparent;
+  filter: drop-shadow(0 10px 14px rgba(23, 20, 15, 0.3));
+}
+.duo-bs-ship--ghost {
+  z-index: 5;
+  pointer-events: none;
+  background: rgba(46, 196, 182, 0.18);
+  box-shadow: inset 0 0 0 3px #2ec4b6;
+}
+.duo-bs-ship--blocked {
+  background: rgba(214, 47, 47, 0.16);
+  box-shadow: inset 0 0 0 3px #d62f2f;
+}
+.duo-bs-turn-handle {
+  position: absolute;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: #17140f;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(23, 20, 15, 0.28);
+  cursor: pointer;
+}
+.duo-bs-turn-handle--h {
+  top: 50%;
+  left: 2px;
+  transform: translateY(-50%);
+}
+.duo-bs-turn-handle--v {
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.duo-bs-turn-handle:focus-visible {
+  outline: 3px solid #17140f;
+  outline-offset: 2px;
 }
 
 /* The main action stays under the thumb while the sea fills a phone screen. */

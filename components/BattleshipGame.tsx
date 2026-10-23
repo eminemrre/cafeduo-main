@@ -31,7 +31,17 @@ import {
   type ShipDirection,
 } from '../lib/battleship';
 import { chooseBotShot } from '../lib/battleshipBot';
-import { placeCovering, rotateInPlace, shipAt } from '../lib/battleshipPlacement';
+import {
+  cellAtPoint,
+  dropCandidate,
+  grabbedSegment,
+  placeCovering,
+  rotateInPlace,
+  shipAt,
+} from '../lib/battleshipPlacement';
+import { ShipShape, VARIANT_NAME, variantFor } from './battleship/ShipShape';
+import { DraggableShip, eventPoint, type Point } from './battleship/DraggableShip';
+import { motion } from 'framer-motion';
 
 export const BATTLESHIP_GAME_TYPE = 'Amiral Battı';
 const BOT_SHOT_DELAY_MS = 750;
@@ -194,6 +204,11 @@ interface GridProps {
   size?: 'full' | 'compact';
   testId: string;
   lastKey?: string | null;
+  /** Ship shapes laid over (placement) or under (battle) the cells. */
+  overlay?: React.ReactNode;
+  /** Ships drawn as shapes: `under` the cells in battle (marks on top), `over` them while placing. */
+  drawn?: 'under' | 'over';
+  gridRef?: React.Ref<HTMLDivElement>;
 }
 
 /** Column letters above and row numbers beside a full-size sea. */
@@ -226,6 +241,9 @@ const SeaGrid: React.FC<GridProps> = ({
   size = 'full',
   testId,
   lastKey,
+  overlay,
+  drawn,
+  gridRef,
 }) => {
   const [focusCell, setFocusCell] = useState(selected ?? 0);
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -263,7 +281,8 @@ const SeaGrid: React.FC<GridProps> = ({
 
   return (
     <div
-      className={`duo-bs-grid duo-bs-grid--${size}`}
+      ref={gridRef}
+      className={`duo-bs-grid duo-bs-grid--${size}${drawn ? ` duo-bs-grid--${drawn}` : ''}`}
       role="group"
       aria-label={label}
       data-testid={testId}
@@ -290,9 +309,11 @@ const SeaGrid: React.FC<GridProps> = ({
         }[state];
         const canPick = interactive && (preview ? true : shot === undefined);
         const isPicked = Boolean(picked?.has(cell));
+        const onShip = shipSet.has(cell);
         const className = [
           'duo-bs-cell',
           `duo-bs-cell--${state}`,
+          onShip ? 'duo-bs-cell--on-ship' : '',
           isPicked ? 'duo-bs-cell--picked' : '',
           selected === cell ? 'duo-bs-cell--selected' : '',
           lastCell === cell ? 'duo-bs-cell--fresh' : '',
@@ -316,17 +337,62 @@ const SeaGrid: React.FC<GridProps> = ({
             onClick={() => {
               if (canPick) onCell?.(cell);
             }}
+            style={{
+              gridRow: Math.floor(cell / BOARD_SIZE) + 1,
+              gridColumn: (cell % BOARD_SIZE) + 1,
+            }}
             data-cell={cell}
           >
-            {state === 'hit' && <HitMark tone="ink" />}
+            {state === 'hit' && <HitMark tone={drawn === 'under' && onShip ? 'deniz' : 'ink'} />}
             {state === 'sunk' && <HitMark tone="deniz" />}
             {selected === cell && state === 'sea' && <AimMark />}
           </button>
         );
       })}
+      {overlay}
     </div>
   );
 };
+
+/** A ship laid on the grid by its cells (a grid item spanning them). */
+const shipArea = (cells: number[]): React.CSSProperties => {
+  const rows = cells.map((cell) => Math.floor(cell / BOARD_SIZE));
+  const cols = cells.map((cell) => cell % BOARD_SIZE);
+  return {
+    gridRow: `${Math.min(...rows) + 1} / ${Math.max(...rows) + 2}`,
+    gridColumn: `${Math.min(...cols) + 1} / ${Math.max(...cols) + 2}`,
+  };
+};
+
+const shipDir = (cells: number[]): ShipDirection =>
+  cells.length > 1 && cells[1] - cells[0] === BOARD_SIZE ? 'v' : 'h';
+
+/** Ships drawn under the cells of a battle sea: the own fleet or sunk enemy ships. */
+const ShipsUnder: React.FC<{ ships: Ship[]; byFleetOrder: boolean }> = ({
+  ships,
+  byFleetOrder,
+}) => (
+  <>
+    {ships.map((ship, index) => {
+      const cells = [...ship.cells].sort((a, b) => a - b);
+      return (
+        <div
+          key={cells.join('-')}
+          className="duo-bs-ship duo-bs-ship--under"
+          style={shipArea(cells)}
+          aria-hidden="true"
+        >
+          <ShipShape
+            className="duo-bs-ship-shape"
+            size={ship.size}
+            dir={shipDir(cells)}
+            variant={variantFor(ship.size, byFleetOrder ? index : undefined)}
+          />
+        </div>
+      );
+    })}
+  </>
+);
 
 /** One side of the scoreboard: name, hits scored and that player's fleet (sunk ships hollow). */
 const FleetSide: React.FC<{
@@ -397,6 +463,16 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
   const [direction, setDirection] = useState<ShipDirection>('h');
   const [placementError, setPlacementError] = useState<string | null>(null);
   const [target, setTarget] = useState<number | null>(null);
+  /** A ship being dragged: which one, the segment under the finger, and where it would land. */
+  const [drag, setDrag] = useState<{
+    index: number;
+    segment: number;
+    dir: ShipDirection;
+    hover: number | null;
+  } | null>(null);
+  const dragRef = useRef<{ index: number; segment: number; dir: ShipDirection } | null>(null);
+  const placementGridRef = useRef<HTMLDivElement>(null);
+  const trayDraggedRef = useRef(false);
   const botDoneRef = useRef(false);
   const onGameEndRef = useRef(onGameEnd);
   const onMatchSettledRef = useRef(onMatchSettled);
@@ -523,6 +599,49 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
     const nextEmpty = next.findIndex((entry) => entry === null);
     setActiveShip(nextEmpty >= 0 ? nextEmpty : null);
   };
+
+  // ------------------------------------------------------------ drag & drop
+  const hoverCellAt = (point: Point) => {
+    const sea = placementGridRef.current?.getBoundingClientRect();
+    return sea ? cellAtPoint(sea, point.x, point.y) : null;
+  };
+
+  const startDrag = (index: number, segment: number) => {
+    setPlacementError(null);
+    setActiveShip(index);
+    const dir = draft[index]?.dir ?? direction;
+    setDirection(dir);
+    dragRef.current = { index, segment, dir };
+    setDrag({ index, segment, dir, hover: null });
+  };
+
+  const moveDrag = (point: Point) => {
+    const hover = hoverCellAt(point);
+    setDrag((prev) => (prev && prev.hover !== hover ? { ...prev, hover } : prev));
+  };
+
+  const endDrag = (point: Point) => {
+    const current = dragRef.current;
+    dragRef.current = null;
+    setDrag(null);
+    if (!current) return;
+    const hover = hoverCellAt(point);
+    if (hover === null) return;
+    const drop = dropCandidate(draft, current.index, hover, current.segment, current.dir);
+    if (!drop.valid) {
+      setPlacementError('Gemiler üst üste binemez. Başka bir yere bırak.');
+      return;
+    }
+    const next = draft.map((entry, index) => (index === current.index ? drop.entry : entry));
+    setDraft(next);
+    const nextEmpty = next.findIndex((entry) => entry === null);
+    setActiveShip(nextEmpty >= 0 ? nextEmpty : null);
+  };
+
+  const dropPreview =
+    drag && drag.hover !== null
+      ? dropCandidate(draft, drag.index, drag.hover, drag.segment, drag.dir)
+      : null;
 
   const shuffle = async () => {
     setPlacementError(null);
@@ -730,23 +849,44 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
               const placed = Boolean(draft[index]);
               const active = activeShip === index;
               return (
-                <button
+                <motion.button
                   key={`ship-${index}`}
                   type="button"
                   className={`duo-bs-tray-ship duo-focus${active ? ' duo-bs-tray-ship--active' : ''}${placed ? ' duo-bs-tray-ship--placed' : ''}`}
                   aria-pressed={active}
-                  aria-label={`${shipLabel(size)} gemi${placed ? ', yerinde' : ''}`}
-                  onClick={() => pickShip(index)}
+                  aria-label={`${VARIANT_NAME[variantFor(size, index)]}, ${shipLabel(size)} gemi${placed ? ', yerinde' : ''}`}
+                  drag
+                  dragSnapToOrigin
+                  dragMomentum={false}
+                  dragTransition={{ bounceStiffness: 700, bounceDamping: 45 }}
+                  whileDrag={{ scale: 1.08, zIndex: 20 }}
+                  onDragStart={() => {
+                    trayDraggedRef.current = true;
+                    startDrag(index, Math.floor(size / 2));
+                  }}
+                  onDrag={(event) => moveDrag(eventPoint(event))}
+                  onDragEnd={(event) => endDrag(eventPoint(event))}
+                  onClick={() => {
+                    if (trayDraggedRef.current) {
+                      trayDraggedRef.current = false;
+                      return;
+                    }
+                    pickShip(index);
+                  }}
                   data-testid={`battleship-ship-${index}`}
                 >
-                  <span className="duo-bs-tray-hull" aria-hidden="true">
-                    {Array.from({ length: size }, (_, part) => (
-                      <i key={part} />
-                    ))}
+                  <span className="duo-bs-tray-top">
+                    <ShipShape
+                      className="duo-bs-tray-shape"
+                      size={size}
+                      dir="h"
+                      variant={variantFor(size, index)}
+                      tone="ink"
+                    />
+                    {placed && <CheckMark />}
                   </span>
-                  <span className="duo-bs-tray-name">{shipLabel(size)}</span>
-                  {placed && <CheckMark />}
-                </button>
+                  <span className="duo-bs-tray-name">{VARIANT_NAME[variantFor(size, index)]}</span>
+                </motion.button>
               );
             })}
           </div>
@@ -760,6 +900,53 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
                 interactive
                 onCell={placeAt}
                 testId="battleship-placement-grid"
+                gridRef={placementGridRef}
+                drawn="over"
+                overlay={
+                  <>
+                    {dropPreview && (
+                      <div
+                        className={`duo-bs-ship duo-bs-ship--ghost${dropPreview.valid ? '' : ' duo-bs-ship--blocked'}`}
+                        style={shipArea(dropPreview.cells)}
+                        aria-hidden="true"
+                        data-testid="battleship-drop-preview"
+                      />
+                    )}
+                    {draft.map((entry, index) => {
+                      if (!entry) return null;
+                      const cells = draftShips[index];
+                      return (
+                        <DraggableShip
+                          key={`${index}-${entry.cell}-${entry.dir}`}
+                          size={FLEET[index]}
+                          dir={entry.dir}
+                          variant={variantFor(FLEET[index], index)}
+                          area={shipArea(cells)}
+                          picked={activeShip === index && drag === null}
+                          dragging={drag?.index === index}
+                          onTap={() => placeAt(cells[0])}
+                          onRotate={rotate}
+                          onDragStart={(element, point) =>
+                            startDrag(
+                              index,
+                              grabbedSegment(
+                                element.getBoundingClientRect(),
+                                entry.dir,
+                                FLEET[index],
+                                point.x,
+                                point.y
+                              )
+                            )
+                          }
+                          onDragMove={moveDrag}
+                          onDragEnd={endDrag}
+                          constraints={placementGridRef}
+                          testId={`battleship-placed-${index}`}
+                        />
+                      );
+                    })}
+                  </>
+                }
               />
             </SeaAxes>
             <div className="duo-bs-panel">
@@ -868,6 +1055,8 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
                   selected={target}
                   onCell={aimAt}
                   testId="battleship-target-grid"
+                  drawn="under"
+                  overlay={<ShipsUnder ships={opBoard.sunk} byFleetOrder={false} />}
                   lastKey={
                     lastNote?.by === 'me' && lastNote.cell !== null ? `x-${lastNote.cell}` : null
                   }
@@ -883,6 +1072,8 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
                 interactive={false}
                 size="compact"
                 testId="battleship-own-grid"
+                drawn="under"
+                overlay={<ShipsUnder ships={myShips} byFleetOrder />}
                 lastKey={
                   lastNote?.by === 'op' && lastNote.cell !== null ? `x-${lastNote.cell}` : null
                 }

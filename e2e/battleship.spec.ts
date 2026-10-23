@@ -375,6 +375,37 @@ test.describe('Amiral Battı', () => {
       await capture(page, 'phone-3-practice-picker', 'practice');
       await page.getByTestId('practice-start-battleship').click();
       await expect(page.getByTestId('battleship-placement')).toBeVisible();
+
+      // Drag the battleship from the tray onto C2 (it centres under the finger),
+      // then drag it on the sea by its bow to A6.
+      const seaCell = (index: number) =>
+        page.locator(`[data-testid=battleship-placement-grid] [data-cell="${index}"]`);
+      const dragTo = async (from: { x: number; y: number }, to: { x: number; y: number }) => {
+        await page.mouse.move(from.x, from.y);
+        await page.mouse.down();
+        for (let step = 1; step <= 12; step += 1) {
+          await page.mouse.move(from.x + ((to.x - from.x) * step) / 12, from.y + ((to.y - from.y) * step) / 12);
+        }
+        await page.mouse.up();
+      };
+      const middle = async (locator: ReturnType<typeof page.locator>) => {
+        const box = (await locator.boundingBox())!;
+        return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+      };
+      await dragTo(await middle(page.getByTestId('battleship-ship-0')), await middle(seaCell(10)));
+      for (const index of [8, 9, 10, 11]) {
+        await expect(seaCell(index)).toHaveClass(/duo-bs-cell--ship/);
+      }
+      const placed = (await page.getByTestId('battleship-placed-0').boundingBox())!;
+      await dragTo(
+        { x: placed.x + placed.width / 8, y: placed.y + placed.height / 2 },
+        await middle(seaCell(40))
+      );
+      for (const index of [40, 41, 42, 43]) {
+        await expect(seaCell(index)).toHaveClass(/duo-bs-cell--ship/);
+      }
+      await expect(seaCell(8)).not.toHaveClass(/duo-bs-cell--ship/);
+
       await page.getByTestId('battleship-shuffle').click();
       await page.getByTestId('battleship-confirm').click();
       await expect(page.getByTestId('battleship-turn')).toContainText('Sıra sende');

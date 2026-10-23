@@ -14,6 +14,14 @@ import { SkeletonGrid } from '../Skeleton';
 import { api } from '../../lib/api';
 import { HistoryDetailModal } from './HistoryDetailModal';
 
+/** Every game has a local, unranked bot mode; the newest game first. */
+const PRACTICE_GAMES = [
+  { mode: 'battleship', type: 'Amiral Battı' },
+  { mode: 'aim', type: 'Nişancı Düellosu' },
+  { mode: 'quiz', type: 'Bilgi Yarışı' },
+  { mode: 'chess', type: 'Retro Satranç' },
+] as const;
+
 interface GameSectionProps {
   // Kullanıcı
   currentUser: User;
@@ -248,25 +256,29 @@ export const GameSection: React.FC<GameSectionProps> = ({
       {onStartPractice && (
         <section
           aria-labelledby="duo-practice-heading"
-          className="flex flex-col gap-4 bg-paper-deep p-5 sm:flex-row sm:items-center sm:justify-between"
-          data-testid="battleship-practice"
+          className="bg-paper-deep p-5"
+          data-testid="practice"
         >
-          <div className="min-w-0">
-            <h3 id="duo-practice-heading" className="duo-lobby-heading mb-1 text-carbon">
-              Antrenman
-            </h3>
-            <p className="font-candy-body text-[15px] leading-6 text-carbon">
-              Amiral Battı'yı bota karşı dene. Süre yok, puan değişmez.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={() => onStartPractice('Amiral Battı')}
-            className="duo-button duo-focus shrink-0 min-h-12 px-5 bg-candy-deniz text-carbon font-candy-body text-base font-semibold transition-transform hover:-translate-y-0.5 active:scale-[0.98]"
-            data-testid="battleship-practice-start"
-          >
+          <h3 id="duo-practice-heading" className="duo-lobby-heading mb-1 text-carbon">
             Bota karşı oyna
-          </button>
+          </h3>
+          <p className="mb-4 font-candy-body text-[15px] leading-6 text-carbon">
+            Bir oyun seç, rakibini beklemeden dene. Puanın ve istatistiklerin değişmez.
+          </p>
+          <div className="duo-practice-games">
+            {PRACTICE_GAMES.map((game) => (
+              <button
+                key={game.mode}
+                type="button"
+                onClick={() => onStartPractice(game.type)}
+                className="duo-practice-game duo-focus"
+                data-testid={`practice-start-${game.mode}`}
+              >
+                <span className={`duo-practice-swatch ${gameChipFill(game.type)}`} aria-hidden="true" />
+                {game.type}
+              </button>
+            ))}
+          </div>
         </section>
       )}
 

@@ -11,7 +11,7 @@
  * target bot, no clock, no points.
  */
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { User } from '../types';
 import { RetroButton } from './RetroButton';
 import { ConnectionOverlay } from './ConnectionOverlay';
@@ -31,6 +31,7 @@ import {
   type ShipDirection,
 } from '../lib/battleship';
 import { chooseBotShot } from '../lib/battleshipBot';
+import { placeCovering, rotateInPlace, shipAt } from '../lib/battleshipPlacement';
 
 export const BATTLESHIP_GAME_TYPE = 'Amiral Battı';
 const BOT_SHOT_DELAY_MS = 750;
@@ -136,13 +137,8 @@ export const toCell = (cell: number) => {
 /** 2 → "2'lik", 3 → "3'lük", 4 → "4'lük". */
 export const shipLabel = (size: number) => `${size}${size === 2 ? "'lik" : "'lük"}`;
 
-/** Moves a bow back so the whole ship fits on the board. */
-const fitBow = (cell: number, dir: ShipDirection, size: number) => {
-  const row = Math.floor(cell / BOARD_SIZE);
-  const col = cell % BOARD_SIZE;
-  if (dir === 'h') return row * BOARD_SIZE + Math.min(col, BOARD_SIZE - size);
-  return Math.min(row, BOARD_SIZE - size) * BOARD_SIZE + col;
-};
+const COLUMNS = Array.from({ length: BOARD_SIZE }, (_, index) => String.fromCharCode(65 + index));
+const ROWS = Array.from({ length: BOARD_SIZE }, (_, index) => String(index + 1));
 
 const describeShot = (note: ShotNote, opponent: string): string => {
   if (note.cell === null) {
@@ -169,19 +165,53 @@ const HitMark: React.FC<{ tone: 'ink' | 'deniz' }> = ({ tone }) => (
   </svg>
 );
 
+/** The aim mark on the picked target cell. */
+const AimMark: React.FC = () => (
+  <svg viewBox="0 0 20 20" className="duo-bs-aim" aria-hidden="true">
+    <circle cx="10" cy="10" r="5.5" fill="none" stroke="#17140F" strokeWidth="2" />
+    <path d="M10 0.5V6M10 14V19.5M0.5 10H6M14 10H19.5" stroke="#17140F" strokeWidth="2" />
+  </svg>
+);
+
+/** A placed ship in the tray. */
+const CheckMark: React.FC = () => (
+  <svg viewBox="0 0 16 16" className="duo-bs-check" aria-hidden="true">
+    <path d="M3 8.5L6.5 12L13 4.5" fill="none" stroke="currentColor" strokeWidth="2.2" />
+  </svg>
+);
+
 interface GridProps {
   label: string;
   board: Board;
   ships?: Ship[];
   /** Ship cells of a placement draft, drawn as ships. */
   preview?: Set<number>;
+  /** Cells of the ship picked for moving, drawn in deniz. */
+  picked?: Set<number>;
   interactive: boolean;
   selected?: number | null;
   onCell?: (cell: number) => void;
-  size?: 'full' | 'mini';
+  size?: 'full' | 'compact';
   testId: string;
   lastKey?: string | null;
 }
+
+/** Column letters above and row numbers beside a full-size sea. */
+const SeaAxes: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="duo-bs-sea">
+    <span className="duo-bs-axis duo-bs-axis--cols" aria-hidden="true">
+      {COLUMNS.map((letter) => (
+        <span key={letter}>{letter}</span>
+      ))}
+    </span>
+    <span className="duo-bs-axis duo-bs-axis--rows" aria-hidden="true">
+      {ROWS.map((row) => (
+        <span key={row}>{row}</span>
+      ))}
+    </span>
+    {children}
+  </div>
+);
 
 /** One 8x8 sea. Cells are buttons with a roving tab stop and arrow-key moves. */
 const SeaGrid: React.FC<GridProps> = ({
@@ -189,6 +219,7 @@ const SeaGrid: React.FC<GridProps> = ({
   board,
   ships = [],
   preview,
+  picked,
   interactive,
   selected = null,
   onCell,
@@ -258,17 +289,16 @@ const SeaGrid: React.FC<GridProps> = ({
           sea: 'boş',
         }[state];
         const canPick = interactive && (preview ? true : shot === undefined);
+        const isPicked = Boolean(picked?.has(cell));
         const className = [
           'duo-bs-cell',
           `duo-bs-cell--${state}`,
+          isPicked ? 'duo-bs-cell--picked' : '',
           selected === cell ? 'duo-bs-cell--selected' : '',
           lastCell === cell ? 'duo-bs-cell--fresh' : '',
         ]
           .filter(Boolean)
           .join(' ');
-        if (size === 'mini') {
-          return <span key={cell} className={className} aria-hidden="true" />;
-        }
         return (
           <button
             key={cell}
@@ -290,6 +320,7 @@ const SeaGrid: React.FC<GridProps> = ({
           >
             {state === 'hit' && <HitMark tone="ink" />}
             {state === 'sunk' && <HitMark tone="deniz" />}
+            {selected === cell && state === 'sea' && <AimMark />}
           </button>
         );
       })}
@@ -297,17 +328,27 @@ const SeaGrid: React.FC<GridProps> = ({
   );
 };
 
-/** Ship bars: a fleet's ships, the sunk ones faded. */
-const FleetBars: React.FC<{ label: string; sunk: number[]; testId: string }> = ({
-  label,
-  sunk,
-  testId,
-}) => {
+/** One side of the scoreboard: name, hits scored and that player's fleet (sunk ships hollow). */
+const FleetSide: React.FC<{
+  name: string;
+  hits: number;
+  sunk: number[];
+  me: boolean;
+  turn: boolean;
+  testId: string;
+}> = ({ name, hits, sunk, me, turn, testId }) => {
   const remaining = [...sunk];
   return (
-    <div className="duo-bs-fleet" data-testid={testId}>
-      <span className="duo-bs-fleet-label">{label}</span>
-      <span className="duo-bs-fleet-ships">
+    <div
+      className={`duo-bs-side-card${me ? ' duo-bs-side-card--me' : ''}${turn ? ' duo-bs-side-card--turn' : ''}`}
+      data-testid={testId}
+    >
+      <span className="duo-bs-side-name">{name}</span>
+      <span className="duo-bs-side-score">
+        {hits}
+        <span className="duo-bs-side-of">/{FLEET_CELLS}</span>
+      </span>
+      <span className="duo-bs-fleet-ships" aria-hidden="true">
         {FLEET.map((size, index) => {
           const at = remaining.indexOf(size);
           const isSunk = at >= 0;
@@ -316,14 +357,13 @@ const FleetBars: React.FC<{ label: string; sunk: number[]; testId: string }> = (
             <span
               key={`${size}-${index}`}
               className={`duo-bs-fleet-ship${isSunk ? ' duo-bs-fleet-ship--sunk' : ''}`}
-              style={{ width: `${size * 12}px` }}
-              title={`${shipLabel(size)} gemi${isSunk ? ', battı' : ''}`}
+              style={{ width: `${size * 10}px` }}
             />
           );
         })}
       </span>
       <span className="sr-only">
-        {sunk.length} / {FLEET.length} gemi battı
+        {hits} isabet, {sunk.length} / {FLEET.length} gemisi battı
       </span>
     </div>
   );
@@ -352,11 +392,11 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
 
   const [bot, setBot] = useState<BotGame>(() => createBotGame());
   const [draft, setDraft] = useState<(LayoutEntry | null)[]>(() => emptyDraft());
+  /** The ship the next grid tap places or moves; null once every ship is placed. */
   const [activeShip, setActiveShip] = useState<number | null>(0);
   const [direction, setDirection] = useState<ShipDirection>('h');
   const [placementError, setPlacementError] = useState<string | null>(null);
   const [target, setTarget] = useState<number | null>(null);
-  const [ownExpanded, setOwnExpanded] = useState(false);
   const botDoneRef = useRef(false);
   const onGameEndRef = useRef(onGameEnd);
   const onMatchSettledRef = useRef(onMatchSettled);
@@ -372,7 +412,6 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
     setDraft(emptyDraft());
     setActiveShip(0);
     setTarget(null);
-    setOwnExpanded(false);
     botDoneRef.current = false;
   }, [gameId, isBot]);
 
@@ -429,40 +468,61 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
     [draft]
   );
   const previewCells = useMemo(() => new Set(draftShips.flat()), [draftShips]);
-  const draftComplete = draft.every(Boolean);
-
-  const placeAt = useCallback(
-    (cell: number) => {
-      setPlacementError(null);
-      const owner = draftShips.findIndex((cells) => cells.includes(cell));
-      if (activeShip === null) {
-        // Tapping a placed ship picks it up again.
-        if (owner >= 0) {
-          setDraft((prev) => prev.map((entry, index) => (index === owner ? null : entry)));
-          setDirection(draft[owner]?.dir || 'h');
-          setActiveShip(owner);
-        }
-        return;
-      }
-      const size = FLEET[activeShip];
-      const bow = fitBow(cell, direction, size);
-      const cells = shipCells(bow, direction, size) || [];
-      const clash = cells.some((c) =>
-        draftShips.some((other, index) => index !== activeShip && other.includes(c))
-      );
-      if (clash) {
-        setPlacementError('Gemiler üst üste binemez. Başka bir kare seç.');
-        return;
-      }
-      const next = draft.map((entry, index) =>
-        index === activeShip ? { cell: bow, dir: direction } : entry
-      );
-      setDraft(next);
-      const nextEmpty = next.findIndex((entry) => entry === null);
-      setActiveShip(nextEmpty >= 0 ? nextEmpty : null);
-    },
-    [activeShip, direction, draft, draftShips]
+  const pickedCells = useMemo(
+    () => new Set(activeShip !== null && draft[activeShip] ? draftShips[activeShip] : []),
+    [activeShip, draft, draftShips]
   );
+  const draftComplete = draft.every(Boolean);
+  const activePlaced = activeShip !== null && Boolean(draft[activeShip]);
+  const activeDirection: ShipDirection =
+    activeShip !== null && draft[activeShip] ? draft[activeShip]!.dir : direction;
+
+  const pickShip = (index: number) => {
+    setPlacementError(null);
+    setActiveShip(index);
+    if (draft[index]) setDirection(draft[index]!.dir);
+  };
+
+  const rotate = () => {
+    setPlacementError(null);
+    if (activeShip !== null && draft[activeShip]) {
+      const turned = rotateInPlace(draft, activeShip);
+      if (!turned) {
+        setPlacementError('Burada dönecek yer yok. Önce gemiyi başka bir kareye taşı.');
+        return;
+      }
+      setDraft(turned);
+      setDirection(turned[activeShip]!.dir);
+      return;
+    }
+    setDirection((prev) => (prev === 'h' ? 'v' : 'h'));
+  };
+
+  const placeAt = (cell: number) => {
+    setPlacementError(null);
+    const owner = shipAt(draft, cell);
+    if (owner >= 0) {
+      // A tap on the picked ship turns it; a tap on another ship picks that one.
+      if (owner === activeShip) rotate();
+      else pickShip(owner);
+      return;
+    }
+    if (activeShip === null) {
+      setPlacementError('Taşımak için önce bir gemiye dokun.');
+      return;
+    }
+    const next = placeCovering(draft, activeShip, cell, activeDirection);
+    if (!next) {
+      setPlacementError(
+        `${shipLabel(FLEET[activeShip])} gemi bu kareye sığmıyor. Başka bir kare seç.`
+      );
+      return;
+    }
+    setDraft(next);
+    setDirection(next[activeShip]!.dir);
+    const nextEmpty = next.findIndex((entry) => entry === null);
+    setActiveShip(nextEmpty >= 0 ? nextEmpty : null);
+  };
 
   const shuffle = async () => {
     setPlacementError(null);
@@ -501,9 +561,8 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
   };
 
   // ---------------------------------------------------------------- battle
-  const fire = async () => {
-    if (target === null || !myTurn || live.pending) return;
-    const cell = target;
+  const fire = async (cell: number | null = target) => {
+    if (cell === null || !myTurn || live.pending) return;
     if (opBoard.shots.some((shot) => shot.cell === cell)) return;
     setTarget(null);
     if (isBot) {
@@ -547,11 +606,20 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
     if (done) onMatchSettledRef.current?.();
   }, [done]);
 
-  // A turn change clears a stale target.
-  const turnId = isBot ? `${bot.turn}-${bot.opBoard.shots.length}` : engine?.round?.id;
+  // A target may be picked ahead during the opponent's turn; one that has been
+  // fired on (here or by a refreshed snapshot) is dropped.
   useEffect(() => {
-    setTarget(null);
-  }, [turnId]);
+    if (target !== null && opBoard.shots.some((shot) => shot.cell === target)) setTarget(null);
+  }, [opBoard.shots, target]);
+
+  // First tap aims, a second tap on the same cell fires.
+  const aimAt = (cell: number) => {
+    if (cell === target && myTurn) {
+      void fire(cell);
+      return;
+    }
+    setTarget(cell);
+  };
 
   // One sound per revealed shot.
   useEffect(() => {
@@ -570,11 +638,14 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
       if (myPlaced) {
         return opPlaced ? 'İki filo da hazır.' : `Filon hazır. ${opponent} filosunu yerleştiriyor.`;
       }
+      if (activeShip !== null && activePlaced) {
+        return `${shipLabel(FLEET[activeShip])} gemi seçili: başka bir kareye dokunup taşı, gemiye yeniden dokunup döndür.`;
+      }
       if (activeShip !== null) {
         return `${shipLabel(FLEET[activeShip])} gemiyi koymak için bir kareye dokun.`;
       }
       return draftComplete
-        ? 'Filon hazır görünüyor. Onayla ya da bir gemiye dokunup yerini değiştir.'
+        ? 'Filon hazır. Onayla ya da taşımak için bir gemiye dokun.'
         : 'Bir gemi seç.';
     }
     if (phase === 'finished') {
@@ -591,7 +662,9 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
         : `Maçı ${result.winner} aldı.`;
     }
     if (lastNote) return describeShot(lastNote, opponent);
-    return myTurn ? 'Rakip sularda bir kare seç.' : `${opponent} nişan alıyor.`;
+    return myTurn
+      ? 'Rakip sularda bir kareye dokun, ateş etmek için yeniden dokun.'
+      : `${opponent} nişan alıyor.`;
   })();
 
   if (!isBot && live.protocolError) {
@@ -652,55 +725,58 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
           <h3 id="bs-placement-title" className="duo-bs-heading">
             Filonu yerleştir
           </h3>
+          <div className="duo-bs-tray" role="group" aria-label="Gemiler">
+            {FLEET.map((size, index) => {
+              const placed = Boolean(draft[index]);
+              const active = activeShip === index;
+              return (
+                <button
+                  key={`ship-${index}`}
+                  type="button"
+                  className={`duo-bs-tray-ship duo-focus${active ? ' duo-bs-tray-ship--active' : ''}${placed ? ' duo-bs-tray-ship--placed' : ''}`}
+                  aria-pressed={active}
+                  aria-label={`${shipLabel(size)} gemi${placed ? ', yerinde' : ''}`}
+                  onClick={() => pickShip(index)}
+                  data-testid={`battleship-ship-${index}`}
+                >
+                  <span className="duo-bs-tray-hull" aria-hidden="true">
+                    {Array.from({ length: size }, (_, part) => (
+                      <i key={part} />
+                    ))}
+                  </span>
+                  <span className="duo-bs-tray-name">{shipLabel(size)}</span>
+                  {placed && <CheckMark />}
+                </button>
+              );
+            })}
+          </div>
           <div className="duo-bs-layout">
-            <SeaGrid
-              label="Senin suların, filonu yerleştir"
-              board={emptyBoard()}
-              preview={previewCells}
-              interactive
-              onCell={placeAt}
-              testId="battleship-placement-grid"
-            />
-            <div className="duo-bs-side">
-              <div className="duo-bs-tray" role="group" aria-label="Gemiler">
-                {FLEET.map((size, index) => {
-                  const placed = Boolean(draft[index]);
-                  const active = activeShip === index;
-                  return (
-                    <button
-                      key={`ship-${index}`}
-                      type="button"
-                      className={`duo-bs-tray-ship duo-focus${active ? ' duo-bs-tray-ship--active' : ''}${placed ? ' duo-bs-tray-ship--placed' : ''}`}
-                      aria-pressed={active}
-                      onClick={() => {
-                        setPlacementError(null);
-                        if (placed) {
-                          setDraft((prev) => prev.map((entry, i) => (i === index ? null : entry)));
-                        }
-                        setActiveShip(index);
-                      }}
-                      data-testid={`battleship-ship-${index}`}
-                    >
-                      <span
-                        className="duo-bs-tray-hull"
-                        style={{ width: `${size * 18}px` }}
-                        aria-hidden="true"
-                      />
-                      <span>
-                        {shipLabel(size)} gemi{placed ? ' · yerinde' : ''}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+            <SeaAxes>
+              <SeaGrid
+                label="Senin suların, filonu yerleştir"
+                board={emptyBoard()}
+                preview={previewCells}
+                picked={pickedCells}
+                interactive
+                onCell={placeAt}
+                testId="battleship-placement-grid"
+              />
+            </SeaAxes>
+            <div className="duo-bs-panel">
+              <p
+                className={`duo-game-status${placementError ? ' duo-bs-error' : ''}`}
+                aria-live="polite"
+              >
+                {placementError || status}
+              </p>
               <div className="duo-bs-tools">
                 <RetroButton
                   variant="secondary"
-                  onClick={() => setDirection((prev) => (prev === 'h' ? 'v' : 'h'))}
+                  onClick={rotate}
                   data-testid="battleship-rotate"
-                  aria-label={`Döndür, şimdi ${direction === 'h' ? 'yatay' : 'dikey'}`}
+                  aria-label={`Döndür, şimdi ${activeDirection === 'h' ? 'yatay' : 'dikey'}`}
                 >
-                  Döndür · {direction === 'h' ? 'yatay' : 'dikey'}
+                  Döndür · {activeDirection === 'h' ? 'yatay' : 'dikey'}
                 </RetroButton>
                 <RetroButton
                   variant="ghost"
@@ -716,20 +792,23 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
                   Rastgele yerleştirme filonu hemen onaylar; yerleşimi sunucu seçer.
                 </p>
               )}
-              <p className="duo-game-status min-h-[44px]" aria-live="polite">
-                {placementError || status}
-              </p>
-              <RetroButton
-                variant="ink"
-                size="lg"
-                className="min-h-[64px] w-full"
-                disabled={!draftComplete || live.pending}
-                onClick={() => void confirmFleet()}
-                data-testid="battleship-confirm"
-              >
-                {live.pending ? 'Gönderiliyor...' : 'Filoyu onayla'}
-              </RetroButton>
             </div>
+          </div>
+          <div className="duo-bs-action">
+            <RetroButton
+              variant="ink"
+              size="lg"
+              className="min-h-[56px] w-full"
+              disabled={!draftComplete || live.pending}
+              onClick={() => void confirmFleet()}
+              data-testid="battleship-confirm"
+            >
+              {live.pending
+                ? 'Gönderiliyor...'
+                : draftComplete
+                  ? 'Filoyu onayla'
+                  : `${draft.filter(Boolean).length}/${FLEET.length} gemi yerinde`}
+            </RetroButton>
           </div>
         </section>
       )}
@@ -751,87 +830,63 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
             </span>
             {seconds !== null && <span>{seconds} sn</span>}
           </div>
+          <div className="duo-bs-board">
+            <FleetSide
+              name="Sen"
+              hits={myHits}
+              sunk={myBoard.sunk.map((ship) => ship.size)}
+              me
+              turn={phase === 'battle' && myTurn}
+              testId="battleship-my-fleet"
+            />
+            <FleetSide
+              name={opponent}
+              hits={theirHits}
+              sunk={opBoard.sunk.map((ship) => ship.size)}
+              me={false}
+              turn={phase === 'battle' && !myTurn}
+              testId="battleship-op-fleet"
+            />
+          </div>
           {missed > 0 && phase === 'battle' && (
             <p className="duo-bs-warning">
               Üst üste {missed} sıranı kaçırdın. {MAX_MISSED_TURNS}. kaçırışta maçı kaybedersin.
             </p>
           )}
+          <p className="duo-game-status duo-bs-status" aria-live="polite">
+            {status}
+          </p>
 
-          <div className="duo-bs-tabs" role="tablist" aria-label="Deniz görünümü">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={!ownExpanded}
-              onClick={() => setOwnExpanded(false)}
-            >
-              Rakip suları
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={ownExpanded}
-              onClick={() => setOwnExpanded(true)}
-            >
-              Senin suların
-            </button>
-          </div>
           <div className="duo-bs-layout">
-            <div className={`min-w-0${ownExpanded ? ' hidden min-[900px]:block' : ''}`}>
-              <FleetBars
-                label={`Rakip filo · ${myHits}/${FLEET_CELLS} isabet`}
-                sunk={opBoard.sunk.map((ship) => ship.size)}
-                testId="battleship-op-fleet"
-              />
-              <SeaGrid
-                label={`${opponent} suları`}
-                board={opBoard}
-                interactive={myTurn && !live.pending}
-                selected={target}
-                onCell={(cell) => setTarget(cell)}
-                testId="battleship-target-grid"
-                lastKey={
-                  lastNote?.by === 'me' && lastNote.cell !== null ? `x-${lastNote.cell}` : null
-                }
-              />
+            <div className="min-w-0">
+              <h3 className="duo-bs-subhead">{opponent} suları</h3>
+              <SeaAxes>
+                <SeaGrid
+                  label={`${opponent} suları`}
+                  board={opBoard}
+                  interactive={phase === 'battle' && !live.pending}
+                  selected={target}
+                  onCell={aimAt}
+                  testId="battleship-target-grid"
+                  lastKey={
+                    lastNote?.by === 'me' && lastNote.cell !== null ? `x-${lastNote.cell}` : null
+                  }
+                />
+              </SeaAxes>
             </div>
-            <div className="duo-bs-side">
-              <FleetBars
-                label={`Senin filon · ${theirHits}/${FLEET_CELLS} isabet aldı`}
-                sunk={myBoard.sunk.map((ship) => ship.size)}
-                testId="battleship-my-fleet"
-              />
+            <div className="duo-bs-panel">
+              <h3 className="duo-bs-subhead">Senin suların</h3>
               <SeaGrid
                 label="Senin suların"
                 board={myBoard}
                 ships={myShips}
                 interactive={false}
-                size={ownExpanded ? 'full' : 'mini'}
+                size="compact"
                 testId="battleship-own-grid"
                 lastKey={
                   lastNote?.by === 'op' && lastNote.cell !== null ? `x-${lastNote.cell}` : null
                 }
               />
-              <p className="duo-game-status min-h-[44px]" aria-live="polite">
-                {status}
-              </p>
-              {phase === 'battle' && !ownExpanded && (
-                <RetroButton
-                  variant="ink"
-                  size="lg"
-                  className="min-h-[64px] w-full"
-                  disabled={!myTurn || target === null || live.pending}
-                  onClick={() => void fire()}
-                  data-testid="battleship-fire"
-                >
-                  {live.pending
-                    ? 'Gönderiliyor...'
-                    : target !== null
-                      ? `${toCell(target)} ateş et`
-                      : myTurn
-                        ? 'Bir kare seç'
-                        : 'Rakip bekleniyor'}
-                </RetroButton>
-              )}
               {phase === 'finished' && (
                 <RetroButton onClick={onLeave} variant="secondary" size="lg" className="w-full">
                   Lobiye dön
@@ -839,6 +894,28 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
               )}
             </div>
           </div>
+          {phase === 'battle' && (
+            <div className="duo-bs-action">
+              <RetroButton
+                variant="ink"
+                size="lg"
+                className="min-h-[56px] w-full"
+                disabled={!myTurn || target === null || live.pending}
+                onClick={() => void fire()}
+                data-testid="battleship-fire"
+              >
+                {live.pending
+                  ? 'Gönderiliyor...'
+                  : !myTurn
+                    ? target !== null
+                      ? `${cellName(target)} hazır · sıra rakipte`
+                      : 'Sıra rakipte'
+                    : target !== null
+                      ? `${toCell(target)} ateş et`
+                      : 'Bir kare seç'}
+              </RetroButton>
+            </div>
+          )}
         </section>
       )}
 

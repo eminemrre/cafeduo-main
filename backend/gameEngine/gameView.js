@@ -14,11 +14,14 @@ const {
   CHESS_GAME_TYPE,
   AIM_GAME_TYPE,
   BATTLESHIP_GAME_TYPE,
+  HANGMAN_GAME_TYPE,
   QUIZ_GAME_TYPE,
 } = require('../../shared/gameRegistry');
 const { CELL_COUNT, FLEET, isCell } = require('../../shared/battleship');
 const { isCompetitiveEngineGameType } = require('../utils/gameEngineConfig');
 const { fleetOf } = require('./battleshipEngine');
+const { actorBoard } = require('./hangmanEngine');
+const { isTurkishLetter } = require('../../shared/turkishText');
 
 const read = (game, camelKey, snakeKey) => {
   if (!game || typeof game !== 'object') return undefined;
@@ -59,6 +62,8 @@ const isChessType = (gameType) => String(gameType || '').trim() === CHESS_GAME_T
 const isAimType = (gameType) => String(gameType || '').trim() === AIM_GAME_TYPE;
 const isQuizType = (gameType) => String(gameType || '').trim() === QUIZ_GAME_TYPE;
 const isBattleshipType = (gameType) => String(gameType || '').trim() === BATTLESHIP_GAME_TYPE;
+const isHangmanType = (gameType) => String(gameType || '').trim() === HANGMAN_GAME_TYPE;
+const PROGRESS_KEYS = ['revealed', 'wrong', 'solved', 'done'];
 
 // Chess state is produced by the server (clock + engine). These keys are safe
 // for both participants; anything else in the JSONB blob is not exposed.
@@ -160,6 +165,17 @@ const sanitizeRound = (round) => {
   if (round.trajectory && typeof round.trajectory === 'object') {
     out.trajectory = pick(round.trajectory, TRAJECTORY_KEYS);
   }
+  // Adam Asmaca: the word's shape and each board's counts, never its letters.
+  for (const key of ['length', 'difficulty', 'maxWrong']) {
+    if (Number.isInteger(round[key])) out[key] = round[key];
+  }
+  if (round.progress && typeof round.progress === 'object') {
+    out.progress = {
+      host: round.progress.host ? pick(round.progress.host, PROGRESS_KEYS) : null,
+      guest: round.progress.guest ? pick(round.progress.guest, PROGRESS_KEYS) : null,
+    };
+  }
+  if (typeof round.word === 'string') out.word = round.word;
   return out;
 };
 
@@ -197,7 +213,11 @@ const sanitizeEngineState = (engine) => {
     };
   }
   const round = sanitizeRound(engine.round);
-  if (round) out.round = round;
+  if (round) {
+    // Adam Asmaca: the word is public only once its round has closed.
+    if (engine.kind === 'hangman' && engine.phase === 'open') delete round.word;
+    out.round = round;
+  }
   if (engine.result && typeof engine.result === 'object') {
     out.result = pick(engine.result, RESULT_KEYS);
   }
@@ -304,6 +324,29 @@ const serializeGameForActor = (game, actorName, receivedAt) => {
     }
   }
 
+  // Adam Asmaca: the actor's own board (letters tried, positions opened). Both
+  // players solve the same word, so a board never reaches the other player.
+  if (isHangmanType(gameType) && actorKey) {
+    const board = actorBoard(
+      read(game, 'gameState', 'game_state')?.engine,
+      read(game, 'gamePrivateState', 'game_private_state'),
+      actorKey
+    );
+    if (board) {
+      out.actorView = {
+        hangman: {
+          roundId: board.roundId,
+          pattern: board.pattern.map((letter) => (isTurkishLetter(letter) ? letter : null)),
+          guessed: board.guessed.filter(isTurkishLetter),
+          wrong: board.wrong,
+          solved: board.solved,
+          done: board.done,
+          points: board.points,
+        },
+      };
+    }
+  }
+
   if (isQuizType(gameType) && actorName) {
     const key = actorKey;
     const joker = key && read(game, 'gamePrivateState', 'game_private_state')?.jokers?.[key];
@@ -362,6 +405,7 @@ module.exports = {
   ENGINE_STATE_KEYS,
   isAimType,
   isBattleshipType,
+  isHangmanType,
   isChessType,
   isQuizType,
   sanitizeEngineState,

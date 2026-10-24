@@ -46,6 +46,27 @@ describe('normalizeActionEnvelope', () => {
     expect(result.code).toBe(code);
   });
 
+  it('normalises a hangman letter with Turkish rules and refuses anything else', () => {
+    const guess = (letter) =>
+      normalizeActionEnvelope(validBody({ type: 'guess', optionIndex: undefined, letter }));
+    expect(guess('I')).toMatchObject({ ok: true, envelope: { type: 'guess', letter: 'ı' } });
+    expect(guess('Ş')).toMatchObject({ ok: true, envelope: { letter: 'ş' } });
+    for (const bad of ['q', 'ab', '', '1', null, 5, undefined]) {
+      expect(guess(bad)).toMatchObject({ ok: false, code: 'INVALID_LETTER' });
+    }
+  });
+
+  it('normalises a whole-word guess and bounds its length', () => {
+    const solve = (word) =>
+      normalizeActionEnvelope(validBody({ type: 'solve', optionIndex: undefined, word }));
+    expect(solve(' Kılıç ')).toMatchObject({ ok: true, envelope: { type: 'solve', word: 'kılıç' } });
+    for (const bad of ['', '123', null, 9, 'a'.repeat(25)]) {
+      expect(solve(bad)).toMatchObject({ ok: false, code: 'INVALID_WORD' });
+    }
+    // The letter field of a guess never rides along on a solve, and vice versa.
+    expect(solve('kahve').envelope.letter).toBeUndefined();
+  });
+
   it('keeps an integer shot time on fire and fingerprints it', () => {
     const fire = validBody({ type: ACTION_TYPES.FIRE, optionIndex: undefined, shotAt: 1792670000123 });
     const result = normalizeActionEnvelope(fire);

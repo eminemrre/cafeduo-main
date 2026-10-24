@@ -11,6 +11,7 @@ const {
   AIM_GAME_TYPE,
   BATTLESHIP_GAME_TYPE,
   COMPETITIVE_GAME_TYPES,
+  HANGMAN_GAME_TYPE,
   QUIZ_GAME_TYPE,
 } = require('../../shared/gameRegistry');
 const {
@@ -34,6 +35,13 @@ const {
   createBattleshipPublicState,
   startBattleshipState,
 } = require('./battleshipEngine');
+const {
+  advanceHangman,
+  applyHangmanAction,
+  createHangmanPrivateState,
+  createHangmanPublicState,
+  startHangmanState,
+} = require('./hangmanEngine');
 
 const nonEmpty = (value) => Array.isArray(value) && value.length > 0;
 
@@ -68,6 +76,16 @@ const ENGINES = Object.freeze({
     start: startBattleshipState,
     applyAction: applyBattleshipAction,
     advance: advanceBattleship,
+  }),
+  [HANGMAN_GAME_TYPE]: Object.freeze({
+    kind: 'hangman',
+    createPrivateState: () => createHangmanPrivateState(),
+    isPrivateStateReady: (privateState) => nonEmpty(privateState?.rounds),
+    createPublicState: ({ hostName, guestName, privateState }) =>
+      createHangmanPublicState({ hostName, guestName, totalRounds: privateState.rounds.length }),
+    start: startHangmanState,
+    applyAction: applyHangmanAction,
+    advance: advanceHangman,
   }),
 });
 

@@ -309,6 +309,27 @@ describe('Dashboard Integration', () => {
   });
 
   describe('Initial Render', () => {
+    it('opens a game at the top of the page, not where the lobby was scrolled to', () => {
+      const scrollTo = jest.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+      const view = renderDashboard();
+      scrollTo.mockClear();
+      mockUseGames.mockReturnValue({
+        ...defaultGamesState,
+        activeGameId: 'practice-2',
+        activeGameType: 'Amiral Battı',
+        isBot: true,
+      });
+      view.rerender(
+        <ToastProvider>
+          <AuthProvider>
+            <Dashboard currentUser={mockUser} onUpdateUser={mockOnUpdateUser} onUpdateProfile={jest.fn()} />
+          </AuthProvider>
+        </ToastProvider>
+      );
+      expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ top: 0 }));
+      scrollTo.mockRestore();
+    });
+
     it('never changes wallet, wins or games played when practice finishes', async () => {
       mockUseGames.mockReturnValue({
         ...defaultGamesState,

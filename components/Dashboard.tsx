@@ -169,7 +169,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
       setGameResult(null);
       setLeavingGame(false);
       gameEndHandledRef.current = false;
+      return;
     }
+    // A game replaces the lobby in place; without this it opened wherever the
+    // lobby was scrolled to (e.g. the practice card), hiding its header and fleet tray.
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [activeGameId]);
 
   // ==========================================

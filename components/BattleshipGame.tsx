@@ -368,9 +368,10 @@ const shipDir = (cells: number[]): ShipDirection =>
   cells.length > 1 && cells[1] - cells[0] === BOARD_SIZE ? 'v' : 'h';
 
 /** Ships drawn under the cells of a battle sea: the own fleet or sunk enemy ships. */
-const ShipsUnder: React.FC<{ ships: Ship[]; byFleetOrder: boolean }> = ({
+const ShipsUnder: React.FC<{ ships: Ship[]; byFleetOrder: boolean; escaped?: boolean }> = ({
   ships,
   byFleetOrder,
+  escaped = false,
 }) => (
   <>
     {ships.map((ship, index) => {
@@ -378,7 +379,7 @@ const ShipsUnder: React.FC<{ ships: Ship[]; byFleetOrder: boolean }> = ({
       return (
         <div
           key={cells.join('-')}
-          className="duo-bs-ship duo-bs-ship--under"
+          className={`duo-bs-ship duo-bs-ship--under${escaped ? ' duo-bs-ship--escaped' : ''}`}
           style={shipArea(cells)}
           aria-hidden="true"
         >
@@ -387,6 +388,7 @@ const ShipsUnder: React.FC<{ ships: Ship[]; byFleetOrder: boolean }> = ({
             size={ship.size}
             dir={shipDir(cells)}
             variant={variantFor(ship.size, byFleetOrder ? index : undefined)}
+            tone={escaped ? 'escaped' : 'ink'}
           />
         </div>
       );
@@ -514,6 +516,20 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
     : (actorKey && engine?.boards?.[otherKey]) || emptyBoard();
   const serverFleet = live.snapshot?.actorView?.fleet;
   const myShips: Ship[] = isBot ? bot.myShips : serverFleet || [];
+  // After the match the opponent's whole fleet is public; the ships never sunk "got away".
+  const revealedOpponent: Ship[] = isBot
+    ? bot.phase === 'finished'
+      ? bot.botShips
+      : []
+    : engine?.phase === 'finished' && actorKey
+      ? engine.reveal?.[otherKey] || []
+      : [];
+  const sunkKeys = new Set(
+    opBoard.sunk.map((ship) => [...ship.cells].sort((a, b) => a - b).join('-'))
+  );
+  const escapedShips = revealedOpponent.filter(
+    (ship) => !sunkKeys.has([...ship.cells].sort((a, b) => a - b).join('-'))
+  );
   const myPlaced = isBot
     ? bot.phase !== 'placement'
     : Boolean(actorKey && engine?.players?.[actorKey]?.placed);
@@ -1056,12 +1072,36 @@ export const BattleshipGame: React.FC<BattleshipGameProps> = ({
                   onCell={aimAt}
                   testId="battleship-target-grid"
                   drawn="under"
-                  overlay={<ShipsUnder ships={opBoard.sunk} byFleetOrder={false} />}
+                  ships={escapedShips}
+                  overlay={
+                    <>
+                      <ShipsUnder ships={opBoard.sunk} byFleetOrder={false} />
+                      <ShipsUnder ships={escapedShips} byFleetOrder={false} escaped />
+                    </>
+                  }
                   lastKey={
                     lastNote?.by === 'me' && lastNote.cell !== null ? `x-${lastNote.cell}` : null
                   }
                 />
               </SeaAxes>
+              {escapedShips.length > 0 && (
+                <p className="duo-bs-legend" data-testid="battleship-reveal-legend">
+                  <span className="duo-bs-legend-item">
+                    <span
+                      className="duo-bs-legend-key duo-bs-legend-key--sunk"
+                      aria-hidden="true"
+                    />
+                    Batırdığın gemiler
+                  </span>{' '}
+                  <span className="duo-bs-legend-item">
+                    <span
+                      className="duo-bs-legend-key duo-bs-legend-key--escaped"
+                      aria-hidden="true"
+                    />
+                    {escapedShips.length} gemi kaçtı
+                  </span>
+                </p>
+              )}
             </div>
             <div className="duo-bs-panel">
               <h3 className="duo-bs-subhead">Senin suların</h3>

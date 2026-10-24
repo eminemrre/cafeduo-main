@@ -76,7 +76,10 @@ Actions: `place {layout}` (four `{cell, dir}` in fleet order) or
 turn ids run `r1`..`r999`. An unfinished placement is auto-placed from the
 seeded layout at the deadline; if nobody placed, the match is `abandoned`.
 Fleets, seeded layouts and the first turn stay in `game_private_state`; the
-public state holds only shots, sunk ship shapes and whose turn it is. A
+public state holds only shots, sunk ship shapes and whose turn it is. When the
+match ends, the engine copies the placed fleets into `reveal` (a side that never
+placed reveals nothing) and `gameView` publishes it only for a finished match, so
+both players see the ships that got away. A
 player's own fleet is projected as `actorView.fleet` by the authenticated
 action/GET only, never by sockets, lobby, join, active-game or history. The
 practice match against the bot is local and unranked.

@@ -292,6 +292,8 @@ export interface CompetitiveEngineState {
   result: CompetitiveEngineResult | null;
   boards?: { host: BattleshipBoard; guest: BattleshipBoard };
   lastShot?: BattleshipLastShot | null;
+  /** Amiral Battı, finished matches only: both fleets, including ships never found. */
+  reveal?: { host: { size: number; cells: number[] }[]; guest: { size: number; cells: number[] }[] };
 }
 
 export interface CompetitiveGame extends GameRequest {

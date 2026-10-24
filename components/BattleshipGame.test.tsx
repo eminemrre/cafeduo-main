@@ -388,6 +388,54 @@ describe('BattleshipGame ranked', () => {
     expect(screen.getByTestId('battleship-fire')).toBeDisabled();
   });
 
+  it('shows the ships the opponent kept afloat once the match is over', async () => {
+    const guestFleet = [
+      { size: 4, cells: [56, 57, 58, 59] },
+      { size: 3, cells: [31, 39, 47] },
+      { size: 3, cells: [18, 26, 34] },
+      { size: 2, cells: [36, 37] },
+    ];
+    mockApi.games.get.mockResolvedValue(
+      snapshot(
+        engine({
+          phase: 'finished',
+          round: { ...engine().round!, phase: 'finished' },
+          boards: {
+            host: { shots: [], sunk: [] },
+            guest: {
+              shots: [
+                { cell: 36, hit: true },
+                { cell: 37, hit: true },
+                { cell: 58, hit: true },
+              ],
+              sunk: [{ size: 2, cells: [36, 37] }],
+            },
+          },
+          result: { winner: 'bora', draw: false, reason: 'fleet_sunk' } as never,
+          reveal: { host: [{ size: 4, cells: [0, 1, 2, 3] }], guest: guestFleet },
+        }),
+        { status: 'finished' }
+      )
+    );
+    render(
+      <BattleshipGame
+        currentUser={user}
+        gameId="g1"
+        isBot={false}
+        onGameEnd={jest.fn()}
+        onLeave={jest.fn()}
+      />
+    );
+    await screen.findByTestId('battleship-battle');
+    const target = screen.getByTestId('battleship-target-grid');
+    // One sunk ship, three that got away.
+    expect(target.querySelectorAll('.duo-bs-ship--under:not(.duo-bs-ship--escaped)')).toHaveLength(1);
+    expect(target.querySelectorAll('.duo-bs-ship--escaped')).toHaveLength(3);
+    // The hit on the escaped battleship stays visible on top of it.
+    expect(cell('battleship-target-grid', 58).className).toContain('duo-bs-cell--on-ship');
+    expect(screen.getByTestId('battleship-reveal-legend')).toHaveTextContent('3 gemi kaçtı');
+  });
+
   it('cannot fire while the opponent has the turn', async () => {
     mockApi.games.get.mockResolvedValue(
       snapshot(engine({ round: { ...engine().round!, turn: 'guest' } }))

@@ -148,7 +148,8 @@ npm run migrate:status   # when touching migrations
   `shared/battleship.js` (8x8, fleet 4+3+3+2, 45 s placement, 20 s turns, no extra shot on a
   hit, three missed turns forfeit, 128-turn cap: 64 cells per player). Fleets, seeded auto layouts and the first
   turn stay in `game_private_state`; the public state holds only shots, sunk ship shapes and
-  the turn. A player's own fleet is projected as `actorView.fleet` by authenticated HTTP
+  the turn — until the match is over: `finish` copies the placed fleets into public
+  `reveal`, and `gameView` publishes it only when `phase === 'finished'`. A player's own fleet is projected as `actorView.fleet` by authenticated HTTP
   action/GET only, never on discovery/history. Actions: `place {layout}` or server-seeded
   `place {auto:true}`, and `fire {cell}`; turn ids run `r1`..`r999`. Both strict numeric
   coordinates and the full legal action ledger are retained across retries.

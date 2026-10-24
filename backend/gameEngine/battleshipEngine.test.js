@@ -212,6 +212,43 @@ describe('battleshipEngine', () => {
     });
   });
 
+  const shipsOf = (layout) => validateLayout(layout).ships.map(({ size, cells }) => ({ size, cells }));
+
+  it('reveals both fleets only once the match is over', () => {
+    const game = placeBoth(newGame({ firstTurn: 'host' }));
+    expect(game.state.reveal).toBeUndefined();
+    GUEST_CELLS.forEach((cell, index) => {
+      act(game, 'host', 'fire', { cell });
+      if (index === 0) expect(game.state.reveal).toBeUndefined();
+      if (index < GUEST_CELLS.length - 1) {
+        act(game, 'guest', 'fire', { cell: EMPTY_FOR_HOST[index] });
+      }
+    });
+    expect(game.state.phase).toBe('finished');
+    expect(game.state.reveal).toEqual({ host: shipsOf(HOST_LAYOUT), guest: shipsOf(GUEST_LAYOUT) });
+  });
+
+  it('reveals the fleets after a resignation, a forfeit or the turn cap too', () => {
+    const resigned = placeBoth(newGame());
+    act(resigned, 'host', 'resign');
+    expect(resigned.state.reveal).toEqual({
+      host: shipsOf(HOST_LAYOUT),
+      guest: shipsOf(GUEST_LAYOUT),
+    });
+    // During placement only a placed fleet is shown; the other side placed nothing.
+    const early = newGame();
+    act(early, 'host', 'place', { layout: HOST_LAYOUT });
+    act(early, 'guest', 'resign');
+    expect(early.state.reveal).toEqual({ host: shipsOf(HOST_LAYOUT), guest: [] });
+  });
+
+  it('reveals nothing for a match nobody placed in', () => {
+    const game = newGame();
+    const { state } = advanceBattleship(game.state, game.privateState, Date.parse(game.state.round.endsAt));
+    expect(state.result).toMatchObject({ reason: 'abandoned' });
+    expect(state.reveal).toEqual({ host: [], guest: [] });
+  });
+
   it('auto-places a missing fleet from the persisted deadline', () => {
     const game = newGame({ firstTurn: 'host' });
     act(game, 'host', 'place', { layout: HOST_LAYOUT });

@@ -6,7 +6,7 @@
 import React from 'react';
 
 export type ShipVariant = 'battleship' | 'destroyer' | 'submarine' | 'patrol';
-export type ShipTone = 'ink' | 'picked' | 'ghost' | 'blocked';
+export type ShipTone = 'ink' | 'picked' | 'ghost' | 'blocked' | 'escaped';
 
 /** The fleet in order 4, 3, 3, 2: a battleship, a destroyer, a submarine, a patrol boat. */
 export const variantFor = (size: number, fleetIndex?: number): ShipVariant => {
@@ -22,11 +22,21 @@ export const VARIANT_NAME: Record<ShipVariant, string> = {
   patrol: 'Hücumbot',
 };
 
-const TONES: Record<ShipTone, { hull: string; deck: string; detail: string; opacity: number }> = {
+interface ToneColors {
+  hull: string;
+  deck: string;
+  detail: string;
+  opacity: number;
+  /** Hull outline; the escaped (never found) ships are drawn as a white hull with an ink edge. */
+  stroke?: string;
+}
+
+const TONES: Record<ShipTone, ToneColors> = {
   ink: { hull: '#17140F', deck: '#FFFFFF', detail: '#17140F', opacity: 1 },
   picked: { hull: '#2EC4B6', deck: '#FFFFFF', detail: '#17140F', opacity: 1 },
   ghost: { hull: '#2EC4B6', deck: '#FFFFFF', detail: '#17140F', opacity: 0.55 },
   blocked: { hull: '#D62F2F', deck: '#FFFFFF', detail: '#17140F', opacity: 0.55 },
+  escaped: { hull: '#FFFFFF', deck: '#17140F', detail: '#FFFFFF', opacity: 1, stroke: '#17140F' },
 };
 
 /** Pointed bow on the right, squared stern with rounded corners on the left. */
@@ -39,7 +49,7 @@ const submarinePath = (length: number) =>
   `M44 30 L${length - 44} 30 Q${length - 4} 30 ${length - 4} 50 Q${length - 4} 70 ${length - 44} 70 ` +
   'L44 70 Q4 70 4 50 Q4 30 44 30 Z';
 
-const Turret: React.FC<{ cx: number; aft?: boolean; tone: (typeof TONES)[ShipTone] }> = ({
+const Turret: React.FC<{ cx: number; aft?: boolean; tone: ToneColors }> = ({
   cx,
   aft = false,
   tone,
@@ -51,7 +61,7 @@ const Turret: React.FC<{ cx: number; aft?: boolean; tone: (typeof TONES)[ShipTon
   </g>
 );
 
-const Bridge: React.FC<{ x: number; width: number; tone: (typeof TONES)[ShipTone] }> = ({
+const Bridge: React.FC<{ x: number; width: number; tone: ToneColors }> = ({
   x,
   width,
   tone,
@@ -62,14 +72,14 @@ const Bridge: React.FC<{ x: number; width: number; tone: (typeof TONES)[ShipTone
   </g>
 );
 
-const Funnel: React.FC<{ cx: number; tone: (typeof TONES)[ShipTone] }> = ({ cx, tone }) => (
+const Funnel: React.FC<{ cx: number; tone: ToneColors }> = ({ cx, tone }) => (
   <g>
     <circle cx={cx} cy={50} r={12} fill={tone.deck} />
     <circle cx={cx} cy={50} r={6} fill={tone.detail} />
   </g>
 );
 
-const Works: React.FC<{ variant: ShipVariant; length: number; tone: (typeof TONES)[ShipTone] }> = ({
+const Works: React.FC<{ variant: ShipVariant; length: number; tone: ToneColors }> = ({
   variant,
   length,
   tone,
@@ -140,6 +150,9 @@ export const ShipShape: React.FC<ShipShapeProps> = ({
         <path
           d={variant === 'submarine' ? submarinePath(length) : hullPath(length)}
           fill={colors.hull}
+          stroke={colors.stroke}
+          strokeWidth={colors.stroke ? 6 : undefined}
+          vectorEffect={colors.stroke ? 'non-scaling-stroke' : undefined}
         />
         <Works variant={variant} length={length} tone={colors} />
       </g>

@@ -169,15 +169,18 @@ const STRUCTURED_ENGINE_KEYS = ['players', 'round', 'result', 'boards', 'lastSho
  * One side's waters in Amiral Battı: only the shots fired at it and the
  * shapes of ships already sunk. Where unhit ships lie is never public.
  */
+const sanitizeShips = (ships) =>
+  (Array.isArray(ships) ? ships : []).slice(0, FLEET.length).map((ship) => ({
+    size: Number.isInteger(ship?.size) ? ship.size : 0,
+    cells: (Array.isArray(ship?.cells) ? ship.cells : []).filter(isCell).slice(0, FLEET[0]),
+  }));
+
 const sanitizeBoard = (board) => ({
   shots: (Array.isArray(board?.shots) ? board.shots : [])
     .filter((shot) => isCell(shot?.cell))
     .slice(0, CELL_COUNT)
     .map((shot) => ({ cell: shot.cell, hit: shot.hit === true })),
-  sunk: (Array.isArray(board?.sunk) ? board.sunk : []).slice(0, FLEET.length).map((ship) => ({
-    size: Number.isInteger(ship?.size) ? ship.size : 0,
-    cells: (Array.isArray(ship?.cells) ? ship.cells : []).filter(isCell).slice(0, FLEET[0]),
-  })),
+  sunk: sanitizeShips(board?.sunk),
 });
 
 const sanitizeEngineState = (engine) => {
@@ -209,6 +212,13 @@ const sanitizeEngineState = (engine) => {
       engine.lastShot && typeof engine.lastShot === 'object'
         ? pick(engine.lastShot, LAST_SHOT_KEYS)
         : null;
+  }
+  // Amiral Battı: both fleets become public only after the match is over.
+  if (engine.phase === 'finished' && engine.reveal && typeof engine.reveal === 'object') {
+    out.reveal = {
+      host: sanitizeShips(engine.reveal.host),
+      guest: sanitizeShips(engine.reveal.guest),
+    };
   }
   return out;
 };

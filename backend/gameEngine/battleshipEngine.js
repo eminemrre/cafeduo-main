@@ -107,8 +107,24 @@ const openRound = (state, { phase, turn, atMs, durationMs }) => {
 
 const battleTurnsUsed = (state) => Math.max(0, state.roundIndex - 1);
 
-const finish = (state, { winnerKey = null, draw = false, reason, atMs }) => {
+/**
+ * Once a match is over both fleets are shown to both players (the ships that
+ * were never found included). Only a fleet that was placed is shown: a side
+ * that never placed has nothing to reveal, not its unused seeded layout.
+ */
+const revealFleets = (state, privateState) => {
+  const reveal = {};
+  for (const key of playerKeys) {
+    reveal[key] = state.players[key]?.placed
+      ? fleetOf(privateState, key).map(({ size, cells }) => ({ size, cells: [...cells] }))
+      : [];
+  }
+  return reveal;
+};
+
+const finish = (state, privateState, { winnerKey = null, draw = false, reason, atMs }) => {
   state.phase = 'finished';
+  state.reveal = revealFleets(state, privateState);
   state.phaseEndsAt = iso(atMs);
   state.updatedAt = iso(atMs);
   if (state.round) state.round.phase = 'finished';
@@ -122,10 +138,10 @@ const finish = (state, { winnerKey = null, draw = false, reason, atMs }) => {
   state.revision += 1;
 };
 
-const finishOnHits = (state, atMs) => {
+const finishOnHits = (state, privateState, atMs) => {
   const { host, guest } = state.players;
   const draw = host.hits === guest.hits;
-  finish(state, {
+  finish(state, privateState, {
     winnerKey: draw ? null : host.hits > guest.hits ? 'host' : 'guest',
     draw,
     reason: 'turn_limit',
@@ -133,9 +149,9 @@ const finishOnHits = (state, atMs) => {
   });
 };
 
-const nextTurn = (state, turnKey, atMs) => {
+const nextTurn = (state, privateState, turnKey, atMs) => {
   if (battleTurnsUsed(state) >= MAX_BATTLE_TURNS) {
-    finishOnHits(state, atMs);
+    finishOnHits(state, privateState, atMs);
     return;
   }
   openRound(state, { phase: 'battle', turn: turnKey, atMs, durationMs: TURN_MS });
@@ -186,10 +202,10 @@ const resolveShot = (state, privateState, actorKey, cell, atMs) => {
   state.lastShot = { by: actorKey, cell, hit: Boolean(ship), sunkSize, at: iso(atMs) };
 
   if (board.sunk.length >= ships.length && ships.length === FLEET.length) {
-    finish(state, { winnerKey: actorKey, reason: 'fleet_sunk', atMs });
+    finish(state, privateState, { winnerKey: actorKey, reason: 'fleet_sunk', atMs });
     return;
   }
-  nextTurn(state, targetKey, atMs);
+  nextTurn(state, privateState, targetKey, atMs);
 };
 
 const advanceBattleship = (state, privateState, nowMs = Date.now()) => {
@@ -212,7 +228,7 @@ const advanceBattleship = (state, privateState, nowMs = Date.now()) => {
     if (next.phase === 'placement') {
       const anyPlaced = playerKeys.some((key) => next.players[key].placed);
       if (!anyPlaced) {
-        finish(next, { draw: true, reason: 'abandoned', atMs: deadline });
+        finish(next, privateState, { draw: true, reason: 'abandoned', atMs: deadline });
         changed = true;
         break;
       }
@@ -234,10 +250,14 @@ const advanceBattleship = (state, privateState, nowMs = Date.now()) => {
       next.lastShot = { by: turnKey, cell: null, hit: false, sunkSize: null, at: iso(deadline) };
       changed = true;
       if (player.missedTurns >= MAX_MISSED_TURNS) {
-        finish(next, { winnerKey: otherKey(turnKey), reason: 'timeout', atMs: deadline });
+        finish(next, privateState, {
+          winnerKey: otherKey(turnKey),
+          reason: 'timeout',
+          atMs: deadline,
+        });
         break;
       }
-      nextTurn(next, otherKey(turnKey), deadline);
+      nextTurn(next, privateState, otherKey(turnKey), deadline);
       if (next.phase === 'finished') break;
       continue;
     }
@@ -317,7 +337,7 @@ const applyBattleshipAction = ({ state, privateState, actorKey, envelope, nowMs 
   }
 
   if (envelope.type === ACTION_TYPES.RESIGN) {
-    finish(next, { winnerKey: otherKey(actorKey), reason: 'resign', atMs: nowMs });
+    finish(next, nextPrivate, { winnerKey: otherKey(actorKey), reason: 'resign', atMs: nowMs });
     return { ok: true, state: next, privateState: nextPrivate };
   }
 

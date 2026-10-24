@@ -60,7 +60,9 @@ const PageLoader = () => (
 
 // Protected Route Component Props
 interface ProtectedRouteProps {
-  children: React.ReactElement;
+  // A render function receives the user this guard has proven to exist, so routes need no
+  // non-null assertion on the nullable context value.
+  children: (user: User) => React.ReactElement;
   isAdminRoute?: boolean;
   requiredRole?: string;
 }
@@ -86,7 +88,7 @@ const ProtectedRoute = ({ children, isAdminRoute = false, requiredRole }: Protec
   if (requiredRole && user.role !== requiredRole) {
     return <Navigate to="/dashboard" replace />;
   }
-  return children;
+  return children(user);
 };
 
 const AppContent: React.FC = () => {
@@ -294,23 +296,25 @@ const AppContent: React.FC = () => {
               path="/dashboard"
               element={
                 <ProtectedRoute>
-                  <PageFrame>
-                    <ErrorBoundary>
-                      {requiresCheckIn() ? (
-                        <CafeSelection
-                          currentUser={user!}
-                          onCheckInSuccess={handleCheckInSuccess}
-                        />
-                      ) : (
-                        <Dashboard
-                          currentUser={user!}
-                          onUpdateUser={handleRefreshUser}
-                          onUpdateProfile={handleUpdateProfile}
-                          onRefreshUser={handleRefreshUser}
-                        />
-                      )}
-                    </ErrorBoundary>
-                  </PageFrame>
+                  {(currentUser) => (
+                    <PageFrame>
+                      <ErrorBoundary>
+                        {requiresCheckIn() ? (
+                          <CafeSelection
+                            currentUser={currentUser}
+                            onCheckInSuccess={handleCheckInSuccess}
+                          />
+                        ) : (
+                          <Dashboard
+                            currentUser={currentUser}
+                            onUpdateUser={handleRefreshUser}
+                            onUpdateProfile={handleUpdateProfile}
+                            onRefreshUser={handleRefreshUser}
+                          />
+                        )}
+                      </ErrorBoundary>
+                    </PageFrame>
+                  )}
                 </ProtectedRoute>
               }
             />
@@ -319,11 +323,13 @@ const AppContent: React.FC = () => {
               path="/admin"
               element={
                 <ProtectedRoute isAdminRoute={true}>
-                  <PageFrame>
-                    <ErrorBoundary>
-                      <AdminDashboard currentUser={user!} />
-                    </ErrorBoundary>
-                  </PageFrame>
+                  {(currentUser) => (
+                    <PageFrame>
+                      <ErrorBoundary>
+                        <AdminDashboard currentUser={currentUser} />
+                      </ErrorBoundary>
+                    </PageFrame>
+                  )}
                 </ProtectedRoute>
               }
             />
@@ -332,11 +338,13 @@ const AppContent: React.FC = () => {
               path="/cafe-admin"
               element={
                 <ProtectedRoute requiredRole="cafe_admin">
-                  <PageFrame>
-                    <ErrorBoundary>
-                      <CafeDashboard currentUser={user!} />
-                    </ErrorBoundary>
-                  </PageFrame>
+                  {(currentUser) => (
+                    <PageFrame>
+                      <ErrorBoundary>
+                        <CafeDashboard currentUser={currentUser} />
+                      </ErrorBoundary>
+                    </PageFrame>
+                  )}
                 </ProtectedRoute>
               }
             />

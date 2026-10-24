@@ -88,22 +88,21 @@ test.describe('Authentication Flow', () => {
     await page.locator('[data-testid="auth-password-input"]').fill(password);
     await page.locator('[data-testid="auth-submit-button"]').click({ force: true });
 
-    const startedAt = Date.now();
-    let hasAuthCookie = false;
-    while (Date.now() - startedAt < 10000) {
-      const cookies = await page.context().cookies();
-      hasAuthCookie = cookies.some((item) => item.name === 'auth_token');
-      if (hasAuthCookie) break;
-      await page.waitForTimeout(250);
-    }
+    // Kayit gercek olarak tamamlanmali: sunucu auth_token cookie set eder ve
+    // check-in ekranina yonlendirilir. Cookie gelmezse test sessizce gecmez,
+    // assertion timeout ile gercek hatayi raporlar.
+    await expect
+      .poll(
+        async () => {
+          const cookies = await page.context().cookies();
+          return cookies.some((item) => item.name === 'auth_token');
+        },
+        { timeout: 15000, message: 'registration did not set the auth_token cookie' }
+      )
+      .toBe(true);
 
-    if (hasAuthCookie) {
-      await page.goto(`${root}/dashboard`);
-      await expect(page.getByRole('heading', { name: 'Kafeye Giriş' })).toBeVisible({ timeout: 10000 });
-      return;
-    }
-
-    await expect(page.locator('[data-testid="auth-email-input"]')).toBeVisible();
+    await page.goto(`${root}/dashboard`);
+    await expect(page.getByRole('heading', { name: 'Kafeye Giriş' })).toBeVisible({ timeout: 10000 });
   });
 
   test('@smoke can login with provisioned account and logout', async ({ page, request, baseURL }) => {
@@ -230,6 +229,11 @@ test.describe('Authentication Flow', () => {
     await page.locator('[data-testid="auth-password-input"]').fill('wrongpass123');
     await page.locator('[data-testid="auth-submit-button"]').click({ force: true });
 
+    // Backend 401 ile "Geçersiz e-posta veya şifre." dondurur; hata kutusunda
+    // gercek mesaj görünmeli ve oturum acilmamis olmali.
+    await expect(page.getByText('Geçersiz e-posta veya şifre.').first()).toBeVisible({ timeout: 10000 });
     await expect(page.locator('[data-testid="auth-email-input"]')).toBeVisible();
+    const cookies = await page.context().cookies();
+    expect(cookies.some((item) => item.name === 'auth_token')).toBe(false);
   });
 });

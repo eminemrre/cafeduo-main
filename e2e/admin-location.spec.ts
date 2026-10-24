@@ -17,7 +17,7 @@ const adminHeaders = (token: string, csrf = 'test-csrf-token-for-e2e') => ({
 });
 
 test.describe('Cafe Admin Location Editor', () => {
-  test('@advanced cafe-admin can open location editor and update cafe radius', async ({
+  test('@advanced cafe-admin location editor save surfaces the backend response', async ({
     page,
     request,
     baseURL,
@@ -82,7 +82,21 @@ test.describe('Cafe Admin Location Editor', () => {
     const addressSearch = page.getByPlaceholder('Adres, kampüs veya kafe ara...').first();
     await expect(addressSearch).toBeVisible({ timeout: 30000 });
 
-    // 7) Kafe listesi hala saglikli (konum editoru data akisini bozmadi)
+    // 7) Radius alanini doldurup gercekten kaydet: konum endpoint'i
+    //    PUT /cafes/:id/location dogrudan pool.query cagirir; DB'siz (memory
+    //    mode) e2e ortaminda 500 doner ve mesaj arayüzde surface edilmeli.
+    const radiusInput = page.locator('#cafe-radius-input');
+    await expect(radiusInput).toBeVisible({ timeout: 15000 });
+    await radiusInput.fill('321');
+    await page.getByRole('button', { name: 'KONUMU KAYDET' }).click();
+
+    const statusRegion = page.locator('[role="status"]').filter({ hasText: 'Kafe konumu' });
+    await expect(statusRegion).toBeVisible({ timeout: 15000 });
+    await expect(statusRegion).toContainText('Kafe konumu güncellenemedi.', { timeout: 15000 });
+    // Hata durumunda form kayip olmamali: kullanici girdigi degeri duzeltebilmeli.
+    await expect(radiusInput).toHaveValue('321');
+
+    // 8) Kafe listesi hala saglikli (konum editoru data akisini bozmadi)
     const cafesRes = await request.get(`${apiRoot}/api/cafes`);
     expect(cafesRes.ok()).toBeTruthy();
     const cafes = await cafesRes.json();

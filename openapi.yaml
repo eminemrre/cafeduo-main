@@ -396,7 +396,7 @@ paths:
               properties:
                 gameType:
                   type: string
-                  enum: ['Retro Satranç', 'Bilgi Yarışı', 'Nişancı Düellosu', 'Amiral Battı']
+                  enum: ['Retro Satranç', 'Bilgi Yarışı', 'Nişancı Düellosu', 'Amiral Battı', 'Adam Asmaca']
                   example: 'Amiral Battı'
                 points:
                   type: integer
@@ -540,7 +540,7 @@ paths:
         - Games
       summary: Sıralı oyun eylemi (protokol v2)
       description: |
-        Bilgi Yarışı, Nişancı Düellosu ve Amiral Battı için tek eylem yolu. Sunucu skoru, isabeti,
+        Bilgi Yarışı, Nişancı Düellosu, Amiral Battı ve Adam Asmaca için tek eylem yolu. Sunucu skoru, isabeti,
         süreyi ve kazananı kendisi hesaplar; istemcinin gönderdiği skor/kazanan alanları yok sayılır.
         Aynı `actionId` ve aynı gövdeyle tekrar saklanan makbuzu döner (`duplicate: true`);
         aynı `actionId` ile farklı gövde `409 ACTION_ID_CONFLICT` olur.
@@ -568,7 +568,7 @@ paths:
                   example: 'r1'
                 type:
                   type: string
-                  enum: ['answer', 'joker', 'fire', 'place', 'resign']
+                  enum: ['answer', 'joker', 'fire', 'place', 'guess', 'solve', 'resign']
                 optionIndex:
                   type: integer
                   minimum: 0
@@ -596,6 +596,18 @@ paths:
                 auto:
                   type: boolean
                   description: Amiral Battı `place`; sunucunun tohumladığı düzenle yerleştir (`layout` ile birlikte gönderilemez).
+                letter:
+                  type: string
+                  pattern: '^[a-zA-ZçğıöşüÇĞİÖŞÜ]$'
+                  description: Adam Asmaca `guess`; tek Türkçe harf (I → ı, İ → i).
+                  example: 'ş'
+                word:
+                  type: string
+                  maxLength: 24
+                  description: >-
+                    Adam Asmaca `solve`; kelimenin tamamı. Yanlışsa iki hak gider. Sunucu Türkçe
+                    küçük harfe çevirip harf dışı karakterleri atar.
+                  example: 'kahve'
       responses:
         200:
           description: Eylem uygulandı ya da aynı eylemin makbuzu döndü

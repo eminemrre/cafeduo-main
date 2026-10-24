@@ -167,7 +167,13 @@ describe('GameSection', () => {
     renderSection({ onStartPractice });
     const practice = screen.getByTestId('practice');
     const choices = Array.from(practice.querySelectorAll('button')).map((b) => b.textContent);
-    expect(choices).toEqual(['Amiral Battı', 'Nişancı Düellosu', 'Bilgi Yarışı', 'Retro Satranç']);
+    expect(choices).toEqual([
+      'Adam Asmaca',
+      'Amiral Battı',
+      'Nişancı Düellosu',
+      'Bilgi Yarışı',
+      'Retro Satranç',
+    ]);
     fireEvent.click(screen.getByTestId('practice-start-aim'));
     expect(onStartPractice).toHaveBeenCalledWith('Nişancı Düellosu');
     fireEvent.click(screen.getByTestId('practice-start-battleship'));

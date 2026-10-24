@@ -107,7 +107,7 @@ npm run migrate:status   # when touching migrations
   `game_room_error`, `lobby_updated`. Sockets only carry server notifications; player actions go
   through the authenticated HTTP game endpoints. `game_move` and `update_game_state` are rejected.
   Call `emitLobbyUpdate(tableCode)` after game mutations, and emit only after the DB commit.
-- Competitive games (Bilgi Yarışı, Nişancı Düellosu, Amiral Battı; `competitive: true` in
+- Competitive games (Bilgi Yarışı, Nişancı Düellosu, Amiral Battı, Adam Asmaca; `competitive: true` in
   `shared/gameRegistry.js`) run only the server-authoritative protocol. Create, join, actions,
   readers and the deadline job reach their rules only through `backend/gameEngine/engines.js`;
   a new competitive game is one entry there, never another type if-chain in a handler.
@@ -153,6 +153,16 @@ npm run migrate:status   # when touching migrations
   action/GET only, never on discovery/history. Actions: `place {layout}` or server-seeded
   `place {auto:true}`, and `fire {cell}`; turn ids run `r1`..`r999`. Both strict numeric
   coordinates and the full legal action ledger are retained across retries.
+- `backend/gameEngine/hangmanEngine.js` runs Adam Asmaca: both players solve the **same hidden
+  word at the same time** on their own board, three 60 s rounds, one word per difficulty from
+  three different categories, six wrong letters. `guess {letter}` takes one Turkish letter
+  (`shared/turkishText.js`: `I → ı`, `İ → i`); `solve {word}` takes the whole word and a wrong
+  one costs two lives. A solved board scores `10 + 2 × lives left + floor(seconds left / 6)`,
+  an unsolved one the positions it opened. Words live in `game_private_state`; the public round
+  carries length, category, difficulty, the life limit and each board's counts, a board's
+  letters reach only its owner as `actorView.hangman`, and the word is published only after its
+  round closes (both the engine and `gameView` strip it while open). Practice is local, unranked
+  and uses `lib/hangmanPractice.ts`, whose word list is disjoint from the server bank.
 - Settlement for a competitive engine game happens only in `backend/gameEngine/settlement.js`
   and at most once: the `games` row is locked, the public engine result gets
   `settled/settledAt/transferredPoints`, and `applyDbSettlement`/`applyMemorySettlement` runs in

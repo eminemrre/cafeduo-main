@@ -7,8 +7,8 @@
 > [game-authority-review.md](game-authority-review.md)); production runs a single
 > API container.
 
-CafeDuo's ranked **Bilgi Yarışı**, **Nişancı Düellosu** and **Amiral Battı**
-matches are run by the server. The client renders public snapshots and sends
+CafeDuo's ranked **Bilgi Yarışı**, **Nişancı Düellosu**, **Amiral Battı** and
+**Adam Asmaca** matches are run by the server. The client renders public snapshots and sends
 actions; it never sends a score, a hit, a winner, a fleet, a clock value or a
 settlement flag.
 
@@ -26,8 +26,8 @@ settlement flag.
   `finish({ winner })` answer `410 LEGACY_PROTOCOL_DISABLED`.
 - `game_move` and `update_game_state` sockets are rejected. Socket events only
   announce a revision; clients refetch the snapshot.
-- Creating or joining a quiz/aim/battleship match while the flag is off answers
-  `503 GAME_ENGINE_MAINTENANCE`.
+- Creating or joining a quiz/aim/battleship/hangman match while the flag is off
+  answers `503 GAME_ENGINE_MAINTENANCE`.
 
 ## Action protocol
 
@@ -83,6 +83,26 @@ both players see the ships that got away. A
 player's own fleet is projected as `actorView.fleet` by the authenticated
 action/GET only, never by sockets, lobby, join, active-game or history. The
 practice match against the bot is local and unranked.
+
+Adam Asmaca (`backend/gameEngine/hangmanEngine.js`, words in
+`backend/gameEngine/data/words.json`): both players solve **the same hidden
+word at the same time**, each on their own board, so neither can copy the
+other's letters. Three 60 s rounds, one word per difficulty (1, 2, 3) from three
+different categories, six wrong letters per board. `guess {letter}` takes one
+Turkish letter (lowercased with Turkish rules: `I → ı`, `İ → i`); `solve {word}`
+takes the whole word and a wrong one costs two lives. A solved board scores
+`10 + 2 × lives left + floor(seconds left / 6)`; an unsolved one scores the
+positions it opened. A round closes when both boards are done or the clock runs
+out, shows the word and its score deltas for 2.5 s, then opens the next one;
+after the third, the higher total wins (equal is a draw).
+The words live only in `game_private_state`. The public round carries the
+word's length, category, difficulty, the life limit and each board's counts
+(opened positions, wrong letters, solved, done); a board's letters reach only
+its owner as `actorView.hangman`, and the word is published only once its round
+has closed. Both the engine and `gameView` enforce that: an open round's `word`
+is stripped even if it leaked into the public state. The practice match is local
+and unranked, and its word list (`lib/hangmanPractice.ts`) is disjoint from the
+server bank; the client bundle contains none of the ranked words.
 
 ## Settlement
 

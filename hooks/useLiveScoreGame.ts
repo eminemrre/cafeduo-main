@@ -23,7 +23,7 @@ import { socketService } from '../lib/socket';
  */
 
 export interface LiveMatchStats {
-  kind: 'quiz' | 'arena' | 'battleship';
+  kind: 'quiz' | 'arena' | 'battleship' | 'hangman';
   playerScore: number;
   opponentScore: number;
   durationMs: number;
@@ -31,7 +31,7 @@ export interface LiveMatchStats {
   correctAnswers?: number;
 }
 
-export type LiveActionType = 'answer' | 'joker' | 'fire' | 'place' | 'resign';
+export type LiveActionType = 'answer' | 'joker' | 'fire' | 'place' | 'guess' | 'solve' | 'resign';
 
 export interface LiveActionInput {
   type: LiveActionType;
@@ -43,6 +43,9 @@ export interface LiveActionInput {
   /** Amiral Battı fleet layout, in fleet order. */
   layout?: { cell: number; dir: 'h' | 'v' }[];
   auto?: true;
+  /** Adam Asmaca: one letter (`guess`) or the whole word (`solve`). */
+  letter?: string;
+  word?: string;
 }
 
 export interface LiveActionResult {
@@ -63,7 +66,7 @@ export interface UseLiveScoreGameOptions {
   /** Fallback polling interval; never below 15 s for competitive games. */
   pollIntervalMs?: number;
   logName?: string;
-  statsKind: 'quiz' | 'arena' | 'battleship';
+  statsKind: 'quiz' | 'arena' | 'battleship' | 'hangman';
   onGameEnd: (winner: string, points: number, stats?: LiveMatchStats) => void;
 }
 
@@ -319,6 +322,8 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
         input.cell ?? '',
         input.layout ? JSON.stringify(input.layout) : '',
         input.auto ? 'auto' : '',
+        input.letter ?? '',
+        input.word ?? '',
       ].join('|');
       const previous = retryRef.current;
       const payload =
@@ -332,6 +337,8 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
               ...(input.cell !== undefined ? { cell: input.cell } : {}),
               ...(input.layout ? { layout: input.layout } : {}),
               ...(input.auto ? { auto: true as const } : {}),
+              ...(input.type === 'guess' && input.letter ? { letter: input.letter } : {}),
+              ...(input.type === 'solve' && input.word ? { word: input.word } : {}),
               // A retry reuses this payload, so the first shot time is kept.
               ...(input.type === 'fire' && input.shotAt !== undefined
                 ? { shotAt: input.shotAt }

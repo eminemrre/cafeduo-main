@@ -326,6 +326,35 @@ describe('useLiveScoreGame (protocol v2)', () => {
     expect(result.current.pending).toBe(false);
   });
 
+  it('sends hangman letters and words, retrying a letter with its first action id', async () => {
+    const { result } = renderLearningHook();
+    await waitFor(() => expect(result.current.engine?.round?.id).toBe('r1'));
+    mockApi.games.action
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue({ success: true, game: buildSnapshot() });
+
+    await act(async () => {
+      await result.current.submitAction({ type: 'guess', letter: 'ş' });
+    });
+    await act(async () => {
+      await result.current.submitAction({ type: 'guess', letter: 'ş' });
+    });
+    await act(async () => {
+      await result.current.submitAction({ type: 'guess', letter: 'a' });
+    });
+    await act(async () => {
+      await result.current.submitAction({ type: 'solve', word: 'kahve' });
+    });
+
+    const [first, retry, other, solve] = mockApi.games.action.mock.calls.map((call) => call[1]);
+    expect(first).toEqual(expect.objectContaining({ roundId: 'r1', type: 'guess', letter: 'ş' }));
+    expect(retry).toEqual(first);
+    expect(other.letter).toBe('a');
+    expect(other.actionId).not.toBe(first.actionId);
+    expect(solve).toEqual(expect.objectContaining({ type: 'solve', word: 'kahve' }));
+    expect(solve.letter).toBeUndefined();
+  });
+
   it('returns the 409 code and refetches on a stale round', async () => {
     const { result } = renderLearningHook();
     await waitFor(() => expect(result.current.engine).not.toBeNull());

@@ -40,7 +40,7 @@ export const playGameSfx = (key: GameSfxKey, volume = 0.35) => {
     // an unhandled rejection reached Sentry as JAVASCRIPT-REACT-8/9/A.
     const playback = instance.play();
     if (playback && typeof playback.catch === 'function') {
-      playback.catch(() => undefined);
+      playback.catch((): undefined => undefined);
     }
   } catch {
     // Audio should never block gameplay flow.

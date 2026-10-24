@@ -101,6 +101,42 @@ const cellsIn = (value, cells) => {
   return cells.filter((cell) => new RegExp(`[\\[,]${cell}[\\],]`).test(text));
 };
 
+describe('Amiral Battı fleet reveal', () => {
+  const { sanitizeEngineState } = require('./gameView');
+  const ships = (layout) => validateLayout(layout).ships.map(({ size, cells }) => ({ size, cells }));
+
+  it('never publishes a reveal while the match is running, even if one leaked into state', () => {
+    const game = buildGame();
+    game.gameState.engine.phase = 'battle';
+    game.gameState.engine.reveal = { host: ships(HOST_LAYOUT), guest: ships(GUEST_LAYOUT) };
+    for (const payload of [
+      serializeGameForActor(game, 'Bora'),
+      serializeLobbyGame(game),
+      sanitizeEngineState(game.gameState.engine),
+    ]) {
+      expect(JSON.stringify(payload)).not.toContain('reveal');
+      expect(cellsIn(payload?.gameState?.engine?.boards ?? payload?.boards, HOST_CELLS)).toEqual([]);
+    }
+  });
+
+  it('shows both fleets to everyone once the match is finished', () => {
+    const game = buildGame();
+    game.status = 'finished';
+    game.gameState.engine.phase = 'finished';
+    game.gameState.engine.reveal = {
+      host: [...ships(HOST_LAYOUT), { size: 9, cells: [99, 'x'] }],
+      guest: ships(GUEST_LAYOUT),
+    };
+    const view = serializeGameForActor(game, 'Bora');
+    // At most one fleet's worth of ships, and only real cells, are published.
+    expect(view.gameState.engine.reveal).toEqual({
+      host: ships(HOST_LAYOUT),
+      guest: ships(GUEST_LAYOUT),
+    });
+    expect(sanitizeEngineState(game.gameState.engine).reveal.guest).toEqual(ships(GUEST_LAYOUT));
+  });
+});
+
 describe('Amiral Battı privacy', () => {
   it('returns only the placing actor fleet and never emits a fleet', async () => {
     const { game, deps, send } = setup();

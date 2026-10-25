@@ -103,6 +103,26 @@ export const createStrokeBatcher = () => {
 };
 
 /**
+ * Joins a replayed round with the packets that arrived while the replay was in
+ * flight. Relay order is store order, so the packets the replay already holds
+ * are a prefix of `live` that equals a suffix of `replayed`; only the rest is
+ * added. (Applying a line twice would draw a stray join; a clear twice would
+ * wipe what came after it.)
+ */
+export const mergeReplay = (replayed: StrokeOp[], live: StrokeOp[]): StrokeOp[] => {
+  const key = (op: StrokeOp) => JSON.stringify(op);
+  const max = Math.min(replayed.length, live.length);
+  for (let overlap = max; overlap > 0; overlap -= 1) {
+    let same = true;
+    for (let i = 0; i < overlap && same; i += 1) {
+      same = key(replayed[replayed.length - overlap + i]) === key(live[i]);
+    }
+    if (same) return [...replayed, ...live.slice(overlap)];
+  }
+  return [...replayed, ...live];
+};
+
+/**
  * Draws ops onto a 2D context scaled from canvas units. `reset` wipes first;
  * `tails` carries the last point of each stroke between incremental calls so
  * the chunks of one stroke join up.

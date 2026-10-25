@@ -5,6 +5,7 @@ import {
   PALETTE,
   WIDTHS,
   createStrokeBatcher,
+  mergeReplay,
   renderOps,
   toCanvasPoint,
   type StrokeOp,
@@ -54,6 +55,21 @@ describe('drawCanvas', () => {
     batcher.clear();
     expect(batcher.flush()).toEqual([{ t: 'line', id: 2, c: 3, w: 0, p: [[100, 100], [110, 100]] }, { t: 'clear' }]);
     expect(batcher.flush()).toEqual([]);
+  });
+
+  it('merges a replay with the packets that arrived while it was in flight, without doubles', () => {
+    const a: StrokeOp = { t: 'line', id: 1, c: 0, w: 0, p: [[0, 0], [10, 0]] };
+    const b: StrokeOp = { t: 'line', id: 1, c: 0, w: 0, p: [[20, 0]] };
+    const c: StrokeOp = { t: 'line', id: 1, c: 0, w: 0, p: [[30, 0]] };
+    // b reached the store before the read and also arrived live: applied once.
+    expect(mergeReplay([a, b], [b, c])).toEqual([a, b, c]);
+    expect(mergeReplay([a], [b, c])).toEqual([a, b, c]);
+    expect(mergeReplay([a, b, c], [b, c])).toEqual([a, b, c]);
+    expect(mergeReplay([], [a])).toEqual([a]);
+    expect(mergeReplay([a], [])).toEqual([a]);
+    // A clear that is already in the replay is not applied again over later lines.
+    const clear: StrokeOp = { t: 'clear' };
+    expect(mergeReplay([a, clear, b], [clear, b, c])).toEqual([a, clear, b, c]);
   });
 
   it('replays lines, joins the chunks of one stroke and wipes on clear', () => {

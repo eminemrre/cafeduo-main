@@ -1,7 +1,8 @@
 import React from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { DrawGame } from './DrawGame';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { DrawGame, REJECTION_VISIBLE_MS } from './DrawGame';
 import { api } from '../lib/api';
+import { socketService } from '../lib/socket';
 import type { CompetitiveEngineState, CompetitiveGame, User } from '../types';
 
 jest.mock('../lib/gameAudio', () => ({ playGameSfx: jest.fn() }));
@@ -158,6 +159,35 @@ describe('DrawGame', () => {
     expect(screen.getByRole('button', { name: 'Silgi' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Lokum' })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.queryByLabelText(/Tahminin/)).not.toBeInTheDocument();
+  });
+
+  it('never gives the drawing tools to someone who is not a player of the match', async () => {
+    const state = engine({ phase: 'drawing', round: drawingRound() });
+    mockApi.games.get.mockResolvedValue(snapshot(state));
+    renderGame({ ...ada, id: 9, username: 'admin' });
+    await waitFor(() => expect(screen.getByTestId('draw-game')).toHaveAttribute('data-phase', 'drawing'));
+    expect(screen.getByTestId('draw-game')).toHaveAttribute('data-role', 'guesser');
+    expect(screen.queryByRole('toolbar')).not.toBeInTheDocument();
+  });
+
+  it('clears a stroke rejection after a few seconds', async () => {
+    const state = engine({ phase: 'drawing', round: drawingRound() });
+    mockApi.games.get.mockResolvedValue(snapshot(state, { draw: { roundId: 'r1', role: 'drawer', word: 'fayton' } }));
+    renderGame(ada);
+    await waitFor(() => expect(screen.getByTestId('draw-word')).toBeInTheDocument());
+    const socket = (socketService.getSocket as jest.Mock)();
+    const onRejected = socket.on.mock.calls.filter(([event]: [string]) => event === 'draw_rejected').pop()[1];
+    jest.useFakeTimers();
+    try {
+      act(() => onRejected({ code: 'NOT_DRAWING' }));
+      expect(screen.getByRole('alert')).toHaveTextContent('Çizim şu an kapalı.');
+      act(() => {
+        jest.advanceTimersByTime(REJECTION_VISIBLE_MS);
+      });
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 
   it('never shows a word from an earlier round to the drawer', async () => {

@@ -19,13 +19,22 @@ import { api } from '../lib/api';
 import { socketService } from '../lib/socket';
 import { playGameSfx } from '../lib/gameAudio';
 import { normalizeGuess } from '../lib/turkishText';
-import { PALETTE, WIDTHS, createStrokeBatcher, type StrokeOp, type StrokePoint } from '../lib/drawCanvas';
+import {
+  PALETTE,
+  WIDTHS,
+  createStrokeBatcher,
+  mergeReplay,
+  type StrokeOp,
+  type StrokePoint,
+} from '../lib/drawCanvas';
 import { useLiveScoreGame, type LiveMatchStats } from '../hooks/useLiveScoreGame';
 import { RetroButton } from './RetroButton';
 import { DrawCanvas, type DrawCanvasHandle } from './draw/DrawCanvas';
 
 export const DRAW_GAME_TYPE = 'Çiz Bil';
 const FLUSH_MS = 50;
+/** How long a refused stroke packet's message stays up. */
+export const REJECTION_VISIBLE_MS = 4_000;
 const MULTIPLIER_LABEL: Record<number, string> = { 1: '×1', 2: '×1,2', 3: '×1,5' };
 const WIDTH_LABEL = ['İnce', 'Orta', 'Kalın'];
 const REJECT_MESSAGE: Record<string, string> = {
@@ -74,9 +83,11 @@ export const DrawGame: React.FC<DrawGameProps> = ({
   const engine = live.engine;
   const round = engine?.round || null;
   const phase = engine?.phase || null;
+  // Labels fall back to host; the drawer role (tools, word) needs a real seat.
   const myKey = live.actorKey || 'host';
   const opKey = myKey === 'host' ? 'guest' : 'host';
-  const role: 'drawer' | 'guesser' = round?.drawer === myKey ? 'drawer' : 'guesser';
+  const role: 'drawer' | 'guesser' =
+    live.actorKey && round?.drawer === live.actorKey ? 'drawer' : 'guesser';
   const privateView = live.snapshot?.actorView?.draw;
   const draw = privateView && privateView.roundId === round?.id ? privateView : null;
   const opponent = live.opponent?.name || opponentName || 'Rakip';
@@ -86,7 +97,9 @@ export const DrawGame: React.FC<DrawGameProps> = ({
   const batcherRef = useRef(createStrokeBatcher());
   const strokeIdRef = useRef(0);
   const roundRef = useRef<string | null>(null);
-  const replayRef = useRef<{ active: boolean; buffer: StrokeOp[] }>({ active: false, buffer: [] });
+  /** The replay in flight, if any; live packets wait in its buffer. */
+  const replayRef = useRef<{ buffer: StrokeOp[] } | null>(null);
+  const rejectTimerRef = useRef<number | null>(null);
   const onMatchSettledRef = useRef(onMatchSettled);
   const [color, setColor] = useState(0);
   const [width, setWidth] = useState(1);
@@ -115,19 +128,26 @@ export const DrawGame: React.FC<DrawGameProps> = ({
   const seconds = deadline ? Math.max(0, Math.ceil((Date.parse(deadline) - live.serverNow()) / 1000)) : 0;
 
   // ------------------------------------------------------------ strokes
+  // Each replay owns its buffer: live packets wait there (not drawn yet) and
+  // are merged without the ones the replay already holds. A newer replay
+  // takes over the buffer; an older one finishing never disturbs it.
   const replay = useCallback(async () => {
     if (!roomId) return;
-    replayRef.current = { active: true, buffer: [] };
+    const session = { buffer: [] as StrokeOp[] };
+    const previous = replayRef.current;
+    if (previous) session.buffer.push(...previous.buffer);
+    replayRef.current = session;
+    let ops: StrokeOp[] | null = null;
     try {
       const result = await api.games.strokes(roomId);
-      if (result?.roundId && result.roundId === roundRef.current) {
-        canvasRef.current?.replace([...(result.ops || []), ...replayRef.current.buffer]);
-      }
+      if (result?.roundId && result.roundId === roundRef.current) ops = result.ops || [];
     } catch {
-      // The live packets keep coming; a failed replay only loses the past.
-    } finally {
-      replayRef.current = { active: false, buffer: [] };
+      // A failed replay only loses the past; live packets still apply below.
     }
+    if (replayRef.current !== session) return;
+    replayRef.current = null;
+    if (ops) canvasRef.current?.replace(mergeReplay(ops, session.buffer));
+    else canvasRef.current?.append(session.buffer);
   }, [roomId]);
 
   // A new round starts on a clean board; drawing and reveal replay what exists.
@@ -150,11 +170,17 @@ export const DrawGame: React.FC<DrawGameProps> = ({
     const onStrokes = (payload: { gameId?: string; roundId?: string; ops?: StrokeOp[] }) => {
       if (String(payload?.gameId) !== roomId || payload?.roundId !== roundRef.current) return;
       const ops = Array.isArray(payload.ops) ? payload.ops : [];
-      if (replayRef.current.active) replayRef.current.buffer.push(...ops);
-      canvasRef.current?.append(ops);
+      if (replayRef.current) replayRef.current.buffer.push(...ops);
+      else canvasRef.current?.append(ops);
     };
     const onRejected = (payload: { code?: string }) => {
-      setLocalError(REJECT_MESSAGE[String(payload?.code)] || 'Çizim gönderilemedi.');
+      const message = REJECT_MESSAGE[String(payload?.code)] || 'Çizim gönderilemedi.';
+      setLocalError(message);
+      if (rejectTimerRef.current !== null) window.clearTimeout(rejectTimerRef.current);
+      rejectTimerRef.current = window.setTimeout(() => {
+        rejectTimerRef.current = null;
+        setLocalError((current) => (current === message ? null : current));
+      }, REJECTION_VISIBLE_MS);
     };
     const onConnect = (): void => {
       void replay();
@@ -163,6 +189,7 @@ export const DrawGame: React.FC<DrawGameProps> = ({
     socket.on('draw_rejected', onRejected);
     socket.on('connect', onConnect);
     return () => {
+      if (rejectTimerRef.current !== null) window.clearTimeout(rejectTimerRef.current);
       socket.off('draw_strokes', onStrokes);
       socket.off('draw_rejected', onRejected);
       socket.off('connect', onConnect);

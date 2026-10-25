@@ -32,7 +32,8 @@ export const DrawCanvas = forwardRef<DrawCanvasHandle, DrawCanvasProps>(
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const logRef = useRef<StrokeOp[]>([]);
     const tailsRef = useRef(new Map<number, StrokePoint>());
-    const strokeRef = useRef<{ id: number; c: number; w: number } | null>(null);
+    /** The stroke being drawn and the one pointer drawing it (a second finger is ignored). */
+    const strokeRef = useRef<{ id: number; c: number; w: number; pointerId: number } | null>(null);
 
     const context = () => canvasRef.current?.getContext('2d') || null;
     const scale = () => (canvasRef.current ? canvasRef.current.width / CANVAS_SIZE : 1);
@@ -72,11 +73,32 @@ export const DrawCanvas = forwardRef<DrawCanvasHandle, DrawCanvasProps>(
         redraw();
       };
       fit();
-      if (typeof ResizeObserver === 'undefined') return undefined;
-      const observer = new ResizeObserver(fit);
-      observer.observe(canvas);
-      return () => observer.disconnect();
+      const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(fit);
+      observer?.observe(canvas);
+      // A zoom or a move to another screen changes the pixel ratio, not the size.
+      let media: MediaQueryList | null = null;
+      const watchRatio = () => {
+        media?.removeEventListener?.('change', onRatio);
+        media = window.matchMedia?.(`(resolution: ${window.devicePixelRatio || 1}dppx)`) || null;
+        media?.addEventListener?.('change', onRatio);
+      };
+      const onRatio = () => {
+        fit();
+        watchRatio();
+      };
+      watchRatio();
+      return () => {
+        observer?.disconnect();
+        media?.removeEventListener?.('change', onRatio);
+      };
     }, [redraw]);
+
+    // The drawing closed under a held finger: end that stroke here.
+    useEffect(() => {
+      if (editable || !strokeRef.current) return;
+      strokeRef.current = null;
+      onEnd?.();
+    }, [editable, onEnd]);
 
     const pointAt = (event: React.PointerEvent<HTMLCanvasElement>) =>
       toCanvasPoint(event.clientX, event.clientY, event.currentTarget.getBoundingClientRect());
@@ -89,21 +111,21 @@ export const DrawCanvas = forwardRef<DrawCanvasHandle, DrawCanvasProps>(
     };
 
     const handleDown = (event: React.PointerEvent<HTMLCanvasElement>) => {
-      if (!editable || !onBegin) return;
+      if (!editable || !onBegin || strokeRef.current) return;
       const stroke = onBegin();
       if (!stroke) return;
       event.currentTarget.setPointerCapture?.(event.pointerId);
-      strokeRef.current = stroke;
+      strokeRef.current = { ...stroke, pointerId: event.pointerId };
       offer(pointAt(event));
     };
     const handleMove = (event: React.PointerEvent<HTMLCanvasElement>) => {
-      if (!strokeRef.current) return;
+      if (!editable || !strokeRef.current || event.pointerId !== strokeRef.current.pointerId) return;
       const events = event.nativeEvent.getCoalescedEvents?.() || [event.nativeEvent];
       const rect = event.currentTarget.getBoundingClientRect();
       for (const sample of events) offer(toCanvasPoint(sample.clientX, sample.clientY, rect));
     };
-    const handleUp = () => {
-      if (!strokeRef.current) return;
+    const handleUp = (event: React.PointerEvent<HTMLCanvasElement>) => {
+      if (!strokeRef.current || event.pointerId !== strokeRef.current.pointerId) return;
       strokeRef.current = null;
       onEnd?.();
     };

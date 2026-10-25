@@ -155,6 +155,8 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
   const phaseTimerRef = useRef<number | null>(null);
   const finishTimerRef = useRef<number | null>(null);
   const fetchInFlightRef = useRef(false);
+  /** A refetch asked for during another one runs right after it, never dropped. */
+  const refetchQueuedRef = useRef(false);
   const gameIdRef = useRef(gameId);
   const onGameEndRef = useRef(onGameEnd);
 
@@ -286,7 +288,10 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
   const fetchSnapshot = useCallback(
     async (silent = false): Promise<CompetitiveGame | null> => {
       if (isBot || !gameId || protocolErrorRef.current) return null;
-      if (fetchInFlightRef.current) return null;
+      if (fetchInFlightRef.current) {
+        refetchQueuedRef.current = true;
+        return null;
+      }
       fetchInFlightRef.current = true;
       const requestedGameId = String(gameId);
       const sentAt = Date.now();
@@ -305,6 +310,10 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
         return null;
       } finally {
         fetchInFlightRef.current = false;
+        if (refetchQueuedRef.current && mountedRef.current) {
+          refetchQueuedRef.current = false;
+          void fetchSnapshot(true);
+        }
       }
     },
     [applySnapshot, gameId, isBot, logName]

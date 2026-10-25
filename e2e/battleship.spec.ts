@@ -367,6 +367,7 @@ test.describe('Amiral Battı', () => {
       // The practice card lets the player pick the game first.
       const practice = page.getByTestId('practice');
       await expect(practice.getByRole('button')).toHaveText([
+        'Adam Asmaca',
         'Amiral Battı',
         'Nişancı Düellosu',
         'Bilgi Yarışı',

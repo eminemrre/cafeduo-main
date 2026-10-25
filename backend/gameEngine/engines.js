@@ -11,6 +11,7 @@ const {
   AIM_GAME_TYPE,
   BATTLESHIP_GAME_TYPE,
   COMPETITIVE_GAME_TYPES,
+  HANGMAN_GAME_TYPE,
   QUIZ_GAME_TYPE,
 } = require('../../shared/gameRegistry');
 const {
@@ -34,6 +35,14 @@ const {
   createBattleshipPublicState,
   startBattleshipState,
 } = require('./battleshipEngine');
+const {
+  advanceHangman,
+  applyHangmanAction,
+  createHangmanPrivateState,
+  createHangmanPublicState,
+  startHangmanState,
+} = require('./hangmanEngine');
+const { isWordBankReady } = require('./wordBank');
 
 const nonEmpty = (value) => Array.isArray(value) && value.length > 0;
 
@@ -69,6 +78,18 @@ const ENGINES = Object.freeze({
     applyAction: applyBattleshipAction,
     advance: advanceBattleship,
   }),
+  [HANGMAN_GAME_TYPE]: Object.freeze({
+    kind: 'hangman',
+    // Closed (503 on create) until the private word bank is loaded.
+    isAvailable: isWordBankReady,
+    createPrivateState: () => createHangmanPrivateState(),
+    isPrivateStateReady: (privateState) => nonEmpty(privateState?.rounds),
+    createPublicState: ({ hostName, guestName, privateState }) =>
+      createHangmanPublicState({ hostName, guestName, totalRounds: privateState.rounds.length }),
+    start: startHangmanState,
+    applyAction: applyHangmanAction,
+    advance: advanceHangman,
+  }),
 });
 
 for (const gameType of COMPETITIVE_GAME_TYPES) {
@@ -81,6 +102,11 @@ const getEngine = (gameType) => ENGINES[String(gameType || '').trim()] || null;
 
 /** Fresh private state for a new waiting game, or null for a non-engine game. */
 const createEnginePrivateState = (gameType) => getEngine(gameType)?.createPrivateState() || null;
+/** Whether new matches of this engine can start (e.g. its private data is loaded). */
+const isEngineAvailable = (gameType) => {
+  const engine = getEngine(gameType);
+  return !engine || typeof engine.isAvailable !== 'function' || Boolean(engine.isAvailable());
+};
 
 /** True when a waiting game's private state can start a match. */
 const isEnginePrivateStateReady = (gameType, privateState) => {
@@ -106,6 +132,7 @@ const startEngineState = ({ gameType, privateState, hostName, guestName, nowMs =
 module.exports = {
   ENGINES,
   createEnginePrivateState,
+  isEngineAvailable,
   getEngine,
   isEnginePrivateStateReady,
   startEngineState,

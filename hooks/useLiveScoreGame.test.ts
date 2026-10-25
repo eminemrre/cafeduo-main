@@ -146,6 +146,54 @@ describe('useLiveScoreGame (protocol v2)', () => {
     await waitFor(() => expect(result.current.snapshot?.actorView?.fleet).toHaveLength(1));
     expect(mockApi.games.get).toHaveBeenCalledTimes(2);
   });
+  it('refetches the hangman board when a socket update opens a new round', async () => {
+    const roundOf = (id: string, index: number) => ({
+      id,
+      index,
+      startedAt: new Date(now).toISOString(),
+      endsAt: new Date(now + 60_000).toISOString(),
+      length: 5,
+    });
+    const board = (roundId: string) => ({
+      hangman: {
+        roundId,
+        pattern: [] as (string | null)[],
+        guessed: [] as string[],
+        wrong: 0,
+        solved: false,
+        done: false,
+        points: 0,
+      },
+    });
+    const first = buildEngine({ kind: 'hangman', phase: 'open', round: roundOf('r1', 0) });
+    mockApi.games.get.mockResolvedValueOnce(
+      buildSnapshot({ gameType: 'Adam Asmaca', actorView: board('r1'), gameState: { engine: first } })
+    );
+    const { result } = renderLearningHook({ mode: 'Adam Asmaca', statsKind: 'hangman' });
+    await waitFor(() => expect(result.current.engine?.kind).toBe('hangman'));
+
+    // The opponent's letter on the same round: the actor's board did not change.
+    act(() => {
+      mockSocketService.getSocket().emit('game_state_updated', {
+        gameId: 'game-1',
+        gameState: { engine: { ...first, revision: 2 } },
+      });
+    });
+    expect(mockApi.games.get).toHaveBeenCalledTimes(1);
+
+    const second = buildEngine({ kind: 'hangman', phase: 'open', revision: 3, round: roundOf('r2', 1) });
+    mockApi.games.get.mockResolvedValue(
+      buildSnapshot({ gameType: 'Adam Asmaca', actorView: board('r2'), gameState: { engine: second } })
+    );
+    act(() => {
+      mockSocketService
+        .getSocket()
+        .emit('game_state_updated', { gameId: 'game-1', gameState: { engine: second } });
+    });
+    await waitFor(() => expect(result.current.snapshot?.actorView?.hangman?.roundId).toBe('r2'));
+    expect(mockApi.games.get).toHaveBeenCalledTimes(2);
+  });
+
   it('does not touch the network in bot mode', async () => {
     const { result, onGameEnd } = renderLearningHook({ isBot: true, gameId: 'game-1' });
     expect(result.current.playerScore).toBe(0);
@@ -324,6 +372,35 @@ describe('useLiveScoreGame (protocol v2)', () => {
     );
     expect(result.current.playerScore).toBe(18);
     expect(result.current.pending).toBe(false);
+  });
+
+  it('sends hangman letters and words, retrying a letter with its first action id', async () => {
+    const { result } = renderLearningHook();
+    await waitFor(() => expect(result.current.engine?.round?.id).toBe('r1'));
+    mockApi.games.action
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValue({ success: true, game: buildSnapshot() });
+
+    await act(async () => {
+      await result.current.submitAction({ type: 'guess', letter: 'ş' });
+    });
+    await act(async () => {
+      await result.current.submitAction({ type: 'guess', letter: 'ş' });
+    });
+    await act(async () => {
+      await result.current.submitAction({ type: 'guess', letter: 'a' });
+    });
+    await act(async () => {
+      await result.current.submitAction({ type: 'solve', word: 'kahve' });
+    });
+
+    const [first, retry, other, solve] = mockApi.games.action.mock.calls.map((call) => call[1]);
+    expect(first).toEqual(expect.objectContaining({ roundId: 'r1', type: 'guess', letter: 'ş' }));
+    expect(retry).toEqual(first);
+    expect(other.letter).toBe('a');
+    expect(other.actionId).not.toBe(first.actionId);
+    expect(solve).toEqual(expect.objectContaining({ type: 'solve', word: 'kahve' }));
+    expect(solve.letter).toBeUndefined();
   });
 
   it('returns the 409 code and refetches on a stale round', async () => {

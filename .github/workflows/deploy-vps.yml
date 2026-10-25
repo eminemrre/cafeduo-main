@@ -76,6 +76,16 @@ jobs:
       - name: Verify smoke flows before deployment
         run: |
           npm run test:e2e:smoke -- --reporter=line
+      - name: Check the private word bank
+        env:
+          # gzip + base64 of the ranked Adam Asmaca bank (kept out of the public repo).
+          WORD_BANK_GZ_B64: ${{ secrets.WORD_BANK_GZ_B64 }}
+        run: |
+          set -euo pipefail
+          : "${WORD_BANK_GZ_B64:?WORD_BANK_GZ_B64 secret missing}"
+          install -d -m 700 "$RUNNER_TEMP/word-bank"
+          printf '%s' "$WORD_BANK_GZ_B64" | base64 -d | gunzip > "$RUNNER_TEMP/word-bank/words.json"
+          node scripts/ops/check-word-bank.cjs "$RUNNER_TEMP/word-bank/words.json"
       - name: Transfer the verified source and deploy
         env:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
@@ -88,6 +98,9 @@ jobs:
           sha="$(git rev-parse HEAD)"
           release="/opt/cafeduo-releases/$sha"
           ssh -F "$HOME/.ssh/config" production "umask 077; mkdir -p '$release'"
+          # The API container (non-root) reads the bank through a read-only bind mount.
+          ssh -F "$HOME/.ssh/config" production "install -d -m 755 /opt/cafeduo-secrets && cat > /opt/cafeduo-secrets/words.json.next && chmod 644 /opt/cafeduo-secrets/words.json.next && mv -f /opt/cafeduo-secrets/words.json.next /opt/cafeduo-secrets/words.json" < "$RUNNER_TEMP/word-bank/words.json"
+          rm -f "$RUNNER_TEMP/word-bank/words.json"
           git archive HEAD | ssh -F "$HOME/.ssh/config" production "tar -xf - -C '$release'"
           ssh -F "$HOME/.ssh/config" production "bash '$release/deploy/scripts/deploy-production.sh' '$path' '$sha' '$PRODUCTION_URL'"
       - name: Verify the public deployed revision
@@ -101,6 +114,7 @@ jobs:
               body=json.load(response)
           assert body['status']=='ready' and body['version']==os.environ['EXPECTED_SHA']
           assert body['checks']['database'] is True and body['checks']['redis']['ready'] is True
+          assert body['checks'].get('wordBank') is True, 'Adam Asmaca word bank is not loaded'
           print('[deploy] Public deployed revision and readiness verified.')
           PYVERIFY
       - name: Upload verification evidence

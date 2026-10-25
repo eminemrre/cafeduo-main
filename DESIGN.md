@@ -15,6 +15,7 @@ colors:
   gok: '#1FB3FF'
   fistik: '#B6D31B'
   deniz: '#2EC4B6'
+  lavanta: '#9B8CFF'
   gok-deep: '#1597D9'
   fistik-face: '#C8E23A'
   coffee: '#5A3424'
@@ -28,6 +29,7 @@ colors:
   limon-text: '#8A6608'
   fistik-text: '#5F7A0C'
   deniz-text: '#0B7A70'
+  lavanta-text: '#5B4BD1'
   danger-text: '#B8241A'
   danger-wash: '#FCE8E8'
 typography:
@@ -346,6 +348,11 @@ surfaces (ice and white, one candy accent per game).
   It appears on the game's lobby marker, selected game card, own-turn band,
   hits and selected placement ship. Misses are ink dots; hits are ink crosses;
   sunk cells are ink with deniz crosses, so colour is never the only signal.
+- **Lavanta (#9B8CFF)** is **Adam Asmaca**, approved 2026-10-24. Ink on lavanta
+  has 6.68:1 contrast; lavanta-text (#5B4BD1) is 6.19:1 on paper and 5.66:1 on
+  ice. It appears on the game's lobby marker, selected game card, the chip and
+  the right-letter key. A missed letter is ice-deep with a strikethrough, so a
+  key never reads by colour alone.
 - **Ice (#EEF6F8)** and **ice-deep (#D9EAEF)** are the Masa ground and wells; **paper (#FFFFFF)**
   is the surface on top of them (the tent, the slip, the sheets' content, the menu bars).
 - **Success (#177A41)** and **danger (#D62F2F)** are for states only, never decoration.

@@ -500,6 +500,9 @@ html::-webkit-scrollbar-thumb {
 .text-candy-fistik {
   color: #5f7a0c;
 }
+.text-candy-lavanta {
+  color: #5b4bd1;
+}
 .text-candy-danger {
   color: #b8241a;
 }
@@ -520,19 +523,22 @@ html::-webkit-scrollbar-thumb {
 .bg-candy-lokum,
 .bg-candy-gok,
 .bg-candy-limon,
-.bg-candy-fistik {
+.bg-candy-fistik,
+.bg-candy-lavanta {
   color: #17140f;
 }
 .hover\:bg-candy-lokum:hover,
 .hover\:bg-candy-gok:hover,
 .hover\:bg-candy-limon:hover,
-.hover\:bg-candy-fistik:hover {
+.hover\:bg-candy-fistik:hover,
+.hover\:bg-candy-lavanta:hover {
   color: #17140f;
 }
 [class*='bg-candy-lokum'] svg,
 [class*='bg-candy-gok'] svg,
 [class*='bg-candy-limon'] svg,
-[class*='bg-candy-fistik'] svg {
+[class*='bg-candy-fistik'] svg,
+[class*='bg-candy-lavanta'] svg {
   color: #17140f;
 }
 
@@ -1447,10 +1453,287 @@ button.duo-bs-cell.duo-bs-cell--selected[aria-disabled='false']:hover {
   background: #ffffff;
 }
 
+/* Adam Asmaca: the gallows, the word tiles and the 29-letter keyboard. One
+ * candy fill for the game (lavanta); a right letter is the only filled key
+ * and a tried-miss letter stays legible but quiet. */
+.duo-hm-board {
+  display: grid;
+  grid-template-columns: 176px minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+  margin-top: 18px;
+}
+.duo-hm-art {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 16px;
+  background: #eef6f8;
+}
+.duo-hm-gallows {
+  width: 140px;
+  height: 150px;
+}
+.duo-hm-gallows-wood {
+  stroke: #5a3424;
+  stroke-width: 6;
+}
+.duo-hm-gallows-body {
+  stroke: #17140f;
+  stroke-width: 5;
+}
+.duo-hm-gallows-body circle {
+  fill: none;
+}
+.duo-hm-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 14px;
+  color: #4a4540;
+}
+.duo-hm-category {
+  font-weight: 600;
+}
+.duo-hm-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+.duo-hm-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #d9eaef;
+}
+.duo-hm-dot--on {
+  background: #9b8cff;
+}
+.duo-hm-side {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.duo-hm-player {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'name score'
+    'lives progress';
+  gap: 4px 12px;
+  align-items: baseline;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: #ffffff;
+}
+.duo-hm-player--op {
+  background: #eef6f8;
+}
+.duo-hm-name {
+  grid-area: name;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.duo-hm-score {
+  grid-area: score;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+.duo-hm-progress {
+  grid-area: progress;
+  color: #4a4540;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.duo-hm-lives {
+  grid-area: lives;
+  display: inline-flex;
+  gap: 4px;
+}
+.duo-hm-life {
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: #9b8cff;
+}
+.duo-hm-life--lost {
+  background: #d9eaef;
+}
+.duo-hm-word {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.duo-hm-tile {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 54px;
+  border-bottom: 3px solid #d9eaef;
+  border-radius: 10px 10px 0 0;
+  background: #eef6f8;
+  color: #17140f;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: lowercase;
+}
+.duo-hm-tile--open {
+  background: #ffffff;
+  border-bottom-color: #9b8cff;
+}
+.duo-hm-word--solved .duo-hm-tile {
+  background: #9b8cff;
+  border-bottom-color: #5b4bd1;
+}
+.duo-hm-reveal,
+.duo-hm-outcome {
+  margin: 14px 0 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #eef6f8;
+  text-align: center;
+}
+.duo-hm-reveal strong {
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-size: 20px;
+  letter-spacing: 0.02em;
+}
+.duo-hm-delta {
+  color: #4a4540;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.duo-hm-outcome {
+  background: #9b8cff;
+  color: #17140f;
+  font-family: 'Baloo 2', system-ui, sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+}
+.duo-hm-keys {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 16px;
+}
+.duo-hm-key-row {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+}
+.duo-hm-key {
+  flex: 1 1 0;
+  max-width: 52px;
+  min-width: 0;
+  height: 44px;
+  border: 0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #17140f;
+  font-family: 'Onest', system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1;
+  text-transform: lowercase;
+  box-shadow: inset 0 -2px 0 #d9eaef;
+  touch-action: manipulation;
+}
+.duo-hm-key:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: inset 0 -1px 0 #d9eaef;
+}
+.duo-hm-key--open,
+.duo-hm-key--open:disabled {
+  background: #9b8cff;
+  color: #17140f;
+  opacity: 1;
+  box-shadow: inset 0 -2px 0 #5b4bd1;
+}
+.duo-hm-key--miss,
+.duo-hm-key--miss:disabled {
+  background: #eef6f8;
+  color: #4a4540;
+  opacity: 1;
+  text-decoration: line-through;
+  box-shadow: none;
+}
+.duo-hm-key:disabled {
+  cursor: default;
+}
+.duo-hm-solve {
+  margin-top: 16px;
+}
+.duo-hm-solve-label {
+  display: block;
+  margin-bottom: 6px;
+  color: #4a4540;
+  font-size: 14px;
+}
+.duo-hm-solve-label span {
+  color: #8a8478;
+}
+.duo-hm-solve-row {
+  display: flex;
+  gap: 8px;
+}
+.duo-hm-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #17140f;
+  font-size: 17px;
+  box-shadow: inset 0 -2px 0 #d9eaef;
+}
+.duo-hm-input:focus-visible {
+  outline: 2px solid #1fb3ff;
+  outline-offset: 2px;
+}
+.duo-hm-foot {
+  margin: 14px 0 0;
+  color: #4a4540;
+  font-size: 13px;
+  text-align: center;
+}
+@media (max-width: 560px) {
+  .duo-hm-board {
+    grid-template-columns: 132px minmax(0, 1fr);
+    gap: 10px;
+  }
+  .duo-hm-gallows {
+    width: 112px;
+    height: 122px;
+  }
+  .duo-hm-tile {
+    width: 32px;
+    height: 44px;
+    font-size: 21px;
+  }
+  .duo-hm-key {
+    height: 40px;
+    font-size: 16px;
+  }
+  .duo-hm-key-row {
+    gap: 4px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .duo-aim-target--hit,
-  .duo-aim-dart {
-    animation: none;
+  .duo-hm-key:active:not(:disabled) {
+    transform: none;
   }
   .duo-aim-pop {
     animation: none;

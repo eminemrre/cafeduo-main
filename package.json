@@ -37,6 +37,7 @@
     "typecheck": "tsc --noEmit",
     "quality": "npm run lint && npm run typecheck",
     "verify:security": "npm audit --audit-level=moderate",
+    "words:check": "node scripts/ops/check-word-bank.cjs",
     "verify": "npm run verify:security && npm run lint && npm run typecheck && npm run test:ci && npm run build",
     "prepare": "husky || true",
     "test": "jest",

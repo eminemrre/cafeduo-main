@@ -536,6 +536,24 @@ describe('createGameHandler – protocol v2 rollout gate', () => {
     }
   });
 
+  it('closes a game whose engine is unavailable, before touching the database', async () => {
+    process.env.GAME_ENGINE_V2_ENABLED = 'true';
+    const isEngineAvailable = jest.fn((gameType) => gameType !== 'Bilgi Yarışı');
+    const deps = makeDeps({ dbConnected: true });
+    const handler = createCreateGameHandler({ ...deps, isEngineAvailable });
+    const res = createMockRes();
+    await handler(
+      {
+        user: { username: 'u1', cafe_id: 1, table_number: '5', points: 100 },
+        body: { gameType: 'Bilgi Yarışı', points: 10 },
+      },
+      res
+    );
+    expect(res.statusCode).toBe(503);
+    expect(res.payload.code).toBe('GAME_UNAVAILABLE');
+    expect(deps.pool.connect).not.toHaveBeenCalled();
+  });
+
   it('keeps Retro Satranç open while the flag is off', async () => {
     delete process.env.GAME_ENGINE_V2_ENABLED;
     const handler = createCreateGameHandler(makeDeps({ dbConnected: false }));

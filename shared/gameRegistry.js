@@ -13,6 +13,7 @@ const AIM_GAME_TYPE = 'Nişancı Düellosu';
 const QUIZ_GAME_TYPE = 'Bilgi Yarışı';
 const CHESS_GAME_TYPE = 'Retro Satranç';
 const BATTLESHIP_GAME_TYPE = 'Amiral Battı';
+const HANGMAN_GAME_TYPE = 'Adam Asmaca';
 
 /** Canonical game definitions keyed by their display type. */
 const GAME_REGISTRY = {
@@ -61,6 +62,18 @@ const GAME_REGISTRY = {
     competitive: true,
     category: 'Strateji',
     description: 'Filonu gizlice yerleştir, sırayla ateş et, rakip filoyu ilk sen batır.',
+  },
+  [HANGMAN_GAME_TYPE]: {
+    type: HANGMAN_GAME_TYPE,
+    mode: 'hangman',
+    maxRounds: 3,
+    // Per round at most 10 + 6 lives × 2 + 60 s / 6 = 32.
+    maxScore: 96,
+    minPoints: 0,
+    submissionKeyPrefix: 'hangman',
+    competitive: true,
+    category: 'Kelime',
+    description: 'Aynı gizli kelimeyi aynı anda çöz; az hatayla ve hızlı bulan kazanır.',
   },
 };
 
@@ -115,6 +128,9 @@ const GAME_TYPE_ALIASES = {
   amiral: BATTLESHIP_GAME_TYPE,
   amiral_batti: BATTLESHIP_GAME_TYPE,
   amiral_batt: BATTLESHIP_GAME_TYPE,
+  hangman: HANGMAN_GAME_TYPE,
+  adam_asmaca: HANGMAN_GAME_TYPE,
+  asmaca: HANGMAN_GAME_TYPE,
 };
 
 module.exports = {
@@ -122,6 +138,7 @@ module.exports = {
   QUIZ_GAME_TYPE,
   CHESS_GAME_TYPE,
   BATTLESHIP_GAME_TYPE,
+  HANGMAN_GAME_TYPE,
   GAME_REGISTRY,
   SUPPORTED_GAME_TYPES,
   COMPETITIVE_GAME_TYPES,

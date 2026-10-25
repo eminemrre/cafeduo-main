@@ -16,6 +16,7 @@ import { HistoryDetailModal } from './HistoryDetailModal';
 
 /** Every game has a local, unranked bot mode; the newest game first. */
 const PRACTICE_GAMES = [
+  { mode: 'hangman', type: 'Adam Asmaca' },
   { mode: 'battleship', type: 'Amiral Battı' },
   { mode: 'aim', type: 'Nişancı Düellosu' },
   { mode: 'quiz', type: 'Bilgi Yarışı' },

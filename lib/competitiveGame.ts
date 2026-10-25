@@ -5,7 +5,12 @@ export const COMPETITIVE_PROTOCOL_VERSION = 2;
 
 // Kept in step with `competitive: true` in shared/gameRegistry.js (CommonJS, so
 // Vite cannot import it at runtime); competitiveGame.test.ts checks the match.
-export const COMPETITIVE_GAME_TYPES = ['Bilgi Yarışı', 'Nişancı Düellosu', 'Amiral Battı'] as const;
+export const COMPETITIVE_GAME_TYPES = [
+  'Bilgi Yarışı',
+  'Nişancı Düellosu',
+  'Amiral Battı',
+  'Adam Asmaca',
+] as const;
 
 export const isCompetitiveGameType = (gameType: unknown): boolean =>
   (COMPETITIVE_GAME_TYPES as readonly string[]).includes(String(gameType || '').trim());

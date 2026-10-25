@@ -196,7 +196,7 @@ export interface TournamentLeaderboardResponse {
   leaderboard: TournamentLeaderboardRow[];
 }
 
-/** Public engine state for protocol v2 games (quiz / aim / battleship). */
+/** Public engine state for protocol v2 games (quiz / aim / battleship / hangman). */
 export interface CompetitiveEnginePlayer {
   name: string | null;
   score: number;
@@ -244,6 +244,37 @@ export interface CompetitiveEngineRound {
     speed?: number;
     rhythm?: { amplitude: number; periodMs: number; phase: number }[];
   };
+  /** Adam Asmaca: word length, category, difficulty and how many lives a board has. */
+  length?: number;
+  difficulty?: number;
+  maxWrong?: number;
+  /** Adam Asmaca: per-board counts; the letters themselves stay private. */
+  progress?: {
+    host: HangmanProgress | null;
+    guest: HangmanProgress | null;
+  };
+  /** Adam Asmaca: public only once the round is over. */
+  word?: string;
+}
+
+/** One player's board in Adam Asmaca, as counts only. */
+export interface HangmanProgress {
+  revealed: number;
+  wrong: number;
+  solved: boolean;
+  done: boolean;
+}
+
+/** The authenticated player's own Adam Asmaca board. */
+export interface HangmanBoard {
+  roundId: string;
+  /** One entry per letter position: the letter once opened, otherwise null. */
+  pattern: (string | null)[];
+  guessed: string[];
+  wrong: number;
+  solved: boolean;
+  done: boolean;
+  points: number;
 }
 
 export interface CompetitiveEngineResult {
@@ -276,7 +307,7 @@ export interface BattleshipLastShot {
 
 export interface CompetitiveEngineState {
   version: 2;
-  kind: 'quiz' | 'aim' | 'battleship';
+  kind: 'quiz' | 'aim' | 'battleship' | 'hangman';
   revision: number;
   phase: 'waiting' | 'open' | 'reveal' | 'placement' | 'battle' | 'finished';
   roundIndex: number;
@@ -301,6 +332,8 @@ export interface CompetitiveGame extends GameRequest {
     joker?: { roundId: string; hiddenOptions: number[] };
     /** Amiral Battı: the authenticated player's own ships. */
     fleet?: { size: number; cells: number[] }[];
+    /** Adam Asmaca: the authenticated player's own board. */
+    hangman?: HangmanBoard;
   };
   winner?: string | null;
   createdAt?: string;
@@ -315,7 +348,7 @@ export interface CompetitiveGame extends GameRequest {
 export interface CompetitiveActionEnvelope {
   actionId: string;
   roundId: string;
-  type: 'answer' | 'joker' | 'fire' | 'place' | 'resign';
+  type: 'answer' | 'joker' | 'fire' | 'place' | 'guess' | 'solve' | 'resign';
   optionIndex?: number;
   cell?: number;
   layout?: { cell: number; dir: 'h' | 'v' }[];

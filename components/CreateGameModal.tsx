@@ -36,13 +36,13 @@ interface CreateGameModalProps {
 }
 
 interface GameDef {
-  id: 'chess' | 'knowledge' | 'aim' | 'battleship';
+  id: 'chess' | 'knowledge' | 'aim' | 'battleship' | 'hangman';
   name: string;
   category: string;
   description: string;
   minPoints: number;
-  /** The game's colour from DESIGN.md: gök, limon, lokum or deniz. */
-  tone: 'gok' | 'limon' | 'lokum' | 'deniz';
+  /** The game's colour from DESIGN.md: gök, limon, lokum, deniz or lavanta. */
+  tone: 'gok' | 'limon' | 'lokum' | 'deniz' | 'lavanta';
 }
 
 // PR #36 — stake bounds rewritten: minimum dropped (0-point matches OK for
@@ -83,6 +83,14 @@ const GAME_TYPES: GameDef[] = [
     minPoints: 0,
     tone: 'deniz',
   },
+  {
+    id: 'hangman',
+    name: 'Adam Asmaca',
+    category: 'Kelime',
+    description: 'Aynı gizli kelimeyi aynı anda çöz; az hatayla ve hızlı bulan kazanır.',
+    minPoints: 0,
+    tone: 'lavanta',
+  },
 ];
 
 const CHESS_TEMPO_OPTIONS = [
@@ -102,6 +110,7 @@ const TONE_FILL: Record<GameDef['tone'], string> = {
   limon: 'bg-candy-limon',
   lokum: 'bg-candy-lokum',
   deniz: 'bg-candy-deniz',
+  lavanta: 'bg-candy-lavanta',
 };
 
 export const CreateGameModal: React.FC<CreateGameModalProps> = ({

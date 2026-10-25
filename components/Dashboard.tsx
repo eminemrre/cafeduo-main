@@ -39,6 +39,7 @@ import { api } from '../lib/api';
 import { isCompetitiveGameType, resignCompetitiveGame } from '../lib/competitiveGame';
 
 const BattleshipGame = lazyWithRetry(() => import('./BattleshipGame'), 'BattleshipGame');
+const HangmanGame = lazyWithRetry(() => import('./HangmanGame'), 'HangmanGame');
 
 interface DashboardProps {
   currentUser: User;
@@ -422,6 +423,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
           ) : activeGameType === 'Amiral Battı' ? (
             <React.Suspense fallback={<p role="status">Amiral Battı yükleniyor...</p>}>
               <BattleshipGame
+                gameId={activeGameId}
+                currentUser={currentUser}
+                opponentName={opponentName || 'Rakip'}
+                isBot={isBot}
+                onGameEnd={handleGameFinish}
+                onLeave={handleLeaveGame}
+                onMatchSettled={handleMatchSettled}
+              />
+            </React.Suspense>
+          ) : activeGameType === 'Adam Asmaca' ? (
+            <React.Suspense fallback={<p role="status">Adam Asmaca yükleniyor...</p>}>
+              <HangmanGame
                 gameId={activeGameId}
                 currentUser={currentUser}
                 opponentName={opponentName || 'Rakip'}

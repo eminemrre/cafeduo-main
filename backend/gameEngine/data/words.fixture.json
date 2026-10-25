@@ -1,0 +1,302 @@
+[
+ {
+  "word": "dut",
+  "category": "Yiyecek ve içecek",
+  "difficulty": 1
+ },
+ {
+  "word": "pide",
+  "category": "Yiyecek ve içecek",
+  "difficulty": 1
+ },
+ {
+  "word": "mısır",
+  "category": "Yiyecek ve içecek",
+  "difficulty": 2
+ },
+ {
+  "word": "kabak",
+  "category": "Yiyecek ve içecek",
+  "difficulty": 2
+ },
+ {
+  "word": "tahin",
+  "category": "Yiyecek ve içecek",
+  "difficulty": 3
+ },
+ {
+  "word": "zerdali",
+  "category": "Yiyecek ve içecek",
+  "difficulty": 3
+ },
+ {
+  "word": "ceylan",
+  "category": "Hayvanlar",
+  "difficulty": 1
+ },
+ {
+  "word": "keklik",
+  "category": "Hayvanlar",
+  "difficulty": 1
+ },
+ {
+  "word": "bıldırcın",
+  "category": "Hayvanlar",
+  "difficulty": 2
+ },
+ {
+  "word": "porsuk",
+  "category": "Hayvanlar",
+  "difficulty": 2
+ },
+ {
+  "word": "akrep",
+  "category": "Hayvanlar",
+  "difficulty": 3
+ },
+ {
+  "word": "mercan",
+  "category": "Hayvanlar",
+  "difficulty": 3
+ },
+ {
+  "word": "tabure",
+  "category": "Ev ve eşyalar",
+  "difficulty": 1
+ },
+ {
+  "word": "sehpa",
+  "category": "Ev ve eşyalar",
+  "difficulty": 1
+ },
+ {
+  "word": "kepçe",
+  "category": "Ev ve eşyalar",
+  "difficulty": 2
+ },
+ {
+  "word": "süzgeç",
+  "category": "Ev ve eşyalar",
+  "difficulty": 2
+ },
+ {
+  "word": "merdane",
+  "category": "Ev ve eşyalar",
+  "difficulty": 3
+ },
+ {
+  "word": "havan",
+  "category": "Ev ve eşyalar",
+  "difficulty": 3
+ },
+ {
+  "word": "çaycı",
+  "category": "Meslekler",
+  "difficulty": 1
+ },
+ {
+  "word": "simitçi",
+  "category": "Meslekler",
+  "difficulty": 1
+ },
+ {
+  "word": "çiçekçi",
+  "category": "Meslekler",
+  "difficulty": 2
+ },
+ {
+  "word": "madenci",
+  "category": "Meslekler",
+  "difficulty": 2
+ },
+ {
+  "word": "oymacı",
+  "category": "Meslekler",
+  "difficulty": 3
+ },
+ {
+  "word": "dokumacı",
+  "category": "Meslekler",
+  "difficulty": 3
+ },
+ {
+  "word": "misket",
+  "category": "Spor ve oyun",
+  "difficulty": 1
+ },
+ {
+  "word": "topaç",
+  "category": "Spor ve oyun",
+  "difficulty": 1
+ },
+ {
+  "word": "langırt",
+  "category": "Spor ve oyun",
+  "difficulty": 2
+ },
+ {
+  "word": "yoyo",
+  "category": "Spor ve oyun",
+  "difficulty": 2
+ },
+ {
+  "word": "kızakçı",
+  "category": "Spor ve oyun",
+  "difficulty": 3
+ },
+ {
+  "word": "eskrimci",
+  "category": "Spor ve oyun",
+  "difficulty": 3
+ },
+ {
+  "word": "çalı",
+  "category": "Doğa ve hava",
+  "difficulty": 1
+ },
+ {
+  "word": "yosun",
+  "category": "Doğa ve hava",
+  "difficulty": 1
+ },
+ {
+  "word": "kozalak",
+  "category": "Doğa ve hava",
+  "difficulty": 2
+ },
+ {
+  "word": "meşe",
+  "category": "Doğa ve hava",
+  "difficulty": 2
+ },
+ {
+  "word": "sarmaşık",
+  "category": "Doğa ve hava",
+  "difficulty": 3
+ },
+ {
+  "word": "kayalık",
+  "category": "Doğa ve hava",
+  "difficulty": 3
+ },
+ {
+  "word": "fayton",
+  "category": "Ulaşım",
+  "difficulty": 1
+ },
+ {
+  "word": "tekerlek",
+  "category": "Ulaşım",
+  "difficulty": 1
+ },
+ {
+  "word": "kağnı",
+  "category": "Ulaşım",
+  "difficulty": 2
+ },
+ {
+  "word": "şilep",
+  "category": "Ulaşım",
+  "difficulty": 2
+ },
+ {
+  "word": "drezin",
+  "category": "Ulaşım",
+  "difficulty": 3
+ },
+ {
+  "word": "salapurya",
+  "category": "Ulaşım",
+  "difficulty": 3
+ },
+ {
+  "word": "mürekkep",
+  "category": "Okul ve kampüs",
+  "difficulty": 1
+ },
+ {
+  "word": "zımba",
+  "category": "Okul ve kampüs",
+  "difficulty": 1
+ },
+ {
+  "word": "raptiye",
+  "category": "Okul ve kampüs",
+  "difficulty": 2
+ },
+ {
+  "word": "klasör",
+  "category": "Okul ve kampüs",
+  "difficulty": 2
+ },
+ {
+  "word": "abaküs",
+  "category": "Okul ve kampüs",
+  "difficulty": 3
+ },
+ {
+  "word": "divit",
+  "category": "Okul ve kampüs",
+  "difficulty": 3
+ },
+ {
+  "word": "trampet",
+  "category": "Müzik ve sanat",
+  "difficulty": 1
+ },
+ {
+  "word": "mızıka",
+  "category": "Müzik ve sanat",
+  "difficulty": 1
+ },
+ {
+  "word": "marakas",
+  "category": "Müzik ve sanat",
+  "difficulty": 2
+ },
+ {
+  "word": "tambur",
+  "category": "Müzik ve sanat",
+  "difficulty": 2
+ },
+ {
+  "word": "rebap",
+  "category": "Müzik ve sanat",
+  "difficulty": 3
+ },
+ {
+  "word": "lavta",
+  "category": "Müzik ve sanat",
+  "difficulty": 3
+ },
+ {
+  "word": "büfe",
+  "category": "Şehir hayatı",
+  "difficulty": 1
+ },
+ {
+  "word": "tabela",
+  "category": "Şehir hayatı",
+  "difficulty": 1
+ },
+ {
+  "word": "kemer",
+  "category": "Şehir hayatı",
+  "difficulty": 2
+ },
+ {
+  "word": "hendek",
+  "category": "Şehir hayatı",
+  "difficulty": 2
+ },
+ {
+  "word": "sebil",
+  "category": "Şehir hayatı",
+  "difficulty": 3
+ },
+ {
+  "word": "arasta",
+  "category": "Şehir hayatı",
+  "difficulty": 3
+ }
+]

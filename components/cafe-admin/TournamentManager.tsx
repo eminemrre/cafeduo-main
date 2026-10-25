@@ -21,6 +21,7 @@ export const GAME_TYPE_OPTIONS: Array<{ value: string; label: string }> = [
   { value: 'Bilgi Yarışı', label: 'Bilgi Yarışı' },
   { value: 'Retro Satranç', label: 'Retro Satranç' },
   { value: 'Amiral Battı', label: 'Amiral Battı' },
+  { value: 'Adam Asmaca', label: 'Adam Asmaca' },
 ];
 
 interface TournamentManagerProps {

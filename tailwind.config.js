@@ -34,6 +34,7 @@ module.exports = {
           'limon-deep': '#E0AE18',
           fistik: '#B6D31B',
           deniz: '#2EC4B6',
+          lavanta: '#9B8CFF',
           danger: '#D62F2F',
         },
       },

@@ -11,14 +11,20 @@
 
 const { createHash } = require('crypto');
 const { CELL_COUNT, DIRECTIONS, FLEET } = require('../../shared/battleship');
+const { normalizeGuess, normalizeLetter } = require('../../shared/turkishText');
 
 const ACTION_TYPES = Object.freeze({
   ANSWER: 'answer',
   JOKER: 'joker',
   FIRE: 'fire',
   PLACE: 'place',
+  GUESS: 'guess',
+  SOLVE: 'solve',
   RESIGN: 'resign',
 });
+
+/** Longest whole-word guess accepted for Adam Asmaca / Çiz Bil. */
+const MAX_WORD_GUESS = 24;
 
 const ACTION_TYPE_VALUES = Object.freeze(Object.values(ACTION_TYPES));
 const ACTION_ID_PATTERN = /^[A-Za-z0-9_-]{8,64}$/;
@@ -84,6 +90,22 @@ const normalizeActionEnvelope = (body) => {
       return { ok: false, code: 'INVALID_SHOT_TIME', message: 'Atış zamanı geçersiz.' };
     }
     envelope.shotAt = shotAt;
+  }
+
+  // Adam Asmaca: one Turkish letter, lowercased with Turkish rules (I → ı).
+  if (type === ACTION_TYPES.GUESS) {
+    const letter = normalizeLetter(body?.letter);
+    if (!letter) return { ok: false, code: 'INVALID_LETTER', message: 'Bir harf seç.' };
+    envelope.letter = letter;
+  }
+
+  // Adam Asmaca whole-word guess: Turkish letters only, normalised.
+  if (type === ACTION_TYPES.SOLVE) {
+    const word = normalizeGuess(body?.word);
+    if (!word || word.length > MAX_WORD_GUESS) {
+      return { ok: false, code: 'INVALID_WORD', message: 'Tahminin geçersiz.' };
+    }
+    envelope.word = word;
   }
 
   // Amiral Battı aims at a cell; Nişancı Düellosu sends only a shot time.

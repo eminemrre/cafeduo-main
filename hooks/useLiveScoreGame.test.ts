@@ -146,6 +146,54 @@ describe('useLiveScoreGame (protocol v2)', () => {
     await waitFor(() => expect(result.current.snapshot?.actorView?.fleet).toHaveLength(1));
     expect(mockApi.games.get).toHaveBeenCalledTimes(2);
   });
+  it('refetches the hangman board when a socket update opens a new round', async () => {
+    const roundOf = (id: string, index: number) => ({
+      id,
+      index,
+      startedAt: new Date(now).toISOString(),
+      endsAt: new Date(now + 60_000).toISOString(),
+      length: 5,
+    });
+    const board = (roundId: string) => ({
+      hangman: {
+        roundId,
+        pattern: [] as (string | null)[],
+        guessed: [] as string[],
+        wrong: 0,
+        solved: false,
+        done: false,
+        points: 0,
+      },
+    });
+    const first = buildEngine({ kind: 'hangman', phase: 'open', round: roundOf('r1', 0) });
+    mockApi.games.get.mockResolvedValueOnce(
+      buildSnapshot({ gameType: 'Adam Asmaca', actorView: board('r1'), gameState: { engine: first } })
+    );
+    const { result } = renderLearningHook({ mode: 'Adam Asmaca', statsKind: 'hangman' });
+    await waitFor(() => expect(result.current.engine?.kind).toBe('hangman'));
+
+    // The opponent's letter on the same round: the actor's board did not change.
+    act(() => {
+      mockSocketService.getSocket().emit('game_state_updated', {
+        gameId: 'game-1',
+        gameState: { engine: { ...first, revision: 2 } },
+      });
+    });
+    expect(mockApi.games.get).toHaveBeenCalledTimes(1);
+
+    const second = buildEngine({ kind: 'hangman', phase: 'open', revision: 3, round: roundOf('r2', 1) });
+    mockApi.games.get.mockResolvedValue(
+      buildSnapshot({ gameType: 'Adam Asmaca', actorView: board('r2'), gameState: { engine: second } })
+    );
+    act(() => {
+      mockSocketService
+        .getSocket()
+        .emit('game_state_updated', { gameId: 'game-1', gameState: { engine: second } });
+    });
+    await waitFor(() => expect(result.current.snapshot?.actorView?.hangman?.roundId).toBe('r2'));
+    expect(mockApi.games.get).toHaveBeenCalledTimes(2);
+  });
+
   it('does not touch the network in bot mode', async () => {
     const { result, onGameEnd } = renderLearningHook({ isBot: true, gameId: 'game-1' });
     expect(result.current.playerScore).toBe(0);

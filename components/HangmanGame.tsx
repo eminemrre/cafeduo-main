@@ -24,6 +24,7 @@ import {
   chooseBotLetter,
   createPracticeGame,
   guessLetter,
+  pickPracticeWord,
   practiceView,
   shouldBotSolve,
   solveWord,
@@ -142,7 +143,9 @@ export const HangmanGame: React.FC<HangmanGameProps> = ({
     onGameEnd,
   });
 
-  const [practice, setPractice] = useState<PracticeGame>(() => createPracticeGame());
+  const [practice, setPractice] = useState<PracticeGame>(() =>
+    createPracticeGame({ word: pickPracticeWord() })
+  );
   /** Latest practice state, so two taps in one frame build on each other. */
   const practiceRef = useRef(practice);
   practiceRef.current = practice;
@@ -161,7 +164,7 @@ export const HangmanGame: React.FC<HangmanGameProps> = ({
   }, [onGameEnd, onMatchSettled]);
 
   useEffect(() => {
-    const fresh = createPracticeGame();
+    const fresh = createPracticeGame({ word: pickPracticeWord() });
     practiceRef.current = fresh;
     setPractice(fresh);
     setAttempt('');
@@ -178,9 +181,15 @@ export const HangmanGame: React.FC<HangmanGameProps> = ({
       : null;
   const phase = isBot ? (practice.phase === 'finished' ? 'finished' : 'open') : rankedPhase;
   const round = engine?.round || null;
+  const serverBoard = live.snapshot?.actorView?.hangman;
+  const myKey = live.actorKey || 'host';
+  const opKey = myKey === 'host' ? 'guest' : 'host';
   const mine: BoardView = isBot
     ? practiceView(practice, 'host')
-    : live.snapshot?.actorView?.hangman || EMPTY_VIEW;
+    : // A board from an earlier round (socket news before the refetch) is not this round's.
+      serverBoard && serverBoard.roundId === round?.id
+      ? serverBoard
+      : EMPTY_VIEW;
   const ops: BoardView = isBot ? practiceView(practice, 'guest') : EMPTY_VIEW;
   const maxWrong = isBot ? PRACTICE_MAX_WRONG : round?.maxWrong || 6;
   const opProgress = isBot
@@ -190,7 +199,7 @@ export const HangmanGame: React.FC<HangmanGameProps> = ({
         solved: ops.solved,
         done: ops.done,
       }
-    : round?.progress?.guest || { revealed: 0, wrong: 0, solved: false, done: false };
+    : round?.progress?.[opKey] || { revealed: 0, wrong: 0, solved: false, done: false };
   const length = isBot ? practice.length : round?.length || 0;
   const category = isBot ? practice.category : round?.category || '';
   const difficulty = isBot ? 1 : round?.difficulty || 1;
@@ -454,7 +463,7 @@ export const HangmanGame: React.FC<HangmanGameProps> = ({
           {delta && (
             <span className="duo-hm-delta">
               {' '}
-              +{delta.host} / +{delta.guest} puan
+              +{delta[myKey]} / +{delta[opKey]} puan
             </span>
           )}
           {isBot && practiceResult && (

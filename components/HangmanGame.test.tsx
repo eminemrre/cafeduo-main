@@ -112,6 +112,19 @@ const renderGame = (props: Partial<React.ComponentProps<typeof HangmanGame>> = {
 };
 
 describe('HangmanGame practice', () => {
+  // Math.random() → 0 picks the first practice word, "badem".
+  let random: jest.SpyInstance;
+  beforeEach(() => {
+    random = jest.spyOn(Math, 'random').mockReturnValue(0);
+  });
+  afterEach(() => random.mockRestore());
+
+  it('starts on a random practice word', () => {
+    random.mockReturnValue(0.9999);
+    renderGame();
+    expect(screen.getByTestId('hangman-word').children).not.toHaveLength(5);
+  });
+
   it('draws one tile per letter and the 29 Turkish letter keys', () => {
     renderGame();
     expect(screen.getByTestId('hangman-word').children).toHaveLength(5);
@@ -181,5 +194,59 @@ describe('HangmanGame ranked', () => {
     expect(screen.getByText('2/5 harf')).toBeInTheDocument();
     expect(screen.queryByText(/bora.*harf/)).not.toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/hiddenOptions|guessed/);
+  });
+
+  it('reads the opponent row from the other side when the player is the guest', async () => {
+    const state = engine({
+      round: {
+        ...engine().round!,
+        scoreDelta: undefined,
+        progress: {
+          host: { revealed: 3, wrong: 2, solved: false, done: false },
+          guest: { revealed: 1, wrong: 0, solved: false, done: false },
+        },
+      },
+    });
+    mockApi.games.get.mockResolvedValue(snapshot(state));
+    renderGame({ isBot: false, gameId: 'g9', currentUser: { ...user, username: 'bora' } });
+    await waitFor(() => expect(screen.getByText('3/5 harf')).toBeInTheDocument());
+    expect(screen.queryByText('1/5 harf')).not.toBeInTheDocument();
+  });
+
+  it('lists the round points as mine first, then the opponent', async () => {
+    const state = engine({
+      phase: 'reveal',
+      round: { ...engine().round!, word: 'kahve', scoreDelta: { host: 31, guest: 4 } },
+    });
+    mockApi.games.get.mockResolvedValue(snapshot(state));
+    renderGame({ isBot: false, gameId: 'g9', currentUser: { ...user, username: 'bora' } });
+    await waitFor(() => expect(screen.getByTestId('hangman-reveal')).toHaveTextContent('kahve'));
+    expect(screen.getByTestId('hangman-reveal')).toHaveTextContent('+4 / +31 puan');
+  });
+
+  it('never draws the previous round board on a new round', async () => {
+    const state = engine({
+      roundIndex: 2,
+      round: { ...engine().round!, id: 'r2', index: 1, length: 4 },
+    });
+    mockApi.games.get.mockResolvedValue(
+      snapshot(state, {
+        actorView: {
+          hangman: {
+            roundId: 'r1',
+            pattern: ['k', 'a', null, null, 'e'],
+            guessed: ['k', 'a', 'e', 'z'],
+            wrong: 1,
+            solved: false,
+            done: false,
+            points: 3,
+          },
+        },
+      })
+    );
+    renderGame({ isBot: false, gameId: 'g9' });
+    await waitFor(() => expect(screen.getByTestId('hangman-word').children).toHaveLength(4));
+    expect(screen.getByTestId('hangman-word')).toHaveTextContent('');
+    expect(screen.getByRole('button', { name: 'k harfi' })).toBeEnabled();
   });
 });

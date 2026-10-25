@@ -483,6 +483,15 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
         ) {
           void fetchSnapshot(true);
         }
+        // Adam Asmaca: the actor's board belongs to one round; a new round needs
+        // the fresh (empty) board, which only the authenticated GET carries.
+        if (
+          incoming.kind === 'hangman' &&
+          incoming.round?.id &&
+          base.actorView?.hangman?.roundId !== incoming.round.id
+        ) {
+          void fetchSnapshot(true);
+        }
         return;
       }
       void fetchSnapshot(true);

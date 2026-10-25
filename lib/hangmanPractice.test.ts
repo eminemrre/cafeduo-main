@@ -10,6 +10,7 @@ import {
   chooseBotLetter,
   createPracticeGame,
   guessLetter,
+  pickPracticeWord,
   practiceScore,
   practiceView,
   shouldBotSolve,
@@ -40,6 +41,13 @@ describe('hangmanPractice', () => {
       expect(entry.word.length).toBeGreaterThanOrEqual(4);
     }
     expect(new Set(PRACTICE_WORDS.map((entry) => entry.word)).size).toBe(PRACTICE_WORDS.length);
+  });
+
+  it('picks a practice word at random from the whole list', () => {
+    expect(pickPracticeWord(() => 0)).toBe(PRACTICE_WORDS[0]);
+    expect(pickPracticeWord(() => 0.9999)).toBe(PRACTICE_WORDS[PRACTICE_WORDS.length - 1]);
+    const middle = Math.floor(PRACTICE_WORDS.length / 2);
+    expect(pickPracticeWord(() => middle / PRACTICE_WORDS.length)).toBe(PRACTICE_WORDS[middle]);
   });
 
   it('opens every position of a right letter and charges a wrong one', () => {

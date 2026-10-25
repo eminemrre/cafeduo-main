@@ -225,6 +225,10 @@ const withBoard = (
   now: number
 ): PracticeGame => settle({ ...game, [key]: board }, now);
 
+/** A practice word, uniformly from the whole list. */
+export const pickPracticeWord = (random: () => number = Math.random) =>
+  PRACTICE_WORDS[Math.min(PRACTICE_WORDS.length - 1, Math.floor(random() * PRACTICE_WORDS.length))];
+
 export const createPracticeGame = ({
   now = Date.now(),
   word = PRACTICE_WORDS[0],

@@ -12,6 +12,7 @@ const {
   BATTLESHIP_GAME_TYPE,
   COMPETITIVE_GAME_TYPES,
   HANGMAN_GAME_TYPE,
+  DRAW_GAME_TYPE,
   QUIZ_GAME_TYPE,
 } = require('../../shared/gameRegistry');
 const {
@@ -42,6 +43,13 @@ const {
   createHangmanPublicState,
   startHangmanState,
 } = require('./hangmanEngine');
+const {
+  advanceDraw,
+  applyDrawAction,
+  createDrawPrivateState,
+  createDrawPublicState,
+  startDrawState,
+} = require('./drawEngine');
 const { isWordBankReady } = require('./wordBank');
 
 const nonEmpty = (value) => Array.isArray(value) && value.length > 0;
@@ -89,6 +97,18 @@ const ENGINES = Object.freeze({
     start: startHangmanState,
     applyAction: applyHangmanAction,
     advance: advanceHangman,
+  }),
+  [DRAW_GAME_TYPE]: Object.freeze({
+    kind: 'draw',
+    // Same private word bank as Adam Asmaca (drawable words only).
+    isAvailable: isWordBankReady,
+    createPrivateState: () => createDrawPrivateState(),
+    isPrivateStateReady: (privateState) => nonEmpty(privateState?.rounds),
+    createPublicState: ({ hostName, guestName, privateState }) =>
+      createDrawPublicState({ hostName, guestName, totalRounds: privateState.rounds.length }),
+    start: startDrawState,
+    applyAction: applyDrawAction,
+    advance: advanceDraw,
   }),
 });
 

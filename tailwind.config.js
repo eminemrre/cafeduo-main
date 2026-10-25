@@ -35,6 +35,7 @@ module.exports = {
           fistik: '#B6D31B',
           deniz: '#2EC4B6',
           lavanta: '#9B8CFF',
+          portakal: '#FF8A3D',
           danger: '#D62F2F',
         },
       },

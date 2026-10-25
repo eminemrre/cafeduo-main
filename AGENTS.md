@@ -106,8 +106,13 @@ npm run migrate:status   # when touching migrations
   (`backend/middleware/socketAuth.js`). Events: `join_game`, `leave_game`, `game_state_updated`,
   `game_room_error`, `lobby_updated`. Sockets only carry server notifications; player actions go
   through the authenticated HTTP game endpoints. `game_move` and `update_game_state` are rejected.
+  The one exception (approved 2026-10-24) is Çiz Bil's `draw_strokes`: accepted only from the
+  current drawer of an open drawing, reduced to integer coordinates and palette indexes, 30
+  packets/s, 6000 points per round, stored per round in Redis and relayed to the room
+  (`backend/socket/drawStrokes.js`, `backend/gameEngine/drawStrokes.js`). Strokes never change a
+  score, word or clock; `GET /api/games/:id/strokes` replays a round. Do not add another socket input.
   Call `emitLobbyUpdate(tableCode)` after game mutations, and emit only after the DB commit.
-- Competitive games (Bilgi Yarışı, Nişancı Düellosu, Amiral Battı, Adam Asmaca; `competitive: true` in
+- Competitive games (Bilgi Yarışı, Nişancı Düellosu, Amiral Battı, Adam Asmaca, Çiz Bil; `competitive: true` in
   `shared/gameRegistry.js`) run only the server-authoritative protocol. Create, join, actions,
   readers and the deadline job reach their rules only through `backend/gameEngine/engines.js`;
   a new competitive game is one entry there, never another type if-chain in a handler.
@@ -166,6 +171,16 @@ npm run migrate:status   # when touching migrations
   letters reach only its owner as `actorView.hangman`, and the word is published only after its
   round closes (both the engine and `gameView` strip it while open). Practice is local, unranked
   and uses `lib/hangmanPractice.ts`, whose word list is disjoint from the server bank.
+- `backend/gameEngine/drawEngine.js` runs Çiz Bil: four rounds, the drawer alternates (host
+  draws r1, r3). Phases `choosing` (10 s, `pick {optionIndex}` of three drawable words, one per
+  difficulty; the seeded `autoPick` when time runs out) → `drawing` (75 s, `solve {word}` guesses,
+  at most 40 per round, one-letter misses marked close; `report` closes the round without points)
+  → `reveal` (3 s). Hints open at 30 s and 50 s, and while drawing `phaseEndsAt` is the next hint,
+  so readers and the job open hints on time; `round.endsAt` is the drawing's end. A right guess
+  scores `round((10 + floor(seconds left / 5)) × 1 | 1.2 | 1.5)`, the drawer half of it. The
+  picked index is `round.pick` (never serialized); choices and the word reach only the drawer as
+  `actorView.draw`, the word is public after its round. Words marked `drawable: false` in the
+  private bank never come up. No practice mode (a bot cannot read a drawing).
 - Settlement for a competitive engine game happens only in `backend/gameEngine/settlement.js`
   and at most once: the `games` row is locked, the public engine result gets
   `settled/settledAt/transferredPoints`, and `applyDbSettlement`/`applyMemorySettlement` runs in

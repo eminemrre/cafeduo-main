@@ -10,6 +10,7 @@ export const COMPETITIVE_GAME_TYPES = [
   'Nişancı Düellosu',
   'Amiral Battı',
   'Adam Asmaca',
+  'Çiz Bil',
 ] as const;
 
 export const isCompetitiveGameType = (gameType: unknown): boolean =>

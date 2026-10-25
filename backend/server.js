@@ -91,6 +91,11 @@ const yaml = require('js-yaml');
 
 // Local modules
 const { pool, isDbConnected } = require('./db');
+const { DRAW_GAME_TYPE } = require('../shared/gameRegistry');
+const { drawingTurn } = require('./gameEngine/drawEngine');
+const { createRateLimiter, createStrokeStore } = require('./gameEngine/drawStrokes');
+const { createDrawStrokeHandler, createTurnCache } = require('./socket/drawStrokes');
+const { createDrawStrokesHandler } = require('./handlers/game/handlers/drawStrokesHandler');
 const { cache, clearCache } = require('./middleware/cache'); // Redis Cache Import
 const redisClient = require('./config/redis'); // Redis client
 const { buildRateLimiterOptions, getPassOnStoreError } = require('./middleware/rateLimit');
@@ -278,6 +283,43 @@ const findMemorySocketGame = (normalizedGameId) => {
   return memoryState.games.find((game) => String(game.id) === normalizedGameId) || null;
 };
 
+// Çiz Bil strokes: the one player input carried by Socket.IO (see
+// backend/socket/drawStrokes.js). Only the current drawer of an open drawing
+// may send them; they never change a score, a word or a clock.
+const strokeStore = createStrokeStore({ redis: redisClient, logger });
+const strokeLimiter = createRateLimiter({ perSecond: 30 });
+const loadDrawTurn = async (gameId) => {
+  let game = null;
+  if (await isDbConnected()) {
+    if (!/^\d+$/.test(gameId)) return null;
+    const result = await pool.query(
+      `SELECT host_name, guest_name, game_type, game_state->'engine' AS engine
+       FROM games
+       WHERE id = $1
+       LIMIT 1`,
+      [gameId]
+    );
+    game = result.rows[0] || null;
+  } else {
+    const memory = findMemorySocketGame(gameId);
+    game = memory && {
+      host_name: memory.host_name ?? memory.hostName,
+      guest_name: memory.guest_name ?? memory.guestName,
+      game_type: memory.game_type ?? memory.gameType,
+      engine: (memory.game_state ?? memory.gameState)?.engine || null,
+    };
+  }
+  if (!game || String(game.game_type || '').trim() !== DRAW_GAME_TYPE) return null;
+  const turn = drawingTurn(game.engine);
+  if (!turn) return null;
+  return {
+    roundId: turn.roundId,
+    open: turn.open,
+    drawerName: turn.drawer === 'host' ? game.host_name : game.guest_name,
+  };
+};
+const drawTurns = createTurnCache({ loadTurn: loadDrawTurn, ttlMs: 1000 });
+
 const canAccessGameRoom = async (socket, normalizedGameId) => {
   if (isSocketAdmin(socket)) {
     return true;
@@ -368,6 +410,11 @@ io.on('connection', (socket) => {
 
   socket.on('game_move', (data) => rejectSocketAction('game_move', data));
   socket.on('update_game_state', (data) => rejectSocketAction('update_game_state', data));
+
+  socket.on(
+    'draw_strokes',
+    createDrawStrokeHandler({ socket, turns: drawTurns, store: strokeStore, limiter: strokeLimiter, logger })
+  );
 
   socket.on('disconnect', () => {
     logger.info(`Client disconnected: ${socket.id} (User: ${socket.username})`);
@@ -940,6 +987,13 @@ const gameRoutes = createGameRoutes({
   authenticateToken,
   gameHandlers,
   gameService,
+  getDrawStrokes: createDrawStrokesHandler({
+    pool,
+    isDbConnected,
+    getMemoryGames: () => MEMORY_GAMES,
+    strokeStore,
+    logger,
+  }),
 });
 
 const adminRoutes = createAdminRoutes({

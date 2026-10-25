@@ -8,13 +8,17 @@ const {
 
 const { serializeGameForActor } = require('../gameEngine/gameView');
 
-const createGameRoutes = ({ authenticateToken, gameHandlers, gameService }) => {
+const createGameRoutes = ({ authenticateToken, gameHandlers, gameService, getDrawStrokes }) => {
   const router = express.Router();
 
   router.get('/games', authenticateToken, gameHandlers.getGames);
   router.post('/games', authenticateToken, validateCreateGamePayload, gameHandlers.createGame);
   router.post('/games/:id/join', authenticateToken, validateJoinGamePayload, gameHandlers.joinGame);
   router.get('/games/:id', authenticateToken, validateGameIdParam, gameHandlers.getGameState);
+  // Çiz Bil: replay the current round's strokes after a reload or reconnect.
+  if (getDrawStrokes) {
+    router.get('/games/:id/strokes', authenticateToken, validateGameIdParam, getDrawStrokes);
+  }
   router.post(
     '/games/:id/actions',
     authenticateToken,

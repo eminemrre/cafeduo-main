@@ -16,6 +16,7 @@ colors:
   fistik: '#B6D31B'
   deniz: '#2EC4B6'
   lavanta: '#9B8CFF'
+  portakal: '#FF8A3D'
   gok-deep: '#1597D9'
   fistik-face: '#C8E23A'
   coffee: '#5A3424'
@@ -30,6 +31,7 @@ colors:
   fistik-text: '#5F7A0C'
   deniz-text: '#0B7A70'
   lavanta-text: '#5B4BD1'
+  portakal-text: '#A84A0C'
   danger-text: '#B8241A'
   danger-wash: '#FCE8E8'
 typography:
@@ -353,6 +355,11 @@ surfaces (ice and white, one candy accent per game).
   ice. It appears on the game's lobby marker, selected game card, the chip and
   the right-letter key. A missed letter is ice-deep with a strikethrough, so a
   key never reads by colour alone.
+- **Portakal (#FF8A3D)** is **Çiz Bil**, approved 2026-10-24. Ink on portakal
+  has 7.83:1 contrast; portakal-text (#A84A0C) is 5.75:1 on paper and 5.25:1 on
+  ice. It appears on the game's lobby marker, selected game card, the chip, the
+  drawer's word band and the selected tool. The canvas itself is white; the
+  drawing palette is the candy set plus ink and an eraser, each swatch labelled.
 - **Ice (#EEF6F8)** and **ice-deep (#D9EAEF)** are the Masa ground and wells; **paper (#FFFFFF)**
   is the surface on top of them (the tent, the slip, the sheets' content, the menu bars).
 - **Success (#177A41)** and **danger (#D62F2F)** are for states only, never decoration.

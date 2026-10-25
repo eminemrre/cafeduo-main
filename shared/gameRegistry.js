@@ -14,6 +14,7 @@ const QUIZ_GAME_TYPE = 'Bilgi Yarışı';
 const CHESS_GAME_TYPE = 'Retro Satranç';
 const BATTLESHIP_GAME_TYPE = 'Amiral Battı';
 const HANGMAN_GAME_TYPE = 'Adam Asmaca';
+const DRAW_GAME_TYPE = 'Çiz Bil';
 
 /** Canonical game definitions keyed by their display type. */
 const GAME_REGISTRY = {
@@ -75,6 +76,19 @@ const GAME_REGISTRY = {
     category: 'Kelime',
     description: 'Aynı gizli kelimeyi aynı anda çöz; az hatayla ve hızlı bulan kazanır.',
   },
+  [DRAW_GAME_TYPE]: {
+    type: DRAW_GAME_TYPE,
+    mode: 'draw',
+    maxRounds: 4,
+    // Each player guesses twice (at most round((10 + 15) × 1.5) = 38) and draws
+    // twice (half of the guesser's points, at most 19): 2 × 38 + 2 × 19.
+    maxScore: 114,
+    minPoints: 0,
+    submissionKeyPrefix: 'draw',
+    competitive: true,
+    category: 'Kelime',
+    description: 'Sırayla çiz ve tahmin et; kelimeyi hızlı bulan da anlaşılır çizen de puan alır.',
+  },
 };
 
 const SUPPORTED_GAME_TYPES = new Set(Object.keys(GAME_REGISTRY));
@@ -131,6 +145,11 @@ const GAME_TYPE_ALIASES = {
   hangman: HANGMAN_GAME_TYPE,
   adam_asmaca: HANGMAN_GAME_TYPE,
   asmaca: HANGMAN_GAME_TYPE,
+  draw: DRAW_GAME_TYPE,
+  pictionary: DRAW_GAME_TYPE,
+  ciz_bil: DRAW_GAME_TYPE,
+  cizbil: DRAW_GAME_TYPE,
+  iz_bil: DRAW_GAME_TYPE,
 };
 
 module.exports = {
@@ -139,6 +158,7 @@ module.exports = {
   CHESS_GAME_TYPE,
   BATTLESHIP_GAME_TYPE,
   HANGMAN_GAME_TYPE,
+  DRAW_GAME_TYPE,
   GAME_REGISTRY,
   SUPPORTED_GAME_TYPES,
   COMPETITIVE_GAME_TYPES,

@@ -15,12 +15,14 @@ const {
   AIM_GAME_TYPE,
   BATTLESHIP_GAME_TYPE,
   HANGMAN_GAME_TYPE,
+  DRAW_GAME_TYPE,
   QUIZ_GAME_TYPE,
 } = require('../../shared/gameRegistry');
 const { CELL_COUNT, FLEET, isCell } = require('../../shared/battleship');
 const { isCompetitiveEngineGameType } = require('../utils/gameEngineConfig');
 const { fleetOf } = require('./battleshipEngine');
 const { actorBoard } = require('./hangmanEngine');
+const { actorDrawView } = require('./drawEngine');
 const { isTurkishLetter } = require('../../shared/turkishText');
 
 const read = (game, camelKey, snakeKey) => {
@@ -63,6 +65,11 @@ const isAimType = (gameType) => String(gameType || '').trim() === AIM_GAME_TYPE;
 const isQuizType = (gameType) => String(gameType || '').trim() === QUIZ_GAME_TYPE;
 const isBattleshipType = (gameType) => String(gameType || '').trim() === BATTLESHIP_GAME_TYPE;
 const isHangmanType = (gameType) => String(gameType || '').trim() === HANGMAN_GAME_TYPE;
+const isDrawType = (gameType) => String(gameType || '').trim() === DRAW_GAME_TYPE;
+const MAX_DRAW_GUESSES = 40;
+const MAX_WORD_LETTERS = 24;
+const lettersOnly = (value) =>
+  typeof value === 'string' ? [...value].filter(isTurkishLetter).slice(0, MAX_WORD_LETTERS).join('') : '';
 const PROGRESS_KEYS = ['revealed', 'wrong', 'solved', 'done'];
 
 // Chess state is produced by the server (clock + engine). These keys are safe
@@ -175,6 +182,20 @@ const sanitizeRound = (round) => {
       guest: round.progress.guest ? pick(round.progress.guest, PROGRESS_KEYS) : null,
     };
   }
+  // Çiz Bil: who draws, the opened hint letters and the guess log.
+  if (round.drawer === 'host' || round.drawer === 'guest') out.drawer = round.drawer;
+  if (typeof round.drawStartedAt === 'string') out.drawStartedAt = round.drawStartedAt;
+  if (Array.isArray(round.hint)) {
+    out.hint = round.hint.slice(0, MAX_WORD_LETTERS).map((letter) => (isTurkishLetter(letter) ? letter : null));
+  }
+  if (Array.isArray(round.guesses)) {
+    out.guesses = round.guesses
+      .slice(-MAX_DRAW_GUESSES)
+      .map((guess) => ({ text: lettersOnly(guess?.text), close: guess?.close === true }));
+  }
+  for (const key of ['solved', 'reported']) {
+    if (typeof round[key] === 'boolean') out[key] = round[key];
+  }
   if (typeof round.word === 'string') out.word = round.word;
   return out;
 };
@@ -216,6 +237,10 @@ const sanitizeEngineState = (engine) => {
   if (round) {
     // Adam Asmaca: the word is public only once its round has closed.
     if (engine.kind === 'hangman' && engine.phase === 'open') delete round.word;
+    // Çiz Bil: likewise, never while the drawer chooses or draws.
+    if (engine.kind === 'draw' && (engine.phase === 'choosing' || engine.phase === 'drawing')) {
+      delete round.word;
+    }
     out.round = round;
   }
   if (engine.result && typeof engine.result === 'object') {
@@ -326,6 +351,24 @@ const serializeGameForActor = (game, actorName, receivedAt) => {
 
   // Adam Asmaca: the actor's own board (letters tried, positions opened). Both
   // players solve the same word, so a board never reaches the other player.
+  // Çiz Bil: the drawer's three choices, then the picked word; the guesser
+  // only learns its role.
+  if (isDrawType(gameType) && actorKey) {
+    const view = actorDrawView(
+      read(game, 'gameState', 'game_state')?.engine,
+      read(game, 'gamePrivateState', 'game_private_state'),
+      actorKey
+    );
+    if (view) {
+      const draw = { roundId: view.roundId, role: view.role };
+      if (Array.isArray(view.choices)) {
+        draw.choices = view.choices.map(({ word, difficulty }) => ({ word: lettersOnly(word), difficulty }));
+      }
+      if (typeof view.word === 'string') draw.word = lettersOnly(view.word);
+      out.actorView = { draw };
+    }
+  }
+
   if (isHangmanType(gameType) && actorKey) {
     const board = actorBoard(
       read(game, 'gameState', 'game_state')?.engine,
@@ -406,6 +449,7 @@ module.exports = {
   isAimType,
   isBattleshipType,
   isHangmanType,
+  isDrawType,
   isChessType,
   isQuizType,
   sanitizeEngineState,

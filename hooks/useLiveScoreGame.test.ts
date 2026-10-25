@@ -194,6 +194,30 @@ describe('useLiveScoreGame (protocol v2)', () => {
     expect(mockApi.games.get).toHaveBeenCalledTimes(2);
   });
 
+  it('queues a refetch asked for while another snapshot request is in flight', async () => {
+    mockApi.games.get.mockResolvedValueOnce(buildSnapshot());
+    const { result } = renderLearningHook();
+    await waitFor(() => expect(result.current.engine?.round?.id).toBe('r1'));
+    let release: (value: CompetitiveGame) => void = () => undefined;
+    mockApi.games.get
+      .mockImplementationOnce(() => new Promise<CompetitiveGame>((resolve) => (release = resolve)))
+      .mockResolvedValue(buildSnapshot());
+    const calls = mockApi.games.get.mock.calls.length;
+    let first: Promise<unknown> = Promise.resolve();
+    act(() => {
+      first = result.current.fetchSnapshot(true);
+    });
+    await act(async () => {
+      expect(await result.current.fetchSnapshot(true)).toBeNull();
+    });
+    expect(mockApi.games.get.mock.calls.length).toBe(calls + 1);
+    await act(async () => {
+      release(buildSnapshot());
+      await first;
+    });
+    await waitFor(() => expect(mockApi.games.get.mock.calls.length).toBe(calls + 2));
+  });
+
   it('does not touch the network in bot mode', async () => {
     const { result, onGameEnd } = renderLearningHook({ isBot: true, gameId: 'game-1' });
     expect(result.current.playerScore).toBe(0);

@@ -20,6 +20,8 @@ const ACTION_TYPES = Object.freeze({
   PLACE: 'place',
   GUESS: 'guess',
   SOLVE: 'solve',
+  PICK: 'pick',
+  REPORT: 'report',
   RESIGN: 'resign',
 });
 
@@ -73,7 +75,8 @@ const normalizeActionEnvelope = (body) => {
 
   const envelope = { actionId, roundId, type };
 
-  if (type === ACTION_TYPES.ANSWER) {
+  // Bilgi Yarışı answers and the Çiz Bil word choice both name an option.
+  if (type === ACTION_TYPES.ANSWER || type === ACTION_TYPES.PICK) {
     const optionIndex = Number(body?.optionIndex);
     if (!Number.isInteger(optionIndex) || optionIndex < 0 || optionIndex > MAX_OPTION_INDEX) {
       return { ok: false, code: 'INVALID_OPTION', message: 'Cevap seçeneği geçersiz.' };

@@ -136,9 +136,13 @@ Strokes are the only player input on Socket.IO (`draw_strokes`, owner-approved
 2026-10-24). The server reduces a packet to `{t:'line', id, c, w, p:[[x,y]…]}` or
 `{t:'clear'}` (integers, canvas 0..1000, 8 colours, 3 widths), accepts it only
 from the current drawer of an open drawing (turn cached 1 s, rechecked once on a
-miss), limits 30 packets/s per socket, 128 points per packet and 6000 per round,
-stores it in Redis (`cafeduo:draw:{gameId}:{roundId}`, 1 h TTL; memory fallback)
-and relays it to the room. `GET /api/games/:id/strokes` replays the current
+miss, at most every 250 ms per game; a known non-drawer never triggers a
+reload), limits 30 packets/s per user (all its sockets), 128 points per packet
+and a budget of 6000 per round (each clear costs 25), stores it in Redis
+(`cafeduo:draw:{gameId}:{roundId}`, budget reserved with INCRBY, packet and TTLs
+in one MULTI, 1 h TTL; a failed write fails the packet) or, without Redis, in a
+memory fallback capped at 500 rounds, and relays it to the room. Expired or
+revoked sessions are dropped (revocation rechecked once a minute). `GET /api/games/:id/strokes` replays the current
 round to a participant. Strokes cannot change a score, a word or a clock. With
 several API containers the relay needs the Socket.IO Redis adapter.
 

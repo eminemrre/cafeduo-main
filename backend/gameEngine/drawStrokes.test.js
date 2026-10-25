@@ -1,5 +1,7 @@
 /** @jest-environment node */
 const {
+  CLEAR_COST,
+  MAX_MEMORY_ROUNDS,
   MAX_POINTS_PER_PACKET,
   MAX_POINTS_PER_ROUND,
   createRateLimiter,
@@ -22,7 +24,8 @@ describe('validateStrokePacket', () => {
       ok: true,
       gameId: '77',
       roundId: 'r2',
-      points: 2,
+      // A clear carries no points but still costs budget, so clears cannot flood a round.
+      points: 2 + CLEAR_COST,
       ops: [{ t: 'line', id: 3, c: 0, w: 1, p: [[0, 0], [1000, 1000]] }, { t: 'clear' }],
     });
   });
@@ -67,23 +70,38 @@ describe('createStrokeStore (memory)', () => {
   });
 });
 
+describe('createStrokeStore (memory limits)', () => {
+  it('refuses new rounds once the memory fallback holds too many', async () => {
+    const store = createStrokeStore({ redis: null, now: () => 0 });
+    for (let i = 0; i < MAX_MEMORY_ROUNDS; i += 1) {
+      expect(await store.append(String(i), 'r1', [line(1, pts(1))], 1)).toEqual({ ok: true });
+    }
+    expect(await store.append('new', 'r1', [line(1, pts(1))], 1)).toEqual({ ok: false, code: 'STORE_FULL' });
+    // An existing round keeps drawing.
+    expect(await store.append('0', 'r1', [line(1, pts(1))], 1)).toEqual({ ok: true });
+  });
+});
+
 describe('createStrokeStore (redis)', () => {
-  const fakeRedis = () => {
+  const fakeRedis = ({ failExec = false } = {}) => {
     const lists = new Map();
     const counters = new Map();
     const multi = () => {
       const steps = [];
       const chain = {
-        incrby: (key, by) => (steps.push(() => counters.set(key, (counters.get(key) || 0) + by) && counters.get(key)), chain),
         rpush: (key, value) => (steps.push(() => lists.set(key, [...(lists.get(key) || []), value]).get(key).length), chain),
         expire: () => (steps.push(() => 1), chain),
-        exec: async () => steps.map((step) => [null, step()]),
+        exec: async () => {
+          if (failExec) throw new Error('connection lost');
+          return steps.map((step) => [null, step()]);
+        },
       };
       return chain;
     };
     return {
       status: 'ready',
       lists,
+      counters,
       multi,
       incrby: async (key, by) => {
         counters.set(key, (counters.get(key) || 0) + by);
@@ -110,6 +128,14 @@ describe('createStrokeStore (redis)', () => {
       code: 'ROUND_FULL',
     });
     expect(await store.list('7', 'r1')).toHaveLength(1);
+  });
+
+  it('fails a half-written packet instead of splitting the round between Redis and memory', async () => {
+    const redis = fakeRedis({ failExec: true });
+    const store = createStrokeStore({ redis, logger: { warn: jest.fn() } });
+    expect(await store.append('7', 'r1', [line(1, pts(2))], 2)).toEqual({ ok: false, code: 'STROKES_FAILED' });
+    expect(redis.counters.get('cafeduo:draw:7:r1:points')).toBe(0);
+    expect(await store.list('7', 'r1')).toEqual([]);
   });
 
   it('falls back to memory when Redis is not ready', async () => {

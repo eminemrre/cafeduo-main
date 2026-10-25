@@ -13,26 +13,55 @@ const { validateStrokePacket } = require('../gameEngine/drawStrokes');
 const sameName = (a, b) =>
   String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase() && Boolean(String(a || '').trim());
 
-/** Caches `loadTurn(gameId)` → `{ roundId, drawerName, open }` for `ttlMs`. */
-const createTurnCache = ({ loadTurn, ttlMs = 1000, now = Date.now, maxEntries = 500 }) => {
+/**
+ * Caches `loadTurn(gameId)` → `{ roundId, drawerName, open }` for `ttlMs`.
+ * A `fresh` read reloads at most once per `minFreshMs` per game, and
+ * concurrent reloads of one game share a single query.
+ */
+const createTurnCache = ({ loadTurn, ttlMs = 1000, minFreshMs = 250, now = Date.now, maxEntries = 500 }) => {
   const cache = new Map();
+  const inFlight = new Map();
+  const load = (gameId) => {
+    if (inFlight.has(gameId)) return inFlight.get(gameId);
+    const pending = Promise.resolve(loadTurn(gameId))
+      .then((turn) => {
+        if (cache.size >= maxEntries && !cache.has(gameId)) cache.delete(cache.keys().next().value);
+        cache.set(gameId, { turn, at: now() });
+        return turn;
+      })
+      .finally(() => inFlight.delete(gameId));
+    inFlight.set(gameId, pending);
+    return pending;
+  };
   return {
     async get(gameId, { fresh = false } = {}) {
       const hit = cache.get(gameId);
-      if (!fresh && hit && now() - hit.at < ttlMs) return hit.turn;
-      const turn = await loadTurn(gameId);
-      if (cache.size >= maxEntries) cache.delete(cache.keys().next().value);
-      cache.set(gameId, { turn, at: now() });
-      return turn;
+      const age = hit ? now() - hit.at : Infinity;
+      if (hit && (fresh ? age < minFreshMs : age < ttlMs)) return hit.turn;
+      return load(gameId);
     },
   };
 };
 
-const createDrawStrokeHandler = ({ socket, turns, store, limiter, logger }) => {
+const AUTH_RECHECK_MS = 60_000;
+
+const createDrawStrokeHandler = ({ socket, turns, store, limiter, logger, now = Date.now }) => {
   const refuse = (code) => socket.emit('draw_rejected', { code });
+  // One budget per user, however many sockets it opens.
+  const budgetKey = `user:${socket.userId ?? String(socket.username || '').toLowerCase()}`;
+  let authCheckedAt = -Infinity;
+
+  /** Expired or revoked sessions are dropped; revocation is checked once a minute. */
+  const sessionValid = async () => {
+    if (Number.isFinite(socket.tokenExpiresAt) && now() >= socket.tokenExpiresAt) return false;
+    if (typeof socket.isSessionRevoked !== 'function' || now() - authCheckedAt < AUTH_RECHECK_MS) return true;
+    const revoked = await socket.isSessionRevoked();
+    authCheckedAt = now();
+    return !revoked;
+  };
 
   return async (payload) => {
-    if (!limiter.take(socket.id)) return;
+    if (!limiter.take(budgetKey)) return;
     const packet = validateStrokePacket(payload);
     if (!packet.ok) {
       refuse(packet.code);
@@ -46,9 +75,18 @@ const createDrawStrokeHandler = ({ socket, turns, store, limiter, logger }) => {
     const allowed = (turn) =>
       Boolean(turn) && turn.open && turn.roundId === roundId && sameName(turn.drawerName, socket.username);
     try {
+      if (!(await sessionValid())) {
+        refuse('AUTH_EXPIRED');
+        socket.disconnect(true);
+        return;
+      }
       let turn = await turns.get(gameId);
-      // The cache may predate the pick or the next round; check once more.
-      if (!allowed(turn)) turn = await turns.get(gameId, { fresh: true });
+      // The cache may predate the pick or the next round: reload (throttled)
+      // for the cached drawer or another round, never for a known non-drawer.
+      const cachedDrawer = Boolean(turn) && sameName(turn.drawerName, socket.username);
+      if (!allowed(turn) && (!turn || turn.roundId !== roundId || cachedDrawer)) {
+        turn = await turns.get(gameId, { fresh: true });
+      }
       if (!allowed(turn)) {
         refuse('NOT_DRAWING');
         return;

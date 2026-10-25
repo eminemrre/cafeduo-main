@@ -417,7 +417,6 @@ io.on('connection', (socket) => {
   );
 
   socket.on('disconnect', () => {
-    strokeLimiter.forget(socket.id);
     logger.info(`Client disconnected: ${socket.id} (User: ${socket.username})`);
   });
 });

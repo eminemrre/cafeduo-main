@@ -17,6 +17,11 @@ const CANVAS_MAX = 1000;
 const MAX_OPS_PER_PACKET = 8;
 const MAX_POINTS_PER_PACKET = 128;
 const MAX_POINTS_PER_ROUND = 6000;
+/** A clear has no points but costs budget, so clears cannot flood a round (≤ 240). */
+const CLEAR_COST = 25;
+/** Rounds the memory fallback keeps at once; beyond that new rounds are refused. */
+const MAX_MEMORY_ROUNDS = 500;
+const MEMORY_PRUNE_MS = 1000;
 const MAX_STROKE_ID = 9999;
 const COLOR_COUNT = 8;
 const WIDTH_COUNT = 3;
@@ -37,11 +42,14 @@ const validateStrokePacket = (payload) => {
   const source = payload.ops;
   if (!Array.isArray(source) || source.length === 0 || source.length > MAX_OPS_PER_PACKET) return invalid;
   const ops = [];
+  /** Budget the packet costs: its points plus CLEAR_COST per clear. */
   let points = 0;
+  let lineLength = 0;
   for (const op of source) {
     if (!op || typeof op !== 'object') return invalid;
     if (op.t === 'clear') {
       ops.push({ t: 'clear' });
+      points += CLEAR_COST;
       continue;
     }
     if (op.t !== 'line') return invalid;
@@ -49,8 +57,9 @@ const validateStrokePacket = (payload) => {
       return invalid;
     }
     if (!Array.isArray(op.p) || op.p.length === 0) return invalid;
+    lineLength += op.p.length;
+    if (lineLength > MAX_POINTS_PER_PACKET) return invalid;
     points += op.p.length;
-    if (points > MAX_POINTS_PER_PACKET) return invalid;
     const p = [];
     for (const point of op.p) {
       if (!Array.isArray(point) || point.length !== 2 || !isCoord(point[0]) || !isCoord(point[1])) return invalid;
@@ -67,6 +76,7 @@ const validateStrokePacket = (payload) => {
  */
 const createStrokeStore = ({ redis = null, now = Date.now, logger = null } = {}) => {
   const memory = new Map();
+  let prunedAt = -Infinity;
   const keyOf = (gameId, roundId) => `cafeduo:draw:${gameId}:${roundId}`;
   const redisReady = () => Boolean(redis) && redis.status === 'ready';
 
@@ -80,12 +90,16 @@ const createStrokeStore = ({ redis = null, now = Date.now, logger = null } = {})
   };
   const pruneMemory = () => {
     const at = now();
+    if (at - prunedAt < MEMORY_PRUNE_MS) return;
+    prunedAt = at;
     for (const [key, entry] of memory) if (entry.expiresAt <= at) memory.delete(key);
   };
 
   const appendMemory = (key, ops, points) => {
     pruneMemory();
-    const entry = memoryEntry(key) || { packets: [], points: 0, expiresAt: 0 };
+    const existing = memoryEntry(key);
+    if (!existing && memory.size >= MAX_MEMORY_ROUNDS) return { ok: false, code: 'STORE_FULL' };
+    const entry = existing || { packets: [], points: 0, expiresAt: 0 };
     if (entry.points + points > MAX_POINTS_PER_ROUND) return { ok: false, code: 'ROUND_FULL' };
     entry.points += points;
     entry.packets.push(ops);
@@ -97,19 +111,32 @@ const createStrokeStore = ({ redis = null, now = Date.now, logger = null } = {})
   const append = async (gameId, roundId, ops, points) => {
     const key = keyOf(gameId, roundId);
     if (redisReady()) {
+      // The budget is reserved atomically first; the packet and both TTLs are
+      // then written in one MULTI. A failed write gives the budget back and
+      // fails the packet rather than splitting a round between Redis and memory.
+      const counterKey = `${key}:points`;
+      let reserved = false;
       try {
-        const counterKey = `${key}:points`;
         const total = await redis.incrby(counterKey, points);
+        reserved = true;
         if (total > MAX_POINTS_PER_ROUND) {
           await redis.decrby(counterKey, points);
           return { ok: false, code: 'ROUND_FULL' };
         }
-        await redis.rpush(key, JSON.stringify(ops));
-        await redis.expire(key, STROKE_TTL_SECONDS);
-        await redis.expire(counterKey, STROKE_TTL_SECONDS);
+        const results = await redis
+          .multi()
+          .rpush(key, JSON.stringify(ops))
+          .expire(key, STROKE_TTL_SECONDS)
+          .expire(counterKey, STROKE_TTL_SECONDS)
+          .exec();
+        if (!Array.isArray(results) || results.some((entry) => entry && entry[0])) {
+          throw new Error('stroke write failed');
+        }
         return { ok: true };
       } catch (error) {
-        logger?.warn?.('Stroke store fell back to memory', { error: error?.message });
+        logger?.warn?.('Stroke write failed', { error: error?.message });
+        if (reserved) await Promise.resolve(redis.decrby(counterKey, points)).catch(() => {});
+        return { ok: false, code: 'STROKES_FAILED' };
       }
     }
     return appendMemory(key, ops, points);
@@ -132,12 +159,17 @@ const createStrokeStore = ({ redis = null, now = Date.now, logger = null } = {})
   return { append, list };
 };
 
-/** Token bucket per key (socket id). */
-const createRateLimiter = ({ perSecond = 30, burst = perSecond, now = Date.now } = {}) => {
+/** Token bucket per key (a user); idle full buckets are dropped past `maxKeys`. */
+const createRateLimiter = ({ perSecond = 30, burst = perSecond, now = Date.now, maxKeys = 5000 } = {}) => {
   const buckets = new Map();
+  const refillMs = (burst / perSecond) * 1000;
   return {
     take(key) {
       const at = now();
+      if (buckets.size >= maxKeys && !buckets.has(key)) {
+        for (const [other, bucket] of buckets) if (at - bucket.at >= refillMs) buckets.delete(other);
+        if (buckets.size >= maxKeys) return false;
+      }
       const bucket = buckets.get(key) || { tokens: burst, at };
       bucket.tokens = Math.min(burst, bucket.tokens + ((at - bucket.at) * perSecond) / 1000);
       bucket.at = at;
@@ -154,6 +186,8 @@ const createRateLimiter = ({ perSecond = 30, burst = perSecond, now = Date.now }
 
 module.exports = {
   CANVAS_MAX,
+  CLEAR_COST,
+  MAX_MEMORY_ROUNDS,
   COLOR_COUNT,
   MAX_OPS_PER_PACKET,
   MAX_POINTS_PER_PACKET,

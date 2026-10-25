@@ -133,6 +133,10 @@ const socketAuthMiddleware = async (socket, next) => {
     socket.userId = user.id;
     socket.username = user.username;
     socket.tokenSource = tokenSource;
+    // Sockets now carry one player input (Çiz Bil strokes), so handlers can
+    // recheck the session: when the token expires and whether it was revoked.
+    socket.tokenExpiresAt = Number.isFinite(decoded.exp) ? decoded.exp * 1000 : null;
+    socket.isSessionRevoked = () => isTokenRevoked(token);
 
     logger.info('Socket authenticated successfully', {
       socketId: socket.id,

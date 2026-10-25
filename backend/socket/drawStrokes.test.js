@@ -9,26 +9,39 @@ const packet = (extra = {}) => ({
   ...extra,
 });
 
-const setup = ({ username = 'Ada', turn = { roundId: 'r1', drawerName: 'ada', open: true }, rooms = ['77'] } = {}) => {
+const setup = ({
+  username = 'Ada',
+  turn = { roundId: 'r1', drawerName: 'ada', open: true },
+  rooms = ['77'],
+  socketId = 's1',
+  limiter = createRateLimiter({ perSecond: 30, now: () => 0 }),
+  auth = {},
+  clock = () => 0,
+} = {}) => {
   const relayed = [];
   const rejected = [];
   const socket = {
-    id: 's1',
+    id: socketId,
     username,
+    userId: username.toLowerCase(),
+    tokenExpiresAt: auth.expiresAt ?? null,
+    isSessionRevoked: auth.revoked || (async () => false),
+    disconnect: jest.fn(),
     rooms: new Set(['s1', ...rooms]),
     to: jest.fn((room) => ({ emit: (event, payload) => relayed.push({ room, event, payload }) })),
     emit: jest.fn((event, payload) => rejected.push({ event, payload })),
   };
   let current = turn;
   const loadTurn = jest.fn(async () => current);
-  const turns = createTurnCache({ loadTurn, ttlMs: 1000, now: () => 0 });
+  const turns = createTurnCache({ loadTurn, ttlMs: 1000, minFreshMs: 250, now: clock });
   const store = createStrokeStore({ redis: null });
   const handle = createDrawStrokeHandler({
     socket,
     turns,
     store,
-    limiter: createRateLimiter({ perSecond: 30, now: () => 0 }),
+    limiter,
     logger: { warn: jest.fn() },
+    now: clock,
   });
   return { socket, relayed, rejected, store, loadTurn, handle, setTurn: (next) => (current = next) };
 };
@@ -61,12 +74,66 @@ describe('draw_strokes socket handler', () => {
   });
 
   it('rechecks a stale cached turn once before refusing (the pick just landed)', async () => {
-    const { relayed, loadTurn, handle, setTurn } = setup({ turn: { roundId: 'r1', drawerName: 'ada', open: false } });
+    let now = 0;
+    const { relayed, loadTurn, handle, setTurn } = setup({
+      turn: { roundId: 'r1', drawerName: 'ada', open: false },
+      clock: () => now,
+    });
     await handle(packet()); // caches the closed turn and refuses
     setTurn({ roundId: 'r1', drawerName: 'ada', open: true });
+    now = 300; // fresh reloads are spaced 250 ms apart per game
     await handle(packet());
     expect(relayed).toHaveLength(1);
-    expect(loadTurn).toHaveBeenCalledTimes(3);
+    // The first refusal needed no second query: the turn had just been loaded.
+    expect(loadTurn).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not reload the turn for a sender who is not the cached drawer of that round', async () => {
+    const { loadTurn, handle } = setup({ username: 'Bora' });
+    for (let i = 0; i < 10; i += 1) await handle(packet());
+    expect(loadTurn).toHaveBeenCalledTimes(1);
+  });
+
+  it('reloads for a new round at most once per 250 ms', async () => {
+    let now = 0;
+    const { loadTurn, relayed, handle, setTurn } = setup({ username: 'Bora', clock: () => now });
+    await handle(packet({ roundId: 'r2' })); // loads r1 by ada; that read is fresh enough
+    await handle(packet({ roundId: 'r2' }));
+    await handle(packet({ roundId: 'r2' }));
+    expect(loadTurn).toHaveBeenCalledTimes(1);
+    setTurn({ roundId: 'r2', drawerName: 'bora', open: true });
+    now = 300;
+    await handle(packet({ roundId: 'r2' }));
+    expect(loadTurn).toHaveBeenCalledTimes(2);
+    expect(relayed).toHaveLength(1);
+  });
+
+  it('shares the packet budget across the sockets of one user', async () => {
+    const limiter = createRateLimiter({ perSecond: 30, now: () => 0 });
+    const first = setup({ limiter, socketId: 's1' });
+    const second = setup({ limiter, socketId: 's2' });
+    for (let i = 0; i < 20; i += 1) await first.handle(packet());
+    for (let i = 0; i < 20; i += 1) await second.handle(packet());
+    expect(first.relayed.length + second.relayed.length).toBe(30);
+  });
+
+  it('drops an expired or revoked session and checks revocation at most once a minute', async () => {
+    const expired = setup({ auth: { expiresAt: -1 } });
+    await expired.handle(packet());
+    expect(expired.rejected[0]).toMatchObject({ payload: { code: 'AUTH_EXPIRED' } });
+    expect(expired.socket.disconnect).toHaveBeenCalledWith(true);
+
+    let now = 0;
+    const revoked = jest.fn(async () => false);
+    const live = setup({ auth: { revoked }, clock: () => now });
+    await live.handle(packet());
+    await live.handle(packet());
+    expect(revoked).toHaveBeenCalledTimes(1);
+    revoked.mockResolvedValue(true);
+    now = 61_000;
+    await live.handle(packet());
+    expect(live.socket.disconnect).toHaveBeenCalledWith(true);
+    expect(live.relayed).toHaveLength(2);
   });
 
   it('drops a malformed packet and a flood without relaying', async () => {
@@ -80,14 +147,16 @@ describe('draw_strokes socket handler', () => {
 });
 
 describe('createTurnCache', () => {
-  it('serves a turn for ttlMs and reloads on demand', async () => {
+  it('serves a turn for ttlMs, reloads on demand at most every minFreshMs and shares a reload', async () => {
     let now = 0;
     const loadTurn = jest.fn(async () => ({ roundId: 'r1', drawerName: 'ada', open: true }));
-    const turns = createTurnCache({ loadTurn, ttlMs: 1000, now: () => now });
+    const turns = createTurnCache({ loadTurn, ttlMs: 1000, minFreshMs: 250, now: () => now });
     await turns.get('77');
     await turns.get('77');
-    expect(loadTurn).toHaveBeenCalledTimes(1);
     await turns.get('77', { fresh: true });
+    expect(loadTurn).toHaveBeenCalledTimes(1);
+    now = 300;
+    await Promise.all([turns.get('77', { fresh: true }), turns.get('77', { fresh: true })]);
     expect(loadTurn).toHaveBeenCalledTimes(2);
     now = 1500;
     await turns.get('77');

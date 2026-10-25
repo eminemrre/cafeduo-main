@@ -60,6 +60,9 @@ services:
       BLACKLIST_FAIL_MODE: '${BLACKLIST_FAIL_MODE:-closed}'
       # Server-authoritative ranked games; set in the server-managed .env.
       GAME_ENGINE_V2_ENABLED: '${GAME_ENGINE_V2_ENABLED:-false}'
+      # Adam Asmaca's private word bank, written by the deploy from a GitHub
+      # secret; without a valid file that game stays closed.
+      WORD_BANK_PATH: /run/cafeduo/words.json
       TRUST_PROXY: '${TRUST_PROXY:-1}'
       RATE_LIMIT_WINDOW_MS: '${RATE_LIMIT_WINDOW_MS:-900000}'
       RATE_LIMIT_MAX_REQUESTS: '${RATE_LIMIT_MAX_REQUESTS:-600}'
@@ -75,6 +78,8 @@ services:
       RESEND_FROM: '${RESEND_FROM:-CafeDuo <noreply@cafeduotr.com>}'
       # Keep internal database error details out of public responses.
       EXPOSE_API_ERRORS: '${EXPOSE_API_ERRORS:-false}'
+    volumes:
+      - '${WORD_BANK_HOST_PATH:-/opt/cafeduo-secrets/words.json}:/run/cafeduo/words.json:ro'
     expose:
       - '3001'
 

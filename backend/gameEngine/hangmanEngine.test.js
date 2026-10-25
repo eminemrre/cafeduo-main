@@ -11,7 +11,7 @@ const {
   createHangmanPublicState,
   startHangmanState,
 } = require('./hangmanEngine');
-const words = require('./data/words.json');
+const words = require('./data/words.fixture.json');
 
 const ROUNDS = [
   { word: 'kahve', category: 'Yiyecek ve içecek', difficulty: 1 },

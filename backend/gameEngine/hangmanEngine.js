@@ -17,7 +17,7 @@
  */
 
 const { randomInt: cryptoRandomInt } = require('crypto');
-const words = require('./data/words.json');
+const { getWordBank } = require('./wordBank');
 const { ACTION_TYPES } = require('./actionProtocol');
 
 const HANGMAN_ROUND_COUNT = 3;
@@ -39,7 +39,8 @@ const playerKeys = ['host', 'guest'];
 const otherKey = (key) => (key === 'host' ? 'guest' : 'host');
 
 /** One word per difficulty (1, 2, 3), each from a different category. */
-const pickRounds = (randomInt) => {
+const pickRounds = (randomInt, words) => {
+  if (!Array.isArray(words) || !words.length) throw new Error('Hangman word bank is unavailable');
   const used = new Set();
   const rounds = [];
   for (const difficulty of [1, 2, 3]) {
@@ -51,10 +52,13 @@ const pickRounds = (randomInt) => {
   return rounds;
 };
 
-const createHangmanPrivateState = ({ randomInt = (max) => cryptoRandomInt(0, max) } = {}) => ({
+const createHangmanPrivateState = ({
+  randomInt = (max) => cryptoRandomInt(0, max),
+  words = getWordBank().words,
+} = {}) => ({
   version: 2,
   kind: 'hangman',
-  rounds: pickRounds(randomInt),
+  rounds: pickRounds(randomInt, words),
   boards: {},
   actions: { host: {}, guest: {} },
 });

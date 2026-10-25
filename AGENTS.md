@@ -158,7 +158,10 @@ npm run migrate:status   # when touching migrations
   three different categories, six wrong letters. `guess {letter}` takes one Turkish letter
   (`shared/turkishText.js`: `I → ı`, `İ → i`); `solve {word}` takes the whole word and a wrong
   one costs two lives. A solved board scores `10 + 2 × lives left + floor(seconds left / 6)`,
-  an unsolved one the positions it opened. Words live in `game_private_state`; the public round
+  an unsolved one the positions it opened. **The ranked word bank never enters this public
+  repo** (`backend/gameEngine/data/words.json` is git-ignored): production loads it from
+  `WORD_BANK_PATH`, written by Deploy VPS from the `WORD_BANK_GZ_B64` secret, and fails closed
+  (`503 GAME_UNAVAILABLE`); dev and tests use `data/words.fixture.json`. Words live in `game_private_state`; the public round
   carries length, category, difficulty, the life limit and each board's counts, a board's
   letters reach only its owner as `actorView.hangman`, and the word is published only after its
   round closes (both the engine and `gameView` strip it while open). Practice is local, unranked

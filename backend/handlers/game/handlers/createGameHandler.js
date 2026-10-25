@@ -12,7 +12,7 @@ const {
   isGameEngineV2Enabled,
 } = require('../../../utils/gameEngineConfig');
 const { serializeGameForActor } = require('../../../gameEngine/gameView');
-const { createEnginePrivateState } = require('../../../gameEngine/engines');
+const { createEnginePrivateState, isEngineAvailable } = require('../../../gameEngine/engines');
 
 const createCreateGameHandler = (deps) => {
   const {
@@ -27,6 +27,7 @@ const createCreateGameHandler = (deps) => {
     setMemoryGames,
     emitLobbyUpdate,
   } = deps;
+  const engineAvailable = deps.isEngineAvailable || isEngineAvailable;
 
   const createGame = async (req, res) => {
     const hostName = String(req.user?.username || '').trim();
@@ -63,6 +64,14 @@ const createCreateGameHandler = (deps) => {
       return res.status(503).json({
         error: 'Sıralı oyunlar sunucu doğrulamasına geçiyor. Kısa bir süre yeni maç açılamıyor.',
         code: 'GAME_ENGINE_MAINTENANCE',
+      });
+    }
+    // An engine whose private data is missing (Adam Asmaca without its word
+    // bank) stays closed rather than starting on a fallback.
+    if (!engineAvailable(gameType)) {
+      return res.status(503).json({
+        error: 'Bu oyun şu an açılamıyor. Biraz sonra yeniden dene.',
+        code: 'GAME_UNAVAILABLE',
       });
     }
 

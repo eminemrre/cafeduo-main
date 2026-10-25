@@ -84,8 +84,8 @@ player's own fleet is projected as `actorView.fleet` by the authenticated
 action/GET only, never by sockets, lobby, join, active-game or history. The
 practice match against the bot is local and unranked.
 
-Adam Asmaca (`backend/gameEngine/hangmanEngine.js`, words in
-`backend/gameEngine/data/words.json`): both players solve **the same hidden
+Adam Asmaca (`backend/gameEngine/hangmanEngine.js`, words from
+`backend/gameEngine/wordBank.js`): both players solve **the same hidden
 word at the same time**, each on their own board, so neither can copy the
 other's letters. Three 60 s rounds, one word per difficulty (1, 2, 3) from three
 different categories, six wrong letters per board. `guess {letter}` takes one
@@ -95,6 +95,20 @@ takes the whole word and a wrong one costs two lives. A solved board scores
 positions it opened. A round closes when both boards are done or the clock runs
 out, shows the word and its score deltas for 2.5 s, then opens the next one;
 after the third, the higher total wins (equal is a draw).
+The ranked word bank is **not in the repository**: the repo is public and the
+public round names the word's length and category, so a published bank would
+let a script solve before the first letter. Production reads it from
+`WORD_BANK_PATH` (`/run/cafeduo/words.json`, a read-only bind mount of
+`/opt/cafeduo-secrets/words.json`). The Deploy VPS workflow decodes the
+`WORD_BANK_GZ_B64` secret (`gzip -9 words.json | base64 -w0`), checks it with
+`npm run words:check -- <file>` (strict: ≥600 words, ≥55 per category, ≥12 per
+category and difficulty; output masks the words), writes it atomically and
+asserts `checks.wordBank` on `/api/readiness`. Without a valid file production
+answers `503 GAME_UNAVAILABLE` on create and never falls back to the fixture.
+Development, Jest and Playwright use `backend/gameEngine/data/words.fixture.json`
+(60 words, none in the real bank). To change the bank, edit the private copy,
+run `WORD_BANK_PATH=<file> npx jest backend/gameEngine/wordBank.test.js
+lib/hangmanPractice.test.ts`, then update the secret.
 The words live only in `game_private_state`. The public round carries the
 word's length, category, difficulty, the life limit and each board's counts
 (opened positions, wrong letters, solved, done); a board's letters reach only

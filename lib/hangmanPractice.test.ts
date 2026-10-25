@@ -1,8 +1,9 @@
 /**
  * Adam Asmaca practice: a local, unranked duel against a bot.
  *
- * The practice word list is deliberately separate from the server bank
- * (`backend/gameEngine/data/words.json`); this suite keeps them apart.
+ * The practice word list is deliberately separate from the ranked bank (kept
+ * outside the repository, checked here when WORD_BANK_PATH points at it) and
+ * from the development fixture; this suite keeps them apart.
  */
 import {
   BOT_MISTAKE_RATE,
@@ -17,7 +18,13 @@ import {
   solveWord,
 } from './hangmanPractice';
 
-const serverWords = require('../backend/gameEngine/data/words.json') as { word: string }[];
+const fs = require('fs') as typeof import('fs');
+const fixtureWords = require('../backend/gameEngine/data/words.fixture.json') as { word: string }[];
+const realBankPath = process.env.WORD_BANK_PATH;
+const serverWords: { word: string }[] = [
+  ...fixtureWords,
+  ...(realBankPath ? (JSON.parse(fs.readFileSync(realBankPath, 'utf8')) as { word: string }[]) : []),
+];
 const { isTurkishLetter } = require('../shared/turkishText') as {
   isTurkishLetter: (value: string) => boolean;
 };

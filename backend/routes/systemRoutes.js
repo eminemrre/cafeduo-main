@@ -1,4 +1,5 @@
 const express = require('express');
+const { isWordBankReady: defaultWordBankReady } = require('../gameEngine/wordBank');
 
 const createSystemRoutes = ({
   appVersion,
@@ -6,6 +7,7 @@ const createSystemRoutes = ({
   isDbConnected,
   getRedisStatus = () => ({ status: 'unknown' }),
   getSocketStatus = () => ({ connectedClients: 0 }),
+  isWordBankReady = defaultWordBankReady,
 }) => {
   const router = express.Router();
 
@@ -50,6 +52,8 @@ const createSystemRoutes = ({
       database: false,
       redis: getRedisStatus(),
       socket: getSocketStatus(),
+      // Adam Asmaca's private word bank (WORD_BANK_PATH); without it that game stays closed.
+      wordBank: isWordBankReady(),
     };
 
     try {

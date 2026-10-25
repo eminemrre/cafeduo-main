@@ -6,5 +6,6 @@ export const gameChipFill = (gameType: string) => {
   if (gameType === 'Nişancı Düellosu') return 'bg-candy-lokum';
   if (gameType === 'Amiral Battı') return 'bg-candy-deniz';
   if (gameType === 'Adam Asmaca') return 'bg-candy-lavanta';
+  if (gameType === 'Çiz Bil') return 'bg-candy-portakal';
   return 'bg-paper-dim';
 };

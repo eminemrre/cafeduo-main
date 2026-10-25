@@ -18,6 +18,7 @@ import type {
   TournamentLeaderboardResponse,
 } from '../types';
 import { getViteEnvVar } from './viteEnv';
+import type { StrokeOp } from './drawCanvas';
 
 const withProtocol = (url: string): string => {
   if (url.startsWith('/') || /^https?:\/\//i.test(url)) return url;
@@ -533,6 +534,11 @@ export const api = {
 
     get: async (gameId: number | string): Promise<GameRequest> => {
       return await fetchAPI(`/games/${gameId}`);
+    },
+
+    /** Çiz Bil: the current round's strokes, for a reload or reconnect. */
+    strokes: async (gameId: number | string): Promise<{ roundId: string | null; ops: StrokeOp[] }> => {
+      return await fetchAPI(`/games/${gameId}/strokes`);
     },
 
     action: async (

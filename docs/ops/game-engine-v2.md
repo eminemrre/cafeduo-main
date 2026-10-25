@@ -7,8 +7,8 @@
 > [game-authority-review.md](game-authority-review.md)); production runs a single
 > API container.
 
-CafeDuo's ranked **Bilgi Yarışı**, **Nişancı Düellosu**, **Amiral Battı** and
-**Adam Asmaca** matches are run by the server. The client renders public snapshots and sends
+CafeDuo's ranked **Bilgi Yarışı**, **Nişancı Düellosu**, **Amiral Battı**,
+**Adam Asmaca** and **Çiz Bil** matches are run by the server. The client renders public snapshots and sends
 actions; it never sends a score, a hit, a winner, a fleet, a clock value or a
 settlement flag.
 
@@ -117,6 +117,30 @@ has closed. Both the engine and `gameView` enforce that: an open round's `word`
 is stripped even if it leaked into the public state. The practice match is local
 and unranked, and its word list (`lib/hangmanPractice.ts`) is disjoint from the
 server bank; the client bundle contains none of the ranked words.
+
+Çiz Bil (`backend/gameEngine/drawEngine.js`, same private bank, `drawable: false`
+words excluded): four rounds, host draws r1 and r3. `choosing` gives the drawer
+10 s to `pick {optionIndex}` one of three words (difficulty 1, 2, 3); when time
+runs out the seeded `autoPick` is used. `drawing` lasts 75 s: the guesser sends
+`solve {word}` (at most 40 per round; a one-letter miss is marked `close` in the
+public guess log) or `report` (the drawer wrote letters: the round closes with no
+points). One letter opens at 30 s and another at 50 s; `phaseEndsAt` is the next
+hint while drawing, so readers and the deadline job open hints on time, and
+`round.endsAt` is the end of the drawing. A right guess scores
+`round((10 + floor(seconds left / 5)) × 1 | 1.2 | 1.5)` for the guesser and half
+(floored) for the drawer, then `reveal` shows the word for 3 s. The choices and
+the word live in `game_private_state` (the picked index `round.pick` is in the
+public engine but never serialized); the drawer gets them as `actorView.draw`.
+
+Strokes are the only player input on Socket.IO (`draw_strokes`, owner-approved
+2026-10-24). The server reduces a packet to `{t:'line', id, c, w, p:[[x,y]…]}` or
+`{t:'clear'}` (integers, canvas 0..1000, 8 colours, 3 widths), accepts it only
+from the current drawer of an open drawing (turn cached 1 s, rechecked once on a
+miss), limits 30 packets/s per socket, 128 points per packet and 6000 per round,
+stores it in Redis (`cafeduo:draw:{gameId}:{roundId}`, 1 h TTL; memory fallback)
+and relays it to the room. `GET /api/games/:id/strokes` replays the current
+round to a participant. Strokes cannot change a score, a word or a clock. With
+several API containers the relay needs the Socket.IO Redis adapter.
 
 ## Settlement
 

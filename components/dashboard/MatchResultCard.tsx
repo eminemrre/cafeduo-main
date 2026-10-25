@@ -15,7 +15,7 @@ import { popIn, reducedFade } from '../ui/motionVariants';
 
 /** Oyun bileşenlerinin maç bitiminde elinde olan, tamamı client-side istatistikler. */
 export interface MatchStats {
-  kind: 'chess' | 'quiz' | 'arena' | 'battleship' | 'hangman';
+  kind: 'chess' | 'quiz' | 'arena' | 'battleship' | 'hangman' | 'draw';
   /** Amiral Battı: ship cells hit (of 12). */
   playerScore?: number;
   opponentScore?: number;

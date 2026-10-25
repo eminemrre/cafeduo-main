@@ -23,7 +23,7 @@ import { socketService } from '../lib/socket';
  */
 
 export interface LiveMatchStats {
-  kind: 'quiz' | 'arena' | 'battleship' | 'hangman';
+  kind: 'quiz' | 'arena' | 'battleship' | 'hangman' | 'draw';
   playerScore: number;
   opponentScore: number;
   durationMs: number;
@@ -31,7 +31,16 @@ export interface LiveMatchStats {
   correctAnswers?: number;
 }
 
-export type LiveActionType = 'answer' | 'joker' | 'fire' | 'place' | 'guess' | 'solve' | 'resign';
+export type LiveActionType =
+  | 'answer'
+  | 'joker'
+  | 'fire'
+  | 'place'
+  | 'guess'
+  | 'solve'
+  | 'pick'
+  | 'report'
+  | 'resign';
 
 export interface LiveActionInput {
   type: LiveActionType;
@@ -66,7 +75,7 @@ export interface UseLiveScoreGameOptions {
   /** Fallback polling interval; never below 15 s for competitive games. */
   pollIntervalMs?: number;
   logName?: string;
-  statsKind: 'quiz' | 'arena' | 'battleship' | 'hangman';
+  statsKind: 'quiz' | 'arena' | 'battleship' | 'hangman' | 'draw';
   onGameEnd: (winner: string, points: number, stats?: LiveMatchStats) => void;
 }
 
@@ -480,6 +489,15 @@ export function useLiveScoreGame(options: UseLiveScoreGameOptions): UseLiveScore
           actorKey &&
           incoming.players?.[actorKey]?.placed &&
           !base.actorView?.fleet?.length
+        ) {
+          void fetchSnapshot(true);
+        }
+        // Çiz Bil: the drawer's choices and word come only with the authenticated
+        // GET, so a new round or phase needs a refetch (a guess does not).
+        const before = base.gameState?.engine;
+        if (
+          incoming.kind === 'draw' &&
+          (before?.phase !== incoming.phase || before?.round?.id !== incoming.round?.id)
         ) {
           void fetchSnapshot(true);
         }

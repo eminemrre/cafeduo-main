@@ -253,8 +253,15 @@ export interface CompetitiveEngineRound {
     host: HangmanProgress | null;
     guest: HangmanProgress | null;
   };
-  /** Adam Asmaca: public only once the round is over. */
+  /** Adam Asmaca / Çiz Bil: public only once the round is over. */
   word?: string;
+  /** Çiz Bil: who draws this round, when the drawing started, opened hint letters and the guess log. */
+  drawer?: 'host' | 'guest';
+  drawStartedAt?: string;
+  hint?: (string | null)[];
+  guesses?: { text: string; close: boolean }[];
+  solved?: boolean;
+  reported?: boolean;
 }
 
 /** One player's board in Adam Asmaca, as counts only. */
@@ -307,9 +314,9 @@ export interface BattleshipLastShot {
 
 export interface CompetitiveEngineState {
   version: 2;
-  kind: 'quiz' | 'aim' | 'battleship' | 'hangman';
+  kind: 'quiz' | 'aim' | 'battleship' | 'hangman' | 'draw';
   revision: number;
-  phase: 'waiting' | 'open' | 'reveal' | 'placement' | 'battle' | 'finished';
+  phase: 'waiting' | 'open' | 'reveal' | 'placement' | 'battle' | 'choosing' | 'drawing' | 'finished';
   roundIndex: number;
   totalRounds: number;
   startedAt: string | null;
@@ -334,6 +341,13 @@ export interface CompetitiveGame extends GameRequest {
     fleet?: { size: number; cells: number[] }[];
     /** Adam Asmaca: the authenticated player's own board. */
     hangman?: HangmanBoard;
+    /** Çiz Bil: the drawer's three choices, then the picked word; the guesser only its role. */
+    draw?: {
+      roundId: string;
+      role: 'drawer' | 'guesser';
+      choices?: { word: string; difficulty: number }[];
+      word?: string;
+    };
   };
   winner?: string | null;
   createdAt?: string;
@@ -348,7 +362,7 @@ export interface CompetitiveGame extends GameRequest {
 export interface CompetitiveActionEnvelope {
   actionId: string;
   roundId: string;
-  type: 'answer' | 'joker' | 'fire' | 'place' | 'guess' | 'solve' | 'resign';
+  type: 'answer' | 'joker' | 'fire' | 'place' | 'guess' | 'solve' | 'pick' | 'report' | 'resign';
   optionIndex?: number;
   cell?: number;
   layout?: { cell: number; dir: 'h' | 'v' }[];

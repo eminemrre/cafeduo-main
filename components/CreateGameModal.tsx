@@ -1,8 +1,9 @@
 /**
  * CreateGameModal — "Yeni oyun kur", in the v2 language (DESIGN.md).
  *
- * Four game cards, each filled with its game's colour when picked (Retro
- * Satranç gök, Bilgi Yarışı limon, Nişancı Düellosu lokum, Amiral Battı deniz), the stake as a
+ * Six game cards, each filled with its game's colour when picked (Retro
+ * Satranç gök, Bilgi Yarışı limon, Nişancı Düellosu lokum, Amiral Battı deniz,
+ * Adam Asmaca lavanta, Çiz Bil portakal), the stake as a
  * range plus an underlined number input, preset chips, the optional chess
  * tempo and a slip-style summary that closes on an ink bar. Text content and
  * data-testid attributes are preserved so CreateGameModal.test.tsx passes:
@@ -36,13 +37,13 @@ interface CreateGameModalProps {
 }
 
 interface GameDef {
-  id: 'chess' | 'knowledge' | 'aim' | 'battleship' | 'hangman';
+  id: 'chess' | 'knowledge' | 'aim' | 'battleship' | 'hangman' | 'draw';
   name: string;
   category: string;
   description: string;
   minPoints: number;
-  /** The game's colour from DESIGN.md: gök, limon, lokum, deniz or lavanta. */
-  tone: 'gok' | 'limon' | 'lokum' | 'deniz' | 'lavanta';
+  /** The game's colour from DESIGN.md: gök, limon, lokum, deniz, lavanta or portakal. */
+  tone: 'gok' | 'limon' | 'lokum' | 'deniz' | 'lavanta' | 'portakal';
 }
 
 // PR #36 — stake bounds rewritten: minimum dropped (0-point matches OK for
@@ -91,6 +92,14 @@ const GAME_TYPES: GameDef[] = [
     minPoints: 0,
     tone: 'lavanta',
   },
+  {
+    id: 'draw',
+    name: 'Çiz Bil',
+    category: 'Kelime',
+    description: 'Sırayla çiz ve tahmin et; kelimeyi hızlı bulan da anlaşılır çizen de puan alır.',
+    minPoints: 0,
+    tone: 'portakal',
+  },
 ];
 
 const CHESS_TEMPO_OPTIONS = [
@@ -111,6 +120,7 @@ const TONE_FILL: Record<GameDef['tone'], string> = {
   lokum: 'bg-candy-lokum',
   deniz: 'bg-candy-deniz',
   lavanta: 'bg-candy-lavanta',
+  portakal: 'bg-candy-portakal',
 };
 
 export const CreateGameModal: React.FC<CreateGameModalProps> = ({

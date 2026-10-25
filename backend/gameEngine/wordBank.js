@@ -1,5 +1,5 @@
 /**
- * The ranked word bank of Adam Asmaca (and later Çiz Bil).
+ * The ranked word bank of Adam Asmaca and Çiz Bil.
  *
  * The repository is public, and the public round state names the word's
  * length and category, so a published bank would let a script solve before
@@ -29,10 +29,14 @@ const CATEGORIES = Object.freeze([
 ]);
 const DIFFICULTIES = Object.freeze([1, 2, 3]);
 const ENTRY_KEYS = 'category,difficulty,word';
+/** Optional: `drawable: false` keeps an abstract word out of Çiz Bil. */
+const OPTIONAL_KEYS = ['drawable'];
 const MIN_LETTERS = 3;
 const MAX_LETTERS = 12;
 /** A match takes one word per difficulty, each from a different category. */
 const MIN_CATEGORIES_PER_DIFFICULTY = 3;
+/** A Çiz Bil match takes four words of each difficulty. */
+const MIN_DRAWABLE_PER_DIFFICULTY = 4;
 /** The real bank: size and balance agreed for ranked play. */
 const STRICT = Object.freeze({ total: 600, perCategory: 55, perCell: 12 });
 const FIXTURE_PATH = path.join(__dirname, 'data', 'words.fixture.json');
@@ -47,8 +51,12 @@ const validateWordBank = (words, { strict = false } = {}) => {
       errors.push(`${at}: not an object`);
       return;
     }
-    if (Object.keys(entry).sort().join(',') !== ENTRY_KEYS) {
-      errors.push(`${at}: keys must be word, category, difficulty`);
+    const keys = Object.keys(entry).filter((key) => !OPTIONAL_KEYS.includes(key));
+    if (keys.sort().join(',') !== ENTRY_KEYS) {
+      errors.push(`${at}: keys must be word, category, difficulty (and optional drawable)`);
+    }
+    if (entry.drawable !== undefined && typeof entry.drawable !== 'boolean') {
+      errors.push(`${at}: drawable must be true or false`);
     }
     const { word, category, difficulty } = entry;
     if (
@@ -73,6 +81,14 @@ const validateWordBank = (words, { strict = false } = {}) => {
     );
     if (categories.size < MIN_CATEGORIES_PER_DIFFICULTY) {
       errors.push(`difficulty ${difficulty} needs words in at least ${MIN_CATEGORIES_PER_DIFFICULTY} categories`);
+    }
+  }
+
+  // Çiz Bil deals three drawable words (one per difficulty) in each of four rounds.
+  for (const difficulty of DIFFICULTIES) {
+    const drawable = words.filter((entry) => entry?.difficulty === difficulty && entry?.drawable !== false);
+    if (drawable.length < MIN_DRAWABLE_PER_DIFFICULTY) {
+      errors.push(`difficulty ${difficulty} needs at least ${MIN_DRAWABLE_PER_DIFFICULTY} drawable words`);
     }
   }
 

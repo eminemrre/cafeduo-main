@@ -42,6 +42,13 @@ describe('validateWordBank', () => {
     expect(errors.join('\n')).toMatch(/keys/);
   });
 
+  it('accepts an optional drawable flag and needs enough drawable words for Çiz Bil', () => {
+    expect(validateWordBank([...fixture, { word: 'özlem', category: 'Hayvanlar', difficulty: 1, drawable: false }]).ok).toBe(true);
+    expect(validateWordBank([...fixture, { word: 'özlem', category: 'Hayvanlar', difficulty: 1, drawable: 'no' }]).ok).toBe(false);
+    const abstract = fixture.map((entry) => (entry.difficulty === 2 ? { ...entry, drawable: false } : entry));
+    expect(validateWordBank(abstract).errors.join('\n')).toMatch(/difficulty 2 needs at least 4 drawable/);
+  });
+
   it('needs three categories at every difficulty so a match can be drawn', () => {
     const thin = fixture.filter(
       (entry) =>

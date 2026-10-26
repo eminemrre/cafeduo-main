@@ -86,6 +86,17 @@ jobs:
           install -d -m 700 "$RUNNER_TEMP/word-bank"
           printf '%s' "$WORD_BANK_GZ_B64" | base64 -d | gunzip > "$RUNNER_TEMP/word-bank/words.json"
           node scripts/ops/check-word-bank.cjs "$RUNNER_TEMP/word-bank/words.json"
+      - name: Check the e-mail key
+        env:
+          # Resend sending key (sending_access, cafeduotr.com only).
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        run: |
+          set -euo pipefail
+          : "${RESEND_API_KEY:?RESEND_API_KEY secret missing}"
+          [[ "$RESEND_API_KEY" =~ ^re_[A-Za-z0-9_]+$ ]] || { echo 'RESEND_API_KEY has an unexpected format'; exit 1; }
+          install -d -m 700 "$RUNNER_TEMP/app-secrets"
+          umask 077
+          printf 'RESEND_API_KEY=%s\n' "$RESEND_API_KEY" > "$RUNNER_TEMP/app-secrets/app.env"
       - name: Transfer the verified source and deploy
         env:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
@@ -101,6 +112,9 @@ jobs:
           # The API container (non-root) reads the bank through a read-only bind mount.
           ssh -F "$HOME/.ssh/config" production "install -d -m 755 /opt/cafeduo-secrets && cat > /opt/cafeduo-secrets/words.json.next && chmod 644 /opt/cafeduo-secrets/words.json.next && mv -f /opt/cafeduo-secrets/words.json.next /opt/cafeduo-secrets/words.json" < "$RUNNER_TEMP/word-bank/words.json"
           rm -f "$RUNNER_TEMP/word-bank/words.json"
+          # Deploy-managed secrets; deploy-production.sh merges them into the release .env.
+          ssh -F "$HOME/.ssh/config" production "install -d -m 755 /opt/cafeduo-secrets && umask 077 && cat > /opt/cafeduo-secrets/app.env.next && mv -f /opt/cafeduo-secrets/app.env.next /opt/cafeduo-secrets/app.env" < "$RUNNER_TEMP/app-secrets/app.env"
+          rm -f "$RUNNER_TEMP/app-secrets/app.env"
           git archive HEAD | ssh -F "$HOME/.ssh/config" production "tar -xf - -C '$release'"
           ssh -F "$HOME/.ssh/config" production "bash '$release/deploy/scripts/deploy-production.sh' '$path' '$sha' '$PRODUCTION_URL'"
       - name: Verify the public deployed revision

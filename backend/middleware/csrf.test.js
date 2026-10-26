@@ -94,6 +94,18 @@ describe('CSRF Middleware', () => {
       expect(next).toHaveBeenCalled();
     });
 
+    it('should bypass CSRF check for the token-only verify-email endpoint', () => {
+      const { req, res, next } = createMocks({ method: 'POST', path: '/api/auth/verify-email' });
+      csrfMiddleware(req, res, next);
+      expect(next).toHaveBeenCalled();
+    });
+
+    it('keeps CSRF on the signed-in resend-verification endpoint', () => {
+      const { req, res, next } = createMocks({ method: 'POST', path: '/api/auth/resend-verification' });
+      csrfMiddleware(req, res, next);
+      expect(next).not.toHaveBeenCalled();
+    });
+
     it('should bypass CSRF check for reset-password endpoint', () => {
       const { req, res, next } = createMocks({ method: 'POST', path: '/api/auth/reset-password' });
       csrfMiddleware(req, res, next);

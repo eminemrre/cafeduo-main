@@ -216,6 +216,26 @@ const responseForgotPassword = {
   message: 'Eğer e-posta adresi sistemde kayıtlıysa, şifre sıfırlama bağlantısı gönderildi.',
 };
 
+/** Sends the reset e-mail without holding up the HTTP answer; failures are logged. */
+const sendResetInBackground = (user, rawToken, failureMessage) => {
+  Promise.resolve()
+    .then(() =>
+      sendPasswordResetEmail({
+        to: user.email,
+        username: user.username,
+        resetUrl: buildPasswordResetUrl(rawToken),
+        expiresInMinutes: Math.round(PASSWORD_RESET_TOKEN_TTL_MS / 60000),
+      })
+    )
+    .catch((mailError) => {
+      logger.error(failureMessage, {
+        userId: user.id,
+        email: user.email,
+        error: mailError?.message || String(mailError),
+      });
+    });
+};
+
 const authController = {
   // REGISTER
   async register(req, res) {
@@ -450,21 +470,9 @@ const authController = {
           ]
         );
 
-        const resetUrl = buildPasswordResetUrl(rawToken);
-        try {
-          await sendPasswordResetEmail({
-            to: user.email,
-            username: user.username,
-            resetUrl,
-            expiresInMinutes: Math.round(PASSWORD_RESET_TOKEN_TTL_MS / 60000),
-          });
-        } catch (mailError) {
-          logger.error('forgotPassword e-mail send failed', {
-            userId: user.id,
-            email: user.email,
-            error: mailError?.message || String(mailError),
-          });
-        }
+        // Answer first: waiting for the send would make a known address
+        // measurably slower than an unknown one.
+        sendResetInBackground(user, rawToken, 'forgotPassword e-mail send failed');
         return res.json(responseForgotPassword);
       }
 
@@ -480,22 +488,7 @@ const authController = {
         usedAt: null,
       });
 
-      const resetUrl = buildPasswordResetUrl(rawToken);
-      try {
-        await sendPasswordResetEmail({
-          to: memoryUser.email,
-          username: memoryUser.username,
-          resetUrl,
-          expiresInMinutes: Math.round(PASSWORD_RESET_TOKEN_TTL_MS / 60000),
-        });
-      } catch (mailError) {
-        logger.error('forgotPassword e-mail send failed (memory mode)', {
-          userId: memoryUser.id,
-          email: memoryUser.email,
-          error: mailError?.message || String(mailError),
-        });
-      }
-
+      sendResetInBackground(memoryUser, rawToken, 'forgotPassword e-mail send failed (memory mode)');
       return res.json(responseForgotPassword);
     } catch (error) {
       logger.error('forgotPassword flow failed', error);

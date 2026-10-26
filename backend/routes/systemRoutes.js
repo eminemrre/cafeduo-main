@@ -1,5 +1,6 @@
 const express = require('express');
 const { isWordBankReady: defaultWordBankReady } = require('../gameEngine/wordBank');
+const { isEmailConfigured: defaultEmailConfigured } = require('../services/emailService');
 
 const createSystemRoutes = ({
   appVersion,
@@ -8,6 +9,7 @@ const createSystemRoutes = ({
   getRedisStatus = () => ({ status: 'unknown' }),
   getSocketStatus = () => ({ connectedClients: 0 }),
   isWordBankReady = defaultWordBankReady,
+  isEmailConfigured = defaultEmailConfigured,
 }) => {
   const router = express.Router();
 
@@ -54,6 +56,8 @@ const createSystemRoutes = ({
       socket: getSocketStatus(),
       // Adam Asmaca's private word bank (WORD_BANK_PATH); without it that game stays closed.
       wordBank: isWordBankReady(),
+      // Whether password reset and verification e-mails can leave (Resend or SMTP).
+      email: isEmailConfigured(),
     };
 
     try {

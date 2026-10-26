@@ -115,6 +115,7 @@ jobs:
           assert body['status']=='ready' and body['version']==os.environ['EXPECTED_SHA']
           assert body['checks']['database'] is True and body['checks']['redis']['ready'] is True
           assert body['checks'].get('wordBank') is True, 'Adam Asmaca word bank is not loaded'
+          assert body['checks'].get('email') is True, 'No e-mail provider: password reset and verification would not be sent'
           print('[deploy] Public deployed revision and readiness verified.')
           PYVERIFY
       - name: Upload verification evidence

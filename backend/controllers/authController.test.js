@@ -333,6 +333,25 @@ describe('authController security-critical auth flows', () => {
     });
   });
 
+  it('answers before the e-mail is sent, so timing does not reveal an account', async () => {
+    pool.query
+      .mockResolvedValueOnce({
+        rows: [{ id: 11, email: 'player@example.com', username: 'player' }],
+      })
+      .mockResolvedValueOnce({ rowCount: 1 });
+    mockSendPasswordResetEmail.mockImplementationOnce(() => new Promise(() => {}));
+    const res = buildRes();
+    const answered = await Promise.race([
+      authController
+        .forgotPassword({ body: { email: 'player@example.com' }, headers: {}, ip: '127.0.0.1' }, res)
+        .then(() => 'answered'),
+      new Promise((resolve) => setTimeout(() => resolve('waited for e-mail'), 300)),
+    ]);
+    expect(answered).toBe('answered');
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    expect(mockSendPasswordResetEmail).toHaveBeenCalled();
+  });
+
   it('still returns generic response when SMTP send fails for known account', async () => {
     pool.query
       .mockResolvedValueOnce({
@@ -349,7 +368,8 @@ describe('authController security-critical auth flows', () => {
     const res = buildRes();
 
     await authController.forgotPassword(req, res);
-    await Promise.resolve();
+    // The send runs after the answer; let its rejection handler run.
+    for (let tick = 0; tick < 5; tick += 1) await Promise.resolve();
 
     expect(res.json).toHaveBeenCalledWith({
       success: true,

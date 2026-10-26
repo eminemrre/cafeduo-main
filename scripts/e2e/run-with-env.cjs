@@ -15,6 +15,8 @@ const command =
 const env = {
   ...process.env,
   NODE_ENV: 'development',
+  // Keep e-mails in memory for the E2E inbox (GET /api/test/emails); never real sends.
+  EMAIL_CAPTURE: 'true',
   JWT_SECRET: process.env.JWT_SECRET || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
   CORS_ORIGIN: 'http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173',
   COOKIE_DOMAIN: '',

@@ -39,6 +39,13 @@ const ResetPasswordPage = lazyWithRetry(
     })),
   'ResetPasswordPage'
 );
+const VerifyEmailPage = lazyWithRetry(
+  () =>
+    import('./components/VerifyEmailPage').then((module) => ({
+      default: module.VerifyEmailPage,
+    })),
+  'VerifyEmailPage'
+);
 const BusinessLanding = lazyWithRetry(
   () =>
     import('./components/BusinessLanding').then((module) => ({
@@ -354,6 +361,14 @@ const AppContent: React.FC = () => {
               element={
                 <PageFrame>
                   <ResetPasswordPage />
+                </PageFrame>
+              }
+            />
+            <Route
+              path="/dogrula"
+              element={
+                <PageFrame>
+                  <VerifyEmailPage />
                 </PageFrame>
               }
             />

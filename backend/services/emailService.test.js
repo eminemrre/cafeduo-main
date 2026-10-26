@@ -129,6 +129,35 @@ describe('emailService', () => {
     expect(JSON.stringify(logger.info.mock.calls)).not.toMatch(/ada\.lovelace|token=/);
   });
 
+  it('captures e-mails instead of sending them only when EMAIL_CAPTURE is on outside production', async () => {
+    process.env.EMAIL_CAPTURE = 'true';
+    process.env.RESEND_API_KEY = 're_test';
+    global.fetch = jest.fn();
+    const { service } = loadService();
+    const result = await service.sendEmail({
+      to: 'Ada@Example.com',
+      template: 'welcome',
+      data: { username: 'ada', appUrl: 'https://cafeduotr.com' },
+    });
+    expect(result).toEqual({ delivered: true, mode: 'capture' });
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(service.capturedEmails('ada@example.com')).toEqual([
+      expect.objectContaining({ template: 'welcome', subject: 'CafeDuo · Aramıza hoş geldin' }),
+    ]);
+    expect(service.isEmailConfigured()).toBe(true);
+
+    const previous = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try {
+      jest.resetModules();
+      const prod = loadService().service;
+      await prod.sendEmail({ to: 'ada@example.com', template: 'welcome', data: { username: 'ada', appUrl: 'https://cafeduotr.com' } }).catch(() => {});
+      expect(prod.capturedEmails('ada@example.com')).toEqual([]);
+    } finally {
+      process.env.NODE_ENV = previous;
+    }
+  });
+
   it('falls back to SMTP when Resend fails', async () => {
     process.env.RESEND_API_KEY = 're_test';
     setBaseSmtpEnv();

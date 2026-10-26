@@ -135,8 +135,25 @@ const maskAddress = (address) => {
   return `${local[0]}***@${domain}`;
 };
 
+/**
+ * E2E/dev only: with EMAIL_CAPTURE=true outside production, e-mails are kept
+ * in memory (newest 200) instead of being sent, so tests can read the links.
+ */
+const captureEnabled = () =>
+  String(process.env.EMAIL_CAPTURE || '').trim().toLowerCase() === 'true' &&
+  process.env.NODE_ENV !== 'production';
+const CAPTURE_LIMIT = 200;
+const captured = [];
+const capturedEmails = (to) => {
+  if (!captureEnabled()) return [];
+  const address = String(to || '').trim().toLowerCase();
+  return captured.filter((entry) => entry.to === address).reverse();
+};
+
 const isEmailConfigured = () =>
-  Boolean(String(process.env.RESEND_API_KEY || '').trim()) || Boolean(resolveTransport());
+  captureEnabled() ||
+  Boolean(String(process.env.RESEND_API_KEY || '').trim()) ||
+  Boolean(resolveTransport());
 
 /**
  * The one way to send a CafeDuo e-mail: Resend first, SMTP as a fallback,
@@ -149,6 +166,12 @@ const sendEmail = async ({ to, template, data, idempotencyKey } = {}) => {
   const { subject, text, html } = renderEmail(template, data);
   const from = fromAddress();
   const masked = maskAddress(safeTo);
+
+  if (captureEnabled()) {
+    captured.push({ to: safeTo.toLowerCase(), template, subject, text, html, at: new Date().toISOString() });
+    if (captured.length > CAPTURE_LIMIT) captured.splice(0, captured.length - CAPTURE_LIMIT);
+    return { delivered: true, mode: 'capture' };
+  }
 
   if (String(process.env.RESEND_API_KEY || '').trim()) {
     try {
@@ -205,6 +228,7 @@ const sendPasswordResetEmail = ({ to, username, resetUrl, expiresInMinutes }) =>
   sendEmail({ to, template: 'password_reset', data: { username, resetUrl, expiresInMinutes } });
 
 module.exports = {
+  capturedEmails,
   isEmailConfigured,
   maskAddress,
   sendEmail,

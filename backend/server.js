@@ -105,6 +105,7 @@ const { createCommerceRoutes } = require('./routes/commerceRoutes');
 const { createTournamentRoutes } = require('./routes/tournamentRoutes');
 const { createProfileRoutes } = require('./routes/profileRoutes');
 const { createSystemRoutes } = require('./routes/systemRoutes');
+const { createTestEmailRoutes } = require('./routes/testEmailRoutes');
 const { createGameRoutes } = require('./routes/gameRoutes');
 const memoryState = require('./store/memoryState');
 const { rejectLegacySocketAction } = require('./socket/legacySocketGuard');
@@ -1185,6 +1186,9 @@ app.use('/api', profileRoutes);
 
 // System Routes (health/meta/root)
 app.use('/', systemRoutes);
+// E2E only: EMAIL_CAPTURE=true outside production (never registered in production).
+const testEmailRoutes = createTestEmailRoutes();
+if (testEmailRoutes) app.use('/', testEmailRoutes);
 
 // NOTE: Duplicate admin endpoints removed. Using protected versions above.
 

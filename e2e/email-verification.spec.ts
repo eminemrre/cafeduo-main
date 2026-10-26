@@ -26,9 +26,10 @@ const inbox = async (request: APIRequestContext, apiRoot: string, to: string) =>
   return ((await res.json()).emails || []) as CapturedEmail[];
 };
 
-const linkIn = (email: CapturedEmail, path: string) => {
-  const match = email.text.match(new RegExp(`https?://\\S+${path}\\?token=([a-f0-9]+)`));
-  expect(match, `${email.template} carries a ${path} link`).toBeTruthy();
+const linkIn = (email: CapturedEmail | undefined, path: string) => {
+  expect(email, `a captured e-mail with a ${path} link`).toBeTruthy();
+  const match = email!.text.match(new RegExp(`https?://\\S+${path}\\?token=([a-f0-9]+)`));
+  expect(match, `${email!.template} carries a ${path} link`).toBeTruthy();
   return match![1];
 };
 
@@ -46,8 +47,8 @@ test.describe('E-posta', () => {
 
     const email = session.credentials.email;
     await expect.poll(async () => (await inbox(request, apiRoot, email)).map((m) => m.template)).toContain('verify_email');
-    const verify = (await inbox(request, apiRoot, email)).find((m) => m.template === 'verify_email')!;
-    expect(verify.subject).toBe('CafeDuo · E-postanı doğrula');
+    const verify = (await inbox(request, apiRoot, email)).find((m) => m.template === 'verify_email');
+    expect(verify?.subject).toBe('CafeDuo · E-postanı doğrula');
     const token = linkIn(verify, '/dogrula');
 
     // Signed in and checked in at a table, the panel asks for verification.
@@ -87,7 +88,7 @@ test.describe('E-posta', () => {
     const asked = await request.post(`${apiRoot}/api/auth/forgot-password`, { data: { email } });
     expect(asked.ok()).toBeTruthy();
     await expect.poll(async () => (await inbox(request, apiRoot, email)).map((m) => m.template)).toContain('password_reset');
-    const reset = (await inbox(request, apiRoot, email)).find((m) => m.template === 'password_reset')!;
+    const reset = (await inbox(request, apiRoot, email)).find((m) => m.template === 'password_reset');
     const token = linkIn(reset, '/reset-password');
 
     const newPassword = `Yeni_${Date.now().toString(36)}!`;

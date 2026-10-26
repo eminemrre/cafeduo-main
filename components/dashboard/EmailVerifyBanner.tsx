@@ -7,27 +7,34 @@ import React, { useEffect, useState } from 'react';
 import { MailCheck, X } from 'lucide-react';
 import { api, ApiRequestError } from '../../lib/api';
 
-const DISMISS_KEY = 'cafeduo:email-verify-banner-dismissed';
+const dismissKey = (userId: string | number | undefined) =>
+  `cafeduo:email-verify-banner-dismissed:${userId ?? 'anonymous'}`;
 
-export const EmailVerifyBanner: React.FC<{ emailVerified?: boolean }> = ({ emailVerified }) => {
-  const [dismissed, setDismissed] = useState(false);
+export const EmailVerifyBanner: React.FC<{
+  userId?: string | number;
+  emailVerified?: boolean;
+}> = ({ userId, emailVerified }) => {
+  /** null until the session flag is read, so a dismissed band never flashes. */
+  const [dismissed, setDismissed] = useState<boolean | null>(null);
   const [state, setState] = useState<'idle' | 'sending' | 'sent'>('idle');
   const [error, setError] = useState('');
 
   useEffect(() => {
+    let hidden = false;
     try {
-      if (window.sessionStorage.getItem(DISMISS_KEY) === '1') setDismissed(true);
+      hidden = window.sessionStorage.getItem(dismissKey(userId)) === '1';
     } catch {
       // Storage may be blocked; the band then simply stays.
     }
-  }, []);
+    setDismissed(hidden);
+  }, [userId]);
 
-  if (emailVerified !== false || dismissed) return null;
+  if (emailVerified !== false || dismissed !== false) return null;
 
   const close = () => {
     setDismissed(true);
     try {
-      window.sessionStorage.setItem(DISMISS_KEY, '1');
+      window.sessionStorage.setItem(dismissKey(userId), '1');
     } catch {
       // Hidden for this view only.
     }

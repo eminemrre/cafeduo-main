@@ -23,8 +23,11 @@ jest.mock('../utils/logger', () => ({
 }));
 
 const mockSendPasswordResetEmail = jest.fn();
+const mockIsEmailConfigured = jest.fn(() => true);
 jest.mock('../services/emailService', () => ({
   sendPasswordResetEmail: (...args) => mockSendPasswordResetEmail(...args),
+  isEmailConfigured: () => mockIsEmailConfigured(),
+  maskAddress: jest.requireActual('../services/emailService').maskAddress,
 }));
 
 const mockIssueVerification = jest.fn();
@@ -167,7 +170,28 @@ describe('authController security-critical auth flows', () => {
     }
   });
 
+  it('resendVerification says so when no e-mail can leave instead of claiming it sent one', async () => {
+    mockIsEmailConfigured.mockReturnValueOnce(false);
+    const res = buildRes();
+    await authController.resendVerification(
+      { user: { id: 7, username: 'ada', email: 'ada@gmail.com', emailVerified: false } },
+      res
+    );
+    expect(res.status).toHaveBeenCalledWith(503);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'EMAIL_UNAVAILABLE' }));
+    expect(mockIssueVerification).not.toHaveBeenCalled();
+
+    mockIssueVerification.mockResolvedValueOnce({ delivered: false });
+    const failed = buildRes();
+    await authController.resendVerification(
+      { user: { id: 7, username: 'ada', email: 'ada@gmail.com', emailVerified: false } },
+      failed
+    );
+    expect(failed.status).toHaveBeenCalledWith(503);
+  });
+
   it('resendVerification issues a new link for an unverified user and refuses a verified one', async () => {
+    mockIssueVerification.mockResolvedValueOnce({ delivered: true });
     const res = buildRes();
     await authController.resendVerification(
       { user: { id: 7, username: 'ada', email: 'ada@gmail.com', emailVerified: false } },
@@ -446,11 +470,9 @@ describe('authController security-critical auth flows', () => {
     });
     expect(logger.error).toHaveBeenCalledWith(
       'forgotPassword e-mail send failed',
-      expect.objectContaining({
-        userId: 11,
-        email: 'player@example.com',
-      })
+      expect.objectContaining({ userId: 11, to: 'p***@example.com' })
     );
+    expect(JSON.stringify(logger.error.mock.calls)).not.toContain('player@example.com');
   });
 
   it('finds gmail alias accounts for forgot-password by canonical local-part', async () => {

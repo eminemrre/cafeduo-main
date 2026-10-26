@@ -65,6 +65,26 @@ describe('VerifyEmailPage', () => {
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/Yeni bağlantıyı gönderdik/));
   });
 
+  it('lets a network failure be retried instead of leaving a dead end', async () => {
+    verifyEmail.mockRejectedValueOnce(new TypeError('Failed to fetch')).mockResolvedValueOnce({ status: 'verified' });
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Şu an doğrulayamadık' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Yeniden dene' }));
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'E-postan doğrulandı' })).toBeInTheDocument());
+    expect(verifyEmail).toHaveBeenCalledTimes(2);
+  });
+
+  it('explains a resend rate limit', async () => {
+    verifyEmail.mockRejectedValue(new ApiRequestError('süresi dolmuş', 'VERIFICATION_EXPIRED', 400));
+    resendVerification.mockRejectedValueOnce(
+      new ApiRequestError('çok', 'AUTH_RESEND_VERIFICATION_RATE_LIMITED', 429)
+    );
+    renderPage();
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Yeni bağlantı gönder' })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: 'Yeni bağlantı gönder' }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/çok kez/));
+  });
+
   it('calls a missing or malformed token invalid without asking the server', async () => {
     renderPage('/dogrula');
     expect(screen.getByRole('heading', { name: 'Bağlantı geçersiz' })).toBeInTheDocument();

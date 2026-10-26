@@ -71,7 +71,7 @@ url,sha=sys.argv[1:]
 for attempt in range(30):
     try:
         with urllib.request.urlopen(url.rstrip('/')+'/api/readiness',timeout=10) as response:body=json.load(response)
-        assert body['status']=='ready' and body['version']==sha and body['checks']['database'] and body['checks']['redis']['ready']
+        assert body['status']=='ready' and body['version']==sha and body['checks']['database'] and body['checks']['redis']['ready'] and body['checks'].get('email') is True and body['checks'].get('wordBank') is True
         with urllib.request.urlopen(url,timeout=10) as response:assert response.status==200
         print('[deploy] Public readiness, database, Redis and exact commit verified.');break
     except Exception:

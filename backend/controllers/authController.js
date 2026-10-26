@@ -6,7 +6,7 @@ const { pool, isDbConnected } = require('../db');
 const logger = require('../utils/logger');
 const { isLocationCheckExempt } = require('../utils/locationExempt');
 const memoryState = require('../store/memoryState');
-const { sendPasswordResetEmail } = require('../services/emailService');
+const { isEmailConfigured, maskAddress, sendPasswordResetEmail } = require('../services/emailService');
 const { resolveAppBaseUrl } = require('../utils/appUrl');
 const { emailVerification } = require('../services/emailVerificationService');
 const { revokeToken } = require('../utils/tokenRevocation');
@@ -231,7 +231,7 @@ const sendResetInBackground = (user, rawToken, failureMessage) => {
     .catch((mailError) => {
       logger.error(failureMessage, {
         userId: user.id,
-        email: user.email,
+        to: maskAddress(user.email),
         error: mailError?.message || String(mailError),
       });
     });
@@ -666,8 +666,24 @@ const authController = {
   async resendVerification(req, res) {
     const user = req.user || {};
     if (user.emailVerified) return res.json({ status: 'already' });
-    startVerificationInBackground({ id: user.id, username: user.username, email: user.email });
-    return res.json({ sent: true });
+    const unavailable = () =>
+      res.status(503).json({
+        code: 'EMAIL_UNAVAILABLE',
+        error: 'Şu an e-posta gönderemiyoruz. Biraz sonra yeniden dene.',
+      });
+    // Never claim a send that cannot happen.
+    if (!isEmailConfigured()) return unavailable();
+    try {
+      const { delivered } = await emailVerification().issueVerification({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+      });
+      return delivered ? res.json({ sent: true }) : unavailable();
+    } catch (error) {
+      logger.error('resendVerification failed', { userId: user.id, error: error?.message || String(error) });
+      return unavailable();
+    }
   },
 
   async getMe(req, res) {

@@ -158,6 +158,17 @@ describe('emailService', () => {
     }
   });
 
+  it('keeps each address\'s captured e-mails even when many others arrive', async () => {
+    process.env.EMAIL_CAPTURE = 'true';
+    const { service } = loadService();
+    const data = { username: 'ada', appUrl: 'https://cafeduotr.com' };
+    await service.sendEmail({ to: 'first@example.com', template: 'welcome', data });
+    for (let i = 0; i < 250; i += 1) {
+      await service.sendEmail({ to: `other${i}@example.com`, template: 'welcome', data });
+    }
+    expect(service.capturedEmails('first@example.com')).toHaveLength(1);
+  });
+
   it('falls back to SMTP when Resend fails', async () => {
     process.env.RESEND_API_KEY = 're_test';
     setBaseSmtpEnv();

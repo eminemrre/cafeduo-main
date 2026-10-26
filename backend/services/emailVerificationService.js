@@ -31,23 +31,32 @@ const createEmailVerificationService = ({
   const memoryTokens = [];
   const baseUrl = () => String(typeof appUrl === 'function' ? appUrl() : appUrl).replace(/\/+$/, '');
 
+  /** Resolves `{ delivered }`; never throws (a failure is logged). */
   const send = (args, failure, meta) =>
     Promise.resolve()
       .then(() => sendEmail(args))
-      .catch((error) => logger.error(failure, { ...meta, error: error?.message || String(error) }));
+      .then((result) => ({ delivered: Boolean(result?.delivered) }))
+      .catch((error) => {
+        logger.error(failure, { ...meta, error: error?.message || String(error) });
+        return { delivered: false };
+      });
 
   const issueVerification = async (user) => {
     const raw = randomBytes(32).toString('hex');
     const tokenHash = hashToken(raw);
     const expiresAt = new Date(now() + VERIFICATION_TTL_MS);
     if (await isDbConnected()) {
+      // One statement: the new link exists before older ones close, and a
+      // failure leaves the user's current link valid.
       await pool.query(
-        'UPDATE email_verification_tokens SET used_at = $2 WHERE user_id = $1 AND used_at IS NULL',
-        [user.id, new Date(now())]
-      );
-      await pool.query(
-        'INSERT INTO email_verification_tokens (user_id, token_hash, expires_at) VALUES ($1, $2, $3)',
-        [user.id, tokenHash, expiresAt]
+        `WITH inserted AS (
+           INSERT INTO email_verification_tokens (user_id, token_hash, expires_at)
+           VALUES ($1, $2, $3)
+           RETURNING id
+         )
+         UPDATE email_verification_tokens SET used_at = $4
+         WHERE user_id = $1 AND used_at IS NULL AND id <> (SELECT id FROM inserted)`,
+        [user.id, tokenHash, expiresAt, new Date(now())]
       );
     } else {
       for (const token of memoryTokens) {
@@ -55,7 +64,7 @@ const createEmailVerificationService = ({
       }
       memoryTokens.push({ userId: user.id, tokenHash, expiresAt: expiresAt.getTime(), usedAt: null });
     }
-    await send(
+    return send(
       {
         to: user.email,
         template: 'verify_email',
@@ -71,8 +80,9 @@ const createEmailVerificationService = ({
     );
   };
 
+  /** Fire and forget: the verification answer never waits for the welcome e-mail. */
   const welcome = (user) =>
-    send(
+    void send(
       {
         to: user.email,
         template: 'welcome',
@@ -112,7 +122,7 @@ const createEmailVerificationService = ({
         new Date(at),
       ]);
       if (!updated.rowCount) return { status: 'already', userId };
-      await welcome({ id: userId, email: row.email, username: row.username });
+      welcome({ id: userId, email: row.email, username: row.username });
       return { status: 'verified', userId };
     }
 
@@ -125,7 +135,7 @@ const createEmailVerificationService = ({
     if (token.usedAt || token.expiresAt <= at) return { status: 'expired', userId };
     user.emailVerifiedAt = new Date(at).toISOString();
     token.usedAt = at;
-    await welcome(user);
+    welcome(user);
     return { status: 'verified', userId };
   };
 

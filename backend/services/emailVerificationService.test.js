@@ -80,10 +80,25 @@ describe('email verification (memory mode)', () => {
     expect(users[0].emailVerifiedAt).toBeNull();
   });
 
-  it('a failed send is logged, not thrown', async () => {
+  it('a failed send is logged, not thrown, and reported as not delivered', async () => {
     const { service, users, sendEmail } = memorySetup();
     sendEmail.mockRejectedValueOnce(new Error('resend down'));
-    await expect(service.issueVerification(users[0])).resolves.toBeUndefined();
+    await expect(service.issueVerification(users[0])).resolves.toEqual({ delivered: false });
+    sendEmail.mockResolvedValueOnce({ delivered: false, mode: 'none' });
+    await expect(service.issueVerification(users[0])).resolves.toEqual({ delivered: false });
+    await expect(service.issueVerification(users[0])).resolves.toEqual({ delivered: true });
+  });
+
+  it('answers "verified" without waiting for the welcome e-mail', async () => {
+    const { service, users, sendEmail } = memorySetup();
+    await service.issueVerification(users[0]);
+    const token = tokenFrom(sendEmail);
+    sendEmail.mockImplementation(() => new Promise(() => {}));
+    const answered = await Promise.race([
+      service.confirmVerification(token),
+      new Promise((resolve) => setTimeout(() => resolve('waited'), 300)),
+    ]);
+    expect(answered).toEqual({ status: 'verified', userId: 7 });
   });
 });
 
@@ -103,16 +118,19 @@ describe('email verification (database)', () => {
     return { pool, sendEmail, service };
   };
 
-  it('closes older links, stores only the hash and never selects every column', async () => {
+  it('writes the new link and closes the older ones in one statement, storing only the hash', async () => {
     const { pool, sendEmail, service } = dbSetup();
-    pool.query.mockResolvedValue({ rows: [], rowCount: 1 });
+    pool.query.mockResolvedValue({ rows: [{ id: 3 }], rowCount: 1 });
     await service.issueVerification({ id: 7, username: 'ada', email: 'ada@gmail.com' });
-    const sql = pool.query.mock.calls.map(([text]) => text).join('\n');
-    expect(sql).toMatch(/UPDATE email_verification_tokens SET used_at/);
-    expect(sql).toMatch(/INSERT INTO email_verification_tokens/);
+    // One atomic statement: a failure leaves the old link valid; the insert comes first.
+    expect(pool.query).toHaveBeenCalledTimes(1);
+    const [sql] = pool.query.mock.calls[0];
+    expect(sql.indexOf('INSERT INTO email_verification_tokens')).toBeGreaterThan(-1);
+    expect(sql.indexOf('INSERT INTO email_verification_tokens')).toBeLessThan(sql.indexOf('UPDATE email_verification_tokens'));
+    expect(sql).toMatch(/id <> \(SELECT id FROM inserted\)/);
     expect(sql).not.toMatch(/SELECT \*/);
     const token = tokenFrom(sendEmail);
-    const inserted = pool.query.mock.calls.find(([text]) => /INSERT/.test(text))[1];
+    const inserted = pool.query.mock.calls[0][1];
     expect(inserted).toContain(createHash('sha256').update(token).digest('hex'));
     expect(inserted).not.toContain(token);
   });

@@ -31,17 +31,17 @@ beforeEach(() => {
 
 describe('EmailVerifyBanner', () => {
   it('shows only for a user known to be unverified', () => {
-    const { rerender } = render(<EmailVerifyBanner emailVerified={false} />);
+    const { rerender } = render(<EmailVerifyBanner userId={5} emailVerified={false} />);
     expect(screen.getByRole('region', { name: 'E-posta doğrulama' })).toBeInTheDocument();
-    rerender(<EmailVerifyBanner emailVerified />);
+    rerender(<EmailVerifyBanner userId={5} emailVerified />);
     expect(screen.queryByRole('region', { name: 'E-posta doğrulama' })).not.toBeInTheDocument();
-    rerender(<EmailVerifyBanner emailVerified={undefined} />);
+    rerender(<EmailVerifyBanner userId={5} emailVerified={undefined} />);
     expect(screen.queryByRole('region', { name: 'E-posta doğrulama' })).not.toBeInTheDocument();
   });
 
   it('sends a new link and says so', async () => {
     resend.mockResolvedValueOnce({ sent: true });
-    render(<EmailVerifyBanner emailVerified={false} />);
+    render(<EmailVerifyBanner userId={5} emailVerified={false} />);
     fireEvent.click(screen.getByRole('button', { name: 'Tekrar gönder' }));
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent(/gönderdik/));
     expect(screen.queryByRole('button', { name: 'Tekrar gönder' })).not.toBeInTheDocument();
@@ -49,20 +49,28 @@ describe('EmailVerifyBanner', () => {
 
   it('explains a rate limit and keeps the button', async () => {
     resend.mockRejectedValueOnce(new ApiRequestError('çok', 'AUTH_RESEND_VERIFICATION_RATE_LIMITED', 429));
-    render(<EmailVerifyBanner emailVerified={false} />);
+    render(<EmailVerifyBanner userId={5} emailVerified={false} />);
     fireEvent.click(screen.getByRole('button', { name: 'Tekrar gönder' }));
     await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/çok kez/i));
     expect(screen.getByRole('button', { name: 'Tekrar gönder' })).toBeEnabled();
   });
 
   it('stays hidden for the rest of the session once closed', async () => {
-    const { unmount } = render(<EmailVerifyBanner emailVerified={false} />);
+    const { unmount } = render(<EmailVerifyBanner userId={5} emailVerified={false} />);
     fireEvent.click(screen.getByRole('button', { name: 'Kapat' }));
     expect(screen.queryByRole('region', { name: 'E-posta doğrulama' })).not.toBeInTheDocument();
     unmount();
-    render(<EmailVerifyBanner emailVerified={false} />);
+    render(<EmailVerifyBanner userId={5} emailVerified={false} />);
     await waitFor(() =>
       expect(screen.queryByRole('region', { name: 'E-posta doğrulama' })).not.toBeInTheDocument()
     );
+  });
+
+  it('remembers a dismissal per account, not per browser', async () => {
+    const first = render(<EmailVerifyBanner userId={5} emailVerified={false} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Kapat' }));
+    first.unmount();
+    render(<EmailVerifyBanner userId={6} emailVerified={false} />);
+    await waitFor(() => expect(screen.getByRole('region', { name: 'E-posta doğrulama' })).toBeInTheDocument());
   });
 });

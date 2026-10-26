@@ -489,7 +489,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           onOpenProfile={handleOpenOwnProfile}
         />
 
-        <EmailVerifyBanner emailVerified={currentUser.emailVerified} />
+        <EmailVerifyBanner userId={currentUser.id} emailVerified={currentUser.emailVerified} />
 
         {activeTournament && (
           <TournamentBanner

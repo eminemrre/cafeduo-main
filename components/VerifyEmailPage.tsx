@@ -27,10 +27,13 @@ export const VerifyEmailPage: React.FC = () => {
   const [resendError, setResendError] = useState('');
   /** The link is single use: confirm it once even when effects run twice. */
   const confirmedRef = useRef<string | null>(null);
+  /** Bumped by "Yeniden dene" after a network or server failure. */
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    if (!wellFormed || confirmedRef.current === token) return;
-    confirmedRef.current = token;
+    const key = `${token}#${attempt}`;
+    if (!wellFormed || confirmedRef.current === key) return;
+    confirmedRef.current = key;
     api.auth
       .verifyEmail(token)
       .then((result) => setOutcome(result.status === 'already' ? 'already' : 'verified'))
@@ -39,7 +42,12 @@ export const VerifyEmailPage: React.FC = () => {
         else if (error instanceof ApiRequestError && error.status === 400) setOutcome('invalid');
         else setOutcome('error');
       });
-  }, [token, wellFormed]);
+  }, [token, wellFormed, attempt]);
+
+  const retry = () => {
+    setOutcome('checking');
+    setAttempt((value) => value + 1);
+  };
 
   const resend = async () => {
     setResendError('');
@@ -52,7 +60,9 @@ export const VerifyEmailPage: React.FC = () => {
       setResendError(
         error instanceof ApiRequestError && error.status === 401
           ? 'Yeni bağlantı için önce giriş yap; panelden de isteyebilirsin.'
-          : 'Bağlantı gönderilemedi. Biraz sonra yeniden dene.'
+          : error instanceof ApiRequestError && error.status === 429
+            ? 'Kısa sürede çok kez istedin; biraz sonra yeniden dene.'
+            : 'Bağlantı gönderilemedi. Biraz sonra yeniden dene.'
       );
     }
   };
@@ -108,6 +118,12 @@ export const VerifyEmailPage: React.FC = () => {
               </div>
             )}
           </>
+        )}
+
+        {outcome === 'error' && (
+          <button type="button" className="duo-recovery-cta duo-focus" onClick={retry}>
+            Yeniden dene
+          </button>
         )}
 
         {outcome !== 'checking' && (

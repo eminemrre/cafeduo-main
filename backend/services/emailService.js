@@ -142,12 +142,14 @@ const maskAddress = (address) => {
 const captureEnabled = () =>
   String(process.env.EMAIL_CAPTURE || '').trim().toLowerCase() === 'true' &&
   process.env.NODE_ENV !== 'production';
-const CAPTURE_LIMIT = 200;
-const captured = [];
+/** Per address, so a busy test run never pushes out another address's mail. */
+const CAPTURE_PER_ADDRESS = 20;
+const CAPTURE_ADDRESSES = 5000;
+const captured = new Map();
 const capturedEmails = (to) => {
   if (!captureEnabled()) return [];
   const address = String(to || '').trim().toLowerCase();
-  return captured.filter((entry) => entry.to === address).reverse();
+  return [...(captured.get(address) || [])].reverse();
 };
 
 const isEmailConfigured = () =>
@@ -168,8 +170,14 @@ const sendEmail = async ({ to, template, data, idempotencyKey } = {}) => {
   const masked = maskAddress(safeTo);
 
   if (captureEnabled()) {
-    captured.push({ to: safeTo.toLowerCase(), template, subject, text, html, at: new Date().toISOString() });
-    if (captured.length > CAPTURE_LIMIT) captured.splice(0, captured.length - CAPTURE_LIMIT);
+    const address = safeTo.toLowerCase();
+    if (!captured.has(address) && captured.size >= CAPTURE_ADDRESSES) {
+      captured.delete(captured.keys().next().value);
+    }
+    const list = captured.get(address) || [];
+    list.push({ to: address, template, subject, text, html, at: new Date().toISOString() });
+    if (list.length > CAPTURE_PER_ADDRESS) list.shift();
+    captured.set(address, list);
     return { delivered: true, mode: 'capture' };
   }
 

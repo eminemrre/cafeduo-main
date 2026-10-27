@@ -134,7 +134,10 @@ describe('API Layer', () => {
             json: async () => ({ user: mockUser, token: 'jwt-token' }),
           });
 
-        await api.auth.register('newuser', 'new@example.com', 'password123');
+        await api.auth.register('newuser', 'new@example.com', 'password123', {
+          acceptTerms: true,
+          termsVersion: '2026-10-27',
+        });
 
         expect(fetch).toHaveBeenCalledWith(
           '/api/auth/register',
@@ -144,6 +147,8 @@ describe('API Layer', () => {
               username: 'newuser',
               email: 'new@example.com',
               password: 'password123',
+              acceptTerms: true,
+              termsVersion: '2026-10-27',
             }),
           })
         );
@@ -161,7 +166,10 @@ describe('API Layer', () => {
             json: async () => ({ user: mockUser, token: 'jwt-token' }),
           });
 
-        await api.auth.register('newuser', 'new@example.com', 'password123');
+        await api.auth.register('newuser', 'new@example.com', 'password123', {
+          acceptTerms: true,
+          termsVersion: '2026-10-27',
+        });
 
         // Should call login after registration
         expect(fetch).toHaveBeenCalledTimes(2);
@@ -174,7 +182,10 @@ describe('API Layer', () => {
           json: async () => mockResponse,
         });
 
-        const result = await api.auth.register('newuser', 'new@example.com', 'password123');
+        const result = await api.auth.register('newuser', 'new@example.com', 'password123', {
+          acceptTerms: true,
+          termsVersion: '2026-10-27',
+        });
 
         expect(result).toEqual(mockResponse);
         expect(fetch).toHaveBeenCalledTimes(1);

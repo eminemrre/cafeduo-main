@@ -169,6 +169,8 @@ export const provisionUser = async (
         email: credentials.email,
         password: credentials.password,
         department: 'E2E',
+        acceptTerms: true,
+        termsVersion: '2026-10-27',
       },
     });
 
@@ -342,7 +344,7 @@ export const bootstrapAuthenticatedPage = async (
       if (sessionStorage.getItem(marker)) return;
       sessionStorage.setItem(marker, '1');
       localStorage.setItem('cafe_user', JSON.stringify(userData));
-      localStorage.setItem('cookie_consent', 'true');
+      localStorage.setItem('cafeduo_cookie_notice', '2026-10-27');
       if (checkedIn) {
         sessionStorage.setItem('cafeduo_checked_in_user_id', String(userData.id));
       }

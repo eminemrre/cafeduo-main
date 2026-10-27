@@ -95,6 +95,7 @@ router.post('/logout', authController.clearLogoutCookies, authenticateToken, aut
 router.post('/forgot-password', forgotPasswordLimiter, authController.forgotPassword);
 router.post('/reset-password', resetPasswordLimiter, authController.resetPassword);
 router.post('/verify-email', verifyEmailLimiter, authController.verifyEmail);
+router.post('/accept-terms', authenticateToken, authController.acceptTerms);
 router.post(
   '/resend-verification',
   authenticateToken,

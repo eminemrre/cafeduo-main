@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { DEFAULT_E2E_APP_BASE_URL, provisionUser } from './helpers/session';
 
 const openAuthModal = async (page: import('@playwright/test').Page) => {
-  await page.evaluate(() => localStorage.setItem('cookie_consent', 'true'));
+  await page.evaluate(() => localStorage.setItem('cafeduo_cookie_notice', '2026-10-27'));
 
   const buttonCandidates = [
     page.locator('[data-testid="hero-login-button"]').first(),
@@ -86,6 +86,7 @@ test.describe('Authentication Flow', () => {
     await page.getByPlaceholder('Kullanıcı adı').fill(username);
     await page.locator('[data-testid="auth-email-input"]').fill(email);
     await page.locator('[data-testid="auth-password-input"]').fill(password);
+    await page.getByRole('checkbox', { name: /Kullanım koşullarını okudum ve kabul ediyorum/ }).check();
     await page.locator('[data-testid="auth-submit-button"]').click({ force: true });
 
     const startedAt = Date.now();

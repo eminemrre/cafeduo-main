@@ -39,6 +39,8 @@ export interface User {
   locationCheckExempt?: boolean;
   /** False until the e-mail address is confirmed; absent on old cached users. */
   emailVerified?: boolean;
+  termsVersion?: string | null;
+  termsAcceptedAt?: string | null;
 }
 
 export interface UserProfileUpdates {
@@ -326,7 +328,10 @@ export interface CompetitiveEngineState {
   boards?: { host: BattleshipBoard; guest: BattleshipBoard };
   lastShot?: BattleshipLastShot | null;
   /** Amiral Battı, finished matches only: both fleets, including ships never found. */
-  reveal?: { host: { size: number; cells: number[] }[]; guest: { size: number; cells: number[] }[] };
+  reveal?: {
+    host: { size: number; cells: number[] }[];
+    guest: { size: number; cells: number[] }[];
+  };
 }
 
 export interface CompetitiveGame extends GameRequest {

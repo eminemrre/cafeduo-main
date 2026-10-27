@@ -10,6 +10,13 @@
 import { FOOTER_COLUMNS, OWNER_HERO_FACTS } from './landingContent';
 import { whatsappLink } from '../../lib/ownerContact';
 import { PUBLIC_PAGES, SITE_URL, pageUrl, type PublicPage, type PublicPath } from './routePages';
+import { LEGAL_DOCUMENTS, type LegalPath } from '../../lib/legal/documents';
+import {
+  LEGAL_LINKS,
+  LEGAL_SELLER,
+  LEGAL_UPDATED_LABEL,
+  LEGAL_VERSION,
+} from '../../lib/legal/seller';
 
 const escapeHtml = (value: string) =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -132,32 +139,59 @@ const ownersShell = () =>
         </div>
       </main>`);
 
-// PrivacyPolicy.tsx's header and first section, with the same classes.
-const privacyShell = () =>
-  appFrame(`
-      <main id="main-content">
-        <div class="duo-scope min-h-screen bg-paper text-carbon py-12 sm:py-20 px-4 relative overflow-x-hidden">
-          <div class="max-w-3xl mx-auto">
-            <header class="mb-10 bg-paper px-6 py-8 sm:mb-12 sm:px-10 sm:py-12 border-b-[3px] border-dotted border-carbon/35">
-              <h1 class="font-candy-display text-3xl leading-[1.05] text-carbon sm:text-4xl md:text-5xl break-words">
-                Gizlilik Politikası ve KVKK Aydınlatma Metni
-              </h1>
-            </header>
-            <div class="space-y-6 sm:space-y-8 text-carbon font-candy-body">
-              <p>
-                6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") kapsamında, kişisel
-                verileriniz; veri sorumlusu olarak <strong>CafeDuo</strong> tarafından bu metinde
-                açıklanan kapsamda işlenebilecektir.
-              </p>
-            </div>
+// Full legal text, not a teaser: the same content remains available without JS.
+const legalShell = (path: LegalPath) => {
+  const document = LEGAL_DOCUMENTS[path];
+  return appFrame(`
+    <main id="main-content">
+      <article class="duo-scope bg-paper px-5 pb-10 pt-28 text-carbon sm:px-7 sm:pb-16 sm:pt-32">
+        <div class="mx-auto max-w-3xl break-words font-candy-body">
+          <a class="duo-focus inline-flex min-h-11 items-center underline underline-offset-4" href="/">Ana sayfaya dön</a>
+          <header class="mb-10 mt-6">
+            <h1 class="font-candy-display text-3xl leading-tight sm:text-5xl">${escapeHtml(document.title)}</h1>
+            <p class="mt-4 text-sm text-carbon-muted">Son güncelleme: ${LEGAL_UPDATED_LABEL} · Sürüm: ${LEGAL_VERSION}</p>
+            <p class="mt-6 max-w-prose leading-relaxed">${escapeHtml(document.intro)}</p>
+          </header>
+          <nav aria-label="Bu metinde"><ul class="mb-10 space-y-1 bg-paper-deep p-5">${document.sections
+            .map(
+              (section) => `
+            <li><a class="duo-focus inline-flex min-h-11 items-center underline underline-offset-4" href="#${escapeHtml(section.id)}">${escapeHtml(section.title)}</a></li>`
+            )
+            .join('')}
+          </ul></nav>
+          <div class="space-y-10">${document.sections
+            .map(
+              (section) => `
+            <section id="${escapeHtml(section.id)}" class="scroll-mt-28" aria-labelledby="${escapeHtml(section.id)}-title">
+              <h2 id="${escapeHtml(section.id)}-title" class="mb-4 font-candy-display text-[1.75rem] leading-tight">${escapeHtml(section.title)}</h2>
+              <div class="max-w-prose space-y-4 leading-relaxed">
+                ${(section.paragraphs ?? []).map((paragraph) => `<p>${escapeHtml(paragraph)}</p>`).join('')}
+                ${section.items ? `<ul class="list-disc space-y-3 pl-5">${section.items.map((item) => `<li>${escapeHtml(item)}</li>`).join('')}</ul>` : ''}
+                ${section.links ? `<ul class="space-y-1">${section.links.map((link) => `<li><a class="duo-focus inline-flex min-h-11 items-center underline underline-offset-4" href="${escapeHtml(link.href)}">${escapeHtml(link.label)}</a></li>`).join('')}</ul>` : ''}
+              </div>
+            </section>`
+            )
+            .join('')}
           </div>
+          <section class="mt-12 bg-paper-deep p-5 sm:p-6" aria-labelledby="legal-contact">
+            <h2 id="legal-contact" class="mb-4 font-candy-display text-[1.75rem] leading-tight">İletişim</h2>
+            <address class="space-y-3 not-italic leading-relaxed"><p>${escapeHtml(LEGAL_SELLER.name)}</p><p>${escapeHtml(LEGAL_SELLER.address)}</p>
+              <a class="duo-focus inline-flex min-h-11 items-center break-all underline underline-offset-4" href="mailto:${escapeHtml(LEGAL_SELLER.email)}">${escapeHtml(LEGAL_SELLER.email)}</a>
+            </address>
+          </section>
+          <nav aria-label="Hukuki metinler"><ul class="mt-8 flex flex-wrap gap-x-6 gap-y-2">${LEGAL_LINKS.map((link) => `<li><a class="duo-focus inline-flex min-h-11 items-center underline underline-offset-4" href="${link.href}">${escapeHtml(link.label)}</a></li>`).join('')}</ul></nav>
         </div>
-      </main>`);
+      </article>
+    </main>`);
+};
 
 const SHELLS: Record<PublicPath, () => string> = {
   '/': playersShell,
   '/kafeler': ownersShell,
-  '/gizlilik': privacyShell,
+  '/gizlilik': () => legalShell('/gizlilik'),
+  '/kosullar': () => legalShell('/kosullar'),
+  '/iade': () => legalShell('/iade'),
+  '/cerezler': () => legalShell('/cerezler'),
 };
 
 const structuredData = (page: PublicPage) => {

@@ -6,13 +6,18 @@ const { pool, isDbConnected } = require('../db');
 const logger = require('../utils/logger');
 const { isLocationCheckExempt } = require('../utils/locationExempt');
 const memoryState = require('../store/memoryState');
-const { isEmailConfigured, maskAddress, sendPasswordResetEmail } = require('../services/emailService');
+const {
+  isEmailConfigured,
+  maskAddress,
+  sendPasswordResetEmail,
+} = require('../services/emailService');
 const { resolveAppBaseUrl } = require('../utils/appUrl');
 const { emailVerification } = require('../services/emailVerificationService');
 const { revokeToken } = require('../utils/tokenRevocation');
 const { getRequiredJwtSecret } = require('../utils/securityConfig');
 const { setCsrfCookie, clearCsrfCookie } = require('../middleware/csrf');
 const { rollbackQuietly } = require('../utils/transaction');
+const { LEGAL_VERSION } = require('../config/legal');
 
 const JWT_SECRET = getRequiredJwtSecret();
 const PASSWORD_RESET_TOKEN_TTL_MINUTES = Number(process.env.PASSWORD_RESET_TOKEN_TTL_MINUTES || 30);
@@ -198,9 +203,32 @@ const toPublicUser = (user) => {
   );
   delete safeUser.email_verified_at;
   delete safeUser.emailVerifiedAt;
+  safeUser.termsVersion = safeUser.termsVersion ?? safeUser.terms_version ?? null;
+  safeUser.termsAcceptedAt = safeUser.termsAcceptedAt ?? safeUser.terms_accepted_at ?? null;
+  delete safeUser.terms_version;
+  delete safeUser.terms_accepted_at;
   delete safeUser.password;
   delete safeUser.password_hash;
   return safeUser;
+};
+
+const validateTermsAcceptance = (body, res) => {
+  if (body?.acceptTerms !== true) {
+    res.status(400).json({
+      code: 'TERMS_REQUIRED',
+      error:
+        'Kayıt için kullanım koşullarını okuyup kabul etmelisin. Onay kutusu görünmüyorsa sayfayı yenile.',
+    });
+    return false;
+  }
+  if (body.termsVersion !== LEGAL_VERSION) {
+    res.status(409).json({
+      code: 'TERMS_VERSION_CHANGED',
+      error: 'Kullanım koşullarının sürümü değişti. Sayfayı yenileyip güncel metni incele.',
+    });
+    return false;
+  }
+  return true;
 };
 
 const responseForgotPassword = {
@@ -213,7 +241,10 @@ const startVerificationInBackground = (user) => {
   Promise.resolve()
     .then(() => emailVerification().issueVerification(user))
     .catch((error) => {
-      logger.error('Verification start failed', { userId: user.id, error: error?.message || String(error) });
+      logger.error('Verification start failed', {
+        userId: user.id,
+        error: error?.message || String(error),
+      });
     });
 };
 
@@ -264,6 +295,8 @@ const authController = {
       return res.status(400).json({ error: 'Şifre 6-72 karakter aralığında olmalıdır.' });
     }
 
+    if (!validateTermsAcceptance(req.body, res)) return;
+
     try {
       const shouldBootstrapAdmin = BOOTSTRAP_ADMIN_EMAILS.includes(normalizedEmail);
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -288,9 +321,9 @@ const authController = {
         }
 
         const result = await pool.query(
-          `INSERT INTO users (username, email, password_hash, points, department, role, is_admin) 
-                     VALUES ($1, $2, $3, 100, $4, $5, $6) 
-                     RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number, email_verified_at IS NOT NULL AS "emailVerified"`,
+          `INSERT INTO users (username, email, password_hash, points, department, role, is_admin, terms_version, terms_accepted_at)
+                     VALUES ($1, $2, $3, 100, $4, $5, $6, $7, now())
+                     RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number, email_verified_at IS NOT NULL AS "emailVerified", terms_version AS "termsVersion", terms_accepted_at AS "termsAcceptedAt"`,
           [
             normalizedUsername,
             normalizedEmail,
@@ -298,6 +331,7 @@ const authController = {
             safeDepartment,
             shouldBootstrapAdmin ? 'admin' : 'user',
             shouldBootstrapAdmin,
+            LEGAL_VERSION,
           ]
         );
         startVerificationInBackground(result.rows[0]);
@@ -343,6 +377,8 @@ const authController = {
         isAdmin: shouldBootstrapAdmin,
         cafe_id: null,
         table_number: null,
+        termsVersion: LEGAL_VERSION,
+        termsAcceptedAt: new Date().toISOString(),
       };
       memoryState.users.unshift(memoryUser);
       startVerificationInBackground(memoryUser);
@@ -372,7 +408,7 @@ const authController = {
     try {
       if (await isDbConnected()) {
         const result = await pool.query(
-          'SELECT id, username, email, password_hash, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number, email_verified_at IS NOT NULL AS "emailVerified" FROM users WHERE LOWER(email) = $1',
+          'SELECT id, username, email, password_hash, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number, email_verified_at IS NOT NULL AS "emailVerified", terms_version AS "termsVersion", terms_accepted_at AS "termsAcceptedAt" FROM users WHERE LOWER(email) = $1',
           [normalizedEmail]
         );
 
@@ -394,7 +430,7 @@ const authController = {
                 [user.id]
               );
               if (promoted.rows.length > 0) {
-                user = promoted.rows[0];
+                user = { ...user, ...promoted.rows[0] };
                 logger.info('Bootstrap admin promoted on login', { email: normalizedEmail });
               }
             }
@@ -491,7 +527,11 @@ const authController = {
         usedAt: null,
       });
 
-      sendResetInBackground(memoryUser, rawToken, 'forgotPassword e-mail send failed (memory mode)');
+      sendResetInBackground(
+        memoryUser,
+        rawToken,
+        'forgotPassword e-mail send failed (memory mode)'
+      );
       return res.json(responseForgotPassword);
     } catch (error) {
       logger.error('forgotPassword flow failed', error);
@@ -658,7 +698,9 @@ const authController = {
       });
     } catch (error) {
       logger.error('verifyEmail failed', { error: error?.message || String(error) });
-      return res.status(500).json({ error: 'Doğrulama şu an yapılamadı. Biraz sonra yeniden dene.' });
+      return res
+        .status(500)
+        .json({ error: 'Doğrulama şu an yapılamadı. Biraz sonra yeniden dene.' });
     }
   },
 
@@ -681,8 +723,45 @@ const authController = {
       });
       return delivered ? res.json({ sent: true }) : unavailable();
     } catch (error) {
-      logger.error('resendVerification failed', { userId: user.id, error: error?.message || String(error) });
+      logger.error('resendVerification failed', {
+        userId: user.id,
+        error: error?.message || String(error),
+      });
       return unavailable();
+    }
+  },
+
+  async acceptTerms(req, res) {
+    if (!req.user?.id) return res.status(401).json({ error: 'Oturum gerekli.' });
+    if (!validateTermsAcceptance(req.body, res)) return;
+    try {
+      let receipt;
+      if (await isDbConnected()) {
+        const result = await pool.query(
+          `UPDATE users
+           SET terms_accepted_at = CASE WHEN terms_version = $2 AND terms_accepted_at IS NOT NULL
+                 THEN terms_accepted_at ELSE now() END,
+               terms_version = $2
+           WHERE id = $1
+           RETURNING terms_version AS "termsVersion", terms_accepted_at AS "termsAcceptedAt"`,
+          [req.user.id, LEGAL_VERSION]
+        );
+        receipt = result.rows[0];
+      } else {
+        const user = memoryState.users.find((item) => Number(item.id) === Number(req.user.id));
+        if (user) {
+          if (user.termsVersion !== LEGAL_VERSION || !user.termsAcceptedAt) {
+            user.termsVersion = LEGAL_VERSION;
+            user.termsAcceptedAt = new Date().toISOString();
+          }
+          receipt = { termsVersion: user.termsVersion, termsAcceptedAt: user.termsAcceptedAt };
+        }
+      }
+      if (!receipt) return res.status(404).json({ error: 'Hesap bulunamadı.' });
+      return res.json(receipt);
+    } catch (error) {
+      logger.error('Terms acceptance failed', { userId: req.user.id, error: error?.message });
+      return res.status(500).json({ error: 'Koşul kabulü kaydedilemedi. Yeniden deneyebilirsin.' });
     }
   },
 
@@ -694,7 +773,7 @@ const authController = {
     }
     // Accounts that skip the café's location verification.
     user.locationCheckExempt = isLocationCheckExempt(user);
-    res.json(user);
+    res.json(toPublicUser(user));
   },
 };
 

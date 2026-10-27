@@ -59,6 +59,7 @@ const buildRes = () => {
 describe('authController security-critical auth flows', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    pool.query.mockReset();
     process.env.JWT_SECRET = '';
     global.fetch = jest.fn();
     isDbConnected.mockResolvedValue(true);
@@ -72,6 +73,137 @@ describe('authController security-critical auth flows', () => {
   afterEach(() => {
     delete process.env.JWT_SECRET;
     delete global.fetch;
+  });
+
+  it.each([undefined, false, 'true', 1])(
+    'rejects registration without boolean terms acceptance (%s)',
+    async (acceptTerms) => {
+      const res = buildRes();
+      await authController.register(
+        {
+          body: {
+            username: 'ada',
+            email: 'ada@example.com',
+            password: 'secret12',
+            acceptTerms,
+            termsVersion: '2026-10-27',
+          },
+        },
+        res
+      );
+      expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'TERMS_REQUIRED' }));
+      expect(bcrypt.hash).not.toHaveBeenCalled();
+      expect(pool.query).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each([undefined, '2025-01-01', '2099-01-01'])(
+    'does not record stale/unknown terms as the current version (%s)',
+    async (termsVersion) => {
+      const res = buildRes();
+      await authController.register(
+        {
+          body: {
+            username: 'ada',
+            email: 'ada@example.com',
+            password: 'secret12',
+            acceptTerms: true,
+            termsVersion,
+          },
+        },
+        res
+      );
+      expect(res.status).toHaveBeenCalledWith(409);
+      expect(res.json).toHaveBeenCalledWith(
+        expect.objectContaining({ code: 'TERMS_VERSION_CHANGED' })
+      );
+      expect(pool.query).not.toHaveBeenCalled();
+    }
+  );
+
+  it('accepts terms only for the authenticated user and retains the first current-version receipt', async () => {
+    const receipt = { termsVersion: '2026-10-27', termsAcceptedAt: '2026-10-27T12:00:00.000Z' };
+    pool.query.mockResolvedValueOnce({ rows: [receipt] });
+    const res = buildRes();
+    await authController.acceptTerms(
+      {
+        user: { id: 7 },
+        body: {
+          userId: 999,
+          acceptTerms: true,
+          termsVersion: '2026-10-27',
+          termsAcceptedAt: '2000-01-01',
+        },
+      },
+      res
+    );
+    expect(pool.query).toHaveBeenCalledWith(
+      expect.stringMatching(/UPDATE users[\s\S]+CASE WHEN terms_version = \$2[\s\S]+ELSE now\(\)/),
+      [7, '2026-10-27']
+    );
+    expect(res.json).toHaveBeenCalledWith(receipt);
+  });
+
+  it('does not acknowledge a terms update when acceptance or the displayed version is missing', async () => {
+    for (const body of [{}, { acceptTerms: true, termsVersion: '2025-01-01' }]) {
+      const res = buildRes();
+      await authController.acceptTerms({ user: { id: 7 }, body }, res);
+      expect(res.status).toHaveBeenCalledWith(body.acceptTerms ? 409 : 400);
+    }
+    expect(pool.query).not.toHaveBeenCalled();
+  });
+
+  it('stores server-time terms acceptance and idempotent retries in memory mode', async () => {
+    const memoryState = require('../store/memoryState');
+    const originalUsers = memoryState.users.slice();
+    isDbConnected.mockResolvedValue(false);
+    bcrypt.hash.mockResolvedValue('hashed-password');
+    memoryState.users.length = 0;
+    try {
+      const res = buildRes();
+      await authController.register(
+        {
+          body: {
+            username: 'ada',
+            email: 'ada@example.com',
+            password: 'secret12',
+            acceptTerms: true,
+            termsVersion: '2026-10-27',
+            termsAcceptedAt: '2000-01-01',
+          },
+        },
+        res
+      );
+      const user = res.json.mock.calls[0][0];
+      expect(user).toEqual(
+        expect.objectContaining({ termsVersion: '2026-10-27', termsAcceptedAt: expect.any(String) })
+      );
+      expect(user.termsAcceptedAt).not.toBe('2000-01-01');
+      expect(user.password_hash).toBeUndefined();
+      const retry = buildRes();
+      await authController.acceptTerms(
+        { user: { id: user.id }, body: { acceptTerms: true, termsVersion: '2026-10-27' } },
+        retry
+      );
+      expect(retry.json).toHaveBeenCalledWith({
+        termsVersion: user.termsVersion,
+        termsAcceptedAt: user.termsAcceptedAt,
+      });
+    } finally {
+      memoryState.users.splice(0, memoryState.users.length, ...originalUsers);
+    }
+  });
+
+  it('returns a generic error rather than storing a success receipt when terms persistence fails', async () => {
+    pool.query.mockRejectedValueOnce(new Error('private database details'));
+    const res = buildRes();
+    await authController.acceptTerms(
+      { user: { id: 7 }, body: { acceptTerms: true, termsVersion: '2026-10-27' } },
+      res
+    );
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(JSON.stringify(res.json.mock.calls)).not.toContain('private database details');
   });
 
   it('register normalizes email and promotes bootstrap admin account at creation', async () => {
@@ -98,6 +230,8 @@ describe('authController security-critical auth flows', () => {
       body: {
         username: 'adminUser',
         email: 'EMIN3619@GMAIL.COM',
+        acceptTerms: true,
+        termsVersion: '2026-10-27',
         password: 'StrongPass123',
         department: 'YBS',
       },
@@ -125,6 +259,7 @@ describe('authController security-critical auth flows', () => {
       'YBS',
       'admin',
       true,
+      '2026-10-27',
     ]);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ role: 'admin' }));
   });
@@ -134,13 +269,26 @@ describe('authController security-critical auth flows', () => {
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({
-        rows: [{ id: 21, username: 'ada', email: 'ada@gmail.com', points: 100, emailVerified: false }],
+        rows: [
+          { id: 21, username: 'ada', email: 'ada@gmail.com', points: 100, emailVerified: false },
+        ],
       });
     mockIssueVerification.mockImplementationOnce(() => new Promise(() => {}));
     const res = buildRes();
     const answered = await Promise.race([
       authController
-        .register({ body: { username: 'ada', email: 'Ada@gmail.com', password: 'secret12' } }, res)
+        .register(
+          {
+            body: {
+              username: 'ada',
+              email: 'Ada@gmail.com',
+              password: 'secret12',
+              acceptTerms: true,
+              termsVersion: '2026-10-27',
+            },
+          },
+          res
+        )
         .then(() => 'answered'),
       new Promise((resolve) => setTimeout(() => resolve('waited'), 300)),
     ]);
@@ -148,7 +296,9 @@ describe('authController security-critical auth flows', () => {
     expect(mockIssueVerification).toHaveBeenCalledWith(
       expect.objectContaining({ id: 21, email: 'ada@gmail.com', username: 'ada' })
     );
-    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ id: 21, emailVerified: false }));
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 21, emailVerified: false })
+    );
     const insert = pool.query.mock.calls[2][0];
     expect(insert).toMatch(/email_verified_at IS NOT NULL AS "emailVerified"/);
   });
@@ -220,6 +370,8 @@ describe('authController security-critical auth flows', () => {
       body: {
         username: 'Emin',
         email: 'fresh@example.com',
+        acceptTerms: true,
+        termsVersion: '2026-10-27',
         password: 'StrongPass123',
         department: 'YBS',
       },
@@ -274,6 +426,8 @@ describe('authController security-critical auth flows', () => {
             isAdmin: false,
             role: 'user',
             cafe_id: 7,
+            termsVersion: '2026-10-27',
+            termsAcceptedAt: '2026-10-27T12:00:00.000Z',
           },
         ],
       })
@@ -337,7 +491,12 @@ describe('authController security-critical auth flows', () => {
     expect(res.json).toHaveBeenCalledWith(
       expect.objectContaining({
         token: 'signed-jwt-token',
-        user: expect.objectContaining({ isAdmin: true, role: 'admin' }),
+        user: expect.objectContaining({
+          isAdmin: true,
+          role: 'admin',
+          termsVersion: '2026-10-27',
+          termsAcceptedAt: '2026-10-27T12:00:00.000Z',
+        }),
       })
     );
   });
@@ -436,7 +595,10 @@ describe('authController security-critical auth flows', () => {
     const res = buildRes();
     const answered = await Promise.race([
       authController
-        .forgotPassword({ body: { email: 'player@example.com' }, headers: {}, ip: '127.0.0.1' }, res)
+        .forgotPassword(
+          { body: { email: 'player@example.com' }, headers: {}, ip: '127.0.0.1' },
+          res
+        )
         .then(() => 'answered'),
       new Promise((resolve) => setTimeout(() => resolve('waited for e-mail'), 300)),
     ]);

@@ -64,7 +64,8 @@ const authenticateToken = async (req, res, next) => {
         `SELECT id, username, email, role, is_admin as "isAdmin",
                 cafe_id, points, wins, games_played as "gamesPlayed",
                 table_number, department, avatar_url,
-                email_verified_at IS NOT NULL AS "emailVerified"
+                email_verified_at IS NOT NULL AS "emailVerified",
+                terms_version AS "termsVersion", terms_accepted_at AS "termsAcceptedAt"
          FROM users
          WHERE id = $1`,
         [decoded.id]

@@ -130,3 +130,117 @@ for disposable development/CI databases, not destruction of production legal evi
 
 Risk scores, fee/fine amounts, trademark estimates and statutory thresholds in earlier research
 are preliminary, not verified conclusions for this operator. Do not copy them into public terms.
+
+## Release-gate verification — 2026-10-27
+
+**Scope:** PR #94 application head `98973286862ea178925e504adce187f57f7f1d79`, repository evidence and
+current official/public vendor documents. No production environment, legal records, customer data,
+private provider agreement, tax filing or regulator submission was inspected. No provider was
+changed, no filing was submitted and no production operation was performed. Absence of supplied
+evidence is **not** proof that the operator has never executed a document or made a filing.
+
+### Technical review
+
+- An independent read-only Opus reviewer completed the TS/JS review of `9d4eaf6..9897328` after
+  the designated free TS reviewer was still quota-blocked. No blocking type/async defect was
+  reported. This is a code-reading review, not a legal opinion or an additional test run.
+- CI [40450060519](https://github.com/eminemrre/cafeduo-main/actions/runs/40450060519) is green
+  for this application head, including build/coverage, E2E and real PostgreSQL migration reversal.
+- **Open security gate:** the reviewer identified token-bearing diagnostic URLs. The actual
+  `lib/errorReporting.ts` `beforeSend` was exercised with a synthetic event: both
+  `request.url=/reset-password?token=...` and a navigation breadcrumb `/dogrula?token=...` retained
+  the synthetic token. No real token was used and no event was sent to Sentry. Installed SDK
+  `HttpContext` obtains the full current URL (`@sentry/browser` `helpers.js`, `getHttpRequestData`).
+  Treat this as an important diagnostic-data/credential minimisation issue, not as evidence of
+  an observed real-user leak. It predates this PR but remains present. Redact sensitive URL
+  parameters in diagnostic request/referrer/breadcrumb fields and test the outgoing event before
+  treating this gate as closed. Review backend error/tracing payloads as part of that correction.
+- Other review observations are non-blocking: brief cache-hydration banner flicker; a persisted
+  acceptance may not update the local cache if the banner unmounts during the request; trailing
+  slash routes do not show the banner; checkbox error accessibility; optional endpoint-specific
+  limiting (a global API limiter exists); constant-only static escaping/key robustness; and the
+  pre-existing register-success/auto-login-failure recovery case. They are not proof of consent
+  forgery or a type-check failure. A repeated server acceptance preserves the original time.
+
+### Current-service privacy gates (not only future payments)
+
+1. **Resend — transfer mechanism not established; a specific attempted solution is unavailable.**
+   [Resend's security FAQ](https://resend.com/security) explicitly says it does not sign third-party
+   or country-specific DPAs/standard contracts, including the Türkiye KVKK Standard Contract,
+   and will not append one to its DPA. Do not present "get Resend to sign SS-2" as an available,
+   verified close-out route. Its standard GDPR DPA/EU SCC/DPF statements alone do not establish
+   a Turkish m.9 transfer basis for this controller. A qualified assessment of an actually
+   available alternative mechanism, or an owner-approved change of the processing arrangement,
+   is required before this can be marked verified. This is not a conclusion that every possible
+   legal transfer mechanism has been ruled out.
+2. **Resend — sending region is not storage location.** Its
+   [GDPR overview](https://resend.com/security/gdpr) says message content, logs, webhook payloads
+   and account records are stored in the **United States**. The
+   [region documentation](https://resend.com/docs/dashboard/domains/regions) expressly distinguishes
+   Tokyo/Ireland/etc. email dispatch from US storage. Changing the sending region cannot close
+   this gate. The vendor states 30-day email/log retention for Free/Pro/Scale and up to 90 days
+   for remaining customer data after account termination; the operator's plan and completed
+   deletion are not verified by reading that policy.
+3. **Other transfers — documentary verification still open.** No evidence was supplied to this
+   review establishing the applicable m.9 mechanism for Sentry, Gmail support or map requests,
+   including any relevant subprocessors/remote access. Backend Sentry remains conditionally
+   enabled with production tracing rate 0.1 (`backend/server.js:41–65`); disabling browser Replay
+   is not anonymisation or proof that remaining diagnostics have no personal data.
+4. **Offsite backups — include them in the inventory.** `deploy/scripts/backup-production.sh`
+   copies a database dump and an environment copy to a configurable rclone remote, defaulting to
+   a `b2-cafeduo` target (lines 6, 19–23). Whether this script/remote is used in production, the
+   actual provider, location, access rights, encryption and lifecycle rules were not verified.
+   Do not assert that this proves active Backblaze processing, or overlook that potential flow.
+5. **Retention/deletion — expiry is not erasure.** Verification links expire after 24 hours and
+   reset links default to 30 minutes; this does not prove the token rows are purged. The game
+   cleanup job deletes unjoined waiting games older than 30 minutes, not all game/history data.
+   `logger.js` configures file transports without age-based retention. Docker has size-based
+   rotation (`10m` × 3), not a legal time limit. Local backup cleanup does not establish remote
+   backup expiry; deployment backups also have no demonstrated lifecycle here. Admin user
+   deletion exists, but a fulfilled rights-request process, downstream deletion and backup
+   expiry were not demonstrated. Category-specific approved retention and execution evidence
+   remain necessary; do not publish an unconditional "all records erased in 30 days" claim.
+6. **Disclosure/consent separation — code verified, complete compliance not certified.** The
+   [KVKK 2026/347 notice](https://www.kvkk.gov.tr/Icerik/8710/veri-sorumlulari-tarafindan-acik-riza-ve-aydinlatma-metinlerinin-ayri-ayri-duzenlenmesi-gerektigi-hakkinda-kisisel-verileri-koruma-kurulunun-18-02-2026-tarihli-ve-2026-347-sayili-ilke-kararina-iliskin-kamuoyu-duyurusu)
+   confirms that information/acknowledgement is distinct from processing consent. The UI and
+   acceptance endpoint reflect this separation; correctness of every underlying processing
+   basis is a separate assessment. If a Turkish standard contract is actually used, the
+   [Authority's signature/notification notice](https://www.kvkk.gov.tr/Icerik/8170/Yurt-Disina-Kisisel-Veri-Aktariminda-Kullanilacak-Standart-Sozlesmelerde-Dikkat-Edilmesi-Gereken-Hususlara-Iliskin-Kamuoyu-Duyurusu)
+   requires valid signatures and notification within five business days after signatures finish.
+
+### Business/product gates
+
+- **Points/prizes and age:** the
+  [Milli Piyango authority](https://www.mpi.gov.tr/lottery) provides permission/appropriate-opinion
+  procedures; its online application channel has been `cekilisevi.gov.tr` since 02.02.2026.
+  No operator-specific classification, exemption opinion or necessary permission was supplied.
+  Neither free entry, "points only", low prize value nor renaming stakes settles classification.
+  Relevant age rules must be assessed with the actual mechanics, not imposed or waived here.
+- **Paddle acceptance:** its official
+  [AUP help page](https://www.paddle.com/help/start/intro-to-paddle/what-am-i-not-allowed-to-sell-on-paddle)
+  lists betting-related products, lotteries/contests/sweepstakes/games of chance and virtual
+  currency/stored value among restricted categories. CafeDuo's actual café-SaaS/points/reward
+  model needs an accurate description and explicit product acceptance, not an assumption from
+  the word "SaaS". No account/product approval was demonstrated. This does not itself decide
+  whether CafeDuo falls into a prohibited category.
+- **Tax/ETBIS/disclosures:** the
+  [Ministry's FAQ, questions 10 and 19](https://ticaret.gov.tr/ic-ticaret/sikca-sorulan-sorular/elektronik-ticaret)
+  confirms that covered service providers register before relevant activity. Applicability to
+  this particular foreign-MoR contract structure, tax/registration/exemption status, KEP and
+  any required public identifiers/contact disclosures have not been established by documents.
+  This check does not assert that a particular company form is compulsory for every case.
+- **VERBIS:** the Authority's
+  [current exemption notice](https://www.kvkk.gov.tr/Icerik/8388/KAMUOYU-DUYURUSU) uses employee,
+  annual financial balance and main-activity criteria (including the 2025/1572 amendment).
+  The operator's facts were not verified; "individual/no employees" alone is not a completed
+  exemption assessment. A registration exemption would not remove other KVKK obligations.
+- **Checkout/refund:** no Paddle checkout, subscription sync or café approval/trial implementation
+  is present in the reviewed backend. Paid-service activation is therefore a separate, unopened
+  gate, not something enabled by these legal pages. Paddle's
+  [refund policy §7.1](https://www.paddle.com/legal/refund-policy) confirms that submitting a request
+  within 14 days does not guarantee discretionary approval; statutory rights remain separate.
+
+**Decision:** independent TS/JS review complete for the named application head; **general legal
+release readiness is not verified**. Keep PR #94 in draft and do not merge/deploy or enable payments
+based on this review. No legal filing, supplier-contract execution or production migration has
+been authorised by requesting this verification.

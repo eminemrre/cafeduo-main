@@ -76,4 +76,67 @@ describe('error-only browser reporting', () => {
       message: 'No user context',
     });
   });
+
+  it('removes credential-bearing diagnostic URLs and raw request data before sending', () => {
+    initializeErrorReporting();
+    const options = (Sentry.init as jest.Mock).mock.calls[0][0];
+    const event = {
+      message: 'GET https://example.com/dogrula?token=SYNTHETIC_MESSAGE failed',
+      request: {
+        url: 'https://example.com/reset-password?token=SYNTHETIC_REQUEST#private',
+        query_string: 'token=SYNTHETIC_QUERY',
+        data: { password: 'SYNTHETIC_PASSWORD' },
+        headers: {
+          Referer: 'https://example.com/dogrula?token=SYNTHETIC_REFERRER',
+          Authorization: 'Bearer SYNTHETIC_AUTH',
+        },
+        cookies: { session: 'SYNTHETIC_COOKIE' },
+        method: 'POST',
+      },
+      breadcrumbs: [
+        {
+          category: 'navigation',
+          data: {
+            from: '/reset-password?token=SYNTHETIC_FROM',
+            to: '/dogrula?%74oken=SYNTHETIC_TO',
+          },
+        },
+        {
+          category: 'fetch',
+          data: { url: '/api/auth/verify-email?token=SYNTHETIC_HTTP', status_code: 400 },
+        },
+      ],
+      exception: {
+        values: [
+          { type: 'TypeError', stacktrace: { frames: [{ filename: '/assets/app.js?v=1' }] } },
+        ],
+      },
+      extra: { nested: { url: 'https://example.com/?unknown=SYNTHETIC_UNKNOWN' } },
+    };
+    const original = JSON.stringify(event);
+    const cleaned = options.beforeSend(event, {});
+    expect(JSON.stringify(cleaned)).not.toContain('SYNTHETIC_');
+    expect(cleaned.request).toEqual({ url: 'https://example.com/reset-password', method: 'POST' });
+    expect(cleaned.breadcrumbs[0].data).toEqual({ from: '/reset-password', to: '/dogrula' });
+    expect(cleaned.breadcrumbs[1].data).toEqual({
+      url: '/api/auth/verify-email',
+      status_code: 400,
+    });
+    expect(cleaned.exception.values[0]).toEqual({
+      type: 'TypeError',
+      stacktrace: { frames: [{ filename: '/assets/app.js' }] },
+    });
+    expect(JSON.stringify(event)).toBe(original);
+  });
+
+  it('sanitizes breadcrumbs on collection as well as the final event', () => {
+    initializeErrorReporting();
+    const options = (Sentry.init as jest.Mock).mock.calls[0][0];
+    expect(
+      options.beforeBreadcrumb({
+        category: 'navigation',
+        data: { from: '/dogrula?token=SYNTHETIC', to: '/dashboard' },
+      })
+    ).toEqual({ category: 'navigation', data: { from: '/dogrula', to: '/dashboard' } });
+  });
 });

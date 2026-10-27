@@ -244,3 +244,33 @@ evidence is **not** proof that the operator has never executed a document or mad
 release readiness is not verified**. Keep PR #94 in draft and do not merge/deploy or enable payments
 based on this review. No legal filing, supplier-contract execution or production migration has
 been authorised by requesting this verification.
+
+### Diagnostic-privacy correction (separate branch; not production clearance)
+
+The user subsequently approved technical fixes and an isolated worktree. The correction on
+`fix/diagnostic-token-redaction`, based on `feat/legal-pages`, addresses the diagnostic gate above:
+
+- `shared/diagnosticPrivacy.js` strips **all** URL query/fragment values and URL credentials,
+  including nested navigation/HTTP breadcrumbs, stack filenames and embedded error-message URLs.
+  Raw request bodies, headers, cookies, query strings and sensitive credential fields are omitted.
+- `lib/errorReporting.ts` applies it both when collecting breadcrumbs and just before sending
+  errors. Error capture stays enabled; browser Replay/tracing/session collection stays disabled.
+- `backend/config/errorReporting.js` applies the same scrubber to errors, transactions, individual
+  spans and breadcrumbs. Redis instrumentation is disabled because actual blacklist keys contain
+  JWTs and rate-limit keys can identify clients. Raw DB statements/query text and DB span command
+  descriptions are also omitted as defence in depth. Existing server trace sampling is unchanged.
+- Traversal has a 1000-work budget per top-level field/structural collection item and depth limit
+  10 (so a large collection cannot erase event type/release metadata), does not invoke object getters,
+  summarises Error/Date values and bounds other non-plain objects. Static stack source snippets
+  are preserved rather than interpreted as URLs; useful error types, paths and HTTP status remain.
+- Regression coverage: `lib/errorReporting.test.ts`, `shared/diagnosticPrivacy.test.js` and
+  `backend/config/errorReporting.test.js`. The latter checks real SDK error/transaction envelopes
+  using an in-memory transport, including synthetic Redis JWT-bearing statements. All fixture
+  secrets are synthetic; no real user payload or production event is needed for verification.
+
+This is **scoped data minimisation**, not a claim to remove arbitrary personal data or secrets
+from every free-text message, path, object key or source snippet. Avoid logging sensitive data in
+the first place. It does not erase historical events or implement retention/account deletion.
+Until reviewed and deployed, production and PR #94 alone retain the earlier behaviour. No
+provider switch, migration, legal filing or change to game/age/payment policy is part of this fix.
+All other transfer, retention and business gates above remain unresolved.

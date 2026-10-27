@@ -34,35 +34,20 @@ const logger = require('./utils/logger');
 
 // Sentry APM Monitoring
 const Sentry = require('@sentry/node');
+const { createServerErrorReportingOptions } = require('./config/errorReporting');
 
 // Track if Sentry was successfully initialized
 let isSentryInitialized = false;
 
 // Only initialize Sentry if DSN is provided
 if (process.env.SENTRY_DSN) {
-  Sentry.init({
-    dsn: process.env.SENTRY_DSN,
-    environment: process.env.NODE_ENV || 'development',
-    release: process.env.APP_VERSION || undefined,
-    tracesSampleRate: process.env.NODE_ENV === 'production' ? 0.1 : 1.0,
-    // Shares a project with the frontend; this tag tells the two apart.
-    initialScope: { tags: { service: 'api' } },
-    // Filter out sensitive data
-    beforeSend(event, _hint) {
-      // Remove password_hash from user object if present
-      if (event.user) {
-        delete event.user.password_hash;
-      }
-      // Filter sensitive headers
-      if (event.request?.headers) {
-        delete event.request.headers['authorization'];
-        delete event.request.headers['cookie'];
-        delete event.request.headers['x-csrf-token'];
-      }
-      if (event.request) delete event.request.cookies;
-      return event;
-    },
-  });
+  Sentry.init(
+    createServerErrorReportingOptions({
+      dsn: process.env.SENTRY_DSN,
+      environment: process.env.NODE_ENV || 'development',
+      release: process.env.APP_VERSION || undefined,
+    })
+  );
   isSentryInitialized = true;
   logger.info('Sentry APM initialized');
 } else {

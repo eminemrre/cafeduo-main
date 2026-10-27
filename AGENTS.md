@@ -107,6 +107,12 @@ npm run migrate:status   # when touching migrations
   BrowserTracing and BrowserSession integrations and both replay sample rates stay disabled.
   Re-enabling behavioural/session recording needs a separate product/legal decision, not the
   necessary-cookie notice. Error reporting still requires assessment of cross-border transfers.
+- Diagnostic privacy is shared in `shared/diagnosticPrivacy.js` (browser bridge:
+  `lib/diagnosticPrivacy.ts`). Keep query/fragment values, URL credentials, request bodies/headers,
+  cookies and raw DB commands out of outgoing diagnostics. Server configuration also scrubs
+  transactions/spans; `beforeSend` alone does not cover them. Do not re-enable Sentry's Redis
+  integration: blacklist keys contain bearer tokens and rate-limit keys may identify clients.
+  This minimisation is not anonymisation or a substitute for a valid transfer mechanism.
 
 ### Architecture
 

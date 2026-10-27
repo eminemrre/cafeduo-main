@@ -1,5 +1,6 @@
 import * as Sentry from '@sentry/react';
 import { getViteEnvVar } from './viteEnv';
+import { sanitizeDiagnosticData } from './diagnosticPrivacy';
 
 export const initializeErrorReporting = (): void => {
   const dsn = getViteEnvVar('VITE_SENTRY_DSN');
@@ -18,12 +19,7 @@ export const initializeErrorReporting = (): void => {
     tracesSampleRate: 0,
     replaysSessionSampleRate: 0,
     replaysOnErrorSampleRate: 0,
-    beforeSend(event) {
-      if (event.user) {
-        delete event.user.email;
-        delete event.user.ip_address;
-      }
-      return event;
-    },
+    beforeSend: sanitizeDiagnosticData,
+    beforeBreadcrumb: sanitizeDiagnosticData,
   });
 };

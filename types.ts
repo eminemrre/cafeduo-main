@@ -37,6 +37,8 @@ export interface User {
   bonusReceived?: boolean;
   /** True when this account checks in without the café's location verification. */
   locationCheckExempt?: boolean;
+  /** False until the e-mail address is confirmed; absent on old cached users. */
+  emailVerified?: boolean;
 }
 
 export interface UserProfileUpdates {

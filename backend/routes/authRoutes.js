@@ -67,11 +67,40 @@ const resetPasswordLimiter = buildAuthLimiter(
   'AUTH_RESET_PASSWORD_RATE_LIMITED'
 );
 
+const verifyEmailLimiter = buildAuthLimiter(
+  'auth:verify-email',
+  Number(process.env.AUTH_VERIFY_EMAIL_RATE_LIMIT_MAX_REQUESTS || 20),
+  'Çok fazla doğrulama denemesi. Lütfen biraz bekleyin.',
+  'AUTH_VERIFY_EMAIL_RATE_LIMITED'
+);
+
+// Three new verification links per user per hour, whatever IP they come from.
+const resendVerificationLimiter = rateLimit(
+  buildRateLimiterOptions({
+    scope: 'auth:resend-verification',
+    windowMs: 60 * 60 * 1000,
+    limit: 3,
+    keyGenerator: (req) => `user:${req.user?.id ?? 'anonymous'}`,
+    handler: (req, res) =>
+      res.status(429).json({
+        error: 'Doğrulama e-postasını kısa süre içinde çok kez istedin. Biraz sonra yeniden dene.',
+        code: 'AUTH_RESEND_VERIFICATION_RATE_LIMITED',
+      }),
+  })
+);
+
 router.post('/register', registerLimiter, authController.register);
 router.post('/login', loginLimiter, authController.login);
 router.post('/logout', authController.clearLogoutCookies, authenticateToken, authController.logout);
 router.post('/forgot-password', forgotPasswordLimiter, authController.forgotPassword);
 router.post('/reset-password', resetPasswordLimiter, authController.resetPassword);
+router.post('/verify-email', verifyEmailLimiter, authController.verifyEmail);
+router.post(
+  '/resend-verification',
+  authenticateToken,
+  resendVerificationLimiter,
+  authController.resendVerification
+);
 router.get(
   '/me',
   authenticateToken,

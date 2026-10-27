@@ -18,11 +18,15 @@ docker inspect deploy-api-1 deploy-web-1 > "$BACKUP/containers.json"
 docker exec deploy-postgres-1 sh -c 'exec pg_dump -Fc --no-owner -U "$POSTGRES_USER" "$POSTGRES_DB"' > "$BACKUP/database.dump"
 test -s "$BACKUP/database.dump"
 docker exec -i deploy-postgres-1 pg_restore --list < "$BACKUP/database.dump" > "$BACKUP/database.toc"
-python3 - "$PROJECT_DIR/.env" "$SOURCE_DIR/.env" "$EXPECTED_SHA" <<'PY'
+python3 - "$PROJECT_DIR/.env" "$SOURCE_DIR/.env" "$EXPECTED_SHA" /opt/cafeduo-secrets/app.env <<'PY'
 import datetime,os,sys
 from pathlib import Path
-source,target,sha=sys.argv[1:]
-lines=[line for line in Path(source).read_text().splitlines() if not line.startswith(('APP_VERSION=','APP_BUILD_TIME=','EXPOSE_API_ERRORS='))]
+source,target,sha,managed=sys.argv[1:]
+# Deploy-managed secrets (written by Deploy VPS from GitHub secrets) win over the server .env.
+managed_lines=[line for line in (Path(managed).read_text().splitlines() if Path(managed).is_file() else []) if '=' in line and not line.startswith('#')]
+managed_keys=tuple(line.split('=',1)[0]+'=' for line in managed_lines)
+lines=[line for line in Path(source).read_text().splitlines() if not line.startswith(('APP_VERSION=','APP_BUILD_TIME=','EXPOSE_API_ERRORS=')+managed_keys)]
+lines += managed_lines
 lines += ['APP_VERSION='+sha,'APP_BUILD_TIME='+datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),'EXPOSE_API_ERRORS=false']
 Path(target).write_text('\n'.join(lines)+'\n');os.chmod(target,0o600)
 PY
@@ -67,7 +71,7 @@ url,sha=sys.argv[1:]
 for attempt in range(30):
     try:
         with urllib.request.urlopen(url.rstrip('/')+'/api/readiness',timeout=10) as response:body=json.load(response)
-        assert body['status']=='ready' and body['version']==sha and body['checks']['database'] and body['checks']['redis']['ready']
+        assert body['status']=='ready' and body['version']==sha and body['checks']['database'] and body['checks']['redis']['ready'] and body['checks'].get('email') is True and body['checks'].get('wordBank') is True
         with urllib.request.urlopen(url,timeout=10) as response:assert response.status==200
         print('[deploy] Public readiness, database, Redis and exact commit verified.');break
     except Exception:

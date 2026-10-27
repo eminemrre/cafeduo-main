@@ -23,8 +23,20 @@ jest.mock('../utils/logger', () => ({
 }));
 
 const mockSendPasswordResetEmail = jest.fn();
+const mockIsEmailConfigured = jest.fn(() => true);
 jest.mock('../services/emailService', () => ({
   sendPasswordResetEmail: (...args) => mockSendPasswordResetEmail(...args),
+  isEmailConfigured: () => mockIsEmailConfigured(),
+  maskAddress: jest.requireActual('../services/emailService').maskAddress,
+}));
+
+const mockIssueVerification = jest.fn();
+const mockConfirmVerification = jest.fn();
+jest.mock('../services/emailVerificationService', () => ({
+  emailVerification: () => ({
+    issueVerification: (...args) => mockIssueVerification(...args),
+    confirmVerification: (...args) => mockConfirmVerification(...args),
+  }),
 }));
 
 const bcrypt = require('bcrypt');
@@ -115,6 +127,87 @@ describe('authController security-critical auth flows', () => {
       true,
     ]);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ role: 'admin' }));
+  });
+
+  it('register sends a verification e-mail without waiting for it and reports the user unverified', async () => {
+    pool.query
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [{ id: 21, username: 'ada', email: 'ada@gmail.com', points: 100, emailVerified: false }],
+      });
+    mockIssueVerification.mockImplementationOnce(() => new Promise(() => {}));
+    const res = buildRes();
+    const answered = await Promise.race([
+      authController
+        .register({ body: { username: 'ada', email: 'Ada@gmail.com', password: 'secret12' } }, res)
+        .then(() => 'answered'),
+      new Promise((resolve) => setTimeout(() => resolve('waited'), 300)),
+    ]);
+    expect(answered).toBe('answered');
+    expect(mockIssueVerification).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 21, email: 'ada@gmail.com', username: 'ada' })
+    );
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ id: 21, emailVerified: false }));
+    const insert = pool.query.mock.calls[2][0];
+    expect(insert).toMatch(/email_verified_at IS NOT NULL AS "emailVerified"/);
+  });
+
+  it('verifyEmail answers verified/already with 200 and invalid/expired with 400', async () => {
+    for (const [status, code] of [
+      ['verified', 200],
+      ['already', 200],
+      ['expired', 400],
+      ['invalid', 400],
+    ]) {
+      mockConfirmVerification.mockResolvedValueOnce({ status, userId: 7 });
+      const res = buildRes();
+      await authController.verifyEmail({ body: { token: 'a'.repeat(64) } }, res);
+      if (code === 200) expect(res.status).not.toHaveBeenCalled();
+      else expect(res.status).toHaveBeenCalledWith(400);
+      expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ status }));
+      expect(JSON.stringify(res.json.mock.calls)).not.toMatch(/userId/);
+    }
+  });
+
+  it('resendVerification says so when no e-mail can leave instead of claiming it sent one', async () => {
+    mockIsEmailConfigured.mockReturnValueOnce(false);
+    const res = buildRes();
+    await authController.resendVerification(
+      { user: { id: 7, username: 'ada', email: 'ada@gmail.com', emailVerified: false } },
+      res
+    );
+    expect(res.status).toHaveBeenCalledWith(503);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ code: 'EMAIL_UNAVAILABLE' }));
+    expect(mockIssueVerification).not.toHaveBeenCalled();
+
+    mockIssueVerification.mockResolvedValueOnce({ delivered: false });
+    const failed = buildRes();
+    await authController.resendVerification(
+      { user: { id: 7, username: 'ada', email: 'ada@gmail.com', emailVerified: false } },
+      failed
+    );
+    expect(failed.status).toHaveBeenCalledWith(503);
+  });
+
+  it('resendVerification issues a new link for an unverified user and refuses a verified one', async () => {
+    mockIssueVerification.mockResolvedValueOnce({ delivered: true });
+    const res = buildRes();
+    await authController.resendVerification(
+      { user: { id: 7, username: 'ada', email: 'ada@gmail.com', emailVerified: false } },
+      res
+    );
+    expect(mockIssueVerification).toHaveBeenCalledWith(expect.objectContaining({ id: 7 }));
+    expect(res.json).toHaveBeenCalledWith({ sent: true });
+
+    mockIssueVerification.mockClear();
+    const verified = buildRes();
+    await authController.resendVerification(
+      { user: { id: 7, username: 'ada', email: 'ada@gmail.com', emailVerified: true } },
+      verified
+    );
+    expect(mockIssueVerification).not.toHaveBeenCalled();
+    expect(verified.json).toHaveBeenCalledWith({ status: 'already' });
   });
 
   it('rejects register when username is already taken (case-insensitive)', async () => {
@@ -333,6 +426,25 @@ describe('authController security-critical auth flows', () => {
     });
   });
 
+  it('answers before the e-mail is sent, so timing does not reveal an account', async () => {
+    pool.query
+      .mockResolvedValueOnce({
+        rows: [{ id: 11, email: 'player@example.com', username: 'player' }],
+      })
+      .mockResolvedValueOnce({ rowCount: 1 });
+    mockSendPasswordResetEmail.mockImplementationOnce(() => new Promise(() => {}));
+    const res = buildRes();
+    const answered = await Promise.race([
+      authController
+        .forgotPassword({ body: { email: 'player@example.com' }, headers: {}, ip: '127.0.0.1' }, res)
+        .then(() => 'answered'),
+      new Promise((resolve) => setTimeout(() => resolve('waited for e-mail'), 300)),
+    ]);
+    expect(answered).toBe('answered');
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ success: true }));
+    expect(mockSendPasswordResetEmail).toHaveBeenCalled();
+  });
+
   it('still returns generic response when SMTP send fails for known account', async () => {
     pool.query
       .mockResolvedValueOnce({
@@ -349,7 +461,8 @@ describe('authController security-critical auth flows', () => {
     const res = buildRes();
 
     await authController.forgotPassword(req, res);
-    await Promise.resolve();
+    // The send runs after the answer; let its rejection handler run.
+    for (let tick = 0; tick < 5; tick += 1) await Promise.resolve();
 
     expect(res.json).toHaveBeenCalledWith({
       success: true,
@@ -357,11 +470,9 @@ describe('authController security-critical auth flows', () => {
     });
     expect(logger.error).toHaveBeenCalledWith(
       'forgotPassword e-mail send failed',
-      expect.objectContaining({
-        userId: 11,
-        email: 'player@example.com',
-      })
+      expect.objectContaining({ userId: 11, to: 'p***@example.com' })
     );
+    expect(JSON.stringify(logger.error.mock.calls)).not.toContain('player@example.com');
   });
 
   it('finds gmail alias accounts for forgot-password by canonical local-part', async () => {

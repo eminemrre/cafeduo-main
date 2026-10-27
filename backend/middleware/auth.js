@@ -63,7 +63,8 @@ const authenticateToken = async (req, res, next) => {
       const result = await pool.query(
         `SELECT id, username, email, role, is_admin as "isAdmin",
                 cafe_id, points, wins, games_played as "gamesPlayed",
-                table_number, department, avatar_url
+                table_number, department, avatar_url,
+                email_verified_at IS NOT NULL AS "emailVerified"
          FROM users
          WHERE id = $1`,
         [decoded.id]
@@ -92,6 +93,7 @@ const authenticateToken = async (req, res, next) => {
           gamesPlayed: Number(
             memoryUser.gamesPlayed ?? memoryUser.games_played ?? decoded.gamesPlayed ?? 0
           ),
+          emailVerified: Boolean(memoryUser.emailVerifiedAt),
         };
       } else {
         req.user = decoded;

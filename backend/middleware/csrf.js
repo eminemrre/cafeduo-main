@@ -38,6 +38,8 @@ const EXEMPT_PATHS = new Set([
   '/api/auth/register',
   '/api/auth/forgot-password',
   '/api/auth/reset-password',
+  // Token-only: the one-time link proves the request, no session is used.
+  '/api/auth/verify-email',
   '/api/meta/version',
   '/health',
 ]);

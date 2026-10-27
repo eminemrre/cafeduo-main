@@ -1,4 +1,7 @@
 const ENV_KEYS = [
+  'RESEND_API_KEY',
+  'RESEND_FROM',
+  'EMAIL_CAPTURE',
   'SMTP_HOST',
   'SMTP_PORT',
   'SMTP_SECURE',
@@ -76,16 +79,109 @@ describe('emailService', () => {
     return { service, nodemailer, logger, mockTransport };
   };
 
-  it('falls back to log-only mode when neither Resend nor SMTP is configured', async () => {
+  it('sends nothing and never logs the link or the address when no provider is configured', async () => {
     const { service, logger } = loadService();
+    expect(service.isEmailConfigured()).toBe(false);
     const response = await service.sendPasswordResetEmail(buildPayload());
 
-    expect(response).toEqual({ delivered: false, mode: 'log-only' });
-    // PR #36 — error message updated to reference both providers (Resend
-    // primary, SMTP fallback). Matches new emailService.js wording.
+    expect(response).toEqual({ delivered: false, mode: 'none' });
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('No email provider configured'),
-      expect.objectContaining({ to: 'player@example.com' })
+      expect.objectContaining({ to: 'p***@example.com', template: 'password_reset' })
+    );
+    const logged = JSON.stringify([logger.info.mock.calls, logger.warn.mock.calls, logger.error.mock.calls]);
+    expect(logged).not.toMatch(/token=|https?:\/\/|player@example\.com/);
+  });
+
+  it('knows when a provider is configured', () => {
+    process.env.RESEND_API_KEY = 're_test';
+    expect(loadService().service.isEmailConfigured()).toBe(true);
+    delete process.env.RESEND_API_KEY;
+    jest.resetModules();
+    setBaseSmtpEnv();
+    expect(loadService().service.isEmailConfigured()).toBe(true);
+  });
+
+  it('sends a rendered template through Resend and logs only a masked address', async () => {
+    process.env.RESEND_API_KEY = 're_test';
+    const fetchMock = jest.fn(async () => ({ ok: true, json: async () => ({ id: 'msg_1' }) }));
+    global.fetch = fetchMock;
+    const { service, logger } = loadService();
+    const response = await service.sendEmail({
+      to: 'ada.lovelace@gmail.com',
+      template: 'verify_email',
+      data: { username: 'ada', verifyUrl: 'https://cafeduotr.com/dogrula?token=abc', expiresInHours: 24 },
+      idempotencyKey: 'verify_email/7/3',
+    });
+    expect(response).toEqual({ delivered: true, mode: 'resend', messageId: 'msg_1' });
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe('https://api.resend.com/emails');
+    // A retried request with the same key is not sent twice by Resend.
+    expect(init.headers['Idempotency-Key']).toBe('verify_email/7/3');
+    const body = JSON.parse(init.body);
+    expect(body).toMatchObject({
+      to: 'ada.lovelace@gmail.com',
+      from: 'CafeDuo <noreply@cafeduotr.com>',
+      subject: 'CafeDuo · E-postanı doğrula',
+    });
+    expect(body.text).toContain('https://cafeduotr.com/dogrula?token=abc');
+    expect(JSON.stringify(logger.info.mock.calls)).toContain('a***@gmail.com');
+    expect(JSON.stringify(logger.info.mock.calls)).not.toMatch(/ada\.lovelace|token=/);
+  });
+
+  it('captures e-mails instead of sending them only when EMAIL_CAPTURE is on outside production', async () => {
+    process.env.EMAIL_CAPTURE = 'true';
+    process.env.RESEND_API_KEY = 're_test';
+    global.fetch = jest.fn();
+    const { service } = loadService();
+    const result = await service.sendEmail({
+      to: 'Ada@Example.com',
+      template: 'welcome',
+      data: { username: 'ada', appUrl: 'https://cafeduotr.com' },
+    });
+    expect(result).toEqual({ delivered: true, mode: 'capture' });
+    expect(global.fetch).not.toHaveBeenCalled();
+    expect(service.capturedEmails('ada@example.com')).toEqual([
+      expect.objectContaining({ template: 'welcome', subject: 'CafeDuo · Aramıza hoş geldin' }),
+    ]);
+    expect(service.isEmailConfigured()).toBe(true);
+
+    const previous = process.env.NODE_ENV;
+    process.env.NODE_ENV = 'production';
+    try {
+      jest.resetModules();
+      const prod = loadService().service;
+      await prod.sendEmail({ to: 'ada@example.com', template: 'welcome', data: { username: 'ada', appUrl: 'https://cafeduotr.com' } }).catch(() => {});
+      expect(prod.capturedEmails('ada@example.com')).toEqual([]);
+    } finally {
+      process.env.NODE_ENV = previous;
+    }
+  });
+
+  it('keeps each address\'s captured e-mails even when many others arrive', async () => {
+    process.env.EMAIL_CAPTURE = 'true';
+    const { service } = loadService();
+    const data = { username: 'ada', appUrl: 'https://cafeduotr.com' };
+    await service.sendEmail({ to: 'first@example.com', template: 'welcome', data });
+    for (let i = 0; i < 250; i += 1) {
+      await service.sendEmail({ to: `other${i}@example.com`, template: 'welcome', data });
+    }
+    expect(service.capturedEmails('first@example.com')).toHaveLength(1);
+  });
+
+  it('falls back to SMTP when Resend fails', async () => {
+    process.env.RESEND_API_KEY = 're_test';
+    setBaseSmtpEnv();
+    global.fetch = jest.fn(async () => ({ ok: false, status: 500, text: async () => 'boom' }));
+    const { service, mockTransport } = loadService();
+    const response = await service.sendEmail({
+      to: 'player@example.com',
+      template: 'welcome',
+      data: { username: 'ada', appUrl: 'https://cafeduotr.com' },
+    });
+    expect(response).toEqual(expect.objectContaining({ delivered: true, mode: 'smtp' }));
+    expect(mockTransport.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({ subject: 'CafeDuo · Aramıza hoş geldin' })
     );
   });
 
@@ -127,7 +223,7 @@ describe('emailService', () => {
     expect(sendMail).toHaveBeenCalledTimes(2);
     expect(response).toEqual(expect.objectContaining({ delivered: true, attempt: 2 }));
     expect(logger.error).toHaveBeenCalledWith(
-      'Password reset e-mail delivery failed',
+      'E-mail delivery failed',
       expect.objectContaining({
         attempt: 1,
         retryable: true,

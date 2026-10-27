@@ -6,7 +6,9 @@ const { pool, isDbConnected } = require('../db');
 const logger = require('../utils/logger');
 const { isLocationCheckExempt } = require('../utils/locationExempt');
 const memoryState = require('../store/memoryState');
-const { sendPasswordResetEmail } = require('../services/emailService');
+const { isEmailConfigured, maskAddress, sendPasswordResetEmail } = require('../services/emailService');
+const { resolveAppBaseUrl } = require('../utils/appUrl');
+const { emailVerification } = require('../services/emailVerificationService');
 const { revokeToken } = require('../utils/tokenRevocation');
 const { getRequiredJwtSecret } = require('../utils/securityConfig');
 const { setCsrfCookie, clearCsrfCookie } = require('../middleware/csrf');
@@ -35,23 +37,8 @@ const memoryPasswordResetTokens = [];
 
 const hashResetToken = (token) => crypto.createHash('sha256').update(String(token)).digest('hex');
 
-const buildPasswordResetUrl = (rawToken) => {
-  const corsOrigin = String(process.env.CORS_ORIGIN || '')
-    .split(',')
-    .map((origin) => origin.trim())
-    .find((origin) => Boolean(origin) && origin !== '*');
-  const baseUrl =
-    String(
-      process.env.APP_BASE_URL ||
-        process.env.PUBLIC_APP_URL ||
-        process.env.FRONTEND_URL ||
-        corsOrigin ||
-        'http://localhost:5173'
-    )
-      .trim()
-      .replace(/\/+$/, '') || 'http://localhost:5173';
-  return `${baseUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
-};
+const buildPasswordResetUrl = (rawToken) =>
+  `${resolveAppBaseUrl()}/reset-password?token=${encodeURIComponent(rawToken)}`;
 
 const normalizeEmail = (email) =>
   String(email || '')
@@ -206,6 +193,11 @@ const toPublicUser = (user) => {
   if (safeUser.is_admin !== undefined && safeUser.isAdmin === undefined) {
     safeUser.isAdmin = Boolean(safeUser.is_admin);
   }
+  safeUser.emailVerified = Boolean(
+    safeUser.emailVerified ?? safeUser.email_verified_at ?? safeUser.emailVerifiedAt
+  );
+  delete safeUser.email_verified_at;
+  delete safeUser.emailVerifiedAt;
   delete safeUser.password;
   delete safeUser.password_hash;
   return safeUser;
@@ -214,6 +206,35 @@ const toPublicUser = (user) => {
 const responseForgotPassword = {
   success: true,
   message: 'Eğer e-posta adresi sistemde kayıtlıysa, şifre sıfırlama bağlantısı gönderildi.',
+};
+
+/** Starts e-mail verification without holding up the HTTP answer. */
+const startVerificationInBackground = (user) => {
+  Promise.resolve()
+    .then(() => emailVerification().issueVerification(user))
+    .catch((error) => {
+      logger.error('Verification start failed', { userId: user.id, error: error?.message || String(error) });
+    });
+};
+
+/** Sends the reset e-mail without holding up the HTTP answer; failures are logged. */
+const sendResetInBackground = (user, rawToken, failureMessage) => {
+  Promise.resolve()
+    .then(() =>
+      sendPasswordResetEmail({
+        to: user.email,
+        username: user.username,
+        resetUrl: buildPasswordResetUrl(rawToken),
+        expiresInMinutes: Math.round(PASSWORD_RESET_TOKEN_TTL_MS / 60000),
+      })
+    )
+    .catch((mailError) => {
+      logger.error(failureMessage, {
+        userId: user.id,
+        to: maskAddress(user.email),
+        error: mailError?.message || String(mailError),
+      });
+    });
 };
 
 const authController = {
@@ -269,7 +290,7 @@ const authController = {
         const result = await pool.query(
           `INSERT INTO users (username, email, password_hash, points, department, role, is_admin) 
                      VALUES ($1, $2, $3, 100, $4, $5, $6) 
-                     RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number`,
+                     RETURNING id, username, email, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number, email_verified_at IS NOT NULL AS "emailVerified"`,
           [
             normalizedUsername,
             normalizedEmail,
@@ -279,6 +300,7 @@ const authController = {
             shouldBootstrapAdmin,
           ]
         );
+        startVerificationInBackground(result.rows[0]);
         return res.json(toPublicUser(result.rows[0]));
       }
 
@@ -323,6 +345,7 @@ const authController = {
         table_number: null,
       };
       memoryState.users.unshift(memoryUser);
+      startVerificationInBackground(memoryUser);
       return res.json(toPublicUser(memoryUser));
     } catch (err) {
       logger.error('Register error:', err);
@@ -349,7 +372,7 @@ const authController = {
     try {
       if (await isDbConnected()) {
         const result = await pool.query(
-          'SELECT id, username, email, password_hash, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number FROM users WHERE LOWER(email) = $1',
+          'SELECT id, username, email, password_hash, points, wins, games_played as "gamesPlayed", department, is_admin as "isAdmin", role, cafe_id, table_number, email_verified_at IS NOT NULL AS "emailVerified" FROM users WHERE LOWER(email) = $1',
           [normalizedEmail]
         );
 
@@ -450,21 +473,9 @@ const authController = {
           ]
         );
 
-        const resetUrl = buildPasswordResetUrl(rawToken);
-        try {
-          await sendPasswordResetEmail({
-            to: user.email,
-            username: user.username,
-            resetUrl,
-            expiresInMinutes: Math.round(PASSWORD_RESET_TOKEN_TTL_MS / 60000),
-          });
-        } catch (mailError) {
-          logger.error('forgotPassword e-mail send failed', {
-            userId: user.id,
-            email: user.email,
-            error: mailError?.message || String(mailError),
-          });
-        }
+        // Answer first: waiting for the send would make a known address
+        // measurably slower than an unknown one.
+        sendResetInBackground(user, rawToken, 'forgotPassword e-mail send failed');
         return res.json(responseForgotPassword);
       }
 
@@ -480,22 +491,7 @@ const authController = {
         usedAt: null,
       });
 
-      const resetUrl = buildPasswordResetUrl(rawToken);
-      try {
-        await sendPasswordResetEmail({
-          to: memoryUser.email,
-          username: memoryUser.username,
-          resetUrl,
-          expiresInMinutes: Math.round(PASSWORD_RESET_TOKEN_TTL_MS / 60000),
-        });
-      } catch (mailError) {
-        logger.error('forgotPassword e-mail send failed (memory mode)', {
-          userId: memoryUser.id,
-          email: memoryUser.email,
-          error: mailError?.message || String(mailError),
-        });
-      }
-
+      sendResetInBackground(memoryUser, rawToken, 'forgotPassword e-mail send failed (memory mode)');
       return res.json(responseForgotPassword);
     } catch (error) {
       logger.error('forgotPassword flow failed', error);
@@ -647,6 +643,49 @@ const authController = {
   },
 
   // GET ME
+  // VERIFY E-MAIL (link from the verification e-mail)
+  async verifyEmail(req, res) {
+    try {
+      const { status } = await emailVerification().confirmVerification(req.body?.token);
+      if (status === 'verified' || status === 'already') return res.json({ status });
+      return res.status(400).json({
+        status,
+        code: status === 'expired' ? 'VERIFICATION_EXPIRED' : 'VERIFICATION_INVALID',
+        error:
+          status === 'expired'
+            ? 'Doğrulama bağlantısının süresi dolmuş. Yeni bağlantı iste.'
+            : 'Doğrulama bağlantısı geçersiz.',
+      });
+    } catch (error) {
+      logger.error('verifyEmail failed', { error: error?.message || String(error) });
+      return res.status(500).json({ error: 'Doğrulama şu an yapılamadı. Biraz sonra yeniden dene.' });
+    }
+  },
+
+  // RESEND VERIFICATION (authenticated)
+  async resendVerification(req, res) {
+    const user = req.user || {};
+    if (user.emailVerified) return res.json({ status: 'already' });
+    const unavailable = () =>
+      res.status(503).json({
+        code: 'EMAIL_UNAVAILABLE',
+        error: 'Şu an e-posta gönderemiyoruz. Biraz sonra yeniden dene.',
+      });
+    // Never claim a send that cannot happen.
+    if (!isEmailConfigured()) return unavailable();
+    try {
+      const { delivered } = await emailVerification().issueVerification({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+      });
+      return delivered ? res.json({ sent: true }) : unavailable();
+    } catch (error) {
+      logger.error('resendVerification failed', { userId: user.id, error: error?.message || String(error) });
+      return unavailable();
+    }
+  },
+
   async getMe(req, res) {
     const user = req.user;
     // Format table_number for frontend (db stores int, frontend needs 'MASAxx')

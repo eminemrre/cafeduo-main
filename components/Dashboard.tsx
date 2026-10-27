@@ -27,6 +27,7 @@ import { useToast } from '../contexts/ToastContext';
 // Sub-components
 import { StatusBar } from './dashboard/StatusBar';
 import { TournamentBanner } from './TournamentBanner';
+import { EmailVerifyBanner } from './dashboard/EmailVerifyBanner';
 import { TournamentLeaderboardModal } from './TournamentLeaderboardModal';
 import { GameSection } from './dashboard/GameSection';
 import { RewardSection } from './dashboard/RewardSection';
@@ -487,6 +488,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
           isMatched={isMatched}
           onOpenProfile={handleOpenOwnProfile}
         />
+
+        <EmailVerifyBanner userId={currentUser.id} emailVerified={currentUser.emailVerified} />
 
         {activeTournament && (
           <TournamentBanner

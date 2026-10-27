@@ -23,3 +23,17 @@ describe('authority flag deployment contract', () => {
     }
   });
 });
+
+describe('deploy script readiness gate', () => {
+  const script = fs.readFileSync(path.resolve(__dirname, '../../deploy/scripts/deploy-production.sh'), 'utf8');
+
+  it('rolls back unless e-mail and the word bank are ready, not only the database', () => {
+    // The readiness assert runs inside the ERR trap, so a failure triggers rollback().
+    const assertLine = script.split('\n').find((line) => line.includes("body['status']=='ready'"));
+    expect(assertLine).toMatch(/checks'\]\.get\('email'\) is True/);
+    expect(assertLine).toMatch(/checks'\]\.get\('wordBank'\) is True/);
+    // The last 'trap - ERR' ends the guarded section (the first is inside rollback()).
+    expect(script.indexOf(assertLine)).toBeGreaterThan(script.indexOf('trap rollback ERR'));
+    expect(script.indexOf(assertLine)).toBeLessThan(script.lastIndexOf('trap - ERR'));
+  });
+});

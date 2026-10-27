@@ -349,6 +349,19 @@ export const api = {
       });
     },
 
+    /** Confirms an e-mail verification link (400 with VERIFICATION_EXPIRED / _INVALID otherwise). */
+    verifyEmail: async (token: string): Promise<{ status: 'verified' | 'already' }> => {
+      return await fetchAPI('/auth/verify-email', {
+        method: 'POST',
+        body: JSON.stringify({ token }),
+      });
+    },
+
+    /** Sends a fresh verification link to the signed-in user. */
+    resendVerification: async (): Promise<{ sent?: true; status?: 'already' }> => {
+      return await fetchAPI('/auth/resend-verification', { method: 'POST' });
+    },
+
     logout: async (): Promise<void> => {
       try {
         await fetchAPI('/auth/logout', { method: 'POST' });

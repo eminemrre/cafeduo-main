@@ -22,6 +22,9 @@ describe('public page HTML', () => {
       'https://cafeduotr.com/',
       'https://cafeduotr.com/kafeler',
       'https://cafeduotr.com/gizlilik',
+      'https://cafeduotr.com/kosullar',
+      'https://cafeduotr.com/iade',
+      'https://cafeduotr.com/cerezler',
     ]);
   });
 
@@ -57,6 +60,24 @@ describe('public page HTML', () => {
       }
     }
   });
+
+  it.each(['/gizlilik', '/kosullar', '/iade', '/cerezler'])(
+    'makes the entire %s legal document readable without JavaScript',
+    (legalPath) => {
+      const page = PUBLIC_PAGES.find((item) => item.path === legalPath);
+      expect(page).toBeDefined();
+      const html = renderPageHtml(indexHtml, page!);
+      expect(html).toContain('Emin Emre');
+      expect(html).toContain('Gaziler Caddesi No:40');
+      expect(html).toContain('cafeduotr@gmail.com');
+      expect(html).toContain('27 Ekim 2026');
+      expect(html).toContain('<nav aria-label="Bu metinde">');
+      expect(html.match(/<section\b/g)!.length).toBeGreaterThanOrEqual(4);
+      expect(html).toContain('href="/kosullar"');
+      expect(html).toContain('href="/iade"');
+      expect(html).toContain('href="/cerezler"');
+    }
+  );
 
   it('can be rendered again from its own output', () => {
     const once = renderPageHtml(indexHtml, PUBLIC_PAGES[0]);

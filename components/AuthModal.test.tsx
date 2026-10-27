@@ -115,7 +115,7 @@ describe('AuthModal', () => {
     trigger.remove();
   });
 
-  it('allows keyboard access to the separate cookie-consent portal', () => {
+  it('keeps focus inside the dialog while the informational cookie notice is behind it', () => {
     render(
       <>
         <AuthModal
@@ -131,7 +131,7 @@ describe('AuthModal', () => {
     );
     const consent = screen.getByRole('button', { name: 'Consent choice' });
     consent.focus();
-    expect(consent).toHaveFocus();
+    expect(screen.getByRole('dialog')).toHaveFocus();
     fireEvent.keyDown(document, { key: 'Tab' });
     expect(screen.getByRole('button', { name: 'Kapat' })).toHaveFocus();
   });
@@ -149,6 +149,27 @@ describe('AuthModal', () => {
     expect(screen.getByRole('heading', { name: 'Giriş Yap' })).toBeInTheDocument();
     expect(screen.getByPlaceholderText('E-posta')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Şifre')).toBeInTheDocument();
+  });
+
+  it.each([null, 'rejected'])('does not require cookie consent for login (%s)', async (choice) => {
+    (window.localStorage.getItem as jest.Mock).mockReturnValue(choice);
+    const { api } = require('../lib/api');
+    api.auth.login.mockResolvedValue(mockLoginUser);
+    render(
+      <AuthModal
+        isOpen
+        onClose={mockOnClose}
+        initialMode="login"
+        onLoginSuccess={mockOnLoginSuccess}
+      />
+    );
+    fireEvent.change(screen.getByPlaceholderText('E-posta'), {
+      target: { value: 'emin3619@gmail.com' },
+    });
+    fireEvent.change(screen.getByPlaceholderText('Şifre'), { target: { value: 'secret123' } });
+    fireEvent.click(screen.getByTestId('auth-submit-button'));
+    await waitFor(() => expect(mockOnLoginSuccess).toHaveBeenCalledWith(mockLoginUser));
+    expect(window.localStorage.removeItem).not.toHaveBeenCalledWith('cookie_consent');
   });
 
   it('renders register form when mode is register', () => {
@@ -306,12 +327,67 @@ describe('AuthModal', () => {
       target: { value: 'secret123' },
     });
 
+    const consent = screen.getByRole('checkbox', {
+      name: /Kullanım koşullarını okudum ve kabul ediyorum/i,
+    });
+    expect(consent).not.toBeChecked();
+    fireEvent.click(consent);
+
     fireEvent.submit(container.querySelector('form') as HTMLFormElement);
 
     await waitFor(() => {
-      expect(api.auth.register).toHaveBeenCalledWith('eminemre', 'emin3619@gmail.com', 'secret123');
+      expect(api.auth.register).toHaveBeenCalledWith(
+        'eminemre',
+        'emin3619@gmail.com',
+        'secret123',
+        { acceptTerms: true, termsVersion: '2026-10-27' }
+      );
       expect(mockOnLoginSuccess).toHaveBeenCalledWith(mockLoginUser);
     });
+  });
+
+  it('does not register without explicit terms acceptance and keeps KVKK separate', async () => {
+    const { api } = await import('../lib/api');
+    const { container } = render(
+      <AuthModal
+        isOpen
+        onClose={mockOnClose}
+        initialMode="register"
+        onLoginSuccess={mockOnLoginSuccess}
+      />
+    );
+    fireEvent.change(screen.getByPlaceholderText('Kullanıcı adı'), {
+      target: { value: 'eminemre' },
+    });
+    fireEvent.change(screen.getByTestId('auth-email-input'), {
+      target: { value: 'emin3619@gmail.com' },
+    });
+    fireEvent.change(screen.getByTestId('auth-password-input'), { target: { value: 'secret123' } });
+    fireEvent.submit(container.querySelector('form')!);
+    expect(api.auth.register).not.toHaveBeenCalled();
+    expect(screen.getByRole('link', { name: 'Kullanım koşullarını' })).toHaveAttribute(
+      'href',
+      '/kosullar'
+    );
+    const privacy = screen.getByRole('link', { name: 'KVKK aydınlatma metni' });
+    expect(privacy).toHaveAttribute('href', '/gizlilik');
+    expect(privacy.closest('label')).toBeNull();
+    expect(screen.getAllByRole('checkbox')).toHaveLength(1);
+  });
+
+  it('clears acceptance when the registration dialog is reopened', () => {
+    const props = {
+      isOpen: true,
+      onClose: mockOnClose,
+      initialMode: 'register' as const,
+      onLoginSuccess: mockOnLoginSuccess,
+    };
+    const { rerender } = render(<AuthModal {...props} />);
+    fireEvent.click(screen.getByRole('checkbox'));
+    expect(screen.getByRole('checkbox')).toBeChecked();
+    rerender(<AuthModal {...props} isOpen={false} />);
+    rerender(<AuthModal {...props} />);
+    expect(screen.getByRole('checkbox')).not.toBeChecked();
   });
 
   it('shows mapped auth error message on wrong password', async () => {

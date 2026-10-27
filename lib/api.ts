@@ -319,10 +319,15 @@ export const api = {
       return (data.user || data) as User;
     },
 
-    register: async (username: string, email: string, password: string): Promise<User> => {
+    register: async (
+      username: string,
+      email: string,
+      password: string,
+      acceptance: { acceptTerms: boolean; termsVersion: string }
+    ): Promise<User> => {
       const data = await fetchAPI<AuthRegisterResponse>('/auth/register', {
         method: 'POST',
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({ username, email, password, ...acceptance }),
       });
       // Auto-login after registration
       if (data.id) {
@@ -360,6 +365,15 @@ export const api = {
     /** Sends a fresh verification link to the signed-in user. */
     resendVerification: async (): Promise<{ sent?: true; status?: 'already' }> => {
       return await fetchAPI('/auth/resend-verification', { method: 'POST' });
+    },
+
+    acceptTerms: async (
+      termsVersion: string
+    ): Promise<{ termsVersion: string; termsAcceptedAt: string }> => {
+      return await fetchAPI('/auth/accept-terms', {
+        method: 'POST',
+        body: JSON.stringify({ acceptTerms: true, termsVersion }),
+      });
     },
 
     logout: async (): Promise<void> => {

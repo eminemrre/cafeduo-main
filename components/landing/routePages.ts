@@ -7,7 +7,7 @@
  */
 export const SITE_URL = 'https://cafeduotr.com';
 
-export type PublicPath = '/' | '/kafeler' | '/gizlilik';
+export type PublicPath = '/' | '/kafeler' | '/gizlilik' | '/kosullar' | '/iade' | '/cerezler';
 
 export interface PublicPage {
   path: PublicPath;
@@ -35,6 +35,24 @@ export const PUBLIC_PAGES: readonly PublicPage[] = [
     title: 'Gizlilik Politikası ve KVKK Aydınlatma Metni | CafeDuo',
     description:
       'CafeDuo hangi kişisel verileri hangi amaçla işler, ne kadar saklar; KVKK kapsamındaki haklarınızı nasıl kullanırsınız.',
+  },
+  {
+    path: '/kosullar',
+    title: 'Kullanım Koşulları | CafeDuo',
+    description:
+      'CafeDuo üyeliği, oyunlar, puanlar, kafe ödülleri ve planlanan abonelik hizmetinin kullanım koşulları ve iletişim bilgileri.',
+  },
+  {
+    path: '/iade',
+    title: 'İade ve İptal Politikası | CafeDuo',
+    description:
+      'CafeDuo kafe aboneliği için iptal, iade talebi, Paddle’ın rolü ve kanuni haklara ilişkin açıklamalar.',
+  },
+  {
+    path: '/cerezler',
+    title: 'Çerez Politikası | CafeDuo',
+    description:
+      'CafeDuo zorunlu oturum ve güvenlik çerezleri, yerel depolama amaçları, süreleri ve tarayıcı kontrol seçenekleri.',
   },
 ];
 

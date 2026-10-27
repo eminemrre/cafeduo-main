@@ -12,13 +12,20 @@ import { lazyWithRetry } from './lib/lazyWithRetry';
 import { whatsappLink } from './lib/ownerContact';
 import { CafeSelection } from './components/CafeSelection';
 import { CookieConsent } from './components/CookieConsent';
-import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ToastProvider, useToast } from './contexts/ToastContext';
 import { usePageMeta } from './hooks/usePageMeta';
+import { TermsUpdateBanner } from './components/legal/TermsUpdateBanner';
 
 // Lazy Load Components
+const PrivacyPolicy = lazyWithRetry(() => import('./components/PrivacyPolicy'), 'PrivacyPolicy');
+const TermsPage = lazyWithRetry(() => import('./components/legal/TermsPage'), 'TermsPage');
+const RefundPage = lazyWithRetry(() => import('./components/legal/RefundPage'), 'RefundPage');
+const CookiePolicyPage = lazyWithRetry(
+  () => import('./components/legal/CookiePolicyPage'),
+  'CookiePolicyPage'
+);
 const Dashboard = lazyWithRetry(
   () => import('./components/Dashboard').then((module) => ({ default: module.Dashboard })),
   'Dashboard'
@@ -60,7 +67,10 @@ const PageLoader = () => (
     aria-label="Sayfa yükleniyor"
     className="min-h-screen flex flex-col items-center justify-center text-carbon"
   >
-    <div aria-hidden="true" className="h-10 w-10 border-4 border-carbon border-t-transparent animate-spin" />
+    <div
+      aria-hidden="true"
+      className="h-10 w-10 border-4 border-carbon border-t-transparent animate-spin"
+    />
     <p className="mt-4 text-[0.9375rem] text-carbon-soft">Yükleniyor…</p>
   </div>
 );
@@ -270,6 +280,13 @@ const AppContent: React.FC = () => {
       )}
 
       <main id="main-content">
+        {user && ['/dashboard', '/admin', '/cafe-admin'].includes(location.pathname) && (
+          <TermsUpdateBanner
+            key={user.id}
+            termsVersion={user.termsVersion}
+            onAccepted={updateUser}
+          />
+        )}
         <Suspense fallback={<PageLoader />}>
           <Routes location={location} key={location.pathname}>
             <Route
@@ -353,6 +370,30 @@ const AppContent: React.FC = () => {
               element={
                 <PageFrame>
                   <PrivacyPolicy />
+                </PageFrame>
+              }
+            />
+            <Route
+              path="/kosullar"
+              element={
+                <PageFrame>
+                  <TermsPage />
+                </PageFrame>
+              }
+            />
+            <Route
+              path="/iade"
+              element={
+                <PageFrame>
+                  <RefundPage />
+                </PageFrame>
+              }
+            />
+            <Route
+              path="/cerezler"
+              element={
+                <PageFrame>
+                  <CookiePolicyPage />
                 </PageFrame>
               }
             />

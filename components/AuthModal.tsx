@@ -18,7 +18,7 @@ import { User as UserType } from '../types';
 import { api } from '../lib/api';
 import { PAU_DEPARTMENTS } from '../constants';
 import { useToast } from '../contexts/ToastContext';
-import { readCookieConsent } from './CookieConsent';
+import { LEGAL_VERSION } from '../lib/legal/seller';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -67,6 +67,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   onLoginSuccess,
 }) => {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const closeRef = useRef(onClose);
   useEffect(() => {
     closeRef.current = onClose;
@@ -79,12 +80,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     document.body.style.overflow = 'hidden';
     dialogRef.current?.focus({ preventScroll: true });
 
-    // Consent is a separate portal and must remain reachable while signing in.
-    const roots = () =>
-      [
-        dialogRef.current,
-        document.querySelector<HTMLElement>('[aria-label="Çerez bildirimi"]'),
-      ].filter((node): node is HTMLElement => Boolean(node));
+    // The informational cookie notice does not gate auth; focus stays in the modal.
+    const roots = () => [dialogRef.current].filter((node): node is HTMLDivElement => Boolean(node));
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         event.preventDefault();
@@ -178,6 +175,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setPassword('');
     setDepartment('');
     setShowPassword(false);
+    setAcceptTerms(false);
   };
 
   // Real-time validation
@@ -263,27 +261,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setError('');
     setHasSubmitted(true);
 
-    // Cookie consent is a hard prerequisite — auth uses JWT cookies for
-    // session management, so without consent we literally cannot keep the
-    // user logged in. Block submission and prompt them to revisit the
-    // cookie banner.
-    if (readCookieConsent() !== 'accepted') {
-      const message =
-        'Giriş yapabilmek için önce çerez kullanımını kabul etmelisin. Çerez bildirimi tekrar açıldı.';
-      setError(message);
-      toast.error(message);
-      // Wipe any prior 'rejected' value so the banner shows pending again
-      // when the user lands back on the page.
-      if (typeof window !== 'undefined') {
-        window.localStorage.removeItem('cookie_consent');
-        window.dispatchEvent(new Event('cookie-consent-changed'));
-      }
-      return;
-    }
-
     // Validate all fields
     if (!validateForm()) {
       toast.error('Lütfen form hatalarını düzeltin');
+      return;
+    }
+
+    if (!isForgotPasswordMode && mode === 'register' && !acceptTerms) {
+      setError('Kayıt için kullanım koşullarını okuyup kabul etmelisin.');
       return;
     }
 
@@ -295,7 +280,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         setForgotMessage(response.message);
         toast.success(response.message);
       } else if (mode === 'register') {
-        const user = await api.auth.register(username, email, password);
+        const user = await api.auth.register(username, email, password, {
+          acceptTerms,
+          termsVersion: LEGAL_VERSION,
+        });
         onLoginSuccess(user);
       } else {
         const user = await api.auth.login(email, password);
@@ -330,6 +318,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
   const switchMode = (newMode: 'login' | 'register') => {
     setMode(newMode);
+    setAcceptTerms(false);
     setIsForgotPasswordMode(false);
     setForgotMessage('');
     setError('');
@@ -617,6 +606,42 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   >
                     Şifremi unuttum
                   </button>
+                )}
+
+                {mode === 'register' && !isForgotPasswordMode && (
+                  <div className="space-y-3 text-sm leading-6 text-carbon font-candy-body">
+                    <label className="flex min-h-11 cursor-pointer items-start gap-3">
+                      <input
+                        type="checkbox"
+                        checked={acceptTerms}
+                        onChange={(event) => setAcceptTerms(event.target.checked)}
+                        className="duo-focus mt-1 h-5 w-5 shrink-0 accent-carbon"
+                      />
+                      <span>
+                        <a
+                          href="/kosullar"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="duo-focus underline underline-offset-4"
+                        >
+                          Kullanım koşullarını
+                        </a>{' '}
+                        okudum ve kabul ediyorum.
+                      </span>
+                    </label>
+                    <p>
+                      Hesap ve oyun verilerinin işlenmesi hakkında{' '}
+                      <a
+                        href="/gizlilik"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="duo-focus underline underline-offset-4"
+                      >
+                        KVKK aydınlatma metni
+                      </a>
+                      . Bu bilgilendirme, açık rıza veya pazarlama izni değildir.
+                    </p>
+                  </div>
                 )}
 
                 <RetroButton

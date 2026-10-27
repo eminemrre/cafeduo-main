@@ -1587,13 +1587,14 @@ body:has(.cdl) {
 /* ------------------------------------------------------------------ cookie notice (landing) */
 
 /* It is portaled to <body>, so it carries literal colours; it floats above the page
-   and that is the one place on the landing where a shadow is allowed. */
+   and that is the one place on the landing where a shadow is allowed.
+   It is information, not a prerequisite: dialogs must stay above it. */
 .cdl-cookie {
   position: fixed;
   right: 16px;
   bottom: 16px;
   left: 16px;
-  z-index: 130;
+  z-index: 40;
   display: grid;
   gap: 8px;
   padding: 16px;

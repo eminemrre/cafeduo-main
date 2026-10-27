@@ -149,6 +149,9 @@ export const FOOTER_COLUMNS = [
     links: [
       { label: 'Kafeler için', href: '/kafeler' },
       { label: 'Gizlilik', href: '/gizlilik' },
+      { label: 'Kullanım koşulları', href: '/kosullar' },
+      { label: 'İade ve iptal', href: '/iade' },
+      { label: 'Çerezler', href: '/cerezler' },
     ],
   },
   {

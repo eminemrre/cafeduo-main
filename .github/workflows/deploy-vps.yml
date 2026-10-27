@@ -93,7 +93,7 @@ jobs:
         run: |
           set -euo pipefail
           : "${RESEND_API_KEY:?RESEND_API_KEY secret missing}"
-          [[ "$RESEND_API_KEY" =~ ^re_[A-Za-z0-9_]+$ ]] || { echo 'RESEND_API_KEY has an unexpected format'; exit 1; }
+          [[ "$RESEND_API_KEY" =~ ^re_[[:alnum:]_]+$ ]] || { echo 'RESEND_API_KEY has an unexpected format'; exit 1; }
           install -d -m 700 "$RUNNER_TEMP/app-secrets"
           umask 077
           printf 'RESEND_API_KEY=%s\n' "$RESEND_API_KEY" > "$RUNNER_TEMP/app-secrets/app.env"

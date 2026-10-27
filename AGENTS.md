@@ -103,6 +103,10 @@ npm run migrate:status   # when touching migrations
   accepted or treat a KVKK notice/cookie dismissal as consent. Preserve acceptance timestamps
   on same-version retries and production application rollback. See `docs/ops/legal.md` for
   unresolved legal release gates; publishing a policy is not evidence those gates are met.
+- Browser Sentry setup lives in `lib/errorReporting.ts`: error diagnosis only. Replay,
+  BrowserTracing and BrowserSession integrations and both replay sample rates stay disabled.
+  Re-enabling behavioural/session recording needs a separate product/legal decision, not the
+  necessary-cookie notice. Error reporting still requires assessment of cross-border transfers.
 
 ### Architecture
 

@@ -20,6 +20,13 @@ Do not infer corporate, tax, registration or supplier-contract details from the 
   for processing, international transfers, advertising or marketing.
 - Cookie-banner dismissal is a browser-only acknowledgement. It is not terms acceptance and it
   never gates login, password reset or registration.
+- `lib/errorReporting.ts` keeps browser error reporting, but removes Replay, BrowserTracing and
+  BrowserSession integrations and sets both replay sample rates and the tracing rate to zero.
+  Even error-triggered replay is disabled (a zero session rate alone would not do this).
+  Default error handlers/breadcrumbs remain for error diagnosis; backend APM remains technical
+  error/performance monitoring. None of this proves absence of personal data or a valid m.9
+  transfer basis. Do not re-enable session recording or behavioural analytics under the
+  necessary-cookie notice; it needs a separate product/legal/consent decision first.
 
 ## Release blockers outside the text/code
 
@@ -94,6 +101,14 @@ registration or legal filing is performed by implementing these pages.
 migration only with explicit production approval, a verified backup and a bounded lock wait,
 before merging application code that reads those columns. Do not use hand-written production SQL
 or manually add `pgmigrations` entries instead of running the migration.
+
+Even nullable/default-free `ADD COLUMN` takes an `ACCESS EXCLUSIVE` lock. The authorized
+production migration process must receive `PGOPTIONS='-c lock_timeout=5s'` so a busy `users`
+table causes a bounded failure instead of an unbounded queue of authentication requests.
+Pass this environment variable into the actual migration container/process, not merely the
+SSH host shell. The existing production approval/baseline guards still apply. If the lock
+times out, stop and investigate long-running transactions; do not remove the bound or merge
+the application before verifying that the migration actually completed.
 
 CI's `fresh-db-migrations` job verifies the complete up → down → up chain on disposable PostgreSQL.
 If no local PostgreSQL is available, say so; mocked queries do not verify real database behavior.

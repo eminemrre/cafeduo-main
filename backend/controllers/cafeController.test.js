@@ -410,4 +410,45 @@ describe('cafeController.updateLocation', () => {
     ]);
     expect(res.status).not.toHaveBeenCalledWith(400);
   });
+
+  it('clears secondary location when the client sends explicit nulls', async () => {
+    pool.query.mockResolvedValueOnce({
+      rows: [{ id: 3, name: 'Kafe 3', latitude: 37.75, longitude: 29.11, radius: 160 }],
+    });
+
+    const req = {
+      params: { id: '3' },
+      body: {
+        latitude: 37.75,
+        longitude: 29.11,
+        radius: 160,
+        secondaryLatitude: null,
+        secondaryLongitude: null,
+        secondaryRadius: null,
+      },
+      user: { id: 11, role: 'cafe_admin', cafe_id: 3 },
+    };
+    const res = buildRes();
+
+    await cafeController.updateLocation(req, res);
+
+    // Regression: `??` used to coerce the explicit nulls to undefined, so the
+    // empty checks saw "not empty" and answered 400 instead of clearing.
+    expect(pool.query).toHaveBeenCalledWith(expect.stringContaining('secondary_latitude'), [
+      37.75,
+      29.11,
+      160,
+      null,
+      null,
+      null,
+      '3',
+    ]);
+    expect(res.status).not.toHaveBeenCalledWith(400);
+    expect(res.json).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success: true,
+        message: 'Kafe konumu güncellendi.',
+      })
+    );
+  });
 });
